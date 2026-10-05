@@ -1,0 +1,78 @@
+# ==============================================================================
+# Git Ignore Configuration - It's A Simple Job
+# ==============================================================================
+
+# Environment & Secrets (Never commit credentials)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# Preserve example config
+!.env.example
+
+# Node.js & Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE & Code Editor Folders
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Logs & Temporary Files
+logs/
+*.log
+*.tmp
+*.bak
+scratch/
+.system_generated/

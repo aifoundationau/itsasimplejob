@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>It's A Simple Job | Australia's Premier AI Labour & Courier Service</title>
+  <meta name="description" content="Connect with trusted tradespeople, handymen, and couriers across Australia. Just explain what you need in plain English—our AI agent matches the best local provider instantly.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons for crisp UI icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <header class="top-bar">
+    <div class="container">
+      <div class="top-bar-left">
+        <span class="badge-pill-pill">Australia's 1st</span>
+        <span>Labour & Courier Service Powered by AI • <strong>Gold Coast & Australia-Wide</strong></span>
+      </div>
+      <div class="top-bar-right">
+        <span><i class="fa-regular fa-clock"></i> Shifts: <strong>9am–12pm</strong> & <strong>2pm–5pm</strong></span>
+        <a href="#franchise" class="top-link" onclick="switchTab('franchise-tab')">
+          <i class="fa-solid fa-handshake"></i> Franchise Opportunities (No Setup Fees)
+        </a>
+        <a href="tel:1300746753" class="top-link">
+          <i class="fa-solid fa-phone"></i> <strong>1300 SIMPLE</strong>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar" id="main-nav">
+    <div class="container nav-container">
+      <a href="#" class="brand-logo" onclick="switchTab('ai-book-tab')">
+        <div class="logo-text-group">
+          <div class="logo-brand-title">It's <span style="font-size:0.85em; font-weight:900;">A</span> <span class="accent-simple">Simple Job</span></div>
+          <span class="logo-tagline">Just Make It Simple</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Buttons -->
+      <div class="nav-menu">
+        <button class="nav-item-btn active" id="tab-btn-ai-book" onclick="switchTab('ai-book-tab')">
+          <i class="fa-solid fa-robot"></i> Book with AI
+        </button>
+        <button class="nav-item-btn" id="tab-btn-find-contractors" onclick="switchTab('find-contractors-tab')">
+          <i class="fa-solid fa-map-location-dot"></i> Find Contractors
+        </button>
+        <button class="nav-item-btn" id="tab-btn-courier" onclick="switchTab('courier-tab')">
+          <i class="fa-solid fa-truck-fast"></i> Courier Service
+        </button>
+        <button class="nav-item-btn" id="tab-btn-how-it-works" onclick="switchTab('how-it-works-tab')">
+          <i class="fa-solid fa-list-check"></i> How It Works
+        </button>
+        <button class="nav-item-btn" id="tab-btn-provider-network" onclick="switchTab('provider-network-tab')">
+          <i class="fa-solid fa-helmet-safety"></i> Tradie Portal
+        </button>
+        <button class="nav-item-btn" id="tab-btn-franchise" onclick="switchTab('franchise-tab')">
+          <i class="fa-solid fa-award"></i> Franchise
+        </button>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-outline btn-sm" onclick="openTrackModal()">
+          <i class="fa-solid fa-receipt"></i> Track Docket
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="focusAIChat()">
+          <i class="fa-solid fa-bolt"></i> Instant Booking
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="ai-dot"></span>
+          <span>Australia's First Labour & Courier Service Powered by AI</span>
+        </div>
+        <h1 class="hero-title">
+          This Service is <br><span class="highlight-orange">SO SIMPLE</span>.
+        </h1>
+        <p class="hero-subtitle">
+          Customers don't need technical terms or complicated categories. Simply describe what you need done in your own words—just like chatting to a mate. Our AI agent instantly finds the best verified local tradie or courier for the exact job.
+        </p>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-lg" onclick="focusAIChat()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Simply Book Using The AI Agent
+          </button>
+          <button class="btn btn-outline btn-lg" onclick="switchTab('courier-tab')">
+            <i class="fa-solid fa-truck-ramp-box"></i> Book Courier Delivery
+          </button>
+        </div>
+
+        <div class="hero-quick-stats">
+          <div class="hero-stat-item">
+            <div class="stat-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="stat-text">
+              <strong>100% Verified</strong>
+              <span>Licences & $20M Insurance</span>
+            </div>
+          </div>
+          <div class="hero-stat-item">
+            <div class="stat-icon-box"><i class="fa-solid fa-bolt"></i></div>
+            <div class="stat-text">
+              <strong>Under 60 Secs</strong>
+              <span>Instant AI Job Matching</span>
+            </div>
+          </div>
+          <div class="hero-stat-item">
+            <div class="stat-icon-box"><i class="fa-solid fa-clock"></i></div>
+            <div class="stat-text">
+              <strong>Fixed Shifts</strong>
+              <span>9am–12pm & 2pm–5pm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual Card -->
+      <div class="hero-media-wrapper">
+        <div class="hero-card-featured">
+          <img src="assets/images/hero_van.jpg" alt="It's A Simple Job Delivery Van along Gold Coast Highway" class="hero-card-img">
+          <div class="hero-card-body">
+            <div class="dual-pillar-pills">
+              <div class="pillar-chip labour-chip">
+                <i class="fa-solid fa-person-digging" style="font-size:1.4rem; color:var(--primary-navy);"></i>
+                <div>
+                  <strong>LABOUR SERVICE</strong>
+                  <span>We do the work. You relax.</span>
+                </div>
+              </div>
+              <div class="pillar-chip courier-chip">
+                <i class="fa-solid fa-truck-fast" style="font-size:1.4rem; color:var(--brand-orange);"></i>
+                <div>
+                  <strong>COURIER SERVICE</strong>
+                  <span>We pick up. We deliver.</span>
+                </div>
+              </div>
+            </div>
+
+            <p style="font-size:0.84rem; color:var(--text-muted); display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i>
+              <span>One simple promise – get it done, simply. No job too small, no job too big.</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Floating Trust Badge -->
+        <div class="floating-trust-badge">
+          <div class="badge-icon"><i class="fa-solid fa-star"></i></div>
+          <div>
+            <strong>4.98 / 5 Rating</strong>
+            <span>Verified Aussie Customer Feedback</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Section Tabs Navigation Bar -->
+  <section class="app-section-tabs">
+    <div class="container tab-nav-bar">
+      <button class="tab-nav-btn active" id="pill-ai-book" onclick="switchTab('ai-book-tab')">
+        <i class="fa-solid fa-robot"></i> 1. AI Booking Agent
+      </button>
+      <button class="tab-nav-btn" id="pill-find-contractors" onclick="switchTab('find-contractors-tab')">
+        <i class="fa-solid fa-map-location-dot"></i> 2. Find Contractors & Map
+      </button>
+      <button class="tab-nav-btn" id="pill-courier" onclick="switchTab('courier-tab')">
+        <i class="fa-solid fa-truck"></i> 3. Courier Calculator
+      </button>
+      <button class="tab-nav-btn" id="pill-how-it-works" onclick="switchTab('how-it-works-tab')">
+        <i class="fa-solid fa-route"></i> 4. 4-Step Process
+      </button>
+      <button class="tab-nav-btn" id="pill-provider-network" onclick="switchTab('provider-network-tab')">
+        <i class="fa-solid fa-id-card"></i> 5. Tradie Portal
+      </button>
+      <button class="tab-nav-btn" id="pill-franchise" onclick="switchTab('franchise-tab')">
+        <i class="fa-solid fa-briefcase"></i> 6. Franchise (No Setup Fees)
+      </button>
+    </div>
+  </section>
+
+  <!-- MAIN APP WORKSPACE CONTAINER -->
+  <main class="container" style="padding-top: 2rem;">
+
+    <!-- =========================================================================
+         VIEW 1: AI Booking Agent (Customer View)
+         ========================================================================= -->
+    <section class="workspace-view active-view" id="ai-book-tab">
+      <div class="section-header">
+        <span class="section-tag">Conversational AI Engine</span>
+        <h2 class="section-title">Explain It Like You're Talking To A Friend</h2>
+        <p class="section-desc">
+          No complicated trade categories. Tell our AI what’s broken, what needs moving, or what you want assembled. We extract requirements, calculate accurate hours, and pair you with the best available local tradie.
+        </p>
+      </div>
+
+      <div class="ai-agent-container">
+        <!-- Left: Chat & Natural Language Input -->
+        <div class="ai-chat-side">
+          <div class="ai-header-bar">
+            <div class="ai-persona">
+              <div class="ai-avatar"><i class="fa-solid fa-sparkles"></i></div>
+              <div class="ai-persona-info">
+                <h4>SimpleAI Job Coordinator</h4>
+                <p><span class="ai-status-indicator"></span> Ready to understand your job in plain English</p>
+              </div>
+            </div>
+            <span class="badge-pill-pill" style="font-size:0.7rem;">Live Model Active</span>
+          </div>
+
+          <div class="suggested-prompts-label">
+            <i class="fa-regular fa-lightbulb"></i> Try one of these real Aussie job examples:
+          </div>
+
+          <!-- Quick Chips -->
+          <div class="quick-prompt-chips">
+            <button class="chip-btn" onclick="applySamplePrompt('leaking_tap')">
+              💧 Leaking mixer tap in Broadbeach
+            </button>
+            <button class="chip-btn" onclick="applySamplePrompt('flatpack_assembly')">
+              🪑 Assemble 2 IKEA wardrobes in Southport
+            </button>
+            <button class="chip-btn" onclick="applySamplePrompt('urgent_courier')">
+              📦 Urgent courier: medical parts to Brisbane Hospital
+            </button>
+            <button class="chip-btn" onclick="applySamplePrompt('powerpoints')">
+              ⚡ Install 3 weatherproof power points in Robina
+            </button>
+            <button class="chip-btn" onclick="applySamplePrompt('garden_lawn')">
+              🌿 Overgrown back lawn & gutter cleaning
+            </button>
+            <button class="chip-btn" onclick="applySamplePrompt('drywall_patch')">
+              🎨 Patch drywall hole & repaint wall
+            </button>
+          </div>
+
+          <!-- Prompt Box -->
+          <div class="prompt-input-wrapper">
+            <textarea 
+              id="ai-prompt-input" 
+              class="prompt-textarea" 
+              placeholder="e.g. My kitchen sink mixer tap is dripping constantly underneath the cupboard and the shutoff valve feels loose. I'm in Broadbeach on the Gold Coast. Can someone come Thursday afternoon?"
+            ></textarea>
+            
+            <div class="prompt-bar-actions">
+              <button class="voice-btn" id="voice-record-btn" onclick="toggleVoiceSpeech()">
+                <i class="fa-solid fa-microphone"></i> <span id="voice-btn-label">Describe by Voice</span>
+              </button>
+              
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <button class="btn btn-outline btn-sm" onclick="clearAIPrompt()">
+                  <i class="fa-solid fa-rotate-left"></i> Clear
+                </button>
+                <button class="btn btn-primary btn-sm" id="analyze-prompt-btn" onclick="submitAIAnalysis()">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Analyse & Match Tradie
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live AI Analysis Pane -->
+          <div class="ai-results-pane" id="ai-results-pane">
+            <div class="ai-analysis-header">
+              <div class="ai-tag-group">
+                <span class="service-tag" id="res-service-category"><i class="fa-solid fa-wrench"></i> Plumbing</span>
+                <span class="urgency-tag" id="res-urgency-badge"><i class="fa-solid fa-calendar-check"></i> Standard Shift</span>
+                <span class="service-tag" style="background:#1E355B;" id="res-location-badge">
+                  <i class="fa-solid fa-location-dot"></i> Gold Coast
+                </span>
+              </div>
+              <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted);" id="res-est-duration">
+                <i class="fa-regular fa-clock"></i> Est: 1.5 Hours
+              </span>
+            </div>
+
+            <!-- Conversational Agent Summary -->
+            <div class="ai-thought-box" id="res-ai-explanation">
+              <!-- Dynamically populated by AI Engine -->
+            </div>
+
+            <!-- Required Materials & Tools Checklist -->
+            <div style="margin-bottom: 1.25rem;">
+              <strong style="font-size:0.82rem; text-transform:uppercase; color:var(--text-light); letter-spacing:0.5px; display:block; margin-bottom:0.4rem;">
+                <i class="fa-solid fa-toolbox"></i> AI-Identified Tools & Parts Checklist:
+              </strong>
+              <div id="res-materials-list" style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Matched Service Providers List -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                <strong style="font-size:0.92rem; color:var(--primary-navy);">
+                  <i class="fa-solid fa-user-check" style="color:var(--brand-orange);"></i> Top Matched Registered Providers
+                </strong>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Ranked by skill, rating & proximity</span>
+              </div>
+
+              <div class="matched-providers-list" id="matched-providers-container">
+                <!-- Dynamically rendered provider cards -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Instant Upfront Pricing & Shift Booking Coordinator -->
+        <div class="ai-booking-side">
+          <div class="booking-step-title">
+            <span><i class="fa-solid fa-calendar-day" style="color:var(--brand-orange);"></i> Shift & Upfront Price</span>
+            <span class="badge-pill-pill" style="font-size:0.68rem; background:var(--primary-navy);">Step 2 of 2</span>
+          </div>
+
+          <!-- Shift Selector (From Flyer: "We only work 9am-12pm and 2pm-5pm") -->
+          <div class="time-slot-selector">
+            <span class="slot-label">Select Service Shift Window:</span>
+            <div class="slot-buttons-grid">
+              <div class="slot-btn active" id="slot-morning" onclick="selectShift('morning')">
+                <strong><i class="fa-regular fa-sun"></i> Morning Shift</strong>
+                <span>9:00 AM – 12:00 PM</span>
+              </div>
+              <div class="slot-btn" id="slot-afternoon" onclick="selectShift('afternoon')">
+                <strong><i class="fa-solid fa-cloud-sun"></i> Afternoon Shift</strong>
+                <span>2:00 PM – 5:00 PM</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upfront Itemized Pricing Preview -->
+          <div class="pricing-breakdown-card">
+            <strong style="display:block; font-size:0.85rem; color:var(--primary-navy); margin-bottom:0.75rem;">
+              <i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-orange);"></i> Upfront Estimate (No Hidden Fees)
+            </strong>
+            
+            <div class="price-row">
+              <span id="label-labour-hours">Labour (<span id="invoice-est-hours">1.5</span> hrs @ $<span id="invoice-hourly-rate">95</span>/hr)</span>
+              <span id="price-labour-val">$143.00</span>
+            </div>
+            <div class="price-row">
+              <span>Local Callout & Vehicle Transit</span>
+              <span id="price-callout-val">$35.00</span>
+            </div>
+            <div class="price-row">
+              <span>Standard Consumables / Parts Buffer</span>
+              <span id="price-materials-val">$25.00</span>
+            </div>
+            <div class="price-row">
+              <span>GST (10% Australian Tax)</span>
+              <span id="price-gst-val">$20.30</span>
+            </div>
+
+            <div class="price-row total-row">
+              <span>Total Estimated Price</span>
+              <span class="final-amount" id="price-total-val">$223.30</span>
+            </div>
+          </div>
+
+          <!-- Booking Customer Details Form -->
+          <div class="input-group">
+            <label class="input-label" for="cust-name">Your Full Name</label>
+            <input type="text" id="cust-name" class="form-control" placeholder="e.g. Jack Thompson" value="Jack Thompson">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cust-phone">Mobile Number (For SMS arrival alert)</label>
+            <input type="tel" id="cust-phone" class="form-control" placeholder="e.g. 0412 345 678" value="0412 889 123">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cust-address">Job Address (Gold Coast / Australia)</label>
+            <div class="input-with-action">
+              <input type="text" id="cust-address" class="form-control" placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218" value="42 Surf Parade, Broadbeach QLD 4218">
+              <button type="button" class="btn-locate-gps" onclick="locateCustomer('cust-address')" title="Locate me with GPS">
+                <i class="fa-solid fa-location-crosshairs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cust-notes">Additional Access or Parking Notes</label>
+            <input type="text" id="cust-notes" class="form-control" placeholder="e.g. Free parking in driveway, dogs locked inside" value="Free visitor parking on site, key under mat">
+          </div>
+
+          <button class="btn btn-primary btn-lg" style="width:100%; margin-top:0.5rem;" onclick="confirmBooking()">
+            <i class="fa-solid fa-circle-check"></i> Book Now & Generate Docket
+          </button>
+
+          <p style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:0.75rem;">
+            <i class="fa-solid fa-lock"></i> No upfront payment required until the work is completed and verified.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 2: Find Contractors & Google Map Locator
+         ========================================================================= -->
+    <section class="workspace-view" id="find-contractors-tab">
+      <div class="section-header">
+        <span class="section-tag">Google Maps Location & Discovery</span>
+        <h2 class="section-title">Find Verified Contractors Near You</h2>
+        <p class="section-desc">
+          Search qualified tradespeople, handymen, and couriers by trade, location, and distance. Locate yourself with GPS or enter any Australian suburb to view active local experts.
+        </p>
+      </div>
+
+      <!-- Search Filters Card -->
+      <div class="search-filter-card">
+        <div class="search-filter-grid">
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="contractor-search-category"><i class="fa-solid fa-toolbox" style="color:var(--brand-orange);"></i> Trade Category</label>
+            <select id="contractor-search-category" class="form-control" onchange="filterContractors()">
+              <option value="all">All Qualified Trades & Couriers</option>
+              <option value="plumbing">Plumbing & Water Services</option>
+              <option value="electrical">Licensed Electrical (Sparky)</option>
+              <option value="handyman">General Handyman & Assembly</option>
+              <option value="courier">Courier & Express Transport</option>
+              <option value="garden">Lawn & Garden Care</option>
+              <option value="carpentry">Carpentry & Joinery</option>
+              <option value="painting">Painting & Drywall Repairs</option>
+              <option value="appliance">Appliance Repairs</option>
+            </select>
+          </div>
+
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="contractor-search-location"><i class="fa-solid fa-map-pin" style="color:var(--accent-red);"></i> Your Location / Suburb</label>
+            <div class="input-with-action">
+              <input type="text" id="contractor-search-location" class="form-control" placeholder="e.g. Broadbeach QLD 4218 or Surfers Paradise" value="Broadbeach QLD 4218">
+              <button type="button" class="btn-locate-gps" onclick="locateCustomer('contractor-search-location')" title="Locate with GPS">
+                <i class="fa-solid fa-location-crosshairs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label"><i class="fa-solid fa-circle-dot" style="color:var(--primary-navy);"></i> Radius: <span class="radius-value-pill" id="radius-val-display">25 km</span></label>
+            <div class="radius-slider-group">
+              <input type="range" id="contractor-search-radius" min="5" max="100" value="25" step="5" oninput="updateRadiusDisplay(this.value)">
+            </div>
+          </div>
+
+          <div>
+            <button class="btn btn-primary" style="height:44px; width:100%; white-space:nowrap;" onclick="filterContractors()">
+              <i class="fa-solid fa-magnifying-glass"></i> Search Nearby
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Split Layout: Google Map + Contractor Cards -->
+      <div class="contractor-search-layout">
+        <!-- Interactive Google Map -->
+        <div class="map-outer-container">
+          <div class="map-header-status">
+            <div>
+              <i class="fa-solid fa-map"></i> <strong id="map-counter-text">Showing 8 Active Contractors</strong>
+            </div>
+            <span class="badge-pill-pill" style="font-size:0.7rem; background:var(--accent-green);">
+              <i class="fa-solid fa-satellite-dish"></i> GPS Active
+            </span>
+          </div>
+          <div id="contractor-map"></div>
+        </div>
+
+        <!-- Scrollable Contractor Cards List -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <strong style="font-size:0.95rem; color:var(--primary-navy);">Verified Local Experts</strong>
+            <span style="font-size:0.8rem; color:var(--text-muted);" id="contractor-filter-summary">Within 25 km</span>
+          </div>
+
+          <div class="contractor-cards-scroll-list" id="contractor-cards-container">
+            <!-- Dynamically populated by filterContractors() -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 2: Dedicated Courier Service View
+         ========================================================================= -->
+    <section class="workspace-view" id="courier-tab">
+      <div class="section-header">
+        <span class="section-tag">Fast • Reliable • Australia-Wide</span>
+        <h2 class="section-title">Courier Service: We Pick Up. We Deliver.</h2>
+        <p class="section-desc">
+          Pickup to delivery across the Gold Coast, Brisbane, and Australia-wide. Someone confirmed at both ends with live SMS tracking and insured transport.
+        </p>
+      </div>
+
+      <div class="courier-grid">
+        <!-- Courier Booking Form -->
+        <div class="courier-calc-card">
+          <h3 style="font-size:1.3rem; font-weight:800; color:var(--primary-navy); margin-bottom:1.25rem;">
+            <i class="fa-solid fa-box-open" style="color:var(--brand-orange);"></i> Select Goods Category
+          </h3>
+
+          <div class="package-type-selector">
+            <div class="package-type-btn active" onclick="selectPackageType('documents', this)">
+              <div class="package-icon"><i class="fa-solid fa-file-shield"></i></div>
+              <strong>Documents</strong>
+              <span>Legal / Contracts</span>
+            </div>
+            <div class="package-type-btn" onclick="selectPackageType('parcels', this)">
+              <div class="package-icon"><i class="fa-solid fa-box"></i></div>
+              <strong>Parcels</strong>
+              <span>Cartons up to 25kg</span>
+            </div>
+            <div class="package-type-btn" onclick="selectPackageType('equipment', this)">
+              <div class="package-icon"><i class="fa-solid fa-wrench"></i></div>
+              <strong>Equipment</strong>
+              <span>Tools & Hardware</span>
+            </div>
+            <div class="package-type-btn" onclick="selectPackageType('retail', this)">
+              <div class="package-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+              <strong>Retail Goods</strong>
+              <span>Stock Transfer</span>
+            </div>
+            <div class="package-type-btn" onclick="selectPackageType('medical', this)">
+              <div class="package-icon"><i class="fa-solid fa-briefcase-medical"></i></div>
+              <strong>Medical Items</strong>
+              <span>Urgent & Fragile</span>
+            </div>
+            <div class="package-type-btn" onclick="selectPackageType('bulky', this)">
+              <div class="package-icon"><i class="fa-solid fa-pallet"></i></div>
+              <strong>Bulky / Pallet</strong>
+              <span>Up to 1.4 Tonne</span>
+            </div>
+          </div>
+
+          <!-- Origin & Destination Inputs with GPS -->
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="courier-origin">
+                <i class="fa-solid fa-location-crosshairs" style="color:var(--accent-green);"></i> Pickup Origin
+              </label>
+              <div class="input-with-action">
+                <input type="text" id="courier-origin" class="form-control" value="Southport, Gold Coast QLD 4215" onchange="calculateCourierQuote()">
+                <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')" title="Use Current GPS">
+                  <i class="fa-solid fa-location-crosshairs"></i>
+                </button>
+              </div>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="courier-dest">
+                <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination
+              </label>
+              <input type="text" id="courier-dest" class="form-control" value="Brisbane CBD, QLD 4000" onchange="calculateCourierQuote()">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="courier-weight">Approximate Weight (kg)</label>
+              <input type="number" id="courier-weight" class="form-control" value="12" min="1" max="1000" oninput="calculateCourierQuote()">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="courier-urgency">Delivery Speed</label>
+              <select id="courier-urgency" class="form-control" onchange="calculateCourierQuote()">
+                <option value="standard">Standard Shift (Same Day 9am-12pm or 2pm-5pm)</option>
+                <option value="express" selected>Urgent Express (Immediate Dispatch)</option>
+                <option value="scheduled">Scheduled Next Day</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="courier-desc">Item Description & Fragile Handling Notes</label>
+            <input type="text" id="courier-desc" class="form-control" placeholder="e.g. 2 sealed boxes of laboratory testing kits, keep upright" value="Box of surgical instruments and medical supplies">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="courier-contact-pickup">Pickup Contact Name & Phone</label>
+            <input type="text" id="courier-contact-pickup" class="form-control" value="Gold Coast Specialist Clinic - 07 5512 3456">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="courier-contact-drop">Drop-off Receiver Name & Phone</label>
+            <input type="text" id="courier-contact-drop" class="form-control" value="Brisbane Private Hospital Receiving Dock - 07 3834 6111">
+          </div>
+
+          <button class="btn btn-primary btn-lg" style="width:100%;" onclick="bookCourierDispatch()">
+            <i class="fa-solid fa-truck-ramp-box"></i> Dispatch Courier & Issue Consignment
+          </button>
+        </div>
+
+        <!-- Live Courier Map & Rate Estimate -->
+        <div>
+          <div style="background:#fff; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:2rem; box-shadow:var(--shadow-lg); margin-bottom:1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h4 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy);">
+                <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> Instant Distance & Rate
+              </h4>
+              <span class="badge-pill-pill" style="background:#15803D; font-size:0.75rem;">Real-Time GPS Route</span>
+            </div>
+
+            <!-- Route Summary Card -->
+            <div style="background:var(--bg-card-alt); border-radius:var(--radius-md); padding:1.25rem; border:1px solid var(--border-light); margin-bottom:1.25rem;">
+              <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:0.5rem;">
+                <span style="color:var(--text-muted);"><i class="fa-solid fa-route"></i> Calculated Road Distance:</span>
+                <strong id="courier-calc-distance">78.5 km</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:0.5rem;">
+                <span style="color:var(--text-muted);"><i class="fa-regular fa-clock"></i> Estimated Transit Time:</span>
+                <strong id="courier-calc-time">58 Mins</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                <span style="color:var(--text-muted);"><i class="fa-solid fa-shield"></i> Goods in Transit Cover:</span>
+                <strong style="color:var(--accent-green);"><i class="fa-solid fa-check"></i> $10,000 Included</strong>
+              </div>
+            </div>
+
+            <!-- Pricing Breakdown -->
+            <div class="pricing-breakdown-card" style="margin-bottom:0;">
+              <div class="price-row">
+                <span>Base Loading & Dispatch</span>
+                <span id="courier-base-fee">$35.00</span>
+              </div>
+              <div class="price-row">
+                <span>Distance Charge (<span id="courier-dist-km">78.5</span> km @ $1.20/km)</span>
+                <span id="courier-dist-fee">$94.20</span>
+              </div>
+              <div class="price-row">
+                <span>Express Urgency Surcharge</span>
+                <span id="courier-urgency-fee">$25.00</span>
+              </div>
+              <div class="price-row">
+                <span>GST (10%)</span>
+                <span id="courier-gst-fee">$15.42</span>
+              </div>
+              <div class="price-row total-row">
+                <span>Total Delivery Price</span>
+                <span class="final-amount" id="courier-total-fee">$169.62</span>
+              </div>
+            </div>
+
+            <!-- Interactive Courier Route Map -->
+            <div id="courier-route-map"></div>
+          </div>
+
+          <!-- Featured Courier Driver Preview -->
+          <div style="background:var(--primary-navy); color:#fff; border-radius:var(--radius-lg); padding:1.75rem; display:flex; align-items:center; gap:1.25rem;">
+            <img src="assets/images/courier_worker.jpg" alt="Callum Evans - Courier" style="width:68px; height:68px; border-radius:50%; object-fit:cover; border:3px solid var(--brand-orange);">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.2rem;">
+                <h5 style="font-size:1.05rem; font-weight:800; color:#fff;">Callum Evans</h5>
+                <span style="background:var(--brand-orange); font-size:0.68rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:var(--radius-full);">On Shift Now</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--text-light); line-height:1.4;">
+                HiAce 1.4T Van • 980+ Deliveries • Gold Coast to Brisbane Express daily.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 3: How It Works (4-Step Process from Flyers)
+         ========================================================================= -->
+    <section class="workspace-view" id="how-it-works-tab">
+      <div class="section-header">
+        <span class="section-tag">Zero Hassle • Zero Jargon</span>
+        <h2 class="section-title">This Service is SO SIMPLE</h2>
+        <p class="section-desc">
+          Compare our streamlined Labour and Courier service workflows. Powered by AI from initial description to final sign-off.
+        </p>
+      </div>
+
+      <div class="dual-process-grid">
+        <!-- Labour Service Column -->
+        <div class="process-column-card labour">
+          <div class="process-header-box">
+            <div class="process-icon-circle">
+              <i class="fa-solid fa-person-digging"></i>
+            </div>
+            <div class="process-title-group">
+              <h3>LABOUR SERVICE</h3>
+              <p>We do the work. You relax.</p>
+            </div>
+          </div>
+
+          <ol class="step-list">
+            <li class="step-item">
+              <span class="step-num">1</span>
+              <div class="step-content">
+                <strong>Just tell us what needs to be done</strong>
+                <p>You describe the work in your own words, our AI estimates the time and skill level required.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">2</span>
+              <div class="step-content">
+                <strong>Tell us how long it will take (or AI calculates)</strong>
+                <p>Flexible scheduling for a day that suits you. Shifts are strictly <strong>9am–12pm</strong> and <strong>2pm–5pm</strong>.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">3</span>
+              <div class="step-content">
+                <strong>We calculate the price and send invoice</strong>
+                <p>Transparent upfront pricing based on verified rates with no hidden callout shocks.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">4</span>
+              <div class="step-content">
+                <strong>We then turn up to do the work</strong>
+                <p>Experienced, punctual, police-checked tradies turn up equipped to get the job done right.</p>
+              </div>
+            </li>
+          </ol>
+
+          <div style="margin-top:1.5rem; text-align:center;">
+            <button class="btn btn-primary" onclick="focusAIChat()">
+              <i class="fa-solid fa-hammer"></i> Book Labour with AI
+            </button>
+          </div>
+        </div>
+
+        <!-- Courier Service Column -->
+        <div class="process-column-card courier">
+          <div class="process-header-box">
+            <div class="process-icon-circle">
+              <i class="fa-solid fa-truck-fast"></i>
+            </div>
+            <div class="process-title-group">
+              <h3>COURIER SERVICE</h3>
+              <p>We pick up. We deliver.</p>
+            </div>
+          </div>
+
+          <ol class="step-list">
+            <li class="step-item">
+              <span class="step-num">1</span>
+              <div class="step-content">
+                <strong>Tell us origin and destination</strong>
+                <p>Provide the pickup address and drop-off destination anywhere from the Gold Coast and beyond.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">2</span>
+              <div class="step-content">
+                <strong>We calculate the price</strong>
+                <p>Dynamic distance-based quoting with same-day urgent options available when you need it most.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">3</span>
+              <div class="step-content">
+                <strong>We then send the invoice</strong>
+                <p>Receive digital consignment docket, invoice, and real-time transit confirmation.</p>
+              </div>
+            </li>
+            <li class="step-item">
+              <span class="step-num">4</span>
+              <div class="step-content">
+                <strong>We then turn up to pick up the goods</strong>
+                <p>Driver arrives on schedule with verified handover at both pickup and delivery.</p>
+              </div>
+            </li>
+          </ol>
+
+          <div style="margin-top:1.5rem; text-align:center;">
+            <button class="btn btn-navy" onclick="switchTab('courier-tab')">
+              <i class="fa-solid fa-box"></i> Book Courier Delivery
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supported Services Row -->
+      <div style="margin-top:3.5rem; background:var(--primary-navy); border-radius:var(--radius-lg); padding:2rem; color:#fff;">
+        <h4 style="text-align:center; font-size:1.15rem; font-weight:800; margin-bottom:1.5rem; letter-spacing:0.5px;">
+          SERVICES WE SUPPORT ACROSS AUSTRALIA
+        </h4>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:1rem; text-align:center;">
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-file-contract" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">Documents</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-box-open" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">Parcels</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-toolbox" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">Equipment</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-cart-shopping" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">Retail Goods</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-kit-medical" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">Medical Items</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:var(--radius-md);">
+            <i class="fa-solid fa-screwdriver-wrench" style="font-size:1.5rem; color:var(--brand-orange); margin-bottom:0.5rem; display:block;"></i>
+            <span style="font-size:0.85rem; font-weight:700;">All Trades</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 4: Tradie & Provider Network (Register & Live Dispatch Portal)
+         ========================================================================= -->
+    <section class="workspace-view" id="provider-network-tab">
+      <div class="section-header">
+        <span class="section-tag">Verified Partner Network</span>
+        <h2 class="section-title">Join The Network & Receive Direct AI Job Leads</h2>
+        <p class="section-desc">
+          Are you a licensed tradie, skilled handyman, or courier driver? Register your skills, service radius, and preferred shifts. Our AI matches customer requests directly to you.
+        </p>
+      </div>
+
+      <div class="provider-network-grid">
+        <!-- Provider Onboarding Registration Form -->
+        <div class="provider-reg-form">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.3rem; font-weight:800; color:var(--primary-navy);">
+              <i class="fa-solid fa-user-plus" style="color:var(--brand-orange);"></i> Register As A Provider
+            </h3>
+            <span class="badge-pill-pill" style="font-size:0.7rem;">Free To Join</span>
+          </div>
+
+          <form id="provider-registration-form" onsubmit="handleProviderRegistration(event)">
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="reg-name">Full Name</label>
+                <input type="text" id="reg-name" class="form-control" placeholder="e.g. Brett Wilson" required>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="reg-business">Business Name & ABN</label>
+                <input type="text" id="reg-business" class="form-control" placeholder="e.g. Wilson Handyman Services (ABN...)" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="reg-trade">Primary Trade Category</label>
+                <select id="reg-trade" class="form-control" required>
+                  <option value="handyman">General Handyman & Assembly</option>
+                  <option value="plumbing">Plumber / Gas Fitter</option>
+                  <option value="electrical">Licensed Electrician</option>
+                  <option value="courier">Courier Driver (Van/Ute)</option>
+                  <option value="garden">Lawn & Garden Specialist</option>
+                  <option value="painting">Painter & Decorator</option>
+                  <option value="appliance">Appliance Repairs</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="reg-license">Licence # or Qualification</label>
+                <input type="text" id="reg-license" class="form-control" placeholder="e.g. QBCC #1598212 or Driver Lic" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="reg-rate">Standard Hourly Rate ($ AUD)</label>
+                <input type="number" id="reg-rate" class="form-control" placeholder="85" min="40" max="250" required>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="reg-suburbs">Primary Service Suburbs</label>
+                <input type="text" id="reg-suburbs" class="form-control" placeholder="e.g. Gold Coast, Robina, Broadbeach" required>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Key Specific Skills (comma separated)</label>
+              <input type="text" id="reg-skills" class="form-control" placeholder="e.g. flatpack assembly, drywall patch, door locks, shelving" required>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Preferred Shifts Available:</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-shift-morn" checked> Morning Shift (9am–12pm)
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-shift-aft" checked> Afternoon Shift (2pm–5pm)
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-shift-urgent"> Urgent Same-Day Dispatch
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-insured" checked required> $10M+ Public Liability
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:1rem;">
+              <i class="fa-solid fa-check"></i> Register & Enter AI Matching Pool
+            </button>
+          </form>
+        </div>
+
+        <!-- Provider Portal / Live Job Dispatch Dashboard Simulator -->
+        <div class="provider-dashboard-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div>
+              <h3 style="font-size:1.25rem; font-weight:800; color:var(--primary-navy);">
+                <i class="fa-solid fa-tower-broadcast" style="color:var(--brand-orange);"></i> Provider Live Dispatch Simulator
+              </h3>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Incoming matched jobs waiting for dispatch</p>
+            </div>
+            <span class="dashboard-live-badge"><i class="fa-solid fa-circle" style="font-size:0.55rem;"></i> Active Dispatch</span>
+          </div>
+
+          <div class="dispatch-job-feed" id="dispatch-job-feed">
+            <!-- Dynamically populated or updated when customer books -->
+            <div class="dispatch-job-item" id="sample-job-1">
+              <div class="dispatch-job-header">
+                <h5><i class="fa-solid fa-wrench" style="color:var(--primary-navy);"></i> Leaking Mixer Tap & Seal Replacement</h5>
+                <span class="dispatch-earnings">$223.30 AUD</span>
+              </div>
+              <p class="dispatch-job-desc">
+                Customer: Jack Thompson • 42 Surf Parade, Broadbeach QLD • Morning Shift (9am–12pm)
+              </p>
+              <div class="dispatch-meta-chips">
+                <span class="dispatch-chip"><i class="fa-regular fa-clock"></i> 1.5 hrs estimated</span>
+                <span class="dispatch-chip"><i class="fa-solid fa-location-arrow"></i> 3.8 km away</span>
+                <span class="dispatch-chip" style="color:var(--accent-green);"><i class="fa-solid fa-check"></i> 99% AI Match</span>
+              </div>
+              <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                <button class="btn btn-primary btn-sm" onclick="acceptDispatchJob('sample-job-1', 'Jack Thompson - Broadbeach')">
+                  <i class="fa-solid fa-thumbs-up"></i> Accept Job
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="declineDispatchJob('sample-job-1')">
+                  Decline
+                </button>
+              </div>
+            </div>
+
+            <div class="dispatch-job-item" id="sample-job-2">
+              <div class="dispatch-job-header">
+                <h5><i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> Urgent Same-Day Courier (Surgical Gear)</h5>
+                <span class="dispatch-earnings">$169.60 AUD</span>
+              </div>
+              <p class="dispatch-job-desc">
+                Origin: Southport Clinic • Dest: Brisbane Private Hospital • Direct handoff
+              </p>
+              <div class="dispatch-meta-chips">
+                <span class="dispatch-chip"><i class="fa-solid fa-route"></i> 78.5 km</span>
+                <span class="dispatch-chip"><i class="fa-solid fa-shield-halved"></i> High Priority</span>
+              </div>
+              <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                <button class="btn btn-primary btn-sm" onclick="acceptDispatchJob('sample-job-2', 'Medical Courier - Southport to Brisbane')">
+                  <i class="fa-solid fa-thumbs-up"></i> Accept Dispatch
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="declineDispatchJob('sample-job-2')">
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 5: Franchise Opportunities (From Flyers: "No Setup Fees")
+         ========================================================================= -->
+    <section class="workspace-view" id="franchise-tab">
+      <!-- Franchise Hero Banner -->
+      <div class="franchise-banner">
+        <div>
+          <h2>FRANCHISE OPPORTUNITIES AVAILABLE</h2>
+          <p>
+            Become an exclusive area licensee with Australia's first AI-powered labour and courier platform. <strong>NO SETUP FEES</strong> for qualified operators.
+          </p>
+          <div class="franchise-perks">
+            <span class="franchise-perk-item"><i class="fa-solid fa-check-circle"></i> Exclusive Australian Territory</span>
+            <span class="franchise-perk-item"><i class="fa-solid fa-check-circle"></i> AI Dispatch Engine Provided</span>
+            <span class="franchise-perk-item"><i class="fa-solid fa-check-circle"></i> $0 Capital Setup Fees</span>
+            <span class="franchise-perk-item"><i class="fa-solid fa-check-circle"></i> Nationwide Branding & Lead Flow</span>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn btn-navy btn-lg" onclick="openFranchiseModal()">
+            <i class="fa-solid fa-file-signature"></i> Apply For Territory
+          </button>
+        </div>
+      </div>
+
+      <!-- Territory Availability Grid -->
+      <div style="background:#fff; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:2.5rem; box-shadow:var(--shadow-lg);">
+        <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:1.5rem; text-align:center;">
+          Available Franchise Territories Across Australia
+        </h3>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1.25rem;">
+          <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; background:var(--bg-card-alt);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="color:var(--primary-navy); font-size:1.05rem;">Gold Coast Central</strong>
+              <span class="badge-pill-pill" style="font-size:0.65rem; background:var(--accent-green);">Available</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:1rem;">
+              Surfers Paradise, Broadbeach, Southport, Robina. High-density residential & holiday booking market.
+            </p>
+            <button class="btn btn-outline btn-sm" style="width:100%;" onclick="openFranchiseModal('Gold Coast Central')">Express Interest</button>
+          </div>
+
+          <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; background:var(--bg-card-alt);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="color:var(--primary-navy); font-size:1.05rem;">Brisbane Metro & South</strong>
+              <span class="badge-pill-pill" style="font-size:0.65rem; background:var(--accent-green);">Available</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:1rem;">
+              CBD, South Bank, Logan, Ipswich corridor. Heavy demand for courier freight & commercial trade work.
+            </p>
+            <button class="btn btn-outline btn-sm" style="width:100%;" onclick="openFranchiseModal('Brisbane Metro')">Express Interest</button>
+          </div>
+
+          <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; background:var(--bg-card-alt);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="color:var(--primary-navy); font-size:1.05rem;">Sunshine Coast Region</strong>
+              <span class="badge-pill-pill" style="font-size:0.65rem; background:var(--accent-green);">Available</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:1rem;">
+              Maroochydore, Caloundra, Noosa. Fast-growing coastal building, maintenance and courier logistics.
+            </p>
+            <button class="btn btn-outline btn-sm" style="width:100%;" onclick="openFranchiseModal('Sunshine Coast')">Express Interest</button>
+          </div>
+
+          <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; background:var(--bg-card-alt);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="color:var(--primary-navy); font-size:1.05rem;">Sydney Northern Beaches</strong>
+              <span class="badge-pill-pill" style="font-size:0.65rem; background:var(--accent-gold); color:#000;">In Negotiation</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:1rem;">
+              Manly, Dee Why, Mona Vale. High household income area seeking premium on-demand trades.
+            </p>
+            <button class="btn btn-outline btn-sm" style="width:100%;" onclick="openFranchiseModal('Sydney Northern Beaches')">Join Waitlist</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Job Booking & Tax Invoice Modal -->
+  <div class="modal-overlay" id="booking-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-receipt"></i> Job Docket & Tax Invoice Preview</h4>
+        <button class="modal-close-btn" onclick="closeBookingModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-invoice-content">
+        <!-- Rendered by JavaScript -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeBookingModal()">Close</button>
+        <button class="btn btn-primary" onclick="printOrDownloadInvoice()">
+          <i class="fa-solid fa-print"></i> Print / Save Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Franchise Inquiry Modal -->
+  <div class="modal-overlay" id="franchise-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-handshake"></i> Franchise Territory Inquiry</h4>
+        <button class="modal-close-btn" onclick="closeFranchiseModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">
+          Take advantage of our <strong>No Setup Fee</strong> franchise release across Australia. Fill in your details below to receive the complete Territory Information Kit and Operations Blueprint.
+        </p>
+
+        <form id="franchise-form" onsubmit="handleFranchiseSubmit(event)">
+          <div class="input-group">
+            <label class="input-label" for="fran-name">Full Name</label>
+            <input type="text" id="fran-name" class="form-control" required placeholder="e.g. Michael Ross">
+          </div>
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="fran-phone">Mobile Phone</label>
+              <input type="tel" id="fran-phone" class="form-control" required placeholder="0400 123 456">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="fran-email">Email Address</label>
+              <input type="email" id="fran-email" class="form-control" required placeholder="m.ross@example.com">
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="fran-territory">Target Territory / City</label>
+            <input type="text" id="fran-territory" class="form-control" required value="Gold Coast Central">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">
+            Request Territory Prospectus & Call
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="toast-msg" id="toast-msg">
+    <i class="fa-solid fa-circle-check" style="color:var(--brand-orange); font-size:1.4rem;"></i>
+    <span id="toast-text">Operation successful</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>It's <span style="font-size:0.85em;">A</span> <span style="color:var(--brand-orange);">Simple Job</span></h3>
+          <p>
+            Australia's first labour and courier service powered by artificial intelligence. Making it simpler, faster, and more reliable to find trusted tradespeople and express couriers nationwide.
+          </p>
+          <div style="display:flex; gap:0.75rem; color:var(--text-light); font-size:1.2rem;">
+            <i class="fa-brands fa-facebook"></i>
+            <i class="fa-brands fa-instagram"></i>
+            <i class="fa-brands fa-linkedin"></i>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Labour Services</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="applySamplePrompt('leaking_tap')">Plumbing & Leaks</a></li>
+            <li><a href="#" onclick="applySamplePrompt('powerpoints')">Electrical & Sparky</a></li>
+            <li><a href="#" onclick="applySamplePrompt('flatpack_assembly')">Flatpack & Handyman</a></li>
+            <li><a href="#" onclick="applySamplePrompt('garden_lawn')">Gardening & Gutters</a></li>
+            <li><a href="#" onclick="applySamplePrompt('drywall_patch')">Painting & Plastering</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Courier Services</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="switchTab('courier-tab')">Documents & Legal</a></li>
+            <li><a href="#" onclick="switchTab('courier-tab')">Urgent Medical Items</a></li>
+            <li><a href="#" onclick="switchTab('courier-tab')">Retail Freight Transfer</a></li>
+            <li><a href="#" onclick="switchTab('courier-tab')">Heavy Equipment & Pallets</a></li>
+            <li><a href="#" onclick="switchTab('courier-tab')">Australia-Wide Delivery</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company & Network</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="switchTab('how-it-works-tab')">How It Works</a></li>
+            <li><a href="#" onclick="switchTab('provider-network-tab')">Join As Tradie / Driver</a></li>
+            <li><a href="#" onclick="switchTab('franchise-tab')">Franchise Opportunities</a></li>
+            <li><a href="#" onclick="openTrackModal()">Docket & Invoice Lookup</a></li>
+            <li><a href="tel:1300746753">1300 SIMPLE (1300 746 753)</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <span>&copy; 2026 It's A Simple Job Pty Ltd. All rights reserved. ABN 84 928 104 291.</span>
+        <span>Australia's First Labour & Courier Service Powered by AI • Gold Coast, QLD</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/providers-data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/app.js"></script>
+  <!-- Google Maps JavaScript API with Places and Geometry libraries -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCPeAOWQj8456TeIWDIPsyxyWT7QLrC8J8&libraries=places,geometry&callback=initGoogleMapsServices" async defer></script>
+</body>
+</html>
