@@ -11,9 +11,6 @@
 *.pem
 *.key
 
-# Preserve example config
-!.env.example
-
 # Node.js & Dependencies
 node_modules/
 npm-debug.log*
