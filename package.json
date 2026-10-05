@@ -1,0 +1,14 @@
+{
+  "name": "its-a-simple-job",
+  "version": "1.0.0",
+  "description": "It's A Simple Job - Australia's Premier AI Labour & Courier Service",
+  "private": true,
+  "scripts": {
+    "dev": "vite --port 3000",
+    "build": "vite build",
+    "preview": "vite preview --port 3000"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

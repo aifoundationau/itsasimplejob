@@ -76,3 +76,6 @@ logs/
 *.bak
 scratch/
 .system_generated/
+
+# Local Agent Workspace Customizations & MCP Credentials
+.agents/

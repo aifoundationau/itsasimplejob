@@ -21,19 +21,10 @@
 
   <!-- Top Announcement Bar -->
   <header class="top-bar">
-    <div class="container">
-      <div class="top-bar-left">
-        <span class="badge-pill-pill">Australia's 1st</span>
-        <span>Labour & Courier Service Powered by AI • <strong>Gold Coast & Australia-Wide</strong></span>
-      </div>
-      <div class="top-bar-right">
-        <span><i class="fa-regular fa-clock"></i> Shifts: <strong>9am–12pm</strong> & <strong>2pm–5pm</strong></span>
-        <a href="#franchise" class="top-link" onclick="switchTab('franchise-tab')">
-          <i class="fa-solid fa-handshake"></i> Franchise Opportunities (No Setup Fees)
-        </a>
-        <a href="tel:1300746753" class="top-link">
-          <i class="fa-solid fa-phone"></i> <strong>1300 SIMPLE</strong>
-        </a>
+    <div class="container" style="justify-content:center; text-align:center;">
+      <div class="top-bar-left" style="justify-content:center;">
+        <span class="badge-pill-pill">24/7 • 365 Days a Year</span>
+        <span>Australia's 1st Labour, Courier & Hire Recruitment Service Powered by AI • <strong>24/7, 365 Days a Year Nationwide</strong></span>
       </div>
     </div>
   </header>
@@ -41,42 +32,139 @@
   <!-- Sticky Navbar -->
   <nav class="navbar" id="main-nav">
     <div class="container nav-container">
-      <a href="#" class="brand-logo" onclick="switchTab('ai-book-tab')">
-        <div class="logo-text-group">
-          <div class="logo-brand-title">It's <span style="font-size:0.85em; font-weight:900;">A</span> <span class="accent-simple">Simple Job</span></div>
-          <span class="logo-tagline">Just Make It Simple</span>
+      <!-- Worker Icon Brand Logo -->
+      <a href="#" class="brand-logo worker-brand-link" onclick="switchTab('ai-book-tab')" title="Simple Job - Just Make It Simple">
+        <div class="worker-brand-icon">
+          <i class="fa-solid fa-helmet-safety"></i>
         </div>
       </a>
 
       <!-- Desktop Nav Buttons -->
       <div class="nav-menu">
         <button class="nav-item-btn active" id="tab-btn-ai-book" onclick="switchTab('ai-book-tab')">
-          <i class="fa-solid fa-robot"></i> Book with AI
+          AI
         </button>
         <button class="nav-item-btn" id="tab-btn-find-contractors" onclick="switchTab('find-contractors-tab')">
-          <i class="fa-solid fa-map-location-dot"></i> Find Contractors
+          Contractors
         </button>
         <button class="nav-item-btn" id="tab-btn-courier" onclick="switchTab('courier-tab')">
-          <i class="fa-solid fa-truck-fast"></i> Courier Service
+          Couriers
+        </button>
+        <button class="nav-item-btn" id="tab-btn-recruitment" onclick="switchTab('recruitment-tab')">
+          Recruit
+        </button>
+        <button class="nav-item-btn" id="tab-btn-register" onclick="openRegisterSelectionPanel()">
+          Register
         </button>
         <button class="nav-item-btn" id="tab-btn-how-it-works" onclick="switchTab('how-it-works-tab')">
-          <i class="fa-solid fa-list-check"></i> How It Works
-        </button>
-        <button class="nav-item-btn" id="tab-btn-provider-network" onclick="switchTab('provider-network-tab')">
-          <i class="fa-solid fa-helmet-safety"></i> Tradie Portal
-        </button>
-        <button class="nav-item-btn" id="tab-btn-franchise" onclick="switchTab('franchise-tab')">
-          <i class="fa-solid fa-award"></i> Franchise
+          FAQ
         </button>
       </div>
 
       <div class="nav-actions">
-        <button class="btn btn-outline btn-sm" onclick="openTrackModal()">
-          <i class="fa-solid fa-receipt"></i> Track Docket
+        <button class="btn btn-primary btn-sm" onclick="focusAIChat()" style="font-weight:900; letter-spacing:0.5px; padding:0.5rem 1.1rem;">
+          <i class="fa-solid fa-bolt"></i> BOOK
         </button>
-        <button class="btn btn-primary btn-sm" onclick="focusAIChat()">
-          <i class="fa-solid fa-bolt"></i> Instant Booking
-        </button>
+
+        <!-- Google Sign-In & Google Calendar Sync Wrapper -->
+        <div class="google-auth-nav-wrapper" id="google-auth-nav-container" style="position:relative;">
+          <button type="button" class="btn-google-nav" id="btn-google-signin-nav" onclick="triggerGoogleSignIn('customer')" title="Sign in with Google to sync your Google Calendar">
+            <svg width="15" height="15" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Google Sign In</span>
+          </button>
+
+          <div class="google-user-chip" id="google-user-chip" style="display:none;" onclick="toggleGoogleUserMenu(event)" title="Google Account & Calendar Options">
+            <img class="google-chip-avatar" id="google-nav-avatar" src="assets/images/tradie_worker.jpg" alt="User">
+            <span class="google-chip-name" id="google-nav-name">Account</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:0.65rem; color:#64748B;"></i>
+          </div>
+
+          <!-- Google User Dropdown Menu -->
+          <div class="settings-dropdown-panel" id="google-user-menu" style="right:0; min-width:270px;">
+            <div class="settings-panel-header" style="background:#EFF6FF; border-bottom:1px solid #DBEAFE;">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <img id="google-menu-avatar" src="assets/images/tradie_worker.jpg" style="width:36px; height:36px; border-radius:50%; border:2px solid #3B82F6;" alt="User">
+                <div>
+                  <h6 id="google-menu-name" style="margin:0; font-size:0.88rem; font-weight:800; color:var(--primary-navy);">Google User</h6>
+                  <span id="google-menu-email" style="font-size:0.72rem; color:var(--text-muted); word-break:break-all;">user@gmail.com</span>
+                </div>
+              </div>
+              <div style="margin-top:0.5rem;">
+                <span class="gcal-badge-connected" id="google-menu-role-badge">
+                  <i class="fa-regular fa-calendar-check"></i> Google Calendar Synced
+                </span>
+              </div>
+            </div>
+
+            <div class="settings-menu-list" style="padding:0.4rem 0;">
+              <a href="https://calendar.google.com" target="_blank" class="settings-menu-option" style="text-decoration:none;">
+                <div class="settings-option-icon" style="background:#EFF6FF; color:#2563EB;">
+                  <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="settings-option-text">
+                  <strong>Open Google Calendar</strong>
+                  <p>View your scheduled bookings & shifts</p>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square settings-arrow"></i>
+              </a>
+
+              <button class="settings-menu-option" onclick="openProviderAdminPanel(); closeGoogleUserMenu();">
+                <div class="settings-option-icon" style="background:#FFF7ED; color:var(--brand-orange);">
+                  <i class="fa-solid fa-calendar-week"></i>
+                </div>
+                <div class="settings-option-text">
+                  <strong>24/7 Shift & Availability</strong>
+                  <p>Manage on-call schedule & auto-block</p>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
+              </button>
+
+              <button class="settings-menu-option" onclick="handleGoogleSignOut(); closeGoogleUserMenu();" style="border-top:1px solid var(--border-light); margin-top:0.25rem;">
+                <div class="settings-option-icon" style="background:#FEE2E2; color:#DC2626;">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </div>
+                <div class="settings-option-text">
+                  <strong style="color:#DC2626;">Disconnect Google Account</strong>
+                  <p>Sign out of this session</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Gear Wheel with Dropdown -->
+        <div class="settings-dropdown-wrapper">
+          <button class="settings-gear-btn" id="settings-menu-btn" onclick="toggleSettingsMenu(event)" title="Settings & Registrations" aria-label="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+
+          <div class="settings-dropdown-panel" id="settings-dropdown-panel">
+            <div class="settings-panel-header">
+              <span class="settings-status-badge"><i class="fa-solid fa-sliders"></i> Portal Settings</span>
+              <h5>Provider & Admin Settings</h5>
+            </div>
+
+            <div class="settings-menu-list">
+              <button class="settings-menu-option" onclick="openProviderAdminPanel()">
+                <div class="settings-option-icon" style="background:#FFF7ED; color:var(--brand-orange); border:1px solid #FED7AA;">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div class="settings-option-text">
+                  <div class="option-title-row">
+                    <strong>Provider Admin & Calendar</strong>
+                  </div>
+                  <p>Pause profile, update 24/7 calendar availability, rates & Google Calendar sync.</p>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -123,8 +211,8 @@
           <div class="hero-stat-item">
             <div class="stat-icon-box"><i class="fa-solid fa-clock"></i></div>
             <div class="stat-text">
-              <strong>Fixed Shifts</strong>
-              <span>9am–12pm & 2pm–5pm</span>
+              <strong>24/7 • 365 Days</strong>
+              <span>Always On-Call & Dispatching</span>
             </div>
           </div>
         </div>
@@ -175,22 +263,22 @@
   <section class="app-section-tabs">
     <div class="container tab-nav-bar">
       <button class="tab-nav-btn active" id="pill-ai-book" onclick="switchTab('ai-book-tab')">
-        <i class="fa-solid fa-robot"></i> 1. AI Booking Agent
+        <i class="fa-solid fa-robot"></i> 1. AI
       </button>
       <button class="tab-nav-btn" id="pill-find-contractors" onclick="switchTab('find-contractors-tab')">
-        <i class="fa-solid fa-map-location-dot"></i> 2. Find Contractors & Map
+        <i class="fa-solid fa-map-location-dot"></i> 2. Contractors
       </button>
       <button class="tab-nav-btn" id="pill-courier" onclick="switchTab('courier-tab')">
-        <i class="fa-solid fa-truck"></i> 3. Courier Calculator
+        <i class="fa-solid fa-truck"></i> 3. Couriers
+      </button>
+      <button class="tab-nav-btn" id="pill-recruitment" onclick="switchTab('recruitment-tab')">
+        <i class="fa-solid fa-user-tie"></i> 4. Recruit
+      </button>
+      <button class="tab-nav-btn" id="pill-register" onclick="openRegisterSelectionPanel()">
+        <i class="fa-solid fa-id-card"></i> 5. Register
       </button>
       <button class="tab-nav-btn" id="pill-how-it-works" onclick="switchTab('how-it-works-tab')">
-        <i class="fa-solid fa-route"></i> 4. 4-Step Process
-      </button>
-      <button class="tab-nav-btn" id="pill-provider-network" onclick="switchTab('provider-network-tab')">
-        <i class="fa-solid fa-id-card"></i> 5. Tradie Portal
-      </button>
-      <button class="tab-nav-btn" id="pill-franchise" onclick="switchTab('franchise-tab')">
-        <i class="fa-solid fa-briefcase"></i> 6. Franchise (No Setup Fees)
+        <i class="fa-solid fa-circle-question"></i> 6. FAQ
       </button>
     </div>
   </section>
@@ -221,7 +309,9 @@
                 <p><span class="ai-status-indicator"></span> Ready to understand your job in plain English</p>
               </div>
             </div>
-            <span class="badge-pill-pill" style="font-size:0.7rem;">Live Model Active</span>
+            <span class="badge-pill-pill" style="font-size:0.7rem; background:#4F46E5; display:inline-flex; align-items:center; gap:0.35rem;" title="Powered by Google Gemini 3.8 Flash Agent Platform">
+              <i class="fa-solid fa-sparkles"></i> Gemini 3.8 Flash Agent
+            </span>
           </div>
 
           <div class="suggested-prompts-label">
@@ -259,9 +349,15 @@
             ></textarea>
             
             <div class="prompt-bar-actions">
-              <button class="voice-btn" id="voice-record-btn" onclick="toggleVoiceSpeech()">
-                <i class="fa-solid fa-microphone"></i> <span id="voice-btn-label">Describe by Voice</span>
-              </button>
+              <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                <button class="voice-btn" id="voice-record-btn" onclick="toggleVoiceSpeech()">
+                  <i class="fa-solid fa-microphone"></i> <span id="voice-btn-label">Voice</span>
+                </button>
+                <label class="voice-btn" style="cursor:pointer;" title="Upload photos to ImgBB Album (https://ibb.co/album/k4vjCb)">
+                  <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> <span id="photo-upload-label">Add Photos</span>
+                  <input type="file" id="ai-job-photo-input" accept="image/*" multiple style="display:none;" onchange="handleJobPhotoUpload(event)">
+                </label>
+              </div>
               
               <div style="display:flex; gap:0.5rem; align-items:center;">
                 <button class="btn btn-outline btn-sm" onclick="clearAIPrompt()">
@@ -271,6 +367,15 @@
                   <i class="fa-solid fa-wand-magic-sparkles"></i> Analyse & Match Tradie
                 </button>
               </div>
+            </div>
+
+            <!-- ImgBB Uploaded Photos Gallery Preview -->
+            <div id="ai-job-photos-preview" style="display:none; padding:0.65rem 0.85rem; border-top:1px dashed var(--border-light); background:#F8FAFC; border-radius:0 0 var(--radius-md) var(--radius-md); font-size:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <span style="font-weight:700; color:var(--text-muted);"><i class="fa-solid fa-images" style="color:#2563EB;"></i> Attached Job Photos (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB; font-weight:700;">ImgBB Album: k4vjCb</a>):</span>
+                <span id="imgbb-upload-count" style="font-size:0.72rem; color:#059669; font-weight:700;"></span>
+              </div>
+              <div id="ai-job-photos-thumbs" style="display:flex; gap:0.5rem; flex-wrap:wrap;"></div>
             </div>
           </div>
 
@@ -327,17 +432,29 @@
             <span class="badge-pill-pill" style="font-size:0.68rem; background:var(--primary-navy);">Step 2 of 2</span>
           </div>
 
-          <!-- Shift Selector (From Flyer: "We only work 9am-12pm and 2pm-5pm") -->
+          <!-- Shift Selector: 24/7, 365 Days a Year Operations! -->
           <div class="time-slot-selector">
-            <span class="slot-label">Select Service Shift Window:</span>
-            <div class="slot-buttons-grid">
+            <span class="slot-label"><i class="fa-solid fa-clock"></i> 24/7 • 365 Days a Year Service Windows (Choose Your Timing):</span>
+            <div class="slot-buttons-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+              <div class="slot-btn" id="slot-emergency" onclick="selectShift('emergency_24_7')">
+                <strong><i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> ⚡ 24/7 Urgent</strong>
+                <span>ASAP (60–90 Mins)</span>
+              </div>
               <div class="slot-btn active" id="slot-morning" onclick="selectShift('morning')">
-                <strong><i class="fa-regular fa-sun"></i> Morning Shift</strong>
-                <span>9:00 AM – 12:00 PM</span>
+                <strong><i class="fa-regular fa-sun"></i> Morning</strong>
+                <span>7:00 AM – 12:00 PM</span>
               </div>
               <div class="slot-btn" id="slot-afternoon" onclick="selectShift('afternoon')">
-                <strong><i class="fa-solid fa-cloud-sun"></i> Afternoon Shift</strong>
-                <span>2:00 PM – 5:00 PM</span>
+                <strong><i class="fa-solid fa-cloud-sun"></i> Afternoon</strong>
+                <span>12:00 PM – 5:00 PM</span>
+              </div>
+              <div class="slot-btn" id="slot-evening" onclick="selectShift('evening')">
+                <strong><i class="fa-solid fa-moon"></i> Evening</strong>
+                <span>5:00 PM – 10:00 PM</span>
+              </div>
+              <div class="slot-btn" id="slot-overnight" onclick="selectShift('overnight')">
+                <strong><i class="fa-solid fa-shield-halved"></i> Overnight</strong>
+                <span>10:00 PM – 6:00 AM</span>
               </div>
             </div>
           </div>
@@ -573,9 +690,9 @@
             <div class="input-group">
               <label class="input-label" for="courier-urgency">Delivery Speed</label>
               <select id="courier-urgency" class="form-control" onchange="calculateCourierQuote()">
-                <option value="standard">Standard Shift (Same Day 9am-12pm or 2pm-5pm)</option>
-                <option value="express" selected>Urgent Express (Immediate Dispatch)</option>
-                <option value="scheduled">Scheduled Next Day</option>
+                <option value="standard">Standard 24/7 Shift (Same Day Delivery • 365 Days a Year)</option>
+                <option value="express" selected>⚡ Urgent 24/7 Express Hotshot (Immediate 24/7/365 Dispatch)</option>
+                <option value="scheduled">Scheduled Delivery (Choose Any Day / Time • 365 Days a Year)</option>
               </select>
             </div>
           </div>
@@ -591,8 +708,11 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="courier-contact-drop">Drop-off Receiver Name & Phone</label>
-            <input type="text" id="courier-contact-drop" class="form-control" value="Brisbane Private Hospital Receiving Dock - 07 3834 6111">
+            <label class="input-label" for="courier-photo-input">
+              <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> Consignment / Cargo Photo (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB;">Hosted on ImgBB</a>)
+            </label>
+            <input type="file" id="courier-photo-input" class="form-control" accept="image/*" onchange="handleCourierPhotoUpload(event)">
+            <div id="courier-photo-preview" style="display:none; margin-top:0.4rem; font-size:0.78rem; color:#2563EB; display:flex; align-items:center; gap:0.5rem;"></div>
           </div>
 
           <button class="btn btn-primary btn-lg" style="width:100%;" onclick="bookCourierDispatch()">
@@ -672,7 +792,612 @@
     </section>
 
     <!-- =========================================================================
-         VIEW 3: How It Works (4-Step Process from Flyers)
+         VIEW: Hire Recruitment (Recruiter Resume Search & Staffing)
+         ========================================================================= -->
+    <section class="workspace-view" id="recruitment-tab">
+      <div class="section-header">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <span class="section-tag"><i class="fa-solid fa-user-tie"></i> 24/7 • 365 Days a Year Staffing & Talent Placement</span>
+            <h2 class="section-title">Hire Recruitment & Resume Search</h2>
+            <p class="section-desc">
+              Recruiters and employers can search verified Australian tradespeople, drivers, and technical staff by key terms, skills, tickets, and location. Book shifts 24/7, 365 days a year or hire for full-time roles with instant candidate reference tracking.
+            </p>
+          </div>
+          <button class="btn btn-outline" onclick="openCandidateRegisterModal()">
+            <i class="fa-solid fa-file-arrow-up"></i> Submit Candidate Resume (Get SPN)
+          </button>
+        </div>
+      </div>
+
+      <!-- Recruiter Search & Filter Control Panel -->
+      <div class="recruiter-search-panel" style="background:#fff; border-radius:var(--radius-md); padding:1.5rem; box-shadow:var(--shadow-md); border:1px solid var(--border-light); margin-bottom:2rem;">
+        <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap:1rem; align-items:end;">
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="recruit-keywords"><i class="fa-solid fa-magnifying-glass"></i> Key Terms, Tickets, & Skills</label>
+            <input type="text" id="recruit-keywords" class="form-control" placeholder="e.g. White Card, Framing, Asbestos, Solar, Heavy Rigid, High Voltage..." oninput="filterCandidates()">
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="recruit-location"><i class="fa-solid fa-location-dot"></i> Suburb, City or Postcode</label>
+            <input type="text" id="recruit-location" class="form-control" placeholder="e.g. Gold Coast, Southport, Brisbane..." oninput="filterCandidates()">
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="recruit-trade"><i class="fa-solid fa-wrench"></i> Trade Category</label>
+            <select id="recruit-trade" class="form-control" onchange="filterCandidates()">
+              <option value="all">All Disciplines</option>
+              <option value="carpentry">Carpentry & Joinery</option>
+              <option value="electrical">Electrical & Solar</option>
+              <option value="courier">Transport & Courier Drivers</option>
+              <option value="handyman">Facilities & Handyman</option>
+              <option value="civil">Civil & Machine Plant</option>
+              <option value="painting">Painting & Finishes</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="filterCandidates()" style="height:48px; padding:0 1.5rem;">
+            <i class="fa-solid fa-filter"></i> Search Resumes
+          </button>
+        </div>
+
+        <!-- Secondary Filters & Counter -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-light);">
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-right:0.25rem;">Shift Availability:</span>
+            <button class="chip-filter active" id="filter-shift-all" onclick="selectCandidateShiftFilter('all')">All Hours</button>
+            <button class="chip-filter" id="filter-shift-247" onclick="selectCandidateShiftFilter('24_7')">⚡ 24/7/365 On-Call</button>
+          </div>
+
+          <div style="font-size:0.85rem; color:var(--text-muted);" id="candidate-count-indicator">
+            Showing <strong>6</strong> verified candidate resumes
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Resume Grid -->
+      <div class="candidate-grid" id="candidate-resumes-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(350px, 1fr)); gap:1.5rem; margin-bottom:2.5rem;">
+        <!-- Dynamically rendered by app.js -->
+      </div>
+
+      <!-- Recruiter Highlights Banner -->
+      <div style="background:linear-gradient(135deg, var(--primary-navy) 0%, #1E293B 100%); border-radius:var(--radius-lg); padding:2rem; color:#fff; display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1.5rem;">
+        <div style="display:flex; gap:1rem; align-items:flex-start;">
+          <div style="width:40px; height:40px; border-radius:var(--radius-sm); background:rgba(255,107,53,0.2); display:flex; align-items:center; justify-content:center; color:var(--brand-orange); font-size:1.2rem; flex-shrink:0;">
+            <i class="fa-solid fa-id-card-clip"></i>
+          </div>
+          <div>
+            <h4 style="font-size:1rem; font-weight:800; margin-bottom:0.25rem; color:#fff;">Verified SPN Badges</h4>
+            <p style="font-size:0.8rem; color:var(--text-light); line-height:1.4;">Every candidate has a verified Service Provider Number with validated tickets, licenses, and background checks.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:1rem; align-items:flex-start;">
+          <div style="width:40px; height:40px; border-radius:var(--radius-sm); background:rgba(16,185,129,0.2); display:flex; align-items:center; justify-content:center; color:#34D399; font-size:1.2rem; flex-shrink:0;">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div>
+            <h4 style="font-size:1rem; font-weight:800; margin-bottom:0.25rem; color:#fff;">24/7 • 365 Days a Year Staffing</h4>
+            <p style="font-size:0.8rem; color:var(--text-light); line-height:1.4;">Fill unexpected vacancies, weekend surges, or holiday project deadlines with 24/7, 365 days a year shift-ready candidates.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:1rem; align-items:flex-start;">
+          <div style="width:40px; height:40px; border-radius:var(--radius-sm); background:rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; color:#60A5FA; font-size:1.2rem; flex-shrink:0;">
+            <i class="fa-solid fa-shield-check"></i>
+          </div>
+          <div>
+            <h4 style="font-size:1rem; font-weight:800; margin-bottom:0.25rem; color:#fff;">No Upfront Placement Fees</h4>
+            <p style="font-size:0.8rem; color:var(--text-light); line-height:1.4;">Transparent hourly & daily rates with automated digital invoicing and zero hidden recruitment markups.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 5: Registration Portal (Options for Service Providers & Customers)
+         ========================================================================= -->
+    <section class="workspace-view" id="register-tab">
+      <div class="section-header">
+        <span class="section-tag">24/7 • 365 Days a Year Verified Network</span>
+        <h2 class="section-title">Registration Portal</h2>
+        <p class="section-desc">
+          Choose whether you are registering as a <strong>Service Provider</strong> or as a <strong>Customer</strong>. All verification images and licences are securely stored on our server and permanently accessible.
+        </p>
+      </div>
+
+      <!-- Gateway Choice Cards -->
+      <div class="register-choice-grid">
+        <!-- Choice 1: Service Providers -->
+        <div class="register-choice-card provider-choice">
+          <div>
+            <div class="register-choice-icon">
+              <i class="fa-solid fa-helmet-safety"></i>
+            </div>
+            <span class="register-choice-badge">For Service Providers</span>
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.4rem;">
+              Service Providers
+            </h3>
+            <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.5;">
+              Licensed tradespeople, subcontractors, courier drivers, and heavy freight operators.
+            </p>
+            <ul class="register-choice-perks">
+              <li><i class="fa-solid fa-circle-check"></i> List your services, hourly rates, flat rates & callout fees</li>
+              <li><i class="fa-solid fa-circle-check"></i> Distance travel charges (per km or per mile depending on region)</li>
+              <li><i class="fa-solid fa-circle-check"></i> 24/7, 365 Days a Year on-call & custom shift registration</li>
+              <li><i class="fa-solid fa-circle-check"></i> <strong>Licences & credentials stored on our server — always available in your vault</strong></li>
+              <li><i class="fa-solid fa-circle-check"></i> Instant <strong>SPN (Service Provider Number)</strong> issued on submission</li>
+            </ul>
+          </div>
+          <button class="btn btn-primary btn-lg" style="width:100%; font-weight:800;" onclick="showInlineRegistration('provider')">
+            <i class="fa-solid fa-helmet-safety"></i> Open Service Provider Form
+          </button>
+        </div>
+
+        <!-- Choice 2: Customers -->
+        <div class="register-choice-card customer-choice">
+          <div>
+            <div class="register-choice-icon">
+              <i class="fa-solid fa-id-card-clip"></i>
+            </div>
+            <span class="register-choice-badge">For Customers</span>
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.4rem;">
+              Customers
+            </h3>
+            <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.5;">
+              Homeowners, commercial properties, businesses, and real estate managers.
+            </p>
+            <ul class="register-choice-perks">
+              <li><i class="fa-solid fa-circle-check"></i> Instant <strong>CRN (Customer Reference Number)</strong> issued</li>
+              <li><i class="fa-solid fa-circle-check"></i> Priority 24/7, 365 Days a Year emergency dispatch for urgent jobs</li>
+              <li><i class="fa-solid fa-circle-check"></i> <strong>Simple registration with 1 form of ID (passport/licence held in hand)</strong></li>
+              <li><i class="fa-solid fa-circle-check"></i> Skip repeating address details on future bookings</li>
+              <li><i class="fa-solid fa-circle-check"></i> Transparent automated tax invoices & Stripe payment integration</li>
+            </ul>
+          </div>
+          <button class="btn btn-navy btn-lg" style="width:100%; font-weight:800;" onclick="showInlineRegistration('customer')">
+            <i class="fa-solid fa-user-plus"></i> Open Customer Form
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Selector Segmented Tabs -->
+      <div id="inline-reg-target" style="scroll-margin-top: 100px;">
+        <div style="display:flex; justify-content:center; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap;">
+          <button class="btn btn-outline" id="btn-toggle-prov-form" onclick="showInlineRegistration('provider')" style="padding:0.75rem 1.5rem; font-weight:800;">
+            <i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange);"></i> Service Provider Form
+          </button>
+          <button class="btn btn-outline" id="btn-toggle-cust-form" onclick="showInlineRegistration('customer')" style="padding:0.75rem 1.5rem; font-weight:800;">
+            <i class="fa-solid fa-user-plus" style="color:#1E40AF;"></i> Customer Form
+          </button>
+        </div>
+
+        <!-- Inline Section 1: Customer Form -->
+        <div id="inline-customer-form-section" style="display:none; background:#fff; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:2rem 2.5rem; box-shadow:var(--shadow-lg); max-width:800px; margin:0 auto 3rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light);">
+            <div style="width:44px; height:44px; border-radius:8px; background:#1E3A8A; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:1.35rem; color:var(--primary-navy); font-weight:800;">Customer Registration</h3>
+              <p style="margin:0; font-size:0.82rem; color:var(--text-muted);">Simple registration • Send in 1 form of identification (holding passport or licence)</p>
+            </div>
+          </div>
+
+          <form id="inline-customer-register-form" onsubmit="handleCustomerRegistrationSubmit(event, true)">
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-name">Full Name</label>
+                <input type="text" id="inline-cust-name" class="form-control" required placeholder="e.g. Sarah Jenkins">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-type">Account Type</label>
+                <select id="inline-cust-type" class="form-control">
+                  <option value="residential">Residential / Homeowner</option>
+                  <option value="business">Business / Commercial Client</option>
+                  <option value="property_manager">Real Estate / Property Manager</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-phone">Mobile Phone (for SMS Dispatch)</label>
+                <input type="tel" id="inline-cust-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-email">Email Address</label>
+                <input type="email" id="inline-cust-email" class="form-control" required placeholder="e.g. s.jenkins@example.com">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-address">Primary Street Address & Suburb</label>
+                <input type="text" id="inline-cust-address" class="form-control" required placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="inline-cust-country">Country / Region</label>
+                <select id="inline-cust-country" class="form-control">
+                  <option value="AU" selected>Australia (km)</option>
+                  <option value="NZ">New Zealand (km)</option>
+                  <option value="US">United States (miles)</option>
+                  <option value="UK">United Kingdom (miles)</option>
+                  <option value="CA">Canada (km)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- MANDATORY CUSTOMER ID HOLDING VERIFICATION SECTION -->
+            <div class="id-holding-instruction-box">
+              <div class="id-holding-header">
+                <i class="fa-solid fa-camera-rotate"></i>
+                <div>
+                  <h5>Customer ID Verification (Selfie Holding ID)</h5>
+                  <span style="font-size:0.75rem; color:#1E40AF; font-weight:600;">One form of ID required (Passport or Driver Licence)</span>
+                </div>
+              </div>
+              <p class="id-holding-desc">
+                Please upload <strong>one clear photo/selfie of yourself holding your photo ID</strong> (such as your driver's licence or passport) next to your face. Ensure your name and photo on the ID are clearly visible.
+              </p>
+              
+              <div class="form-row" style="margin-bottom:0.75rem;">
+                <div class="input-group" style="margin-bottom:0;">
+                  <label class="input-label" for="inline-cust-id-type" style="font-size:0.78rem;">Select ID Document Type</label>
+                  <select id="inline-cust-id-type" class="form-control" style="font-size:0.85rem;">
+                    <option value="driver_licence">Driver Licence</option>
+                    <option value="passport">Passport</option>
+                    <option value="proof_of_age">State Photo Card / Proof of Age</option>
+                    <option value="gov_id">Government Photo ID</option>
+                  </select>
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                  <label class="input-label" for="inline-cust-id-file" style="font-size:0.78rem;">Upload Photo of You Holding ID</label>
+                  <input type="file" id="inline-cust-id-file" class="form-control" accept="image/*" required onchange="handleCustomerPhotoUpload(event, 'inline')">
+                </div>
+              </div>
+
+              <div id="inline-cust-photo-preview" style="display:none; margin-top:0.6rem; align-items:center; gap:0.6rem; background:#fff; padding:0.5rem 0.75rem; border-radius:var(--radius-sm); border:1px solid #BFDBFE;">
+                <!-- Populated on upload -->
+              </div>
+
+              <div class="id-holding-tip">
+                <i class="fa-solid fa-lock"></i>
+                <span>Stored securely on our server via 256-bit encryption. Album: <strong>k4vjCb</strong>. Never shared publicly.</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-notes">Property Access / Special Instructions</label>
+              <textarea id="inline-cust-notes" class="form-control" rows="2" placeholder="e.g. Side gate access, dogs on premises, parking in driveway..."></textarea>
+            </div>
+
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.6rem;">
+              <i class="fa-solid fa-id-card" style="font-size:1.3rem; color:#1E40AF;"></i>
+              <div style="font-size:0.78rem; color:#1E3A8A;">
+                <strong>Instant CRN:</strong> Your permanent <strong>CRN-XXXXXX</strong> is generated immediately for 24/7, 365 days a year bookings.
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; padding:0.85rem; font-size:1rem; font-weight:800;">
+              <i class="fa-solid fa-check"></i> Register Customer & Issue CRN
+            </button>
+          </form>
+        </div>
+
+        <!-- Inline Section 2: Service Provider Form & Document Vault -->
+        <div id="inline-provider-form-section" style="background:#fff; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:2rem 2.5rem; box-shadow:var(--shadow-lg); max-width:960px; margin:0 auto 3rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light); flex-wrap:wrap; gap:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <div style="width:44px; height:44px; border-radius:8px; background:var(--brand-orange); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                <i class="fa-solid fa-helmet-safety"></i>
+              </div>
+              <div>
+                <h3 style="margin:0; font-size:1.35rem; color:var(--primary-navy); font-weight:800;">Service Provider Registration</h3>
+                <p style="margin:0; font-size:0.82rem; color:var(--text-muted);">Set your rates, distance fees (km/mi), 24/7, 365 days a year hours & manage stored licence documents</p>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="scrollToVault()">
+              <i class="fa-solid fa-folder-open"></i> View Stored Documents
+            </button>
+          </div>
+
+          <form id="inline-provider-reg-form" onsubmit="handleAdvancedProviderSubmit(event, true)">
+            <!-- 1. Provider Identity -->
+            <div style="margin-bottom:1.25rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-address-card" style="color:var(--brand-orange);"></i> 1. Profile & Trade Credentials
+              </h5>
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-name">Full Name / Primary Contact</label>
+                  <input type="text" id="page-prov-name" class="form-control" required placeholder="e.g. Jack Sullivan">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-business">Business / Trading Name</label>
+                  <input type="text" id="page-prov-business" class="form-control" required placeholder="e.g. Sullivan & Sons Plumbing & Gas">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-category">Primary Trade Discipline</label>
+                  <select id="page-prov-category" class="form-control" required>
+                    <option value="plumbing">Plumbing & Gas Solutions</option>
+                    <option value="electrical">Licensed Electrical Services</option>
+                    <option value="courier">Courier Driver & Express Freight</option>
+                    <option value="handyman">General Handyman & Assembly</option>
+                    <option value="carpentry">Carpentry & Building Repairs</option>
+                    <option value="garden">Lawn, Tree & Garden Care</option>
+                    <option value="painting">Painting & Surface Restoration</option>
+                    <option value="appliance">Appliance Diagnostics & Repair</option>
+                    <option value="civil">Civil & Machine Plant Operator</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-license">Licence # / Certification / Driver Lic</label>
+                  <input type="text" id="page-prov-license" class="form-control" required placeholder="e.g. QBCC #1509214 or MR Commercial Lic">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-phone">Mobile Phone</label>
+                  <input type="tel" id="page-prov-phone" class="form-control" required placeholder="0400 123 456">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-email">Email Address</label>
+                  <input type="email" id="page-prov-email" class="form-control" required placeholder="jack@sullivanplumbing.com.au">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Location & Distance Units -->
+            <div style="margin-bottom:1.25rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i> 2. Location & Distance Units (km / mile)
+              </h5>
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-suburb">Base Suburb / City & Postcode</label>
+                  <input type="text" id="page-prov-suburb" class="form-control" required placeholder="e.g. Broadbeach QLD 4218">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-country">Country / Region</label>
+                  <select id="page-prov-country" class="form-control" onchange="handleProviderCountryChange(this.value)">
+                    <option value="AU" selected>Australia (km)</option>
+                    <option value="NZ">New Zealand (km)</option>
+                    <option value="US">United States (miles)</option>
+                    <option value="UK">United Kingdom (miles)</option>
+                    <option value="CA">Canada (km)</option>
+                    <option value="OTHER">Other Region</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.6rem 0.85rem; margin-bottom:0.75rem;">
+                <div>
+                  <strong style="font-size:0.82rem; color:var(--primary-navy);">Distance Measurement Unit:</strong>
+                  <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Used for calculating travel radius and mileage fees</p>
+                </div>
+                <div style="display:flex; gap:1rem;">
+                  <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                    <input type="radio" name="page-prov-dist-unit" value="km" checked onchange="updateProviderDistUnit('km')"> Kilometres (km)
+                  </label>
+                  <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                    <input type="radio" name="page-prov-dist-unit" value="mile" onchange="updateProviderDistUnit('mile')"> Miles (mi)
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-radius">Standard Service Radius (<span class="unit-span">km</span>)</label>
+                  <input type="number" id="page-prov-radius" class="form-control" value="25" min="5" max="250">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-suburbs-list">Service Areas Covered (comma separated)</label>
+                  <input type="text" id="page-prov-suburbs-list" class="form-control" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Rates, Pricing & Distance Fee -->
+            <div style="margin-bottom:1.25rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> 3. Pricing, Rates & Distance Charges
+              </h5>
+
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-bottom:0.85rem;">
+                <!-- Hourly -->
+                <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                  <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                    <input type="checkbox" id="page-rate-hourly" checked> Hourly Rate
+                  </label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:var(--text-muted);">$</span>
+                    <input type="number" id="page-prov-hourly" class="form-control" value="95" min="30" max="400">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">/ hr</span>
+                  </div>
+                </div>
+
+                <!-- Flat Rate -->
+                <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                  <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                    <input type="checkbox" id="page-rate-flat" checked> Flat Rate (Standard Jobs)
+                  </label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:var(--text-muted);">$</span>
+                    <input type="number" id="page-prov-flat" class="form-control" value="130" min="40" max="2000">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">flat</span>
+                  </div>
+                </div>
+
+                <!-- Callout -->
+                <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                  <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                    <input type="checkbox" id="page-rate-callout" checked> Base Call-Out Fee
+                  </label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:var(--text-muted);">$</span>
+                    <input type="number" id="page-prov-callout" class="form-control" value="35" min="0" max="300">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">callout</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Distance Charges -->
+              <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                <label style="display:flex; align-items:center; gap:0.4rem; font-weight:800; font-size:0.85rem; color:#92400E; cursor:pointer;">
+                  <input type="checkbox" id="page-rate-distance" checked onchange="toggleDistanceChargeFields(this.checked)">
+                  <i class="fa-solid fa-route"></i> Charge Distance / Travel Fee (Callout per <span class="unit-span">km</span> / Courier per <span class="unit-span">km</span>)
+                </label>
+
+                <div id="page-distance-charge-inputs" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem; margin-top:0.6rem;">
+                  <div>
+                    <label class="input-label" style="font-size:0.75rem;" for="page-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
+                    <div style="display:flex; align-items:center; gap:0.3rem;">
+                      <span style="font-weight:700; color:#92400E;">$</span>
+                      <input type="number" id="page-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20">
+                      <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="input-label" style="font-size:0.75rem;" for="page-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
+                    <div style="display:flex; align-items:center; gap:0.3rem;">
+                      <span style="font-weight:700; color:#92400E;">$</span>
+                      <input type="number" id="page-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20">
+                      <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="input-label" style="font-size:0.75rem;" for="page-prov-free-km">Included Free Distance</label>
+                    <div style="display:flex; align-items:center; gap:0.3rem;">
+                      <input type="number" id="page-prov-free-km" class="form-control" value="10" min="0" max="100">
+                      <span style="font-size:0.75rem; color:#92400E;"><span class="unit-span">km</span> free</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Services Offered -->
+            <div style="margin-bottom:1.25rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-toolbox" style="color:var(--brand-orange);"></i> 4. Services Offered & Machinery Owned
+              </h5>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-services-desc">List Specific Services You Provide</label>
+                <textarea id="page-prov-services-desc" class="form-control" rows="2" required placeholder="e.g. Burst pipe repairs, hot water tank changeovers, bathroom plumbing, leak detection..."></textarea>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-equipment">Tools, Machinery & Vehicles Owned</label>
+                <input type="text" id="page-prov-equipment" class="form-control" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake">
+              </div>
+            </div>
+
+            <!-- 5. 24/7, 365 Days a Year Hours, Calendar & Profile Status -->
+            <div style="margin-bottom:1.5rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> 5. Profile Status & 7-Day Shift Calendar (24/7 • 365 Days)
+              </h5>
+              
+              <!-- Profile Status Toggle: Active vs Paused -->
+              <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+                <div>
+                  <strong style="font-size:0.85rem; color:var(--primary-navy); display:block;">Initial Profile Status:</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">You can pause or resume receiving jobs anytime from your Admin Panel.</span>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <label class="radio-pill active" id="label-inline-status-active" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
+                    <input type="radio" name="inline-profile-status" value="active" checked onchange="handleStatusRadioChange('inline', 'active')"> 🟢 Active & Ready
+                  </label>
+                  <label class="radio-pill" id="label-inline-status-paused" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">
+                    <input type="radio" name="inline-profile-status" value="paused" onchange="handleStatusRadioChange('inline', 'paused')"> ⏸️ Paused (On Break)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Interactive Weekly Calendar Matrix Container -->
+              <div class="calendar-matrix-wrapper">
+                <div class="matrix-toolbar">
+                  <div>
+                    <strong style="font-size:0.84rem; color:var(--primary-navy);"><i class="fa-solid fa-clock"></i> Weekly Availability Grid:</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Click shift cells to turn ON/OFF for each day</span>
+                  </div>
+                  <div class="matrix-presets">
+                    <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'all')">⚡ 24/7 All On</button>
+                    <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'core')">🏢 Mon–Fri Day (7am–5pm)</button>
+                    <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'after_hours')">🌙 After-Hours & W/Ends</button>
+                    <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'clear')">Clear All</button>
+                  </div>
+                </div>
+
+                <div id="inline-calendar-matrix-root"></div>
+              </div>
+
+              <div style="margin-top:0.6rem;">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="page-shift-insured" checked required> $10M+ Public Liability / Carrier Transit Cover Active
+                </label>
+              </div>
+            </div>
+
+            <!-- 6. Document Uploads Stored on Server -->
+            <div style="margin-bottom:1.25rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-cloud-arrow-up" style="color:var(--brand-orange);"></i> 6. Licences & Verification Uploads (Stored on Server)
+              </h5>
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-photo-license">Trade Licence Card / Insurance Scan</label>
+                  <input type="file" id="page-prov-photo-license" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'licence')">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="page-prov-photo-vehicle">Work Vehicle / Profile Photo</label>
+                  <input type="file" id="page-prov-photo-vehicle" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'vehicle')">
+                </div>
+              </div>
+              <div id="page-prov-photo-preview" style="display:none; font-size:0.75rem; color:#059669; font-weight:700;"></div>
+            </div>
+
+            <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.78rem; color:#92400E; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-id-card-clip" style="font-size:1.2rem;"></i>
+              <span><strong>Instant Service Provider Number:</strong> You will immediately receive your official <strong>SPN-XXXXXX</strong> on submission.</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%; font-weight:800; padding:0.9rem;">
+              <i class="fa-solid fa-check"></i> Register Service Provider & Issue SPN
+            </button>
+          </form>
+
+          <!-- DEDICATED STORED VERIFICATION DOCUMENTS & LICENCE VAULT -->
+          <div class="provider-vault-card" id="provider-documents-vault">
+            <div class="vault-header-row">
+              <div>
+                <h4 style="margin:0; font-size:1.15rem; color:var(--primary-navy); font-weight:800;">
+                  <i class="fa-solid fa-vault" style="color:var(--brand-orange);"></i> My Stored Verification Documents & Licences
+                </h4>
+                <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">
+                  All verification images such as licences are stored on our server and always available to the service provider.
+                </p>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="vault-server-badge"><i class="fa-solid fa-server"></i> Stored on Server (Album: k4vjCb)</span>
+                <button class="btn btn-outline btn-sm" onclick="triggerVaultUpload()">
+                  <i class="fa-solid fa-plus"></i> Add Document
+                </button>
+              </div>
+            </div>
+
+            <!-- Documents Grid -->
+            <div class="vault-grid" id="vault-documents-list">
+              <!-- Dynamically populated by renderProviderDocumentVault() -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         VIEW 6: How It Works (4-Step Process from Flyers)
          ========================================================================= -->
     <section class="workspace-view" id="how-it-works-tab">
       <div class="section-header">
@@ -708,7 +1433,7 @@
               <span class="step-num">2</span>
               <div class="step-content">
                 <strong>Tell us how long it will take (or AI calculates)</strong>
-                <p>Flexible scheduling for a day that suits you. Shifts are strictly <strong>9am–12pm</strong> and <strong>2pm–5pm</strong>.</p>
+                <p>Available <strong>24/7, 365 Days a Year</strong>. Flexible scheduling day or night, weekends and holidays, with priority emergency dispatch.</p>
               </div>
             </li>
             <li class="step-item">
@@ -817,6 +1542,100 @@
           </div>
         </div>
       </div>
+
+      <!-- Interactive Frequently Asked Questions (FAQ) Accordion -->
+      <div class="faq-accordion-section">
+        <div class="section-header" style="margin-bottom:1.5rem; margin-top:2.5rem;">
+          <span class="section-tag">Frequently Asked Questions</span>
+          <h3 class="section-title" style="font-size:1.85rem;">Everything You Need To Know</h3>
+          <p class="section-desc">Quick answers about our 24/7, 365 days a year registration, CRN & SPN references, pricing, and distance calculations.</p>
+        </div>
+
+        <div class="faq-accordion-list">
+          <!-- FAQ 1: CRN -->
+          <div class="faq-item" id="faq-1">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-1')">
+              <span><i class="fa-solid fa-id-badge" style="color:var(--brand-orange); margin-right:0.6rem;"></i> What is a Customer Reference Number (CRN) and how do I get one?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Your <strong>Customer Reference Number (CRN)</strong> is your permanent digital identity across our national 24/7, 365 days a year service platform (e.g. <code>CRN-849102</code>). You can generate one instantly via the <strong>Settings Wheel &gt; For Customers</strong> menu or automatically upon completing your first booking. Quoting your CRN unlocks 1-click booking, priority 24/7/365 emergency dispatch, and direct access to your past job history and tax invoices.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 2: SPN & Provider Registration -->
+          <div class="faq-item" id="faq-2">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-2')">
+              <span><i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange); margin-right:0.6rem;"></i> How do Service Providers join and receive an SPN?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Licensed contractors and courier operators can register via <strong>Settings Wheel &gt; For Service Providers</strong>. Upon registering your trade licence (e.g. QBCC), working hours, pricing, and service radius, an official <strong>Service Provider Number (SPN)</strong> (e.g. <code>SPN-294810</code>) is immediately issued. This SPN activates your profile in our live dispatch feed and links your insurance verification documents hosted on ImgBB album <code>k4vjCb</code>.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 3: Pricing Models & Distance per km/mi -->
+          <div class="faq-item" id="faq-3">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-3')">
+              <span><i class="fa-solid fa-calculator" style="color:var(--brand-orange); margin-right:0.6rem;"></i> How are rates, callout fees, and travel distance calculated?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Providers have complete flexibility to configure their transparent pricing models:</p>
+              <ul style="margin:0.5rem 0 0.5rem 1.5rem; line-height:1.7;">
+                <li><strong>Hourly Rates:</strong> Clearly stated rate per hour for trade work or on-site diagnostic time.</li>
+                <li><strong>Flat Rates:</strong> Upfront fixed price for defined standard tasks.</li>
+                <li><strong>Base Call-Out Fee:</strong> Standard call-out fee to cover arrival, inspection, and tooling.</li>
+                <li><strong>Distance Charges:</strong> Callout or courier freight rate charged per <strong>km</strong> or <strong>mile</strong> beyond the included free travel zone (e.g. $1.50/km after 10 km).</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- FAQ 4: km vs miles -->
+          <div class="faq-item" id="faq-4">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-4')">
+              <span><i class="fa-solid fa-route" style="color:var(--brand-orange); margin-right:0.6rem;"></i> When do we use Kilometres (km) versus Miles (mile)?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Our platform automatically detects your operating region. Australia (AU), New Zealand (NZ), and Canada (CA) default to <strong>Kilometres (km)</strong>. When operating in the United States (US) or United Kingdom (UK), the system automatically converts and quotes in <strong>Miles (mi)</strong>. Providers can also manually switch their preferred measurement unit anytime in their profile settings.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 5: 24/7 Availability -->
+          <div class="faq-item" id="faq-5">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-5')">
+              <span><i class="fa-solid fa-clock" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Is this service available 24/7, 365 days a year?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes! We operate 24 hours a day, 7 days a week, 365 days a year — including all nights, weekends, and public holidays. Service providers register their on-call availability, including <strong>24/7, 365 Days a Year Urgent On-Call</strong>, Morning (7am–12pm), Afternoon (12pm–5pm), Evening (5pm–10pm), and Overnight (10pm–6am) shifts. Urgent emergency callouts for burst pipes, electrical faults, or medical logistics are routed immediately to active on-call specialists round the clock.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 6: Invoicing & Stripe -->
+          <div class="faq-item" id="faq-6">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-6')">
+              <span><i class="fa-brands fa-stripe" style="color:#635BFF; margin-right:0.6rem;"></i> How does payment and digital tax invoicing work?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Every booking generates an official Australian Tax Invoice docket (e.g. <code>IASJ-XXXXXX</code>) detailing labor, materials, callout fee, distance travel, and 10% GST. Customers can pay instantly online or on-site via our integrated <strong>Stripe Payment Gateway</strong> (supporting all Visa, Mastercard, and digital wallets) with 256-bit encryption.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 7: Recruitment -->
+          <div class="faq-item" id="faq-7">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-7')">
+              <span><i class="fa-solid fa-briefcase" style="color:var(--brand-orange); margin-right:0.6rem;"></i> How do employers hire staff through the Recruitment tab?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Recruiters and site managers can visit the <strong>Recruit</strong> tab to filter vetted candidate resumes by keywords (e.g., "Plumber", "Licensed Sparky", "Forklift") and location. You can inspect full CVs, verified licences, police checks, and shift availability, then submit an instant placement request directly through the portal.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- =========================================================================
@@ -889,25 +1708,44 @@
             </div>
 
             <div class="input-group">
-              <label class="input-label">Preferred Shifts Available:</label>
-              <div class="checkbox-group">
+              <label class="input-label"><i class="fa-solid fa-clock"></i> Register Your Working Hours & 24/7, 365 Days a Year Availability:</label>
+              <div class="checkbox-group" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.4rem;">
                 <label class="checkbox-label">
-                  <input type="checkbox" id="reg-shift-morn" checked> Morning Shift (9am–12pm)
+                  <input type="checkbox" id="reg-shift-247" checked> ⚡ <strong>24/7 • 365 Days a Year Emergency On-Call</strong>
                 </label>
                 <label class="checkbox-label">
-                  <input type="checkbox" id="reg-shift-aft" checked> Afternoon Shift (2pm–5pm)
+                  <input type="checkbox" id="reg-shift-morn" checked> Morning (7am–12pm)
                 </label>
                 <label class="checkbox-label">
-                  <input type="checkbox" id="reg-shift-urgent"> Urgent Same-Day Dispatch
+                  <input type="checkbox" id="reg-shift-aft" checked> Afternoon (12pm–5pm)
                 </label>
                 <label class="checkbox-label">
-                  <input type="checkbox" id="reg-insured" checked required> $10M+ Public Liability
+                  <input type="checkbox" id="reg-shift-eve"> Evening (5pm–10pm)
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-shift-overnight"> Overnight (10pm–6am)
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="reg-insured" checked required> $10M+ Liability Verified
                 </label>
               </div>
             </div>
 
+            <div class="input-group" style="margin-top:0.75rem;">
+              <label class="input-label" for="reg-license-photo">
+                <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> QBCC Licence Card / Insurance Photo (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB;">Hosted on ImgBB</a>)
+              </label>
+              <input type="file" id="reg-license-photo" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event)">
+              <div id="provider-photo-preview" style="display:none; margin-top:0.4rem; font-size:0.78rem; color:#2563EB; display:flex; align-items:center; gap:0.5rem;"></div>
+            </div>
+
+            <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.6rem 0.85rem; font-size:0.78rem; color:#92400E; margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-id-card-clip" style="font-size:1.1rem;"></i>
+              <span><strong>Instant Service Provider Number:</strong> You will immediately receive your official <strong>SPN-XXXXXX</strong> on submission for live dispatch & direct payments.</span>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:1rem;">
-              <i class="fa-solid fa-check"></i> Register & Enter AI Matching Pool
+              <i class="fa-solid fa-check"></i> Register & Generate Service Provider Number (SPN)
             </button>
           </form>
         </div>
@@ -932,7 +1770,7 @@
                 <span class="dispatch-earnings">$223.30 AUD</span>
               </div>
               <p class="dispatch-job-desc">
-                Customer: Jack Thompson • 42 Surf Parade, Broadbeach QLD • Morning Shift (9am–12pm)
+                Customer: Jack Thompson • 42 Surf Parade, Broadbeach QLD • 24/7/365 On-Call Dispatch
               </p>
               <div class="dispatch-meta-chips">
                 <span class="dispatch-chip"><i class="fa-regular fa-clock"></i> 1.5 hrs estimated</span>
@@ -970,6 +1808,31 @@
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Stored Licences & Verification Vault (Always Available on Server) -->
+        <div class="provider-vault-card" style="margin-top:1.5rem;">
+          <div class="vault-header-row">
+            <div>
+              <h4 style="margin:0; font-size:1.15rem; color:var(--primary-navy); font-weight:800;">
+                <i class="fa-solid fa-vault" style="color:var(--brand-orange);"></i> My Stored Verification Documents & Licences
+              </h4>
+              <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">
+                All verification images such as licences are stored on our server and always available to the service provider.
+              </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span class="vault-server-badge"><i class="fa-solid fa-server"></i> Stored on Server (Album: k4vjCb)</span>
+              <button class="btn btn-outline btn-sm" onclick="triggerVaultUpload()">
+                <i class="fa-solid fa-plus"></i> Add Document
+              </button>
+            </div>
+          </div>
+
+          <!-- Documents Grid -->
+          <div class="vault-grid" id="provider-network-vault-list">
+            <!-- Dynamically populated by renderProviderDocumentVault() -->
           </div>
         </div>
       </div>
@@ -1066,50 +1929,1205 @@
       <div class="modal-body" id="modal-invoice-content">
         <!-- Rendered by JavaScript -->
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions" style="display:flex; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
         <button class="btn btn-outline" onclick="closeBookingModal()">Close</button>
-        <button class="btn btn-primary" onclick="printOrDownloadInvoice()">
-          <i class="fa-solid fa-print"></i> Print / Save Invoice
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <a id="btn-add-to-google-cal" href="#" target="_blank" class="btn btn-outline" style="color:#1D4ED8; border-color:#93C5FD; background:#EFF6FF; text-decoration:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px;">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Add to Google Calendar
+          </a>
+          <button class="btn btn-outline" onclick="printOrDownloadInvoice()">
+            <i class="fa-solid fa-print"></i> Print Invoice
+          </button>
+          <button class="btn btn-primary" id="btn-open-stripe" onclick="openStripePaymentModal()" style="background:#635BFF; border-color:#635BFF;">
+            <i class="fa-brands fa-stripe" style="font-size:1.1rem;"></i> Pay via Stripe
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stripe Checkout & Payment Processing Modal -->
+  <div class="modal-overlay" id="stripe-payment-modal">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header" style="background:#F8FAFC; border-bottom:1px solid var(--border-light); padding:1rem 1.25rem;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:34px; height:34px; border-radius:8px; background:#635BFF; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-brands fa-stripe"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.1rem; color:var(--primary-navy); font-weight:800;">Stripe Secure Payment</h4>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Account: AI Foundation sandbox (acct_1UKnKUI8bClhBF4P)</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeStripePaymentModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem;">
+        <!-- Order Summary Box -->
+        <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-size:0.75rem; color:#4338CA; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Job Docket Reference</span>
+            <div style="font-weight:800; color:#1E1B4B; font-size:1rem;" id="stripe-modal-docket">IASJ-XXXXXX</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.75rem; color:#4338CA; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Total Due (AUD)</span>
+            <div style="font-weight:900; color:#4338CA; font-size:1.35rem;" id="stripe-modal-amount">$0.00 AUD</div>
+          </div>
+        </div>
+
+        <form id="stripe-checkout-form" onsubmit="handleStripePaymentSubmit(event)">
+          <div class="input-group">
+            <label class="input-label" for="stripe-cardholder-name">Cardholder Name</label>
+            <input type="text" id="stripe-cardholder-name" class="form-control" required placeholder="Name on card (e.g. David Smith)">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="stripe-card-number">Card Details (Test Sandbox: 4242...)</label>
+            <div style="position:relative;">
+              <input type="text" id="stripe-card-number" class="form-control" required maxlength="19" value="4242 •••• •••• 4242" style="font-family:monospace; letter-spacing:1px; padding-left:2.5rem;">
+              <i class="fa-solid fa-credit-card" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#635BFF; font-size:1.1rem;"></i>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="stripe-expiry">Expiry Date</label>
+              <input type="text" id="stripe-expiry" class="form-control" required maxlength="5" value="12/28" placeholder="MM/YY" style="font-family:monospace;">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="stripe-cvc">CVC Security Code</label>
+              <input type="text" id="stripe-cvc" class="form-control" required maxlength="4" value="842" placeholder="CVC" style="font-family:monospace;">
+            </div>
+          </div>
+
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.76rem; color:var(--text-muted); margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-lock" style="color:#059669; font-size:1rem;"></i>
+            <span>Encrypted with 256-bit SSL via <strong>Stripe API Gateway</strong>. Tagged in multi-tenant Firestore under <code>itsasimplejob</code>.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-stripe-submit" style="width:100%; background:#635BFF; border-color:#635BFF; font-weight:700; padding:0.85rem; font-size:1rem;">
+            <i class="fa-solid fa-shield-halved"></i> Authorize & Pay with Stripe
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       REGISTRATION SELECTION PANEL (Checks Customer vs Service Provider)
+       ========================================================================= -->
+  <div class="modal-overlay" id="register-selection-panel">
+    <div class="modal-box" style="max-width:620px; text-align:center; padding:2rem 2rem 2.25rem;">
+      <div style="display:flex; justify-content:flex-end; margin-top:-0.5rem; margin-right:-0.5rem; margin-bottom:0.5rem;">
+        <button class="modal-close-btn" onclick="closeRegisterSelectionPanel()">&times;</button>
+      </div>
+
+      <div style="width:68px; height:68px; border-radius:var(--radius-full); background:linear-gradient(135deg, #1E3A8A 0%, #EA580C 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.25rem; box-shadow:0 8px 20px rgba(234,88,12,0.25);">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+
+      <h3 style="font-size:1.6rem; font-weight:900; color:var(--primary-navy); margin-bottom:0.4rem; font-family:var(--font-display);">
+        How would you like to register?
+      </h3>
+      <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:1.5rem; max-width:480px; margin-left:auto; margin-right:auto;">
+        Select your account type below to be directed to the correct verified registration form.
+      </p>
+
+      <!-- Google Sign-Up Fast Track -->
+      <div style="background:linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%); border:2px solid #93C5FD; border-radius:var(--radius-md); padding:1rem 1.25rem; margin-bottom:1.5rem; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div style="width:40px; height:40px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.08); flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+            </div>
+            <div>
+              <strong style="font-size:0.92rem; color:var(--primary-navy); display:block;">
+                Fast Track: Sign Up with Google & Connect Your Google Calendar
+              </strong>
+              <span style="font-size:0.78rem; color:var(--text-muted);">
+                Instantly link your personal Google Calendar. Providers sync 24/7 availability; customers auto-save bookings.
+              </span>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm" style="background:#1E3A8A; color:#fff; font-weight:700; border-radius:var(--radius-full); padding:0.45rem 0.9rem;" onclick="signUpWithGoogle('customer')">
+              <i class="fa-solid fa-user"></i> Customer Sign-Up
+            </button>
+            <button type="button" class="btn btn-sm" style="background:var(--brand-orange); color:#fff; font-weight:700; border-radius:var(--radius-full); padding:0.45rem 0.9rem;" onclick="signUpWithGoogle('provider')">
+              <i class="fa-solid fa-helmet-safety"></i> Provider Sign-Up
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+        <!-- Option 1: Customer -->
+        <div class="reg-select-card" onclick="selectRegistrationType('customer')" style="border:2px solid #BFDBFE; background:#F8FAFC; border-radius:var(--radius-md); padding:1.5rem 1.25rem; cursor:pointer; text-align:left; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:10px; background:#EFF6FF; color:#1E40AF; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:1rem; border:1px solid #BFDBFE;">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <div style="font-size:0.72rem; font-weight:800; color:#1E40AF; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.3rem;">
+              Option 1
+            </div>
+            <h4 style="font-size:1.2rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.5rem;">
+              I Am A Customer
+            </h4>
+            <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5; margin-bottom:1rem;">
+              Book verified trades, emergency 24/7/365 callouts, or express couriers.
+            </p>
+            <div style="background:#EFF6FF; border:1px solid #DBEAFE; border-radius:6px; padding:0.5rem 0.65rem; font-size:0.75rem; color:#1E40AF; margin-bottom:1rem;">
+              <i class="fa-solid fa-camera"></i> <strong>Simple Verification:</strong> 1 photo ID (holding passport or licence)
+            </div>
+          </div>
+          <button class="btn btn-navy" style="width:100%; font-weight:800; padding:0.65rem;">
+            Register as Customer <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
+          </button>
+        </div>
+
+        <!-- Option 2: Service Provider -->
+        <div class="reg-select-card" onclick="selectRegistrationType('provider')" style="border:2px solid #FED7AA; background:#FFFDFB; border-radius:var(--radius-md); padding:1.5rem 1.25rem; cursor:pointer; text-align:left; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:10px; background:#FFF7ED; color:var(--brand-orange); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:1rem; border:1px solid #FED7AA;">
+              <i class="fa-solid fa-helmet-safety"></i>
+            </div>
+            <div style="font-size:0.72rem; font-weight:800; color:#C2410C; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.3rem;">
+              Option 2
+            </div>
+            <h4 style="font-size:1.2rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.5rem;">
+              I Am A Service Provider
+            </h4>
+            <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5; margin-bottom:1rem;">
+              Tradie, contractor, or courier seeking jobs, custom rates & 24/7/365 dispatch.
+            </p>
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:0.5rem 0.65rem; font-size:0.75rem; color:#92400E; margin-bottom:1rem;">
+              <i class="fa-solid fa-server"></i> <strong>Server Storage:</strong> Licences stored & always available in your vault
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%; font-weight:800; padding:0.65rem;">
+            Register as Provider <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+        <i class="fa-solid fa-shield-halved" style="color:#059669;"></i>
+        <span>Official 24/7 • 365 Days a Year AI-Powered Labor & Logistics Network • Free Instant Numbers (CRN / SPN)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       REGISTRATION MODAL 1: FOR CUSTOMERS (Generates Instant CRN)
+       ========================================================================= -->
+  <div class="modal-overlay" id="customer-register-modal">
+    <div class="modal-box" style="max-width:560px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:36px; height:36px; border-radius:8px; background:#1E3A8A; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.15rem; color:var(--primary-navy); font-weight:800;">Customer Registration</h4>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Get your instant Customer Reference Number (CRN) for 24/7, 365 days a year service</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCustomerRegisterModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem;">
+        <!-- Quick Google Sign-Up Banner -->
+        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <div>
+              <strong style="font-size:0.84rem; color:#1E40AF; display:block;">Sign Up with Google & Calendar</strong>
+              <span style="font-size:0.74rem; color:var(--text-muted);">Auto-fills your details and connects your Google Calendar</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #D1D5DB; color:#374151; font-weight:700;" onclick="signUpWithGoogle('customer')">
+            Continue with Google
+          </button>
+        </div>
+
+        <form id="customer-register-form" onsubmit="handleCustomerRegistrationSubmit(event)">
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-name">Full Name</label>
+              <input type="text" id="cust-reg-name" class="form-control" required placeholder="e.g. Sarah Jenkins">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-type">Account Type</label>
+              <select id="cust-reg-type" class="form-control">
+                <option value="residential">Residential / Homeowner</option>
+                <option value="business">Business / Commercial Client</option>
+                <option value="property_manager">Real Estate / Property Manager</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-phone">Mobile Phone (for SMS Dispatch)</label>
+              <input type="tel" id="cust-reg-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-email">Email Address</label>
+              <input type="email" id="cust-reg-email" class="form-control" required placeholder="e.g. s.jenkins@example.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-address">Primary Street Address & Suburb</label>
+              <input type="text" id="cust-reg-address" class="form-control" required placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cust-reg-country">Country / Region</label>
+              <select id="cust-reg-country" class="form-control" onchange="syncCustomerDistanceUnits(this.value)">
+                <option value="AU" selected>Australia (km)</option>
+                <option value="NZ">New Zealand (km)</option>
+                <option value="US">United States (miles)</option>
+                <option value="UK">United Kingdom (miles)</option>
+                <option value="CA">Canada (km)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- MANDATORY CUSTOMER ID HOLDING VERIFICATION SECTION -->
+          <div class="id-holding-instruction-box">
+            <div class="id-holding-header">
+              <i class="fa-solid fa-camera-rotate"></i>
+              <div>
+                <h5>Customer ID Verification (Selfie Holding ID)</h5>
+                <span style="font-size:0.75rem; color:#1E40AF; font-weight:600;">One form of ID required (Passport or Driver Licence)</span>
+              </div>
+            </div>
+            <p class="id-holding-desc">
+              Please upload <strong>one clear photo/selfie of yourself holding your photo ID</strong> (passport or driver's licence) next to your face so your details and face are visible.
+            </p>
+            
+            <div class="form-row" style="margin-bottom:0.75rem;">
+              <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label" for="cust-reg-id-type" style="font-size:0.78rem;">ID Document Type</label>
+                <select id="cust-reg-id-type" class="form-control" style="font-size:0.85rem;">
+                  <option value="driver_licence">Driver Licence</option>
+                  <option value="passport">Passport</option>
+                  <option value="proof_of_age">State Photo Card / Proof of Age</option>
+                  <option value="gov_id">Government Photo ID</option>
+                </select>
+              </div>
+              <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label" for="cust-reg-id-file" style="font-size:0.78rem;">Upload Photo of You Holding ID</label>
+                <input type="file" id="cust-reg-id-file" class="form-control" accept="image/*" required onchange="handleCustomerPhotoUpload(event, 'modal')">
+              </div>
+            </div>
+
+            <div id="modal-cust-photo-preview" style="display:none; margin-top:0.6rem; align-items:center; gap:0.6rem; background:#fff; padding:0.5rem 0.75rem; border-radius:var(--radius-sm); border:1px solid #BFDBFE;">
+              <!-- Populated on upload -->
+            </div>
+
+            <div class="id-holding-tip">
+              <i class="fa-solid fa-lock"></i>
+              <span>Stored securely on our server via 256-bit encryption. Album: <strong>k4vjCb</strong>. Always private.</span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cust-reg-notes">Property Access / Special Instructions</label>
+            <textarea id="cust-reg-notes" class="form-control" rows="2" placeholder="e.g. Access via side gate, dogs on premises, parking in visitor bay..."></textarea>
+          </div>
+
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.6rem;">
+            <i class="fa-solid fa-id-card" style="font-size:1.3rem; color:#1E40AF;"></i>
+            <div style="font-size:0.78rem; color:#1E3A8A;">
+              <strong>Instant Reference Issued:</strong> You will immediately receive your official <strong>CRN-XXXXXX</strong>. Quote this number on future calls or repeat bookings for priority assignment.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%; padding:0.85rem; font-size:1rem; font-weight:800;">
+            <i class="fa-solid fa-check"></i> Register Customer & Issue CRN
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       REGISTRATION MODAL 2: FOR SERVICE PROVIDERS (Generates Instant SPN)
+       ========================================================================= -->
+  <div class="modal-overlay" id="service-provider-register-modal">
+    <div class="modal-box modal-box-lg" style="max-height:90vh; overflow-y:auto;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:38px; height:38px; border-radius:8px; background:var(--brand-orange); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-helmet-safety"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.2rem; color:var(--primary-navy); font-weight:800;">Service Provider Registration</h4>
+            <span style="font-size:0.76rem; color:var(--text-muted);">List your services, rates, flat fee, callout fee, distance per km/mi & receive your SPN</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeServiceProviderRegisterModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem;">
+        <!-- Quick Google Sign-Up / Calendar Connect Banner -->
+        <div style="background:#FFFDFB; border:1px solid #FED7AA; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <div>
+              <strong style="font-size:0.84rem; color:var(--primary-navy); display:block;">Connect Google Calendar for Live Sync</strong>
+              <span style="font-size:0.74rem; color:var(--text-muted);">Syncs 24/7 on-call availability & prevents double-booking</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #FED7AA; color:var(--brand-orange); font-weight:700;" onclick="signUpWithGoogle('provider')">
+            <i class="fa-solid fa-calendar-plus"></i> Connect Google Calendar
+          </button>
+        </div>
+
+        <form id="provider-advanced-reg-form" onsubmit="handleAdvancedProviderSubmit(event)">
+          <!-- Section A: Identity -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-address-card" style="color:var(--brand-orange);"></i> 1. Provider & Business Profile
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-name">Full Name / Primary Contact</label>
+                <input type="text" id="adv-prov-name" class="form-control" required placeholder="e.g. Jack Sullivan">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-business">Business / Trading Name</label>
+                <input type="text" id="adv-prov-business" class="form-control" required placeholder="e.g. Sullivan & Sons Plumbing & Gas">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-category">Primary Trade Discipline</label>
+                <select id="adv-prov-category" class="form-control" required>
+                  <option value="plumbing">Plumbing & Gas Solutions</option>
+                  <option value="electrical">Licensed Electrical Services</option>
+                  <option value="courier">Courier Driver & Express Freight</option>
+                  <option value="handyman">General Handyman & Assembly</option>
+                  <option value="carpentry">Carpentry & Building Repairs</option>
+                  <option value="garden">Lawn, Tree & Garden Care</option>
+                  <option value="painting">Painting & Surface Restoration</option>
+                  <option value="appliance">Appliance Diagnostics & Repair</option>
+                  <option value="civil">Civil & Machine Plant Operator</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-license">Licence # / Certification / Driver Lic</label>
+                <input type="text" id="adv-prov-license" class="form-control" required placeholder="e.g. QBCC #1509214 or MR Commercial Lic">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-phone">Mobile Phone</label>
+                <input type="tel" id="adv-prov-phone" class="form-control" required placeholder="0400 123 456">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-email">Email Address</label>
+                <input type="email" id="adv-prov-email" class="form-control" required placeholder="jack@sullivanplumbing.com.au">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Location & Distance Units (km or miles) -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i> 2. Location & Distance Units (km / mile)
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-suburb">Base Suburb / City & Postcode</label>
+                <input type="text" id="adv-prov-suburb" class="form-control" required placeholder="e.g. Broadbeach QLD 4218">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-country">Country / Region</label>
+                <select id="adv-prov-country" class="form-control" onchange="handleProviderCountryChange(this.value)">
+                  <option value="AU" selected>Australia (km)</option>
+                  <option value="NZ">New Zealand (km)</option>
+                  <option value="US">United States (miles)</option>
+                  <option value="UK">United Kingdom (miles)</option>
+                  <option value="CA">Canada (km)</option>
+                  <option value="OTHER">Other Region</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.6rem 0.85rem; margin-bottom:0.75rem;">
+              <div>
+                <strong style="font-size:0.82rem; color:var(--primary-navy);">Distance Measurement Unit:</strong>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Used for calculating travel radius and mileage fees</p>
+              </div>
+              <div style="display:flex; gap:1rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="prov-dist-unit" value="km" checked onchange="updateProviderDistUnit('km')"> Kilometres (km)
+                </label>
+                <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="prov-dist-unit" value="mile" onchange="updateProviderDistUnit('mile')"> Miles (mi)
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-radius">Standard Service Radius (<span class="unit-span">km</span>)</label>
+                <input type="number" id="adv-prov-radius" class="form-control" value="25" min="5" max="250">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-suburbs-list">Service Areas Covered (comma separated)</label>
+                <input type="text" id="adv-prov-suburbs-list" class="form-control" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section C: Rates, Price Models & Distance Charging -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> 3. Pricing, Rates & Distance Charges
+            </h5>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-bottom:0.85rem;">
+              <!-- Hourly Rate -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="rate-type-hourly" checked> Hourly Rate
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="adv-prov-hourly" class="form-control" value="95" min="30" max="400" placeholder="95">
+                  <span style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">/ hr</span>
+                </div>
+              </div>
+
+              <!-- Flat Rate -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="rate-type-flat" checked> Flat Rate (Standard Jobs)
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="adv-prov-flat" class="form-control" value="130" min="40" max="2000" placeholder="130">
+                  <span style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">flat</span>
+                </div>
+              </div>
+
+              <!-- Call Out Fee -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="rate-type-callout" checked> Base Call-Out Fee
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="adv-prov-callout" class="form-control" value="35" min="0" max="300" placeholder="35">
+                  <span style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">callout</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distance & Mileage Charging Block -->
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <label style="display:flex; align-items:center; gap:0.4rem; font-weight:800; font-size:0.85rem; color:#92400E; cursor:pointer;">
+                  <input type="checkbox" id="rate-type-distance" checked onchange="toggleDistanceChargeFields(this.checked)">
+                  <i class="fa-solid fa-route"></i> Charge Distance / Travel Fee (Callout per <span class="unit-span">km</span> / Courier per <span class="unit-span">km</span>)
+                </label>
+              </div>
+
+              <div id="distance-charge-inputs" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem; margin-top:0.6rem;">
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="adv-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:#92400E;">$</span>
+                    <input type="number" id="adv-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20" placeholder="1.50">
+                    <span style="font-size:0.75rem; color:#92400E; white-space:nowrap;">/<span class="unit-span">km</span></span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="adv-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:#92400E;">$</span>
+                    <input type="number" id="adv-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20" placeholder="1.20">
+                    <span style="font-size:0.75rem; color:#92400E; white-space:nowrap;">/<span class="unit-span">km</span></span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="adv-prov-free-km">Included Free Distance</label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <input type="number" id="adv-prov-free-km" class="form-control" value="10" min="0" max="100">
+                    <span style="font-size:0.75rem; color:#92400E; white-space:nowrap;"><span class="unit-span">km</span> free</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: Services Offered -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-toolbox" style="color:var(--brand-orange);"></i> 4. Services Offered & Capabilities
+            </h5>
+            <div class="input-group">
+              <label class="input-label" for="adv-prov-services-desc">List Specific Services You Provide (detailed breakdown)</label>
+              <textarea id="adv-prov-services-desc" class="form-control" rows="2" required placeholder="e.g. Burst pipe repairs, hot water tank changeovers, bathroom renovations, leaking tap washer replacements, backflow testing..."></textarea>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="adv-prov-equipment">Tools, Machinery & Vehicles Owned</label>
+              <input type="text" id="adv-prov-equipment" class="form-control" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake, Laser Level">
+            </div>
+          </div>
+
+          <!-- Section E: 24/7, 365 Days a Year Hours, Calendar & Profile Status -->
+          <div style="margin-bottom:1.5rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> 5. Profile Status & 7-Day Shift Calendar (24/7 • 365 Days)
+            </h5>
+
+            <!-- Profile Status Toggle: Active vs Paused -->
+            <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div>
+                <strong style="font-size:0.85rem; color:var(--primary-navy); display:block;">Initial Profile Status:</strong>
+                <span style="font-size:0.78rem; color:var(--text-muted);">Pause or resume receiving jobs anytime in your Admin Panel.</span>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <label class="radio-pill active" id="label-modal-status-active" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
+                  <input type="radio" name="modal-profile-status" value="active" checked onchange="handleStatusRadioChange('modal', 'active')"> 🟢 Active & Ready
+                </label>
+                <label class="radio-pill" id="label-modal-status-paused" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">
+                  <input type="radio" name="modal-profile-status" value="paused" onchange="handleStatusRadioChange('modal', 'paused')"> ⏸️ Paused (On Break)
+                </label>
+              </div>
+            </div>
+
+            <!-- Interactive Weekly Calendar Matrix Container -->
+            <div class="calendar-matrix-wrapper">
+              <div class="matrix-toolbar">
+                <div>
+                  <strong style="font-size:0.84rem; color:var(--primary-navy);"><i class="fa-solid fa-clock"></i> Weekly Availability Grid:</strong>
+                  <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Click shift cells to turn ON/OFF for each day</span>
+                </div>
+                <div class="matrix-presets">
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('modal', 'all')">⚡ 24/7 All On</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('modal', 'core')">🏢 Mon–Fri Day (7am–5pm)</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('modal', 'after_hours')">🌙 After-Hours & W/Ends</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('modal', 'clear')">Clear All</button>
+                </div>
+              </div>
+
+              <div id="modal-calendar-matrix-root"></div>
+            </div>
+
+            <div style="margin-top:0.6rem;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="adv-shift-insured" checked required> $10M+ Public Liability / Carrier Transit Cover Active
+              </label>
+            </div>
+          </div>
+
+          <!-- Section F: Photo / Verification Uploads via ImgBB -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> 6. Verification Uploads (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB;">Hosted on ImgBB Album: k4vjCb</a>)
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-photo-license">Trade Licence Card / Insurance Photo</label>
+                <input type="file" id="adv-prov-photo-license" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event)">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="adv-prov-photo-profile">Profile / Work Vehicle Photo</label>
+                <input type="file" id="adv-prov-photo-profile" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event)">
+              </div>
+            </div>
+            <div id="adv-prov-photo-preview" style="display:none; font-size:0.75rem; color:#059669; font-weight:700;"></div>
+          </div>
+
+          <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.78rem; color:#92400E; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-id-card-clip" style="font-size:1.2rem;"></i>
+            <span><strong>Instant Service Provider Number:</strong> You will immediately receive your official <strong>SPN-XXXXXX</strong> on submission to quote on invoices, timesheets, and live dispatches.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%; font-weight:800; padding:0.9rem;">
+            <i class="fa-solid fa-check"></i> Register Service Provider & Issue SPN
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CUSTOMER REGISTRATION SUCCESS MODAL (Displays CRN)
+       ========================================================================= -->
+  <div class="modal-overlay" id="customer-success-modal">
+    <div class="modal-box" style="text-align:center; max-width:480px;">
+      <div style="width:68px; height:68px; border-radius:var(--radius-full); background:#EFF6FF; color:#1E40AF; font-size:2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">
+        Customer Registered!
+      </h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1.5rem;">
+        Your customer account is now active in our national 24/7 • 365 Days a Year AI coordination system.
+      </p>
+
+      <div style="background:#EFF6FF; border:2px dashed #3B82F6; border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+        <span style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.4rem;">
+          Your Official Customer Reference Number
+        </span>
+        <div style="font-size:1.8rem; font-weight:900; font-family:monospace; color:var(--primary-navy);" id="modal-crn-number">
+          CRN-849102
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem; background:#fff;" onclick="copyCRNToClipboard()">
+          <i class="fa-solid fa-copy"></i> Copy Reference Number
+        </button>
+      </div>
+
+      <div style="text-align:left; font-size:0.82rem; color:var(--text-muted); background:#F8FAFC; padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--border-light); margin-bottom:1.5rem;">
+        <p style="margin-bottom:0.3rem;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>Instant Booking:</strong> Quote your CRN to skip repeat address entry on future jobs.</p>
+        <p style="margin-bottom:0;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>24/7 • 365 Days a Year Priority:</strong> Fast-tracks your urgent night, weekend, and holiday emergency callouts.</p>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="closeCustomerSuccessModal()">
+        Got It, Book a Job
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SERVICE PROVIDER REGISTRATION SUCCESS MODAL (Displays SPN)
+       ========================================================================= -->
+  <div class="modal-overlay" id="provider-success-modal">
+    <div class="modal-box" style="text-align:center; max-width:500px;">
+      <div style="width:68px; height:68px; border-radius:var(--radius-full); background:#FFF7ED; color:var(--brand-orange); font-size:2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; border:2px solid #FDBA74;">
+        <i class="fa-solid fa-helmet-safety"></i>
+      </div>
+      <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">
+        Service Provider Registered!
+      </h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1.5rem;">
+        Your trade profile, rates, and 24/7 • 365 Days a Year service radius are now active in the national AI dispatch pool.
+      </p>
+
+      <div style="background:#FFFBEB; border:2px dashed #F59E0B; border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+        <span style="font-size:0.8rem; font-weight:700; color:#B45309; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.4rem;">
+          Your Official Service Provider Number
+        </span>
+        <div style="font-size:1.8rem; font-weight:900; font-family:monospace; color:var(--primary-navy);" id="modal-spn-number">
+          SPN-294810
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem; background:#fff;" onclick="copySPNToClipboard()">
+          <i class="fa-solid fa-copy"></i> Copy Provider Number
+        </button>
+      </div>
+
+      <div style="text-align:left; font-size:0.82rem; color:var(--text-muted); background:#F8FAFC; padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--border-light); margin-bottom:1.5rem;">
+        <p style="margin-bottom:0.3rem;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>Automated Invoicing:</strong> Your hourly, flat, callout, and distance fees per km/mile are locked in.</p>
+        <p style="margin-bottom:0.3rem;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>Instant Dispatch Feed:</strong> Urgent customer jobs matching your radius appear on your dashboard.</p>
+        <p style="margin-bottom:0;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>ImgBB Credentials:</strong> Uploaded licence & vehicle records linked to album <code>k4vjCb</code>.</p>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="closeProviderSuccessModal()">
+        <i class="fa-solid fa-tower-broadcast"></i> View Live Dispatch Board
+      </button>
+    </div>
+  </div>
+
+  <!-- Candidate Full Resume Modal -->
+  <div class="modal-overlay" id="candidate-resume-modal">
+    <div class="modal-box modal-box-lg">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-file-lines" style="color:var(--brand-orange);"></i> Candidate Resume & Credentials</h4>
+        <button class="modal-close-btn" onclick="closeCandidateResumeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="candidate-resume-content">
+        <!-- Rendered by JavaScript -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCandidateResumeModal()">Close</button>
+        <button class="btn btn-primary" id="btn-modal-hire-candidate" onclick="openHireModalFromResume()">
+          <i class="fa-solid fa-user-check"></i> Hire / Request This Candidate
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Franchise Inquiry Modal -->
-  <div class="modal-overlay" id="franchise-modal">
+  <!-- Recruiter Hire / Staffing Order Modal -->
+  <div class="modal-overlay" id="hire-staff-modal">
     <div class="modal-box">
       <div class="modal-header">
-        <h4><i class="fa-solid fa-handshake"></i> Franchise Territory Inquiry</h4>
-        <button class="modal-close-btn" onclick="closeFranchiseModal()">&times;</button>
+        <h4><i class="fa-solid fa-briefcase" style="color:var(--brand-orange);"></i> Request Staff Placement</h4>
+        <button class="modal-close-btn" onclick="closeHireStaffModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">
-          Take advantage of our <strong>No Setup Fee</strong> franchise release across Australia. Fill in your details below to receive the complete Territory Information Kit and Operations Blueprint.
-        </p>
+        <div id="hire-candidate-summary" style="background:#F8FAFC; border:1px solid var(--border-light); padding:0.85rem; border-radius:var(--radius-sm); margin-bottom:1rem; font-size:0.85rem;">
+          <!-- Candidate target info -->
+        </div>
 
-        <form id="franchise-form" onsubmit="handleFranchiseSubmit(event)">
-          <div class="input-group">
-            <label class="input-label" for="fran-name">Full Name</label>
-            <input type="text" id="fran-name" class="form-control" required placeholder="e.g. Michael Ross">
-          </div>
+        <form id="hire-staff-form" onsubmit="handleRecruitmentHireSubmit(event)">
+          <input type="hidden" id="hire-cand-id">
+          
           <div class="form-row">
             <div class="input-group">
-              <label class="input-label" for="fran-phone">Mobile Phone</label>
-              <input type="tel" id="fran-phone" class="form-control" required placeholder="0400 123 456">
+              <label class="input-label" for="hire-company">Company / Employer Name</label>
+              <input type="text" id="hire-company" class="form-control" required placeholder="e.g. Metricon Homes / Apex Builders">
             </div>
             <div class="input-group">
-              <label class="input-label" for="fran-email">Email Address</label>
-              <input type="email" id="fran-email" class="form-control" required placeholder="m.ross@example.com">
+              <label class="input-label" for="hire-contact">Recruiter / Contact Name</label>
+              <input type="text" id="hire-contact" class="form-control" required placeholder="e.g. David Henderson">
             </div>
           </div>
-          <div class="input-group">
-            <label class="input-label" for="fran-territory">Target Territory / City</label>
-            <input type="text" id="fran-territory" class="form-control" required value="Gold Coast Central">
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="hire-phone">Contact Phone</label>
+              <input type="tel" id="hire-phone" class="form-control" required placeholder="0412 000 000">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="hire-email">Contact Email</label>
+              <input type="email" id="hire-email" class="form-control" required placeholder="d.henderson@company.com.au">
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">
-            Request Territory Prospectus & Call
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="hire-location">Job / Site Location</label>
+              <input type="text" id="hire-location" class="form-control" required placeholder="e.g. Broadbeach QLD site">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="hire-shift-select">Shift / Timing</label>
+              <select id="hire-shift-select" class="form-control">
+                <option value="24_7_emergency">⚡ Immediate 24/7 • 365 Days a Year On-Call Start</option>
+                <option value="day_shift">Standard Day Shift (7am–3pm)</option>
+                <option value="afternoon">Afternoon Shift (12pm–5pm)</option>
+                <option value="twilight">Twilight / Evening (5pm–10pm)</option>
+                <option value="night">Night Shift / Overnight (10pm–6am)</option>
+                <option value="full_time">Ongoing Full-Time Placement</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="hire-notes">Scope of Work / Project Details</label>
+            <textarea id="hire-notes" class="form-control" rows="2" placeholder="Briefly describe project requirements, site PPE needs, tickets required..."></textarea>
+          </div>
+
+          <div style="background:#F3E8FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:0.6rem 0.85rem; font-size:0.78rem; color:#6B21A8; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-receipt" style="font-size:1.1rem;"></i>
+            <span><strong>Instant Recruiter Tracking:</strong> You will be issued an instant <strong>RRN-XXXXXX</strong> (Recruiter Reference Number) upon submission.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Staffing Placement Request
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Candidate Self-Registration Modal -->
+  <div class="modal-overlay" id="candidate-register-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-file-arrow-up" style="color:var(--brand-orange);"></i> Register Candidate Resume</h4>
+        <button class="modal-close-btn" onclick="closeCandidateRegisterModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="cand-reg-form" onsubmit="handleCandidateRegisterSubmit(event)">
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-name">Full Name</label>
+              <input type="text" id="cand-reg-name" class="form-control" required placeholder="e.g. Cameron Smith">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-trade">Trade / Role Title</label>
+              <input type="text" id="cand-reg-trade" class="form-control" required placeholder="e.g. Cert III Carpenter & Joiner">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-cat">Discipline Category</label>
+              <select id="cand-reg-cat" class="form-control" required>
+                <option value="carpentry">Carpentry & Building</option>
+                <option value="electrical">Electrical & High Voltage</option>
+                <option value="courier">Transport & Courier Drivers</option>
+                <option value="handyman">Facilities & Handyman</option>
+                <option value="civil">Civil & Machine Plant</option>
+                <option value="painting">Painting & Decorating</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-suburb">Base Suburb & State</label>
+              <input type="text" id="cand-reg-suburb" class="form-control" required placeholder="e.g. Southport QLD 4215">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-rate">Expected Rate ($/hr)</label>
+              <input type="number" id="cand-reg-rate" class="form-control" required placeholder="65">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="cand-reg-exp">Years Experience</label>
+              <input type="number" id="cand-reg-exp" class="form-control" required placeholder="8">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cand-reg-skills">Key Terms, Skills & Tickets (comma separated)</label>
+            <input type="text" id="cand-reg-skills" class="form-control" required placeholder="e.g. White Card, Framing, Asbestos, Solar, EWP, Laser Level">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="cand-reg-summary">Resume Summary / Bio</label>
+            <textarea id="cand-reg-summary" class="form-control" rows="3" required placeholder="Highlight your recent projects, tickets owned, reliable tools and transportation..."></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="cand-reg-photo">
+              <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> Profile Photo / Tickets Scan (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB;">Hosted on ImgBB</a>)
+            </label>
+            <input type="file" id="cand-reg-photo" class="form-control" accept="image/*" onchange="handleCandidatePhotoUpload(event)">
+            <div id="cand-photo-preview" style="display:none; margin-top:0.4rem; font-size:0.78rem; color:#2563EB; display:flex; align-items:center; gap:0.5rem;"></div>
+          </div>
+
+          <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.6rem 0.85rem; font-size:0.78rem; color:#92400E; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-id-card-clip" style="font-size:1.1rem;"></i>
+            <span><strong>Instant Service Provider Number:</strong> You will immediately receive your official <strong>SPN-XXXXXX</strong> to share with recruiters and track bookings.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            <i class="fa-solid fa-check"></i> Register Resume & Generate SPN
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Provider Number (SPN) Confirmation Modal -->
+  <div class="modal-overlay" id="provider-success-modal">
+    <div class="modal-box" style="text-align:center;">
+      <div style="width:68px; height:68px; border-radius:var(--radius-full); background:#ECFDF5; color:#059669; font-size:2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+      <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">
+        Registration Successful!
+      </h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1.5rem;">
+        Your verified profile and 24/7 • 365 Days a Year working hours are now live in our AI matching network and recruiter search.
+      </p>
+
+      <div style="background:#FEF3C7; border:2px dashed #F59E0B; border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+        <span style="font-size:0.8rem; font-weight:700; color:#92400E; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:0.4rem;">
+          Your Official Service Provider Number
+        </span>
+        <div style="font-size:1.8rem; font-weight:900; font-family:monospace; color:var(--primary-navy);" id="modal-spn-number">
+          SPN-849201
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem; background:#fff;" onclick="copySPNToClipboard()">
+          <i class="fa-solid fa-copy"></i> Copy Reference Number
+        </button>
+      </div>
+
+      <div style="text-align:left; font-size:0.82rem; color:var(--text-muted); background:#F8FAFC; padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--border-light); margin-bottom:1.5rem;">
+        <p style="margin-bottom:0.3rem;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>Direct Dispatch:</strong> Quote your SPN on timesheets, invoices, and material claims.</p>
+        <p style="margin-bottom:0;"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> <strong>24/7 • 365 Days a Year Matching:</strong> You will be notified via SMS when jobs matching your registered working hours are booked round the clock.</p>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="closeProviderSuccessModal()">
+        Got It, Enter Dispatch Feed
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SERVICE PROVIDER ADMIN & CALENDAR MANAGEMENT MODAL
+       ========================================================================= -->
+  <div class="modal-overlay" id="provider-admin-modal">
+    <div class="modal-box" style="max-width:860px; max-height:92vh; overflow-y:auto;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:38px; height:38px; border-radius:8px; background:var(--primary-navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.2rem; color:var(--primary-navy); font-weight:800;">Service Provider Admin & Calendar</h4>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Manage your profile status, 24/7 calendar availability, and shift windows</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeProviderAdminPanel()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.5rem;">
+        <!-- Provider Profile Switcher / Selector -->
+        <div style="background:#F1F5F9; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <i class="fa-solid fa-user-gear" style="color:var(--brand-orange);"></i>
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">CURRENT PROVIDER PROFILE:</div>
+              <strong id="admin-current-provider-name" style="color:var(--primary-navy); font-size:0.95rem;">Lachlan 'Lockie' Miller (SPN-101001)</strong>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <label for="admin-provider-selector" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Switch Provider:</label>
+            <select id="admin-provider-selector" class="form-control" style="width:auto; height:34px; font-size:0.8rem; padding:0 0.5rem;" onchange="loadProviderIntoAdmin(this.value)">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 1. Live Profile Status Controller: Active vs Paused -->
+        <div class="profile-status-box" id="admin-status-box">
+          <div class="profile-status-header">
+            <div>
+              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Live Dispatch Status:</span>
+              <div style="margin-top:0.25rem;">
+                <span class="status-badge-live active" id="admin-live-status-badge">
+                  Active & Receiving Bookings
+                </span>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="status-switch-btn btn-pause" id="admin-toggle-pause-btn" onclick="toggleProviderAdminPause()">
+                <i class="fa-solid fa-circle-pause"></i> Pause My Profile
+              </button>
+            </div>
+          </div>
+          <p id="admin-status-explanation" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.45;">
+            Your profile is currently <strong>ACTIVE</strong> in the AI matching pool and visible on the live contractor map. Customers can book your active shift windows 24/7, 365 days a year.
+          </p>
+          <div id="admin-pause-reason-wrapper" style="display:none; margin-top:0.5rem;">
+            <label class="input-label" for="admin-pause-reason" style="font-size:0.78rem;">Reason for pause / Message to customers (Optional):</label>
+            <input type="text" id="admin-pause-reason" class="form-control" style="font-size:0.82rem;" placeholder="e.g. Taking annual leave until next Monday, fully booked this week...">
+          </div>
+        </div>
+
+        <!-- Google Calendar 2-Way Synchronization Box -->
+        <div class="gcal-sync-card" id="admin-gcal-sync-box">
+          <div class="gcal-sync-header">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <div style="width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid #DBEAFE; display:flex; align-items:center; justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+              </div>
+              <div>
+                <h5 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--primary-navy);">
+                  Google Calendar 2-Way Synchronization
+                </h5>
+                <span style="font-size:0.75rem; color:var(--text-muted);" id="admin-gcal-status-text">
+                  Connected as: <strong id="admin-gcal-account-email">jack.morrison.trades@gmail.com</strong>
+                </span>
+              </div>
+            </div>
+            <div>
+              <span class="gcal-badge-connected" id="admin-gcal-badge">
+                <i class="fa-solid fa-circle-check"></i> Google Calendar Connected
+              </span>
+            </div>
+          </div>
+
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.45;">
+            Your personal Google Calendar is linked. Confirmed customer bookings automatically export to your calendar, and busy calendar events can automatically blackout your dispatch availability.
+          </p>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #DBEAFE; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:0.75rem;">
+            <div>
+              <strong style="font-size:0.82rem; color:var(--primary-navy); display:block;">
+                <i class="fa-solid fa-calendar-xmark" style="color:#EF4444;"></i> Auto-Block Busy Google Calendar Times
+              </strong>
+              <span style="font-size:0.74rem; color:var(--text-muted);">
+                Automatically blackout shifts when you have existing appointments in your personal Google Calendar
+              </span>
+            </div>
+            <div>
+              <label class="switch">
+                <input type="checkbox" id="admin-gcal-autoblock" checked onchange="toggleGoogleCalendarAutoBlock(this.checked)">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="triggerGoogleCalendarManualSync()">
+              <i class="fa-solid fa-rotate"></i> Sync With Google Calendar Now
+            </button>
+            <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm" style="color:#2563EB; border-color:#93C5FD; text-decoration:none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Calendar
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Weekly Shift Calendar Matrix -->
+        <div class="calendar-matrix-wrapper">
+          <div class="matrix-toolbar">
+            <div>
+              <h5 style="margin:0; font-size:0.95rem; color:var(--primary-navy); font-weight:800;">
+                <i class="fa-solid fa-calendar-week" style="color:var(--brand-orange);"></i> 24/7 • 365 Days a Year Availability Matrix
+              </h5>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Configure which specific shift blocks you are available for each day of the week</span>
+            </div>
+            <div class="matrix-presets">
+              <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('admin', 'all')">⚡ 24/7 All On</button>
+              <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('admin', 'core')">🏢 Mon–Fri 7am–5pm</button>
+              <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('admin', 'after_hours')">🌙 After-Hours & W/Ends</button>
+              <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('admin', 'clear')">Clear All</button>
+            </div>
+          </div>
+
+          <div id="admin-calendar-matrix-root"></div>
+        </div>
+
+        <!-- 3. Blackout Dates (Holidays / Days Off) -->
+        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.5rem;">
+          <h5 style="font-size:0.85rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.4rem;">
+            <i class="fa-solid fa-calendar-xmark" style="color:#EF4444;"></i> Specific Blackout Dates (Days Off & Holidays)
+          </h5>
+          <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:0.75rem;">Add specific dates when you are completely unavailable (e.g. public holidays, doctor appointments).</p>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.75rem;">
+            <input type="date" id="admin-new-blackout-date" class="form-control" style="width:auto; height:36px; font-size:0.82rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addAdminBlackoutDate()">
+              <i class="fa-solid fa-plus"></i> Add Day Off
+            </button>
+          </div>
+          <div id="admin-blackout-chips-container" style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- 4. Quick Rate & Pricing Summary -->
+        <div style="background:#FFFDFB; border:1px solid #FED7AA; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.5rem;">
+          <h5 style="font-size:0.85rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.75rem;">
+            <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> Rates & Travel Distance Settings
+          </h5>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem;">
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" style="font-size:0.72rem;">Hourly Rate ($)</label>
+              <input type="number" id="admin-hourly-rate" class="form-control" style="font-size:0.85rem; height:36px;" value="95">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" style="font-size:0.72rem;">Base Callout ($)</label>
+              <input type="number" id="admin-callout-fee" class="form-control" style="font-size:0.85rem; height:36px;" value="35">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" style="font-size:0.72rem;">Distance Rate ($)</label>
+              <input type="number" id="admin-distance-rate" class="form-control" style="font-size:0.85rem; height:36px;" value="1.50" step="0.1">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" style="font-size:0.72rem;">Distance Unit</label>
+              <select id="admin-distance-unit" class="form-control" style="font-size:0.85rem; height:36px;">
+                <option value="km">Per Kilometre (km)</option>
+                <option value="mile">Per Mile (mi)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Actions Footer -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; border-top:1px solid var(--border-light); padding-top:1.25rem;">
+          <button type="button" class="btn btn-outline" onclick="scrollToVault(); closeProviderAdminPanel();">
+            <i class="fa-solid fa-folder-open"></i> Manage Licences in Vault
+          </button>
+          <div style="display:flex; gap:0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="closeProviderAdminPanel()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveProviderAdminSchedule()">
+              <i class="fa-solid fa-floppy-disk"></i> Save Schedule & Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PUBLIC PROVIDER CALENDAR & AVAILABILITY MODAL (For Customers & Recruiters)
+       ========================================================================= -->
+  <div class="modal-overlay" id="provider-calendar-modal">
+    <div class="modal-box" style="max-width:820px; max-height:92vh; overflow-y:auto;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.8rem;">
+          <img id="pub-cal-avatar" src="assets/images/tradie_worker.jpg" alt="Provider" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--brand-orange);">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <h4 id="pub-cal-name" style="margin:0; font-size:1.15rem; color:var(--primary-navy); font-weight:800;">Lachlan Miller</h4>
+              <span id="pub-cal-status-pill" class="card-status-pill active"><i class="fa-solid fa-circle"></i> Active</span>
+            </div>
+            <span id="pub-cal-meta" style="font-size:0.75rem; color:var(--text-muted);">Licensed Master Plumber • SPN-101001 • Broadbeach QLD</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeProviderCalendarModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.5rem;">
+        <!-- Banner if paused -->
+        <div id="pub-cal-paused-banner" style="display:none; background:#FFFBEB; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1.25rem;">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <i class="fa-solid fa-circle-pause" style="color:#B45309; font-size:1.2rem;"></i>
+            <div>
+              <strong style="font-size:0.85rem; color:#92400E;">This provider's profile is currently paused</strong>
+              <p id="pub-cal-paused-reason" style="font-size:0.78rem; color:#78350F; margin:0;">Currently not accepting new instant bookings.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 24/7 Operations Headline -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+          <div>
+            <h5 style="margin:0; font-size:0.95rem; font-weight:800; color:var(--primary-navy);">
+              <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> Upcoming 7-Day Live Availability
+            </h5>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Click an active shift window to immediately book this provider</span>
+          </div>
+          <span class="badge-pill-pill" style="background:var(--primary-navy);">24/7 • 365 Days a Year</span>
+        </div>
+
+        <!-- 7-Day Schedule Grid -->
+        <div class="public-calendar-grid" id="pub-cal-grid-container">
+          <!-- Dynamically generated 7 columns for rolling week -->
+        </div>
+
+        <!-- Shift Key Legend -->
+        <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-light); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; font-size:0.75rem;">
+          <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+            <span style="font-weight:700; color:var(--text-muted);">Legend:</span>
+            <span style="display:inline-flex; align-items:center; gap:0.25rem; color:#C2410C;"><span style="width:10px; height:10px; background:#FED7AA; border:1px solid #F97316; border-radius:2px;"></span> ⚡ 24/7 Urgent On-Call</span>
+            <span style="display:inline-flex; align-items:center; gap:0.25rem; color:#065F46;"><span style="width:10px; height:10px; background:#A7F3D0; border:1px solid #10B981; border-radius:2px;"></span> Scheduled Shift Available</span>
+            <span style="display:inline-flex; align-items:center; gap:0.25rem; color:#94A3B8;"><span style="width:10px; height:10px; background:#F1F5F9; border:1px dashed #CBD5E1; border-radius:2px;"></span> Off / Booked</span>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="pub-cal-book-anyway-btn" onclick="bookProviderDirectly(window.appState.currentViewingProviderId); closeProviderCalendarModal();">
+            <i class="fa-solid fa-bolt"></i> Book With AI Now
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1162,6 +3180,7 @@
           <h4>Company & Network</h4>
           <ul class="footer-links">
             <li><a href="#" onclick="switchTab('how-it-works-tab')">How It Works</a></li>
+            <li><a href="#" onclick="switchTab('recruitment-tab')">Hire Recruitment</a></li>
             <li><a href="#" onclick="switchTab('provider-network-tab')">Join As Tradie / Driver</a></li>
             <li><a href="#" onclick="switchTab('franchise-tab')">Franchise Opportunities</a></li>
             <li><a href="#" onclick="openTrackModal()">Docket & Invoice Lookup</a></li>
@@ -1171,13 +3190,17 @@
       </div>
 
       <div class="footer-bottom-bar">
-        <span>&copy; 2026 It's A Simple Job Pty Ltd. All rights reserved. ABN 84 928 104 291.</span>
-        <span>Australia's First Labour & Courier Service Powered by AI • Gold Coast, QLD</span>
+        <span>&copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584.</span>
+        <span>Australia's First Labour & Courier Service Powered by AI • 24/7, 365 Days a Year Nationwide</span>
       </div>
     </div>
   </footer>
 
   <!-- Scripts -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="module" src="js/firebase-service.js"></script>
+  <script src="js/stripe-service.js"></script>
+  <script src="js/imgbb-service.js"></script>
   <script src="js/providers-data.js"></script>
   <script src="js/ai-engine.js"></script>
   <script src="js/app.js"></script>
