@@ -1,13 +1,13 @@
 /**
  * It's A Simple Job - Stripe Payment Gateway Service
- * Connected to Stripe Account: acct_1UKnKUI8bClhBF4P (AI Foundation sandbox)
  * Supports Invoice Payments, On-Call Callout Deposits, and Recruiter Staffing Escrow.
+ * Credentials loaded dynamically from .env via window.ENV
  */
 
 const STRIPE_CONFIG = {
-  accountId: "acct_1UKnKUI8bClhBF4P",
-  accountName: "AI Foundation sandbox",
-  publishableKey: "pk_test_51UKnKUI8bClhBF4Pl59doST5JkSHIg47DaHs5bicuWUEM0iuyT6BtcVV2zlvZUAAL5HjnRNt5PAzJQETRIckLarb00o6jAlzpi",
+  accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || "",
+  accountName: "AI Foundation",
+  publishableKey: (typeof window !== 'undefined' && window.ENV?.STRIPE_PUBLISHABLE_KEY) || "",
   currency: "aud",
   isTestMode: true
 };

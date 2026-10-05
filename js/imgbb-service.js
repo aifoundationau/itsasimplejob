@@ -2,17 +2,17 @@
  * It's A Simple Job - ImgBB Image Hosting & Album Service
  * Connected to Album: https://ibb.co/album/k4vjCb (ID: k4vjCb)
  * Endpoint: https://api.imgbb.com/1/upload
- * Key: 6d7007353630f7eaf44016384dd9761e
  * 
  * Handles all customer job photos, tradie licence scans, courier freight photos,
  * and recruiter candidate resume pictures with instant preview and multi-tenant tagging.
+ * Credentials loaded dynamically from .env via window.ENV
  */
 
 const IMGBB_CONFIG = {
-  apiKey: "6d7007353630f7eaf44016384dd9761e",
-  uploadUrl: "https://api.imgbb.com/1/upload",
-  albumUrl: "https://ibb.co/album/k4vjCb",
-  albumId: "k4vjCb",
+  apiKey: (typeof window !== 'undefined' && window.ENV?.IMGBB_API_KEY) || "",
+  uploadUrl: (typeof window !== 'undefined' && window.ENV?.IMGBB_UPLOAD_URL) || "https://api.imgbb.com/1/upload",
+  albumUrl: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_URL) || "https://ibb.co/album/k4vjCb",
+  albumId: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_ID) || "k4vjCb",
   maxSizeBytes: 32 * 1024 * 1024 // 32MB ImgBB limit
 };
 

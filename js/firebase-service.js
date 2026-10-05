@@ -25,14 +25,14 @@ import {
   onAuthStateChanged 
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 
-// Firebase Project Configuration
+// Firebase Project Configuration (Loaded dynamically from .env via window.ENV)
 export const firebaseConfig = {
-  apiKey: "AIzaSyCPeAOWQj8456TeIWDIPsyxyWT7QLrC8J8",
-  authDomain: "ai-foundation-firebase.firebaseapp.com",
-  projectId: "ai-foundation-firebase",
-  storageBucket: "ai-foundation-firebase.firebasestorage.app",
-  messagingSenderId: "614773274800",
-  appId: "1:614773274800:web:a7c2a66e4e8c4409afb221"
+  apiKey: (typeof window !== 'undefined' && window.ENV?.FIREBASE_API_KEY) || "",
+  authDomain: (typeof window !== 'undefined' && window.ENV?.FIREBASE_AUTH_DOMAIN) || "ai-foundation-firebase.firebaseapp.com",
+  projectId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_PROJECT_ID) || "ai-foundation-firebase",
+  storageBucket: (typeof window !== 'undefined' && window.ENV?.FIREBASE_STORAGE_BUCKET) || "ai-foundation-firebase.firebasestorage.app",
+  messagingSenderId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MESSAGING_SENDER_ID) || "614773274800",
+  appId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_APP_ID) || "1:614773274800:web:a7c2a66e4e8c4409afb221"
 };
 
 export const BUSINESS_ID = "itsasimplejob";

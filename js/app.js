@@ -47,6 +47,7 @@ const SAMPLE_PROMPTS = {
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
   initSpeechRecognition();
+  loadGoogleMapsScript();
   initGoogleAuthUI();
   calculateCourierQuote();
   filterCandidates();
@@ -1615,8 +1616,25 @@ function showToast(message) {
   }, 4000);
 }
 
+// Dynamic Google Maps Script Loader using key from .env via window.ENV
+function loadGoogleMapsScript() {
+  const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.warn("⚠️ [Google Maps] GOOGLE_MAPS_API_KEY not configured in .env");
+    return;
+  }
+  if (document.getElementById('google-maps-api-script')) return;
+  const script = document.createElement('script');
+  script.id = 'google-maps-api-script';
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&callback=initGoogleMapsServices`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
 // Make initGoogleMapsServices accessible globally for JSONP callback
 window.initGoogleMapsServices = initGoogleMapsServices;
+window.loadGoogleMapsScript = loadGoogleMapsScript;
 
 /**
  * ==============================================================================
