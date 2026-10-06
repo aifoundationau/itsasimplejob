@@ -4,13 +4,13 @@
  * Seamless hybrid execution: Remote Gemini Agent with resilient local fallback.
  */
 
-// Google Gemini API Configuration (Agent Platform API)
+// Google Gemini API Configuration (Agent Platform API loaded from .env)
 const GEMINI_CONFIG = {
-  enabled: false, // Pre-configured and ready. Set to true once active API key is activated.
+  enabled: (typeof window !== 'undefined' && window.ENV?.GEMINI_ENABLED) || false,
   apiKey: (typeof window !== 'undefined' && window.ENV?.GEMINI_API_KEY) || "",
-  projectId: "gen-lang-client-0551298781",
-  model: "gemini-3.8-flash",
-  endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+  projectId: (typeof window !== 'undefined' && window.ENV?.GEMINI_PROJECT_ID) || "",
+  model: (typeof window !== 'undefined' && window.ENV?.GEMINI_MODEL) || "gemini-3.8-flash",
+  endpoint: `https://generativelanguage.googleapis.com/v1beta/models/${(typeof window !== 'undefined' && window.ENV?.GEMINI_MODEL) || 'gemini-3.8-flash'}:generateContent`
 };
 
 class SimpleAIEngine {
