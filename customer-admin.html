@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Admin & Service Control Center | It's A Simple Job</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <style>
+    .admin-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .admin-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+    .admin-card-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--primary-navy);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+    }
+    .date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #EFF6FF;
+      color: #1E40AF;
+      border: 1px solid #BFDBFE;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+    .date-chip-off {
+      background: #FEF2F2;
+      color: #991B1B;
+      border-color: #FECACA;
+    }
+    .date-chip-remove {
+      cursor: pointer;
+      color: #EF4444;
+      font-weight: bold;
+      margin-left: 0.25rem;
+    }
+    .date-chip-remove:hover {
+      color: #B91C1C;
+    }
+    .preset-pill-btn {
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      color: #334155;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-pill-btn:hover {
+      background: #E2E8F0;
+      color: var(--primary-navy);
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .admin-table th {
+      background: #F8FAFC;
+      color: var(--primary-navy);
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .admin-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-dark);
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Main Navbar -->
+  <nav class="navbar" id="main-nav">
+    <div class="container nav-container">
+      <!-- Worker Icon Brand Logo -->
+      <a href="index.html" class="brand-logo worker-brand-link" title="Simple Job - Just Make It Simple">
+        <div class="worker-brand-icon">
+          <i class="fa-solid fa-helmet-safety"></i>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Buttons -->
+      <div class="nav-menu">
+        <a href="index.html?tab=ai-book-tab" class="nav-item-btn" style="text-decoration:none;">AI</a>
+        <a href="index.html?tab=find-contractors-tab" class="nav-item-btn" style="text-decoration:none;">Contractors</a>
+        <a href="index.html?tab=courier-tab" class="nav-item-btn" style="text-decoration:none;">Couriers</a>
+        <a href="index.html?tab=recruitment-tab" class="nav-item-btn" style="text-decoration:none;">Recruit</a>
+        <a href="index.html?tab=how-it-works-tab" class="nav-item-btn" style="text-decoration:none;">FAQ</a>
+        <a href="index.html?tab=register-selection-tab" class="nav-item-btn" style="text-decoration:none;">Register</a>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Sign In Button -->
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-signin" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google">
+          <svg width="14" height="14" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span id="admin-nav-signin-text">Sign In</span>
+        </button>
+        <a href="index.html" class="btn btn-primary btn-sm" style="font-weight:900; text-decoration:none; padding:0.5rem 1.1rem;">
+          <i class="fa-solid fa-bolt"></i> MAIN APP
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Customer Admin Container -->
+  <main style="padding: 2rem 0 4rem 0;">
+    <div class="container" style="max-width: 960px; margin: 0 auto;">
+      
+      <!-- Top Navigation Breadcrumb -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem; flex-wrap:wrap; gap:0.5rem;">
+        <a href="index.html" class="embedded-back-link" style="text-decoration:none; color:var(--primary-navy); font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;">
+          <i class="fa-solid fa-arrow-left"></i> Return to Main Application
+        </a>
+        <div style="display:flex; gap:0.5rem;">
+          <span class="status-badge-live active" id="customer-global-status-badge">
+            🟢 Service Active
+          </span>
+        </div>
+      </div>
+
+      <!-- Customer Profile Header Card -->
+      <div class="admin-card" style="background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%); color:#fff; border:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem;">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:60px; height:60px; border-radius:50%; background:#fff; border:3px solid #93C5FD; display:flex; align-items:center; justify-content:center; color:#1E40AF; font-size:1.75rem;">
+              <i class="fa-solid fa-user-shield" id="customer-avatar-icon"></i>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#BFDBFE; font-weight:800;">
+                Customer Admin Dashboard
+              </div>
+              <h2 style="margin:0; font-size:1.5rem; font-weight:900; color:#fff;" id="customer-profile-name">
+                David Anderson
+              </h2>
+              <div style="font-size:0.82rem; color:#DBEAFE; margin-top:0.2rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                <span><i class="fa-solid fa-id-card"></i> <strong id="customer-profile-crn">CRN-882041</strong></span>
+                <span><i class="fa-solid fa-envelope"></i> <span id="customer-profile-email">david.anderson@example.com</span></span>
+                <span><i class="fa-solid fa-phone"></i> <span id="customer-profile-phone">0412 345 678</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
+            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.9rem; text-align:right;">
+              <div style="font-size:0.7rem; color:#BFDBFE; font-weight:700;">APPROVED RATE CAP</div>
+              <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="customer-header-rate-cap">$95.00 / hr</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Pause / Resume Service Status Controller -->
+      <div class="admin-card" id="admin-pause-card">
+        <div class="admin-card-header">
+          <h3 class="admin-card-title">
+            <i class="fa-solid fa-circle-pause" style="color:#F59E0B;"></i> 1. Service Status Controller (Pause / Resume)
+          </h3>
+          <span class="status-badge-live active" id="customer-pause-status-pill">
+            Service Active
+          </span>
+        </div>
+
+        <div class="profile-status-box" id="customer-status-box">
+          <div class="profile-status-header">
+            <div>
+              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Live Dispatch & Booking Status:</span>
+              <div style="margin-top:0.25rem;">
+                <strong id="customer-status-headline" style="color:#059669; font-size:1.05rem;">
+                  🟢 ACTIVE - Ready for Service Requests & Dispatch
+                </strong>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="status-switch-btn btn-pause" id="btn-toggle-customer-pause" onclick="toggleCustomerPauseState()">
+                <i class="fa-solid fa-circle-pause"></i> Pause My Service
+              </button>
+            </div>
+          </div>
+
+          <p id="customer-status-desc" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.5;">
+            Your account is currently <strong>ACTIVE</strong>. You can book emergency, after-hours, and scheduled contractors 24/7. When you pause your service, upcoming auto-dispatches and booking notifications will be safely placed on hold.
+          </p>
+
+          <div id="customer-pause-reason-wrapper" style="margin-top:0.75rem;">
+            <label class="input-label" for="customer-pause-reason" style="font-size:0.78rem;">
+              Reason for Pause / Note (e.g. On vacation, home renovations, budget hold):
+            </label>
+            <div style="display:flex; gap:0.5rem;">
+              <input type="text" id="customer-pause-reason" class="form-control" placeholder="e.g. Taking annual leave until next week, property locked">
+              <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerPauseReason()" style="white-space:nowrap; font-weight:700;">
+                <i class="fa-solid fa-check"></i> Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Interactive Calendar & Turn ON / OFF Dates -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h3 class="admin-card-title">
+            <i class="fa-solid fa-calendar-days" style="color:#2563EB;"></i> 2. Calendar & Turn ON / OFF Dates
+          </h3>
+          <span style="font-size:0.75rem; color:var(--text-muted);">
+            Turn off specific days when you are away or unavailable for visits
+          </span>
+        </div>
+
+        <!-- Google Calendar 2-Way Sync Box -->
+        <div class="gcal-sync-card" style="margin-bottom:1.25rem;">
+          <div class="gcal-sync-header">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <div style="width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid #DBEAFE; display:flex; align-items:center; justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+              </div>
+              <div>
+                <h5 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--primary-navy);">
+                  Google Calendar 2-Way Synchronization
+                </h5>
+                <span style="font-size:0.75rem; color:var(--text-muted);" id="customer-gcal-status-text">
+                  Connected as: <strong id="customer-gcal-email">david.anderson@example.com</strong>
+                </span>
+              </div>
+            </div>
+            <div>
+              <span class="gcal-badge-connected" id="customer-gcal-badge">
+                <i class="fa-solid fa-circle-check"></i> Google Calendar Connected
+              </span>
+            </div>
+          </div>
+
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.45;">
+            Scheduled contractor bookings and maintenance jobs automatically sync to your personal Google Calendar.
+          </p>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #DBEAFE; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:0.75rem;">
+            <div>
+              <strong style="font-size:0.82rem; color:var(--primary-navy); display:block;">
+                <i class="fa-solid fa-calendar-xmark" style="color:#EF4444;"></i> Auto-Block Busy Google Calendar Dates
+              </strong>
+              <span style="font-size:0.74rem; color:var(--text-muted);">
+                Do not allow contractor visits or deliveries when you have existing appointments on your Google Calendar
+              </span>
+            </div>
+            <div>
+              <label class="switch">
+                <input type="checkbox" id="customer-gcal-autoblock" checked onchange="saveCustomerGcalAutoblock(this.checked)">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="syncCustomerGoogleCalendarNow()">
+              <i class="fa-solid fa-rotate"></i> Sync With Google Calendar Now
+            </button>
+            <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm" style="color:#2563EB; border-color:#93C5FD; text-decoration:none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Calendar
+            </a>
+          </div>
+        </div>
+
+        <!-- Turn Off Dates Controller -->
+        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1.25rem;">
+          <h5 style="margin:0 0 0.5rem 0; font-size:0.92rem; color:var(--primary-navy); font-weight:800;">
+            <i class="fa-solid fa-ban" style="color:#EF4444;"></i> Turn Off Specific Dates (Blackout Schedule)
+          </h5>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
+            Add dates when you will NOT be home or do not want any service providers dispatched to your address:
+          </p>
+
+          <!-- Quick Presets -->
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Quick Presets:</span>
+            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('weekends_off')">Turn Off Weekends</button>
+            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_7_off')">Turn Off Next 7 Days</button>
+            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_14_off')">Turn Off Next 14 Days (Holiday)</button>
+            <button type="button" class="preset-pill-btn" style="color:#16A34A; border-color:#86EFAC;" onclick="applyCustomerDatePreset('all_on')">Turn All Dates ON</button>
+          </div>
+
+          <!-- Add Date Form -->
+          <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
+            <div class="input-group" style="margin-bottom:0; flex:1;">
+              <label class="input-label" for="new-blackout-date" style="font-size:0.75rem;">Select Date to Turn OFF</label>
+              <input type="date" id="new-blackout-date" class="form-control">
+            </div>
+            <div class="input-group" style="margin-bottom:0; flex:2;">
+              <label class="input-label" for="new-blackout-reason" style="font-size:0.75rem;">Reason (Optional)</label>
+              <input type="text" id="new-blackout-reason" class="form-control" placeholder="e.g. Away on business, flooring being stained">
+            </div>
+            <div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="addCustomerBlackoutDate()" style="height:42px; font-weight:700; color:#EF4444; border-color:#FCA5A5;">
+                <i class="fa-solid fa-plus"></i> Turn Off Date
+              </button>
+            </div>
+          </div>
+
+          <!-- Currently Blocked Dates List -->
+          <div>
+            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+              Currently Turned OFF Dates (Click &times; to turn back ON):
+            </span>
+            <div id="customer-blocked-dates-list" style="min-height:36px;">
+              <!-- Populated dynamically via renderBlockedDates() -->
+            </div>
+          </div>
+
+          <!-- Preferred Time Windows -->
+          <div style="margin-top:1.25rem; border-top:1px solid var(--border-light); padding-top:1rem;">
+            <span style="font-size:0.78rem; font-weight:700; color:var(--primary-navy); display:block; margin-bottom:0.5rem;">
+              Preferred Daily Service Windows:
+            </span>
+            <div style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                <input type="checkbox" id="pref-window-morning" checked onchange="saveCustomerWindowPreferences()">
+                <span>Morning (8:00 AM - 12:00 PM)</span>
+              </label>
+              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                <input type="checkbox" id="pref-window-afternoon" checked onchange="saveCustomerWindowPreferences()">
+                <span>Afternoon (12:00 PM - 5:00 PM)</span>
+              </label>
+              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                <input type="checkbox" id="pref-window-evening" onchange="saveCustomerWindowPreferences()">
+                <span>Evening (5:00 PM - 9:00 PM)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Rates & Pricing Budget Settings (If they want to change) -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h3 class="admin-card-title">
+            <i class="fa-solid fa-dollar-sign" style="color:#10B981;"></i> 3. Rates & Pricing Preferences
+          </h3>
+          <span style="font-size:0.75rem; color:var(--text-muted);">
+            Set your budget limits and approved pricing ceilings for trade services
+          </span>
+        </div>
+
+        <form id="customer-rates-form" onsubmit="event.preventDefault(); saveCustomerRates();">
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cust-rate-hourly-cap">
+                Standard Hourly Rate Cap ($)
+              </label>
+              <div class="input-with-unit">
+                <span class="currency-prefix">$</span>
+                <input type="number" id="cust-rate-hourly-cap" class="form-control" value="95.00" min="40" max="300" step="1.00">
+                <span class="unit-suffix">/ hr</span>
+              </div>
+              <span class="input-help">The AI matching engine will prioritize qualified trades under this hourly ceiling.</span>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label" for="cust-rate-callout-cap">
+                Standard Callout Fee Cap ($)
+              </label>
+              <div class="input-with-unit">
+                <span class="currency-prefix">$</span>
+                <input type="number" id="cust-rate-callout-cap" class="form-control" value="65.00" min="0" max="250" step="1.00">
+                <span class="unit-suffix">flat</span>
+              </div>
+              <span class="input-help">Maximum initial callout / diagnostic attendance fee accepted.</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="cust-emergency-rate-allowance">
+                Emergency & After-Hours Rate Multiplier
+              </label>
+              <select id="cust-emergency-rate-allowance" class="form-control">
+                <option value="standard">Standard Rates Only (No Emergency Surcharge)</option>
+                <option value="1.25">Up to +25% Emergency Surcharge Permitted</option>
+                <option value="1.5" selected>Up to +50% After-Hours / Weekend Surcharge Permitted</option>
+                <option value="2.0">Up to 2x Double Time Permitted (Critical Immediate Repairs)</option>
+              </select>
+              <span class="input-help">Controls rate tolerance for urgent 24/7 callouts.</span>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label" for="cust-max-travel-distance">
+                Maximum Travel Distance
+              </label>
+              <div style="display:flex; gap:0.5rem;">
+                <input type="number" id="cust-max-travel-distance" class="form-control" value="35" min="5" max="250" style="flex:1;">
+                <select id="cust-distance-unit" class="form-control" style="width:170px; font-size:0.75rem; padding:0.25rem 0.4rem;">
+                  <option value="km" selected>Per Kilometre (km)</option>
+                  <option value="miles">Per Mile (mi)</option>
+                </select>
+              </div>
+              <span class="input-help">Maximum radius for contractor dispatch from your property.</span>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.75rem;">
+            <button type="submit" class="btn btn-primary" style="font-weight:800; padding:0.65rem 1.4rem;">
+              <i class="fa-solid fa-floppy-disk"></i> Save Rate Changes & Budget Preferences
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 4. Scheduled Bookings & Service History -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h3 class="admin-card-title">
+            <i class="fa-solid fa-list-check" style="color:#6366F1;"></i> 4. Active & Scheduled Bookings
+          </h3>
+          <span style="font-size:0.75rem; color:var(--text-muted);">
+            Manage confirmed visits, view invoices, or reschedule
+          </span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Booking #</th>
+                <th>Trade Service</th>
+                <th>Contractor</th>
+                <th>Date & Time</th>
+                <th>Rate Quoted</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customer-bookings-table-body">
+              <tr>
+                <td><strong>#BK-90214</strong></td>
+                <td><span style="background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Plumbing</span></td>
+                <td>Lachlan Miller (SPN-101001)</td>
+                <td>Tomorrow, 9:30 AM</td>
+                <td>$85.00/hr</td>
+                <td><span style="color:#059669; font-weight:700;">🟢 Confirmed</span></td>
+                <td>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reschedule</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>#BK-88421</strong></td>
+                <td><span style="background:#FFF7ED; color:#C2410C; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Electrical</span></td>
+                <td>Jack Morrison (SPN-101002)</td>
+                <td>Friday, 2:00 PM</td>
+                <td>$90.00/hr</td>
+                <td><span style="color:#2563EB; font-weight:700;">⏳ Dispatched</span></td>
+                <td>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;">Cancel</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="module" src="js/firebase-service.js"></script>
+  <script src="js/stripe-service.js"></script>
+  <script src="js/imgbb-service.js"></script>
+  <script src="js/providers-data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    // Customer Admin Interactive Logic
+    const CUSTOMER_SETTINGS_KEY = 'iasj_customer_admin_settings';
+
+    function getCustomerSettings() {
+      const defaultSettings = {
+        isPaused: false,
+        pauseReason: '',
+        gcalAutoBlock: true,
+        blockedDates: [
+          { date: '2026-10-18', reason: 'Public Holiday' },
+          { date: '2026-10-25', reason: 'Family Event' }
+        ],
+        preferredWindows: { morning: true, afternoon: true, evening: false },
+        rates: {
+          hourlyCap: 95.00,
+          calloutCap: 65.00,
+          emergencyAllowance: '1.5',
+          maxDistance: 35,
+          distanceUnit: 'km'
+        }
+      };
+      try {
+        const stored = localStorage.getItem(CUSTOMER_SETTINGS_KEY);
+        if (stored) return { ...defaultSettings, ...JSON.parse(stored) };
+      } catch (e) {
+        console.warn('Error reading customer settings:', e);
+      }
+      return defaultSettings;
+    }
+
+    function saveCustomerSettings(settings) {
+      try {
+        localStorage.setItem(CUSTOMER_SETTINGS_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.warn('Error saving customer settings:', e);
+      }
+    }
+
+    function updateCustomerAdminUI() {
+      const settings = getCustomerSettings();
+      
+      // Update Google User profile if available
+      try {
+        const googleUser = JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
+        if (googleUser) {
+          if (googleUser.displayName) document.getElementById('customer-profile-name').textContent = googleUser.displayName;
+          if (googleUser.email) {
+            document.getElementById('customer-profile-email').textContent = googleUser.email;
+            document.getElementById('customer-gcal-email').textContent = googleUser.email;
+          }
+          const signinBtn = document.getElementById('btn-admin-signin');
+          if (signinBtn) signinBtn.style.display = 'none';
+        }
+      } catch (e) {}
+
+      // Update Pause / Resume status
+      const statusBox = document.getElementById('customer-status-box');
+      const headline = document.getElementById('customer-status-headline');
+      const pauseBtn = document.getElementById('btn-toggle-customer-pause');
+      const globalBadge = document.getElementById('customer-global-status-badge');
+      const pillBadge = document.getElementById('customer-pause-status-pill');
+      const pauseReasonInput = document.getElementById('customer-pause-reason');
+
+      if (pauseReasonInput) pauseReasonInput.value = settings.pauseReason || '';
+
+      if (settings.isPaused) {
+        if (statusBox) statusBox.classList.add('is-paused');
+        if (headline) {
+          headline.innerHTML = '⏸️ PAUSED - Automated Matching & Dispatch On Hold';
+          headline.style.color = '#B45309';
+        }
+        if (pauseBtn) {
+          pauseBtn.className = 'status-switch-btn';
+          pauseBtn.style.background = '#ECFDF5';
+          pauseBtn.style.color = '#059669';
+          pauseBtn.style.border = '1px solid #10B981';
+          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-play"></i> Resume My Service';
+        }
+        if (globalBadge) {
+          globalBadge.className = 'status-badge-live paused';
+          globalBadge.innerHTML = '⏸️ Service Paused';
+        }
+        if (pillBadge) {
+          pillBadge.className = 'status-badge-live paused';
+          pillBadge.textContent = 'Service Paused';
+        }
+      } else {
+        if (statusBox) statusBox.classList.remove('is-paused');
+        if (headline) {
+          headline.innerHTML = '🟢 ACTIVE - Ready for Service Requests & Dispatch';
+          headline.style.color = '#059669';
+        }
+        if (pauseBtn) {
+          pauseBtn.className = 'status-switch-btn btn-pause';
+          pauseBtn.style.background = '#FEF3C7';
+          pauseBtn.style.color = '#B45309';
+          pauseBtn.style.border = '1px solid #F59E0B';
+          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Pause My Service';
+        }
+        if (globalBadge) {
+          globalBadge.className = 'status-badge-live active';
+          globalBadge.innerHTML = '🟢 Service Active';
+        }
+        if (pillBadge) {
+          pillBadge.className = 'status-badge-live active';
+          pillBadge.textContent = 'Service Active';
+        }
+      }
+
+      // Render Blocked Dates
+      renderBlockedDates(settings.blockedDates || []);
+
+      // Preferred Windows
+      if (settings.preferredWindows) {
+        document.getElementById('pref-window-morning').checked = !!settings.preferredWindows.morning;
+        document.getElementById('pref-window-afternoon').checked = !!settings.preferredWindows.afternoon;
+        document.getElementById('pref-window-evening').checked = !!settings.preferredWindows.evening;
+      }
+
+      // Google Calendar Auto-block
+      document.getElementById('customer-gcal-autoblock').checked = settings.gcalAutoBlock !== false;
+
+      // Rates
+      if (settings.rates) {
+        document.getElementById('cust-rate-hourly-cap').value = settings.rates.hourlyCap || 95.00;
+        document.getElementById('cust-rate-callout-cap').value = settings.rates.calloutCap || 65.00;
+        document.getElementById('cust-emergency-rate-allowance').value = settings.rates.emergencyAllowance || '1.5';
+        document.getElementById('cust-max-travel-distance').value = settings.rates.maxDistance || 35;
+        document.getElementById('cust-distance-unit').value = settings.rates.distanceUnit || 'km';
+        document.getElementById('customer-header-rate-cap').textContent = `$${parseFloat(settings.rates.hourlyCap || 95).toFixed(2)} / hr`;
+      }
+    }
+
+    function toggleCustomerPauseState() {
+      const settings = getCustomerSettings();
+      settings.isPaused = !settings.isPaused;
+      saveCustomerSettings(settings);
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') {
+        showToast(settings.isPaused ? 'Service Paused. Dispatches placed on hold.' : 'Service Resumed. Active for bookings.');
+      }
+    }
+
+    function saveCustomerPauseReason() {
+      const settings = getCustomerSettings();
+      const val = document.getElementById('customer-pause-reason')?.value || '';
+      settings.pauseReason = val;
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') {
+        showToast('Pause note saved successfully.');
+      }
+    }
+
+    function renderBlockedDates(blockedList) {
+      const container = document.getElementById('customer-blocked-dates-list');
+      if (!container) return;
+      if (!blockedList || blockedList.length === 0) {
+        container.innerHTML = '<span style="font-size:0.8rem; color:#94A3B8; font-style:italic;">No dates currently turned off. All dates active.</span>';
+        return;
+      }
+      container.innerHTML = blockedList.map(item => `
+        <span class="date-chip date-chip-off">
+          <i class="fa-solid fa-calendar-xmark"></i> ${item.date} ${item.reason ? `(${item.reason})` : ''}
+          <span class="date-chip-remove" onclick="removeCustomerBlackoutDate('${item.date}')" title="Turn Date Back ON">&times;</span>
+        </span>
+      `).join('');
+    }
+
+    function addCustomerBlackoutDate() {
+      const dateInput = document.getElementById('new-blackout-date');
+      const reasonInput = document.getElementById('new-blackout-reason');
+      const date = dateInput?.value;
+      const reason = reasonInput?.value || '';
+
+      if (!date) {
+        if (typeof showToast === 'function') showToast('Please select a date to turn off.');
+        return;
+      }
+
+      const settings = getCustomerSettings();
+      if (!settings.blockedDates) settings.blockedDates = [];
+      if (settings.blockedDates.some(d => d.date === date)) {
+        if (typeof showToast === 'function') showToast('This date is already turned off.');
+        return;
+      }
+
+      settings.blockedDates.push({ date, reason });
+      saveCustomerSettings(settings);
+      dateInput.value = '';
+      if (reasonInput) reasonInput.value = '';
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') showToast(`Date ${date} turned OFF.`);
+    }
+
+    function removeCustomerBlackoutDate(date) {
+      const settings = getCustomerSettings();
+      settings.blockedDates = (settings.blockedDates || []).filter(d => d.date !== date);
+      saveCustomerSettings(settings);
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') showToast(`Date ${date} turned Back ON.`);
+    }
+
+    function applyCustomerDatePreset(preset) {
+      const settings = getCustomerSettings();
+      const today = new Date();
+
+      if (preset === 'all_on') {
+        settings.blockedDates = [];
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast('All dates turned ON.');
+        return;
+      }
+
+      if (preset === 'next_7_off' || preset === 'next_14_off') {
+        const count = preset === 'next_7_off' ? 7 : 14;
+        const newDates = [];
+        for (let i = 0; i < count; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          newDates.push({ date: dateStr, reason: 'Vacation / Holiday' });
+        }
+        settings.blockedDates = newDates;
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast(`Turned off next ${count} days.`);
+        return;
+      }
+
+      if (preset === 'weekends_off') {
+        const newDates = [];
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          const day = d.getDay();
+          if (day === 0 || day === 6) { // Sunday or Saturday
+            newDates.push({ date: d.toISOString().split('T')[0], reason: 'Weekend Off' });
+          }
+        }
+        settings.blockedDates = newDates;
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast('Turned off weekend visits for the next 30 days.');
+        return;
+      }
+    }
+
+    function saveCustomerGcalAutoblock(checked) {
+      const settings = getCustomerSettings();
+      settings.gcalAutoBlock = checked;
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') showToast(checked ? 'Google Calendar auto-block enabled.' : 'Google Calendar auto-block disabled.');
+    }
+
+    function saveCustomerWindowPreferences() {
+      const settings = getCustomerSettings();
+      settings.preferredWindows = {
+        morning: document.getElementById('pref-window-morning')?.checked ?? true,
+        afternoon: document.getElementById('pref-window-afternoon')?.checked ?? true,
+        evening: document.getElementById('pref-window-evening')?.checked ?? false
+      };
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') showToast('Time window preferences saved.');
+    }
+
+    function saveCustomerRates() {
+      const settings = getCustomerSettings();
+      const hourlyCap = parseFloat(document.getElementById('cust-rate-hourly-cap')?.value || '95');
+      const calloutCap = parseFloat(document.getElementById('cust-rate-callout-cap')?.value || '65');
+      const emergencyAllowance = document.getElementById('cust-emergency-rate-allowance')?.value || '1.5';
+      const maxDistance = parseFloat(document.getElementById('cust-max-travel-distance')?.value || '35');
+      const distanceUnit = document.getElementById('cust-distance-unit')?.value || 'km';
+
+      settings.rates = {
+        hourlyCap,
+        calloutCap,
+        emergencyAllowance,
+        maxDistance,
+        distanceUnit
+      };
+
+      saveCustomerSettings(settings);
+      document.getElementById('customer-header-rate-cap').textContent = `$${hourlyCap.toFixed(2)} / hr`;
+      if (typeof showToast === 'function') showToast('Rate preferences & budget caps saved successfully!');
+    }
+
+    function syncCustomerGoogleCalendarNow() {
+      if (typeof showToast === 'function') showToast('Syncing with Google Calendar... All events updated.');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCustomerAdminUI();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Registration & Instant CRN | It's A Simple Job</title>
+  <meta name="description" content="Register as a customer with Australia's premier AI labour, trade and express courier platform. Simple verification with 1 photo ID and receive your instant Customer Reference Number (CRN).">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background: #F8FAFC; min-height: 100vh;">
+
+  <!-- Top Announcement Bar -->
+  <header class="top-bar">
+    <div class="container" style="justify-content:center; text-align:center;">
+      <div class="top-bar-left" style="justify-content:center;">
+        <span class="badge-pill-pill">24/7 • 365 Days a Year</span>
+        <span>Australia's 1st Labour, Courier & Hire Recruitment Service Powered by AI • <strong>Customer Priority Registration</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar" id="main-nav">
+    <div class="container nav-container">
+      <!-- Worker Icon Brand Logo -->
+      <a href="index.html" class="brand-logo worker-brand-link" title="Simple Job - Return to Home">
+        <div class="worker-brand-icon">
+          <i class="fa-solid fa-helmet-safety"></i>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Buttons -->
+      <div class="nav-menu">
+        <a href="index.html?tab=ai-book-tab" class="nav-item-btn" style="text-decoration:none;">AI</a>
+        <a href="index.html?tab=find-contractors-tab" class="nav-item-btn" style="text-decoration:none;">Contractors</a>
+        <a href="index.html?tab=courier-tab" class="nav-item-btn" style="text-decoration:none;">Couriers</a>
+        <a href="index.html?tab=recruitment-tab" class="nav-item-btn" style="text-decoration:none;">Recruit</a>
+        <a href="index.html?tab=how-it-works-tab" class="nav-item-btn" style="text-decoration:none;">FAQ</a>
+        <a href="index.html?tab=register-selection-tab" class="nav-item-btn active" style="text-decoration:none;">Register</a>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Sign In Button -->
+        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google">
+          <svg width="14" height="14" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Sign In
+        </button>
+        <a href="index.html" class="btn btn-primary btn-sm" style="font-weight:900; text-decoration:none; padding:0.5rem 1.1rem;">
+          <i class="fa-solid fa-bolt"></i> MAIN APP
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Embedded Form Container -->
+  <main style="padding: 2rem 0 4rem 0;">
+    <div class="container" style="max-width: 860px; margin: 0 auto;">
+      
+      <!-- Top Navigation Breadcrumb -->
+      <div style="margin-bottom: 1.25rem;">
+        <a href="index.html" class="embedded-back-link">
+          <i class="fa-solid fa-arrow-left"></i> Return to Main Application
+        </a>
+      </div>
+
+      <!-- Embedded Header Hero Banner -->
+      <div class="embedded-app-header" style="background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%);">
+        <div class="embedded-header-bar">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.5rem;">
+              <span class="badge-pill-pill" style="background:#1E40AF; color:#fff; border:none; padding:0.3rem 0.75rem;">
+                <i class="fa-solid fa-user-check"></i> Customer Network
+              </span>
+              <span style="font-size:0.75rem; color:#94A3B8;">Priority 24/7 • 365 Days a Year</span>
+            </div>
+            <h2 style="color:#ffffff !important;">Customer Registration Application</h2>
+            <p>
+              Get your instant Customer Reference Number (CRN) for 24/7, 365 days a year priority service. Simple verification with 1 photo ID (holding passport or licence).
+            </p>
+          </div>
+
+          <div class="embedded-header-controls">
+            <div id="inline-cust-draft-status" class="draft-auto-saved-pill">
+              <i class="fa-solid fa-cloud-check"></i> <span>Draft auto-saved</span>
+            </div>
+            <button type="button" class="btn-draft-save" onclick="saveCustomerApplicationDraft(true)">
+              <i class="fa-solid fa-floppy-disk" style="color:#1E40AF;"></i> Save Draft & Continue Later
+            </button>
+          </div>
+        </div>
+
+        <!-- Google Account Status Banner -->
+        <div id="inline-cust-google-banner" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <!-- Populated via updateGoogleAuthUI / restoreCustomerApplicationDraft -->
+        </div>
+      </div>
+
+      <!-- Restored Draft Notice Banner -->
+      <div id="cust-restored-draft-banner" class="restored-draft-banner" style="display:none;">
+        <div style="display:flex; align-items:center; gap:0.65rem;">
+          <i class="fa-solid fa-clock-rotate-left" style="font-size:1.15rem; color:#D97706;"></i>
+          <div>
+            <strong>Resumed Customer Draft:</strong>
+            <span id="cust-draft-time-text">Details restored from your Google Account.</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
+            <i class="fa-solid fa-save"></i> Save Now
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+            <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Embedded Customer Form Card -->
+      <div class="embedded-form-card">
+        <form id="inline-customer-register-form" onsubmit="handleCustomerRegistrationSubmit(event, true)">
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-name">Full Name</label>
+              <input type="text" id="inline-cust-name" class="form-control" required placeholder="e.g. Sarah Jenkins">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-type">Account Type</label>
+              <select id="inline-cust-type" class="form-control">
+                <option value="residential">Residential / Homeowner</option>
+                <option value="business">Business / Commercial Client</option>
+                <option value="property_manager">Real Estate / Property Manager</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-phone">Mobile Phone (for SMS Dispatch)</label>
+              <input type="tel" id="inline-cust-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-email">Email Address</label>
+              <input type="email" id="inline-cust-email" class="form-control" required placeholder="e.g. s.jenkins@example.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-address">Primary Street Address & Suburb</label>
+              <input type="text" id="inline-cust-address" class="form-control" required placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="inline-cust-country">Country / Region</label>
+              <select id="inline-cust-country" class="form-control">
+                <option value="AU" selected>Australia (km)</option>
+                <option value="NZ">New Zealand (km)</option>
+                <option value="US">United States (miles)</option>
+                <option value="UK">United Kingdom (miles)</option>
+                <option value="CA">Canada (km)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- MANDATORY CUSTOMER ID HOLDING VERIFICATION SECTION -->
+          <div class="id-holding-instruction-box">
+            <div class="id-holding-header">
+              <i class="fa-solid fa-camera-rotate"></i>
+              <div>
+                <h5>Customer ID Verification (Selfie Holding ID)</h5>
+                <span style="font-size:0.75rem; color:#1E40AF; font-weight:600;">One form of ID required (Passport or Driver Licence)</span>
+              </div>
+            </div>
+            <p class="id-holding-desc">
+              Please upload <strong>one clear photo/selfie of yourself holding your photo ID</strong> (such as your driver's licence or passport) next to your face. Ensure your name and photo on the ID are clearly visible.
+            </p>
+            
+            <div class="form-row" style="margin-bottom:0.75rem;">
+              <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label" for="inline-cust-id-type" style="font-size:0.78rem;">Select ID Document Type</label>
+                <select id="inline-cust-id-type" class="form-control" style="font-size:0.85rem;">
+                  <option value="driver_licence">Driver Licence</option>
+                  <option value="passport">Passport</option>
+                  <option value="proof_of_age">State Photo Card / Proof of Age</option>
+                  <option value="gov_id">Government Photo ID</option>
+                </select>
+              </div>
+              <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label" for="inline-cust-id-file" style="font-size:0.78rem;">Upload Photo of You Holding ID</label>
+                <input type="file" id="inline-cust-id-file" class="form-control" accept="image/*" required onchange="handleCustomerPhotoUpload(event, 'inline')">
+              </div>
+            </div>
+
+            <div id="inline-cust-photo-preview" style="display:none; margin-top:0.6rem; align-items:center; gap:0.6rem; background:#fff; padding:0.5rem 0.75rem; border-radius:var(--radius-sm); border:1px solid #BFDBFE;">
+              <!-- Populated on upload -->
+            </div>
+
+            <div class="id-holding-tip">
+              <i class="fa-solid fa-lock"></i>
+              <span>Stored securely on our server via 256-bit encryption. Album: <strong>k4vjCb</strong>. Never shared publicly.</span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="inline-cust-notes">Property Access / Special Instructions</label>
+            <textarea id="inline-cust-notes" class="form-control" rows="2" placeholder="e.g. Side gate access, dogs on premises, parking in driveway..."></textarea>
+          </div>
+
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.6rem;">
+            <i class="fa-solid fa-id-card" style="font-size:1.3rem; color:#1E40AF;"></i>
+            <div style="font-size:0.78rem; color:#1E3A8A;">
+              <strong>Instant CRN:</strong> Your permanent <strong>CRN-XXXXXX</strong> is generated immediately for 24/7, 365 days a year bookings.
+            </div>
+          </div>
+
+          <!-- Sticky Actions Bar -->
+          <div class="form-sticky-actions">
+            <button type="button" class="btn btn-outline" onclick="saveCustomerApplicationDraft(true)">
+              <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
+            </button>
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+              <button type="button" class="btn btn-outline" onclick="clearCustomerApplicationDraft(true)" style="color:#64748B;">
+                <i class="fa-solid fa-rotate-left"></i> Reset Form
+              </button>
+              <button type="submit" class="btn btn-navy btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">
+                <i class="fa-solid fa-circle-check"></i> Register Customer & Issue CRN
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Quick Switch to Other Registration Types -->
+      <div style="margin-top:2.5rem; text-align:center;">
+        <span style="font-size:0.85rem; color:var(--text-muted);">Looking for a different registration?</span>
+        <div style="margin-top:0.75rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+          <a href="provider.html" class="btn btn-outline btn-sm" style="font-weight:700;">
+            <i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange);"></i> Service Provider Registration
+          </a>
+          <a href="franchise.html" class="btn btn-outline btn-sm" style="font-weight:700;">
+            <i class="fa-solid fa-building-user" style="color:#7E22CE;"></i> Franchise Registration
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Customer Success Modal -->
+  <div class="modal-overlay" id="customer-success-modal">
+    <div class="modal-box" style="max-width:520px; text-align:center;">
+      <div style="width:68px; height:68px; border-radius:50%; background:#EFF6FF; color:#1E40AF; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:1rem auto 1rem;">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3 style="font-size:1.5rem; color:var(--primary-navy); font-weight:900; margin-bottom:0.5rem;">
+        Customer Registered!
+      </h3>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.25rem;">
+        Your identity verification photo has been encrypted and stored on our secure server. Your permanent Customer Reference Number is:
+      </p>
+
+      <div style="background:#F1F5F9; border:2px dashed #93C5FD; border-radius:var(--radius-md); padding:1rem; margin-bottom:1.5rem; display:flex; justify-content:center; align-items:center; gap:1rem;">
+        <span id="modal-crn-number" style="font-family:monospace; font-size:1.8rem; font-weight:900; color:#1E40AF; letter-spacing:2px;">
+          CRN-000000
+        </span>
+        <button class="btn btn-outline btn-sm" onclick="copyCRNToClipboard()" title="Copy CRN">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+      </div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:center;">
+        <a href="index.html" class="btn btn-primary" style="font-weight:800; text-decoration:none; padding:0.65rem 1.25rem;">
+          <i class="fa-solid fa-bolt"></i> Book a Tradie or Courier
+        </a>
+        <button class="btn btn-outline" onclick="closeCustomerSuccessModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content" style="text-align:center; padding:2rem 0;">
+      <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">
+        &copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584.<br>
+        Australia's First Labour & Courier Service Powered by AI • 24/7, 365 Days a Year Nationwide
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="module" src="js/firebase-service.js"></script>
+  <script src="js/stripe-service.js"></script>
+  <script src="js/imgbb-service.js"></script>
+  <script src="js/providers-data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof restoreCustomerApplicationDraft === 'function') {
+        restoreCustomerApplicationDraft();
+      }
+      if (typeof updateGoogleAuthBanners === 'function') {
+        updateGoogleAuthBanners();
+      }
+      if (typeof attachDraftAutoSaveListeners === 'function') {
+        attachDraftAutoSaveListeners();
+      }
+    });
+  </script>
+</body>
+</html>

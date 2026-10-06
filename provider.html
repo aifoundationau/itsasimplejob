@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Provider Registration & 24/7 Calendar | It's A Simple Job</title>
+  <meta name="description" content="Register as a verified tradie, contractor or courier with Australia's premier AI labour and logistics platform. Configure custom fee structures, 24/7 calendar shifts, and get your instant SPN.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background: #F8FAFC; min-height: 100vh;">
+
+  <!-- Top Announcement Bar -->
+  <header class="top-bar">
+    <div class="container" style="justify-content:center; text-align:center;">
+      <div class="top-bar-left" style="justify-content:center;">
+        <span class="badge-pill-pill">24/7 • 365 Days a Year</span>
+        <span>Australia's 1st Labour, Courier & Hire Recruitment Service Powered by AI • <strong>Service Provider Network Onboarding</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar" id="main-nav">
+    <div class="container nav-container">
+      <!-- Worker Icon Brand Logo -->
+      <a href="index.html" class="brand-logo worker-brand-link" title="Simple Job - Return to Home">
+        <div class="worker-brand-icon">
+          <i class="fa-solid fa-helmet-safety"></i>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Buttons -->
+      <div class="nav-menu">
+        <a href="index.html?tab=ai-book-tab" class="nav-item-btn" style="text-decoration:none;">AI</a>
+        <a href="index.html?tab=find-contractors-tab" class="nav-item-btn" style="text-decoration:none;">Contractors</a>
+        <a href="index.html?tab=courier-tab" class="nav-item-btn" style="text-decoration:none;">Couriers</a>
+        <a href="index.html?tab=recruitment-tab" class="nav-item-btn" style="text-decoration:none;">Recruit</a>
+        <a href="index.html?tab=how-it-works-tab" class="nav-item-btn" style="text-decoration:none;">FAQ</a>
+        <a href="index.html?tab=register-selection-tab" class="nav-item-btn active" style="text-decoration:none;">Register</a>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Sign In Button -->
+        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('provider')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED;" title="Sign in with Google">
+          <svg width="14" height="14" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Sign In
+        </button>
+        <a href="index.html" class="btn btn-primary btn-sm" style="font-weight:900; text-decoration:none; padding:0.5rem 1.1rem;">
+          <i class="fa-solid fa-bolt"></i> MAIN APP
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Embedded Form Container -->
+  <main style="padding: 2rem 0 4rem 0;">
+    <div class="container" style="max-width: 1040px; margin: 0 auto;">
+      
+      <!-- Top Navigation Breadcrumb -->
+      <div style="margin-bottom: 1.25rem;">
+        <a href="index.html" class="embedded-back-link">
+          <i class="fa-solid fa-arrow-left"></i> Return to Main Application
+        </a>
+      </div>
+
+      <!-- Embedded Header Hero Banner -->
+      <div class="embedded-app-header" style="background: linear-gradient(135deg, #1C1917 0%, #431407 50%, #9A3412 100%);">
+        <div class="embedded-header-bar">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.5rem;">
+              <span class="badge-pill-pill" style="background:var(--brand-orange); color:#fff; border:none; padding:0.3rem 0.75rem;">
+                <i class="fa-solid fa-helmet-safety"></i> Service Provider Network
+              </span>
+              <span style="font-size:0.75rem; color:#FED7AA;">24/7 • 365 Days a Year Dispatch</span>
+            </div>
+            <h2 style="color:#ffffff !important;">Service Provider Admin & Calendar Application</h2>
+            <p>
+              Complete your trade application, specify custom services & fee structures, set up your 24/7 calendar availability, and connect direct Australian bank settlement.
+            </p>
+          </div>
+
+          <div class="embedded-header-controls">
+            <div id="page-prov-draft-status" class="draft-auto-saved-pill">
+              <i class="fa-solid fa-cloud-check"></i> <span>Draft auto-saved</span>
+            </div>
+            <button type="button" class="btn-draft-save" onclick="saveProviderApplicationDraft(true)">
+              <i class="fa-solid fa-floppy-disk" style="color:var(--brand-orange);"></i> Save Draft & Continue Later
+            </button>
+          </div>
+        </div>
+
+        <!-- Google Account Status Banner -->
+        <div id="page-prov-google-banner" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <!-- Populated via updateGoogleAuthUI / restoreProviderApplicationDraft -->
+        </div>
+      </div>
+
+      <!-- Restored Draft Notice Banner -->
+      <div id="prov-restored-draft-banner" class="restored-draft-banner" style="display:none;">
+        <div style="display:flex; align-items:center; gap:0.65rem;">
+          <i class="fa-solid fa-clock-rotate-left" style="font-size:1.15rem; color:#D97706;"></i>
+          <div>
+            <strong>Resumed Application Draft:</strong>
+            <span id="prov-draft-time-text">Details restored from your Google Account.</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="saveProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
+            <i class="fa-solid fa-save"></i> Save Now
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+            <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
+          </button>
+        </div>
+      </div>
+
+      <!-- The Complete Embedded Provider Form Card -->
+      <div class="embedded-form-card">
+        <form id="inline-provider-reg-form" onsubmit="handleAdvancedProviderSubmit(event, true)">
+          <!-- 1. Provider Identity -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-address-card" style="color:var(--brand-orange);"></i> 1. Profile & Trade Credentials
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-name">Full Name / Primary Contact</label>
+                <input type="text" id="page-prov-name" class="form-control" required placeholder="e.g. Jack Sullivan">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-business">Business / Trading Name</label>
+                <input type="text" id="page-prov-business" class="form-control" required placeholder="e.g. Sullivan & Sons Plumbing & Gas">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-category">Primary Trade Discipline</label>
+                <select id="page-prov-category" class="form-control" required onchange="handleCategoryChange('page', this.value)">
+                  <option value="plumbing">Plumbing & Gas Solutions</option>
+                  <option value="electrical">Licensed Electrical Services</option>
+                  <option value="courier">Courier Driver & Express Freight</option>
+                  <option value="handyman">General Handyman & Assembly</option>
+                  <option value="carpentry">Carpentry & Building Repairs</option>
+                  <option value="garden">Lawn, Tree & Garden Care</option>
+                  <option value="painting">Painting & Surface Restoration</option>
+                  <option value="appliance">Appliance Diagnostics & Repair</option>
+                  <option value="civil">Civil & Machine Plant Operator</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-license">Licence # / Certification / Driver Lic</label>
+                <input type="text" id="page-prov-license" class="form-control" required placeholder="e.g. QBCC #1509214 or MR Commercial Lic">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-phone">Mobile Phone</label>
+                <input type="tel" id="page-prov-phone" class="form-control" required placeholder="0400 123 456">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-email">Email Address</label>
+                <input type="email" id="page-prov-email" class="form-control" required placeholder="jack@sullivanplumbing.com.au">
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Location & Distance Units -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i> 2. Location & Distance Units (km / mile)
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-suburb">Base Suburb / City & Postcode</label>
+                <input type="text" id="page-prov-suburb" class="form-control" required placeholder="e.g. Broadbeach QLD 4218">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-country">Country / Region</label>
+                <select id="page-prov-country" class="form-control" onchange="handleProviderCountryChange(this.value)">
+                  <option value="AU" selected>Australia (km)</option>
+                  <option value="NZ">New Zealand (km)</option>
+                  <option value="US">United States (miles)</option>
+                  <option value="UK">United Kingdom (miles)</option>
+                  <option value="CA">Canada (km)</option>
+                  <option value="OTHER">Other Region</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.6rem 0.85rem; margin-bottom:0.75rem;">
+              <div>
+                <strong style="font-size:0.82rem; color:var(--primary-navy);">Distance Measurement Unit:</strong>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Used for calculating travel radius and mileage fees</p>
+              </div>
+              <div style="display:flex; gap:1rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="page-prov-dist-unit" value="km" checked onchange="updateProviderDistUnit('km')"> Kilometres (km)
+                </label>
+                <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="page-prov-dist-unit" value="mile" onchange="updateProviderDistUnit('mile')"> Miles (mi)
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-radius">Standard Service Radius (<span class="unit-span">km</span>)</label>
+                <input type="number" id="page-prov-radius" class="form-control" value="25" min="5" max="250">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-suburbs-list">Service Areas Covered (comma separated)</label>
+                <input type="text" id="page-prov-suburbs-list" class="form-control" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Rates, Pricing & Distance Fee -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> 3. Pricing, Rates & Distance Charges
+            </h5>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-bottom:0.85rem;">
+              <!-- Hourly -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="page-rate-hourly" checked> Hourly Rate
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="page-prov-hourly" class="form-control" value="95" min="30" max="400">
+                  <span style="font-size:0.75rem; color:var(--text-muted);">/ hr</span>
+                </div>
+              </div>
+
+              <!-- Flat Rate -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="page-rate-flat" checked> Flat Rate (Standard Jobs)
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="page-prov-flat" class="form-control" value="130" min="40" max="2000">
+                  <span style="font-size:0.75rem; color:var(--text-muted);">flat</span>
+                </div>
+              </div>
+
+              <!-- Callout -->
+              <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+                <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+                  <input type="checkbox" id="page-rate-callout" checked> Base Call-Out Fee
+                </label>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span style="font-weight:700; color:var(--text-muted);">$</span>
+                  <input type="number" id="page-prov-callout" class="form-control" value="35" min="0" max="300">
+                  <span style="font-size:0.75rem; color:var(--text-muted);">callout</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distance Charges -->
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+              <label style="display:flex; align-items:center; gap:0.4rem; font-weight:800; font-size:0.85rem; color:#92400E; cursor:pointer;">
+                <input type="checkbox" id="page-rate-distance" checked onchange="toggleDistanceChargeFields(this.checked)">
+                <i class="fa-solid fa-route"></i> Charge Distance / Travel Fee (Callout per <span class="unit-span">km</span> / Courier per <span class="unit-span">km</span>)
+              </label>
+
+              <div id="page-distance-charge-inputs" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem; margin-top:0.6rem;">
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="page-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:#92400E;">$</span>
+                    <input type="number" id="page-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20">
+                    <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="page-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <span style="font-weight:700; color:#92400E;">$</span>
+                    <input type="number" id="page-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20">
+                    <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="input-label" style="font-size:0.75rem;" for="page-prov-free-km">Included Free Distance</label>
+                  <div style="display:flex; align-items:center; gap:0.3rem;">
+                    <input type="number" id="page-prov-free-km" class="form-control" value="10" min="0" max="100">
+                    <span style="font-size:0.75rem; color:#92400E;"><span class="unit-span">km</span> free</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Services Offered & Fee Structures -->
+          <div style="margin-bottom:1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; flex-wrap:wrap; gap:0.5rem; border-bottom:2px solid var(--border-light); padding-bottom:0.4rem;">
+              <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; margin:0;">
+                <i class="fa-solid fa-list-check" style="color:var(--brand-orange);"></i> 4. Services Offered & Fee Structures
+              </h5>
+              <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="font-weight:700; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED; font-size:0.78rem;">
+                <i class="fa-solid fa-plus-circle"></i> Add Another Service
+              </button>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem;">
+              List the services you provide using the drop boxes below. For each service, select its fee structure (Hourly, Flat Rate, Call-out + Hourly, Day Rate, etc.) and enter your rate.
+            </p>
+
+            <!-- Dynamic Services & Fee Structures Container -->
+            <div id="page-services-fee-container" class="services-fee-container">
+              <!-- Injected via JavaScript -->
+            </div>
+
+            <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="width:100%; border:1px dashed #FDBA74; color:#C2410C; background:#FFFDFB; font-weight:700; margin-bottom:1rem; padding:0.55rem;">
+              <i class="fa-solid fa-plus-circle"></i> + Add Another Service & Fee Structure
+            </button>
+
+            <div class="input-group">
+              <label class="input-label" for="page-prov-equipment">Tools, Machinery & Vehicles Owned</label>
+              <input type="text" id="page-prov-equipment" class="form-control" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake">
+            </div>
+          </div>
+
+          <!-- 5. 24/7, 365 Days a Year Hours, Calendar & Profile Status -->
+          <div style="margin-bottom:1.5rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> 5. Profile Status & 7-Day Shift Calendar (24/7 • 365 Days)
+            </h5>
+            
+            <!-- Profile Status Toggle: Active vs Paused -->
+            <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div>
+                <strong style="font-size:0.85rem; color:var(--primary-navy); display:block;">Initial Profile Status:</strong>
+                <span style="font-size:0.78rem; color:var(--text-muted);">You can pause or resume receiving jobs anytime from your Admin Panel.</span>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <label class="radio-pill active" id="label-inline-status-active" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
+                  <input type="radio" name="inline-profile-status" value="active" checked onchange="handleStatusRadioChange('inline', 'active')"> 🟢 Active & Ready
+                </label>
+                <label class="radio-pill" id="label-inline-status-paused" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">
+                  <input type="radio" name="inline-profile-status" value="paused" onchange="handleStatusRadioChange('inline', 'paused')"> ⏸️ Paused (On Break)
+                </label>
+              </div>
+            </div>
+
+            <!-- Interactive Weekly Calendar Matrix Container -->
+            <div class="calendar-matrix-wrapper">
+              <div class="matrix-toolbar">
+                <div>
+                  <strong style="font-size:0.84rem; color:var(--primary-navy);"><i class="fa-solid fa-clock"></i> Weekly Availability Grid:</strong>
+                  <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Click shift cells to turn ON/OFF for each day</span>
+                </div>
+                <div class="matrix-presets">
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'all')">⚡ 24/7 All On</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'core')">🏢 Mon–Fri Day (7am–5pm)</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'after_hours')">🌙 After-Hours & W/Ends</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'clear')">Clear All</button>
+                </div>
+              </div>
+
+              <div id="inline-calendar-matrix-root"></div>
+            </div>
+
+            <div style="margin-top:0.6rem;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="page-shift-insured" checked required> $10M+ Public Liability / Carrier Transit Cover Active
+              </label>
+            </div>
+          </div>
+
+          <!-- 6. Document Uploads Stored on Server -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--brand-orange);"></i> 6. Licences & Verification Uploads (Stored on Server)
+            </h5>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-photo-license">Trade Licence Card / Insurance Scan</label>
+                <input type="file" id="page-prov-photo-license" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'licence')">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-photo-vehicle">Work Vehicle / Profile Photo</label>
+                <input type="file" id="page-prov-photo-vehicle" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'vehicle')">
+              </div>
+            </div>
+            <div id="page-prov-photo-preview" style="display:none; font-size:0.75rem; color:#059669; font-weight:700;"></div>
+          </div>
+
+          <!-- Section 7: Australian Direct Banking & PayID Registration -->
+          <div style="margin-bottom:1.25rem;">
+            <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.35rem; margin-bottom:0.75rem;">
+              <i class="fa-solid fa-building-columns" style="color:var(--brand-orange);"></i> 7. Direct Payment Settlement (Bank Account & PayID)
+            </h5>
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.75rem; color:#1E40AF; margin-bottom:0.85rem;">
+              <i class="fa-solid fa-circle-info"></i> <strong>Customers Pay You Directly:</strong> Customers transfer funds straight into your Australian bank account or PayID upon completing each job docket.
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-bank-name">Account Name (Trading / Legal Entity)</label>
+                <input type="text" id="page-prov-bank-name" class="form-control" placeholder="e.g. Sullivan & Sons Plumbing Pty Ltd">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-payid">PayID (Instant NPP - Phone / Email / ABN)</label>
+                <input type="text" id="page-prov-payid" class="form-control" placeholder="0400 123 456 or accounts@sullivan.com.au">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="page-prov-bsb">BSB Number (6 Digits)</label>
+                <input type="text" id="page-prov-bsb" class="form-control" placeholder="e.g. 084-004" maxlength="7">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-account">Account Number</label>
+                <input type="text" id="page-prov-account" class="form-control" placeholder="e.g. 12345678" maxlength="10">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="page-prov-payid-type">PayID Type</label>
+                <select id="page-prov-payid-type" class="form-control">
+                  <option value="phone">Mobile Phone (04XX XXX XXX)</option>
+                  <option value="email">Email Address</option>
+                  <option value="abn">ABN (Australian Business Number)</option>
+                  <option value="org_id">Organisation ID</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.78rem; color:#92400E; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-id-card-clip" style="font-size:1.2rem;"></i>
+            <span><strong>Instant Service Provider Number:</strong> You will immediately receive your official <strong>SPN-XXXXXX</strong> on submission.</span>
+          </div>
+
+          <!-- Sticky Actions Bar -->
+          <div class="form-sticky-actions">
+            <button type="button" class="btn btn-outline" onclick="saveProviderApplicationDraft(true)">
+              <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
+            </button>
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+              <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true)" style="color:#64748B;">
+                <i class="fa-solid fa-rotate-left"></i> Reset Form
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">
+                <i class="fa-solid fa-circle-check"></i> Submit Service Provider Application & Issue SPN
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- DEDICATED STORED VERIFICATION DOCUMENTS & LICENCE VAULT -->
+        <div class="provider-vault-card" id="provider-documents-vault" style="margin-top:2rem;">
+          <div class="vault-header-row">
+            <div>
+              <h4 style="margin:0; font-size:1.15rem; color:var(--primary-navy); font-weight:800;">
+                <i class="fa-solid fa-vault" style="color:var(--brand-orange);"></i> My Stored Verification Documents & Licences
+              </h4>
+              <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">
+                All verification images such as licences are stored on our server and always available to the service provider.
+              </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span class="vault-server-badge"><i class="fa-solid fa-server"></i> Stored on Server (Album: k4vjCb)</span>
+              <button class="btn btn-outline btn-sm" onclick="triggerVaultUpload()">
+                <i class="fa-solid fa-plus"></i> Add Document
+              </button>
+            </div>
+          </div>
+
+          <!-- Documents Grid -->
+          <div class="vault-grid" id="vault-documents-list">
+            <!-- Dynamically populated by renderProviderDocumentVault() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Switch to Other Registration Types -->
+      <div style="margin-top:2.5rem; text-align:center;">
+        <span style="font-size:0.85rem; color:var(--text-muted);">Looking for a different registration?</span>
+        <div style="margin-top:0.75rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+          <a href="customer.html" class="btn btn-outline btn-sm" style="font-weight:700;">
+            <i class="fa-solid fa-user-check" style="color:#1E40AF;"></i> Customer Registration
+          </a>
+          <a href="franchise.html" class="btn btn-outline btn-sm" style="font-weight:700;">
+            <i class="fa-solid fa-building-user" style="color:#7E22CE;"></i> Franchise Registration
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Provider Success Modal -->
+  <div class="modal-overlay" id="provider-success-modal">
+    <div class="modal-box" style="max-width:540px; text-align:center;">
+      <div style="width:68px; height:68px; border-radius:50%; background:#FFF7ED; color:var(--brand-orange); display:flex; align-items:center; justify-content:center; font-size:2rem; margin:1rem auto 1rem;">
+        <i class="fa-solid fa-helmet-safety"></i>
+      </div>
+      <h3 style="font-size:1.5rem; color:var(--primary-navy); font-weight:900; margin-bottom:0.5rem;">
+        Service Provider Registered!
+      </h3>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.25rem;">
+        Your trade profile, custom services, 24/7 calendar availability, and direct settlement details are now live. Your official Service Provider Number is:
+      </p>
+
+      <div style="background:#FFFBEB; border:2px dashed #FDE68A; border-radius:var(--radius-md); padding:1rem; margin-bottom:1.5rem; display:flex; justify-content:center; align-items:center; gap:1rem;">
+        <span id="modal-spn-number" style="font-family:monospace; font-size:1.8rem; font-weight:900; color:var(--brand-orange); letter-spacing:2px;">
+          SPN-000000
+        </span>
+        <button class="btn btn-outline btn-sm" onclick="copySPNToClipboard()" title="Copy SPN">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+      </div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+        <a href="index.html" class="btn btn-outline" style="font-weight:700; text-decoration:none;">
+          Return to App
+        </a>
+        <button class="btn btn-primary" onclick="closeProviderSuccessModal(); window.location.href='index.html';">
+          <i class="fa-solid fa-gauge-high"></i> View On Contractors Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content" style="text-align:center; padding:2rem 0;">
+      <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">
+        &copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584.<br>
+        Australia's First Labour & Courier Service Powered by AI • 24/7, 365 Days a Year Nationwide
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="module" src="js/firebase-service.js"></script>
+  <script src="js/stripe-service.js"></script>
+  <script src="js/imgbb-service.js"></script>
+  <script src="js/providers-data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Initialize weekly calendar matrix for inline/standalone mode
+      if (typeof initInlineCalendarMatrix === 'function') {
+        initInlineCalendarMatrix();
+      }
+
+      // 2. Render initial default service rows
+      const catSelect = document.getElementById('page-prov-category');
+      const initialCat = catSelect ? catSelect.value : 'plumbing';
+      if (typeof renderDefaultServiceFeeRows === 'function') {
+        renderDefaultServiceFeeRows('page', initialCat);
+      }
+
+      // 3. Restore draft if available
+      if (typeof restoreProviderApplicationDraft === 'function') {
+        restoreProviderApplicationDraft();
+      }
+
+      // 4. Populate document vault
+      if (typeof renderProviderDocumentVault === 'function') {
+        renderProviderDocumentVault();
+      }
+
+      // 5. Update auth banners & attach auto-save listeners
+      if (typeof updateGoogleAuthBanners === 'function') {
+        updateGoogleAuthBanners();
+      }
+      if (typeof attachDraftAutoSaveListeners === 'function') {
+        attachDraftAutoSaveListeners();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -49,6 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initSpeechRecognition();
   loadGoogleMapsScript();
   initGoogleAuthUI();
+  const courierDateInput = document.getElementById('courier-pickup-date');
+  if (courierDateInput && !courierDateInput.value) {
+    courierDateInput.value = new Date().toISOString().split('T')[0];
+  }
   calculateCourierQuote();
   filterCandidates();
   renderProviderDocumentVault();
@@ -92,6 +96,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (promptInput) {
     promptInput.value = SAMPLE_PROMPTS.leaking_tap;
     submitAIAnalysis(false); // subtle initial run without notification toast
+  }
+
+  // Handle URL search params or hash for navigation
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedTab = urlParams.get('tab');
+    if (requestedTab) {
+      if (requestedTab === 'register-selection-tab') {
+        openRegisterSelectionPanel();
+      } else if (typeof switchTab === 'function') {
+        switchTab(requestedTab);
+      }
+    } else if (window.location.hash === '#register') {
+      openRegisterSelectionPanel();
+    }
+  } catch (e) {
+    console.warn('URL param navigation error:', e);
   }
 });
 
@@ -152,6 +173,7 @@ function switchTab(tabId) {
     document.getElementById('pill-register')?.classList.add('active');
   } else if (tabId === 'provider-application-tab') {
     document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('tab-btn-provider')?.classList.add('active');
     document.getElementById('pill-register')?.classList.add('active');
     if (typeof restoreProviderApplicationDraft === 'function') {
       restoreProviderApplicationDraft();
@@ -164,6 +186,7 @@ function switchTab(tabId) {
     }
   } else if (tabId === 'customer-application-tab') {
     document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('tab-btn-customer')?.classList.add('active');
     document.getElementById('pill-register')?.classList.add('active');
     if (typeof restoreCustomerApplicationDraft === 'function') {
       restoreCustomerApplicationDraft();
@@ -173,6 +196,7 @@ function switchTab(tabId) {
     }
   } else if (tabId === 'franchise-application-tab') {
     document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('tab-btn-franchise')?.classList.add('active');
     document.getElementById('pill-register')?.classList.add('active');
     if (typeof restoreFranchiseApplicationDraft === 'function') {
       restoreFranchiseApplicationDraft();
@@ -180,6 +204,9 @@ function switchTab(tabId) {
     if (typeof updateGoogleAuthBanners === 'function') {
       updateGoogleAuthBanners();
     }
+  } else if (tabId === 'franchise-tab') {
+    document.getElementById('tab-btn-franchise')?.classList.add('active');
+    document.getElementById('pill-franchise')?.classList.add('active');
   } else if (tabId === 'how-it-works-tab') {
     document.getElementById('tab-btn-how-it-works')?.classList.add('active');
     document.getElementById('pill-how-it-works')?.classList.add('active');
@@ -1173,6 +1200,8 @@ function bookCourierDispatch() {
   const origin = document.getElementById('courier-origin')?.value || 'Southport';
   const dest = document.getElementById('courier-dest')?.value || 'Brisbane CBD';
   const desc = document.getElementById('courier-desc')?.value || 'Parcels';
+  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
+  const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
   const totalText = document.getElementById('courier-total-fee')?.textContent.replace('$', '') || '169.62';
   const total = parseFloat(totalText);
   const docketNumber = 'IASJ-CR-' + Math.floor(100000 + Math.random() * 900000);
@@ -1183,11 +1212,13 @@ function bookCourierDispatch() {
     businessId: 'itsasimplejob',
     customerRefNumber,
     createdAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
+    pickupDate,
+    pickupTime,
     custName: 'Priority Consignor',
     custPhone: '07 5512 3456',
     custAddress: `${origin} ➔ ${dest}`,
-    custNotes: desc,
-    shift: 'Urgent Same-Day Express Transit',
+    custNotes: `${desc} (Pickup: ${pickupDate} - ${pickupTime.toUpperCase()})`,
+    shift: `Pickup: ${pickupDate} (${pickupTime.toUpperCase()}) • Express Transit`,
     categoryName: 'Courier & Freight Express',
     provider: {
       serviceProviderNumber: 'SPN-101002',
@@ -1364,7 +1395,7 @@ function renderInvoiceModal(booking) {
           <h3 style="font-size:1.3rem; font-weight:900; color:var(--primary-navy);">It's A Simple Job</h3>
           <p style="font-size:0.78rem; color:var(--text-muted);">
             Australia's 1st Labour, Courier & Hire Service Powered by AI<br>
-            ABN: 36 339 516 584 • Phone: 1300 SIMPLE • 24/7, 365 Days a Year Operations
+            ABN: 36 339 516 584 • Phone: 0495 019 791 • 24/7, 365 Days a Year Operations
           </p>
         </div>
         <div style="text-align:right;">
@@ -1604,25 +1635,33 @@ async function handleStripePaymentSubmit(event) {
 }
 
 /**
- * Franchise Modal
+ * Franchise Embedded Form Navigation
  */
 function openFranchiseModal(territory = 'Gold Coast Central') {
-  const modal = document.getElementById('franchise-modal');
-  const terrInput = document.getElementById('fran-territory');
-  if (terrInput) terrInput.value = territory;
-  if (modal) modal.classList.add('active');
+  if (typeof switchTab === 'function') {
+    switchTab('franchise-application-tab');
+  }
+  const regionInput = document.getElementById('franchise-admin-region');
+  if (regionInput && territory) {
+    regionInput.value = territory;
+  }
+  setTimeout(() => {
+    const embeddedCard = document.querySelector('#franchise-application-tab .embedded-form-card') || document.getElementById('franchise-application-tab');
+    if (embeddedCard) {
+      embeddedCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 60);
 }
 
 function closeFranchiseModal() {
-  document.getElementById('franchise-modal')?.classList.remove('active');
+  // Retained for backward-compatibility; no modal overlay needed as registration is embedded
 }
 
 function handleFranchiseSubmit(e) {
-  e.preventDefault();
-  const name = document.getElementById('fran-name')?.value;
-  const territory = document.getElementById('fran-territory')?.value;
-  closeFranchiseModal();
-  showToast(`Thank you, ${name}! Your franchise prospectus for ${territory} has been queued.`);
+  if (e && e.preventDefault) e.preventDefault();
+  if (typeof switchTab === 'function') {
+    switchTab('franchise-application-tab');
+  }
 }
 
 /**
@@ -3119,6 +3158,15 @@ function toggleFaq(id) {
   item.classList.toggle('open');
 }
 
+function goToFaq(id) {
+  switchTab('how-it-works-tab');
+  const item = document.getElementById(id);
+  if (!item) return;
+  item.classList.add('open');
+  setTimeout(() => item.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+}
+window.goToFaq = goToFaq;
+
 function openRegisterSelectionPanel() {
   document.getElementById('settings-dropdown-panel')?.classList.remove('show');
   document.getElementById('settings-menu-btn')?.classList.remove('active');
@@ -3442,6 +3490,12 @@ function handleProviderAdminClick() {
 function closeProviderAdminPanel() {
   document.getElementById('provider-admin-modal')?.classList.remove('active');
 }
+
+function openCustomerAdminPanel() {
+  document.getElementById('google-user-menu')?.classList.remove('show');
+  window.location.href = 'customer-admin.html';
+}
+window.openCustomerAdminPanel = openCustomerAdminPanel;
 
 function loadProviderIntoAdmin(providerId) {
   const provider = window.providerDB.findById(providerId);
@@ -3861,7 +3915,7 @@ function getGoogleCalendarUrl(booking) {
     `Customer Address: ${booking.custAddress || 'On-site'}`,
     `Shift Window: ${booking.shift || 'Urgent Dispatch'}`,
     `Estimated Total: $${booking.pricing?.estimatedTotal?.toFixed(2) || '0.00'} AUD`,
-    `24/7 Operations Hotline: 1300 SIMPLE (1300 746 753)`
+    `24/7 Operations Hotline: 0495 019 791`
   ].join('\n');
 
   const location = booking.custAddress || 'Australia';
@@ -4093,16 +4147,9 @@ function triggerGoogleCalendarManualSync() {
 
 function routeUserToDashboard(user) {
   if (!user) return;
-  if (user.role === 'customer') {
-    if (typeof switchTab === 'function') switchTab('ai-book-tab');
-  } else if (user.role === 'provider') {
-    if (user.hasCompletedApplication) {
-      if (typeof openProviderAdminPanel === 'function') openProviderAdminPanel(user.spn);
-    } else {
-      if (typeof openServiceProviderRegisterModal === 'function') openServiceProviderRegisterModal(user);
-    }
-  } else if (user.role === 'franchise_admin') {
-    if (typeof openFranchiseDashboard === 'function') openFranchiseDashboard();
+  // If provider has an active registered profile, they can view their admin panel if explicitly navigated
+  if (user.role === 'provider' && user.hasCompletedApplication) {
+    if (typeof openProviderAdminPanel === 'function') openProviderAdminPanel(user.spn);
   }
 }
 
@@ -4110,13 +4157,12 @@ function initGoogleAuthUI() {
   const existingUser = window.firebaseService?.getCurrentGoogleUser?.();
   if (existingUser) {
     updateGoogleAuthUI(existingUser);
-    // Route on initial load
-    setTimeout(() => routeUserToDashboard(existingUser), 500);
+    // Do NOT automatically switch tabs on initial page load - user must remain on the main app page
   }
 
   window.addEventListener('googleAuthStateChanged', (e) => {
     updateGoogleAuthUI(e.detail?.user);
-    if (e.detail?.action === 'login') {
+    if (e.detail?.action === 'login' && e.detail?.redirectOnLogin) {
       routeUserToDashboard(e.detail?.user);
     }
   });
@@ -4190,7 +4236,9 @@ function fallbackCopy(text, label) {
 // Franchise Admin Logic
 // ==========================================
 function openFranchiseRegisterModal(user = null) {
-  switchTab('franchise-application-tab');
+  if (typeof switchTab === 'function') {
+    switchTab('franchise-application-tab');
+  }
   const currentUser = user || (function() {
     try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
   })();
@@ -4203,27 +4251,28 @@ function openFranchiseRegisterModal(user = null) {
   if (typeof restoreFranchiseApplicationDraft === 'function') {
     restoreFranchiseApplicationDraft();
   }
+  setTimeout(() => {
+    const embeddedCard = document.querySelector('#franchise-application-tab .embedded-form-card') || document.getElementById('franchise-application-tab');
+    if (embeddedCard) {
+      embeddedCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 60);
 }
 
 function closeFranchiseRegisterModal() {
-  const panel = document.getElementById('franchise-register-modal');
-  if (panel) panel.classList.remove('active');
+  // Retained for backward-compatibility; no modal overlay needed as registration is embedded
 }
 
 function openFranchiseDashboard() {
-  const panel = document.getElementById('franchise-dashboard-modal');
-  const user = window.firebaseService?.getCurrentGoogleUser?.() || JSON.parse(localStorage.getItem('iasj_google_user'));
-  if (user && user.franchiseName) {
-    const title = document.getElementById('dashboard-franchise-name');
-    if (title) title.textContent = user.franchiseName;
+  if (window.location.pathname.endsWith('franchise.html')) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    window.location.href = 'franchise.html';
   }
-  renderFranchiseStaff();
-  if (panel) panel.classList.add('active');
 }
 
 function closeFranchiseDashboard() {
-  const panel = document.getElementById('franchise-dashboard-modal');
-  if (panel) panel.classList.remove('active');
+  // Modal removed - franchise.html is the dedicated page
 }
 
 async function handleFranchiseRegisterSubmit(e) {
@@ -4231,10 +4280,14 @@ async function handleFranchiseRegisterSubmit(e) {
   const franchiseName = document.getElementById('franchise-name')?.value.trim() || 'Franchise Partner';
   const abn = document.getElementById('franchise-abn')?.value.trim() || '';
   const adminName = document.getElementById('franchise-admin-name')?.value.trim() || 'Franchise Manager';
+  const adminTitle = document.getElementById('franchise-admin-title')?.value.trim() || 'General Manager & Operations Director';
   const adminEmail = document.getElementById('franchise-admin-email')?.value.trim() || '';
   const adminPhone = document.getElementById('franchise-admin-phone')?.value.trim() || '0412 000 000';
   const adminRegion = document.getElementById('franchise-admin-region')?.value.trim() || 'Australia';
+  const adminLicense = document.getElementById('franchise-admin-license')?.value.trim() || '';
+  const adminIsProvider = document.getElementById('franchise-admin-is-provider')?.checked || false;
   const adminPayId = document.getElementById('franchise-admin-payid')?.value.trim() || adminPhone;
+  const adminPayIdType = document.getElementById('franchise-admin-payid-type')?.value || 'email';
   const adminBankName = document.getElementById('franchise-admin-bank-name')?.value.trim() || franchiseName;
   const adminBsb = document.getElementById('franchise-admin-bsb')?.value.trim() || '084-004';
   const adminAccount = document.getElementById('franchise-admin-account')?.value.trim() || '98765432';
@@ -4245,33 +4298,136 @@ async function handleFranchiseRegisterSubmit(e) {
     email: adminEmail,
     role: 'franchise_admin',
     franchiseName: franchiseName,
+    title: adminTitle,
     abn: abn,
     phone: adminPhone,
     region: adminRegion,
+    license: adminLicense,
+    isFieldProvider: adminIsProvider,
     payId: adminPayId,
+    payIdType: adminPayIdType,
     photoURL: 'assets/images/tradie_worker.jpg'
   };
 
   localStorage.setItem('iasj_google_user', JSON.stringify(user));
 
-  // Collect and register each staff technician as a provider
+  // Collect and register each staff technician and service provider
   const staffCards = document.querySelectorAll('#franchise-staff-container .franchise-staff-card');
   const registeredStaffList = [];
+
+  // If Manager is also marked as an active field provider, register Manager
+  if (adminIsProvider) {
+    const managerSpn = window.firebaseService?.generateSPN?.() || (`SPN-${Math.floor(100000 + Math.random() * 900000)}`);
+    const mgrLat = -28.0027 + (Math.random() * 0.08 - 0.04);
+    const mgrLng = 153.4146 + (Math.random() * 0.08 - 0.04);
+
+    const managerProvider = {
+      id: managerSpn,
+      serviceProviderNumber: managerSpn,
+      name: adminName,
+      businessName: `${adminName} (${franchiseName} - GM & Field Operations)`,
+      category: 'handyman',
+      tradeTitle: `${adminTitle} (${franchiseName})`,
+      qbccLicense: adminLicense || 'Business Registered Licence',
+      phone: adminPhone,
+      email: adminEmail,
+      baseSuburb: adminRegion,
+      country: 'AU',
+      distanceUnit: 'km',
+      radius: 35,
+      serviceAreas: [adminRegion],
+      pricing: { hourly: 110, flat: 180, callout: 50 },
+      servicesList: [
+        { name: "Emergency Dispatch & Priority Inspection", feeStructure: "hourly", rate: 110, callout: 50 },
+        { name: "Comprehensive Project Management & Site Review", feeStructure: "flat", rate: 250, callout: 0 }
+      ],
+      servicesOffered: "Emergency Dispatch & Priority Inspection, Comprehensive Project Management",
+      skills: ["project management", "emergency inspection", "field diagnostics"],
+      hourlyRate: 110,
+      location: { lat: mgrLat, lng: mgrLng },
+      bankDetails: {
+        accountName: adminBankName,
+        bsb: adminBsb,
+        accountNumber: adminAccount,
+        bankName: 'Franchise Central Settlement'
+      },
+      payId: adminPayId,
+      payIdType: adminPayIdType,
+      workingHours: {
+        is24_7: true,
+        shiftDescription: "24/7 • 365 Days a Year Franchise Dispatch",
+        shifts: ['emergency_24_7', 'morning', 'afternoon', 'evening', 'overnight']
+      },
+      rating: 5.0,
+      reviewCount: 2,
+      status: 'active',
+      isFranchiseManager: true,
+      franchiseName,
+      franchiseAdmin: adminName,
+      franchiseId: user.uid
+    };
+
+    if (window.providerDB) {
+      window.providerDB.addProvider(managerProvider);
+    }
+    if (window.firebaseService?.saveProviderToFirestore) {
+      await window.firebaseService.saveProviderToFirestore(managerProvider);
+    }
+
+    registeredStaffList.push({
+      id: managerSpn,
+      name: `${adminName} (Franchise Manager)`,
+      email: adminEmail,
+      phone: adminPhone,
+      category: 'handyman',
+      tradeTitle: adminTitle,
+      payId: adminPayId,
+      isManager: true,
+      addedAt: new Date().toISOString()
+    });
+  }
 
   for (let idx = 0; idx < staffCards.length; idx++) {
     const card = staffCards[idx];
     const i = card.dataset.index;
     const name = document.getElementById(`franchise-staff-${i}-name`)?.value.trim() || `Staff Technician #${idx + 1}`;
+    const businessName = document.getElementById(`franchise-staff-${i}-business`)?.value.trim() || `${name} (${franchiseName})`;
+    const bizName = document.getElementById(`franchise-staff-${i}-biz-name`)?.value.trim() || businessName;
+    const bizCodeType = document.getElementById(`franchise-staff-${i}-biz-code-type`)?.value || 'ABN';
+    const bizNumber = document.getElementById(`franchise-staff-${i}-biz-number`)?.value.trim() || '';
+    const bizStructure = document.getElementById(`franchise-staff-${i}-biz-structure`)?.value || 'sole_trader';
+    const bizGst = document.getElementById(`franchise-staff-${i}-biz-gst`)?.value || 'yes';
+    const bizAddress = document.getElementById(`franchise-staff-${i}-biz-address`)?.value.trim() || '';
     const phone = document.getElementById(`franchise-staff-${i}-phone`)?.value.trim() || adminPhone;
     const email = document.getElementById(`franchise-staff-${i}-email`)?.value.trim() || adminEmail;
     const category = document.getElementById(`franchise-staff-${i}-category`)?.value || 'plumbing';
     const license = document.getElementById(`franchise-staff-${i}-license`)?.value.trim() || 'Verified Licence';
     const suburb = document.getElementById(`franchise-staff-${i}-suburb`)?.value.trim() || adminRegion;
+    const country = document.getElementById(`franchise-staff-${i}-country`)?.value || 'AU';
     const radius = parseFloat(document.getElementById(`franchise-staff-${i}-radius`)?.value) || 25;
     const distRadio = document.querySelector(`input[name="franchise-staff-${i}-dist-unit"]:checked`);
     const distUnit = distRadio ? distRadio.value : 'km';
-    const services = collectServicesFeeData(`franchise-staff-${i}`);
+    const areasInput = document.getElementById(`franchise-staff-${i}-areas`)?.value.trim() || '';
+    const serviceAreas = areasInput ? areasInput.split(',').map(s => s.trim()).filter(Boolean) : [suburb];
 
+    // Pricing & Rates
+    const hourlyActive = document.getElementById(`franchise-staff-${i}-rate-hourly`)?.checked !== false;
+    const hourlyRate = parseFloat(document.getElementById(`franchise-staff-${i}-hourly-rate`)?.value) || 95;
+    const flatActive = document.getElementById(`franchise-staff-${i}-rate-flat`)?.checked || false;
+    const flatRate = parseFloat(document.getElementById(`franchise-staff-${i}-flat-rate`)?.value) || 150;
+    const calloutActive = document.getElementById(`franchise-staff-${i}-rate-callout`)?.checked || false;
+    const calloutRate = parseFloat(document.getElementById(`franchise-staff-${i}-callout-rate`)?.value) || 45;
+    const chargeDistance = document.getElementById(`franchise-staff-${i}-rate-distance`)?.checked || false;
+    const calloutPerKm = parseFloat(document.getElementById(`franchise-staff-${i}-callout-per-km`)?.value) || 1.50;
+    const courierPerKm = parseFloat(document.getElementById(`franchise-staff-${i}-courier-per-km`)?.value) || 1.20;
+    const freeKm = parseFloat(document.getElementById(`franchise-staff-${i}-free-km`)?.value) || 10;
+
+    const services = collectServicesFeeData(`franchise-staff-${i}`);
+    const equipment = document.getElementById(`franchise-staff-${i}-equipment`)?.value.trim() || '';
+
+    // Status & 24/7 Hours
+    const statusRadio = document.querySelector(`input[name="franchise-staff-${i}-profile-status"]:checked`);
+    const profileStatus = statusRadio ? statusRadio.value : 'active';
     const is24_7 = document.getElementById(`franchise-staff-${i}-shift-247`)?.checked || false;
     const shifts = [];
     if (is24_7) shifts.push('emergency_24_7');
@@ -4279,9 +4435,13 @@ async function handleFranchiseRegisterSubmit(e) {
     if (document.getElementById(`franchise-staff-${i}-shift-aft`)?.checked) shifts.push('afternoon');
     if (document.getElementById(`franchise-staff-${i}-shift-eve`)?.checked) shifts.push('evening');
     if (document.getElementById(`franchise-staff-${i}-shift-overnight`)?.checked) shifts.push('overnight');
+    const insured = document.getElementById(`franchise-staff-${i}-insured`)?.checked || false;
 
+    // Remuneration Route
     const route = document.getElementById(`franchise-staff-${i}-payout-route`)?.value || 'franchise';
     const staffPayId = document.getElementById(`franchise-staff-${i}-payid`)?.value.trim() || adminPayId;
+    const staffPayIdType = document.getElementById(`franchise-staff-${i}-payid-type`)?.value || 'phone';
+    const staffBankName = document.getElementById(`franchise-staff-${i}-bank-name`)?.value.trim() || name;
     const staffBsb = document.getElementById(`franchise-staff-${i}-bsb`)?.value.trim() || adminBsb;
     const staffAccount = document.getElementById(`franchise-staff-${i}-account`)?.value.trim() || adminAccount;
 
@@ -4290,37 +4450,62 @@ async function handleFranchiseRegisterSubmit(e) {
     const lng = 153.4146 + (Math.random() * 0.1 - 0.05);
 
     const staffProvider = {
+      id: spn,
       name,
-      businessName: `${name} (${franchiseName})`,
+      businessName: bizName || businessName,
+      businessLegalName: bizName,
+      businessNumber: bizNumber,
+      businessCodeType: bizCodeType,
+      abn: bizNumber,
+      businessStructure: bizStructure,
+      gstRegistered: bizGst === 'yes',
+      businessAddress: bizAddress,
       category,
       serviceProviderNumber: spn,
       tradeTitle: `${category.toUpperCase()} Specialist (${franchiseName})`,
       qbccLicense: license,
       phone,
       email,
-      suburb,
-      country: 'AU',
+      baseSuburb: suburb,
+      country,
       distanceUnit: distUnit,
       radius,
+      serviceAreas,
+      pricing: {
+        hourly: hourlyRate,
+        flat: flatRate,
+        callout: calloutRate,
+        distanceCharge: {
+          enabled: chargeDistance,
+          calloutPerKm,
+          courierPerKm,
+          freeKm
+        }
+      },
       servicesList: services,
       servicesOffered: services.map(s => s.name).join(', ') || `${category} services`,
       skills: services.length > 0 ? services.map(s => s.name.toLowerCase()) : [category],
-      hourlyRate: services.find(s => s.feeStructure === 'hourly')?.rate || 85,
+      hourlyRate: hourlyActive ? hourlyRate : (services.find(s => s.feeStructure === 'hourly')?.rate || 85),
+      tools: equipment,
       location: { lat, lng },
-      serviceAreas: [suburb],
+      insurance: insured ? "$10M+ Public Liability / Transit Cover Verified" : "",
       bankDetails: route === 'staff' ? {
-        accountName: name,
+        accountName: staffBankName,
         bsb: staffBsb,
         accountNumber: staffAccount,
-        bankName: 'Staff Designated Account'
+        bankName: 'Staff Designated Account',
+        payId: staffPayId,
+        payIdType: staffPayIdType
       } : {
         accountName: adminBankName,
         bsb: adminBsb,
         accountNumber: adminAccount,
-        bankName: 'Franchise Central Settlement'
+        bankName: 'Franchise Central Settlement',
+        payId: adminPayId,
+        payIdType: adminPayIdType
       },
       payId: route === 'staff' ? staffPayId : adminPayId,
-      payIdType: 'phone',
+      payIdType: route === 'staff' ? staffPayIdType : adminPayIdType,
       workingHours: {
         is24_7,
         shiftDescription: is24_7 ? "24/7 • 365 Days a Year On-Call" : "Standard Registered Shifts",
@@ -4328,7 +4513,7 @@ async function handleFranchiseRegisterSubmit(e) {
       },
       rating: 5.0,
       reviewCount: 1,
-      status: 'active',
+      status: profileStatus,
       franchiseName,
       franchiseAdmin: adminName,
       franchiseId: user.uid
@@ -4347,7 +4532,19 @@ async function handleFranchiseRegisterSubmit(e) {
       email,
       phone,
       category,
+      tradeTitle: `${category.toUpperCase()} Specialist`,
+      bizName,
+      bizCodeType,
+      bizNumber,
+      bizStructure,
+      bizGst,
+      abn: bizNumber,
+      bizAddress,
       payId: route === 'staff' ? staffPayId : adminPayId,
+      route,
+      servicesCount: services.length,
+      is24_7,
+      status: profileStatus,
       addedAt: new Date().toISOString()
     });
   }
@@ -4359,9 +4556,11 @@ async function handleFranchiseRegisterSubmit(e) {
       franchiseName,
       abn,
       adminName,
+      adminTitle,
       adminEmail,
       adminPhone,
       adminRegion,
+      adminIsProvider,
       staffCount: registeredStaffList.length
     });
   }
@@ -4370,69 +4569,101 @@ async function handleFranchiseRegisterSubmit(e) {
   if (typeof clearFranchiseApplicationDraft === 'function') {
     clearFranchiseApplicationDraft(false);
   }
-  showToast(`✅ Franchise '${franchiseName}' registered with ${registeredStaffList.length} staff technician(s)!`);
+  showToast(`✅ Franchise '${franchiseName}' registered with Manager '${adminName}' and ${registeredStaffList.length} staff technician(s)!`);
   
   window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: user, action: 'login' } }));
   if (window.filterContractors) window.filterContractors();
-  openFranchiseDashboard();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function handleAddStaffSubmit(e) {
   e.preventDefault();
-  const name = document.getElementById('staff-name').value.trim();
-  const email = document.getElementById('staff-email').value.trim();
-  const payId = document.getElementById('staff-payid').value.trim();
+  const name = document.getElementById('staff-name')?.value.trim();
+  const email = document.getElementById('staff-email')?.value.trim();
+  const payId = document.getElementById('staff-payid')?.value.trim();
+  const bizName = document.getElementById('staff-biz-name')?.value.trim() || '';
+  const bizCodeType = document.getElementById('staff-biz-code-type')?.value || 'ABN';
+  const bizNumber = document.getElementById('staff-biz-number')?.value.trim() || '';
+  const bizStructure = document.getElementById('staff-biz-structure')?.value || 'sole_trader';
+  const bizGst = document.getElementById('staff-biz-gst')?.value || 'yes';
+  const bizAddress = document.getElementById('staff-biz-address')?.value.trim() || '';
+  const category = document.getElementById('staff-category')?.value || 'handyman';
+  if (!name) return;
 
   let staffList = JSON.parse(localStorage.getItem('iasj_franchise_staff') || '[]');
   
+  const spn = window.firebaseService?.generateSPN?.() || ('SPN-' + Math.floor(100000 + Math.random() * 900000));
   const newStaff = {
-    id: 'staff-' + Date.now(),
+    id: spn,
     name,
     email,
     payId,
+    category,
+    tradeTitle: `${category.charAt(0).toUpperCase() + category.slice(1)} Specialist`,
+    bizName,
+    bizCodeType,
+    bizNumber,
+    bizStructure,
+    bizGst,
+    abn: bizNumber,
+    bizAddress,
+    is24_7: true,
+    status: 'active',
     addedAt: new Date().toISOString()
   };
 
   staffList.push(newStaff);
   localStorage.setItem('iasj_franchise_staff', JSON.stringify(staffList));
   
-  // Also register staff as a provider globally so they appear in searches
-  // Generate random coords nearby for the map
+  // Register staff globally
   const lat = -28.0 + (Math.random() * 0.1 - 0.05);
   const lng = 153.4 + (Math.random() * 0.1 - 0.05);
   
   const providerProfile = {
-    serviceProviderNumber: 'SPN-' + Math.floor(100000 + Math.random() * 900000),
+    id: spn,
+    serviceProviderNumber: spn,
     name: name,
-    businessName: newStaff.name + ' (Franchise Staff)',
+    businessName: bizName || (newStaff.name + ' (Franchise Staff)'),
+    businessLegalName: bizName,
+    businessNumber: bizNumber,
+    businessCodeType: bizCodeType,
+    abn: bizNumber,
+    businessStructure: bizStructure,
+    gstRegistered: bizGst === 'yes',
+    businessAddress: bizAddress,
     phone: '0400 000 000',
     email: email,
     location: { lat, lng },
-    radiusKm: 20,
-    services: ['Handyman', 'Plumbing'],
-    status: 'Available',
+    radius: 25,
+    distanceUnit: 'km',
+    category: category,
+    tradeTitle: `${category.charAt(0).toUpperCase() + category.slice(1)} Specialist (Franchise Staff)`,
+    servicesList: [{ name: "General Maintenance & Service", feeStructure: "hourly", rate: 85, callout: 35 }],
+    servicesOffered: 'General Maintenance & Service',
+    status: 'active',
+    workingHours: {
+      is24_7: true,
+      shiftDescription: "24/7 • 365 Days On-Call Dispatch",
+      shifts: ['emergency_24_7', 'morning', 'afternoon']
+    },
     bankDetails: {
+      accountName: name,
       payId: payId,
-      bsb: '',
-      account: ''
-    }
+      bsb: '084-004',
+      account: '12345678'
+    },
+    payId: payId,
+    payIdType: 'phone'
   };
 
-  // Add to global provider DB
-  if (window.addProviderToDatabase) {
-    window.addProviderToDatabase(providerProfile);
+  if (window.providerDB) {
+    window.providerDB.addProvider(providerProfile);
   }
 
-  // Sync to Stripe if service exists
-  if (window.stripePaymentService && window.stripePaymentService.registerProviderUser) {
-    window.stripePaymentService.registerProviderUser(providerProfile).catch(err => console.warn('Stripe register staff error:', err));
-  }
-  
-  document.getElementById('franchise-add-staff-form').reset();
-  showToast(`✅ Staff member '${name}' added successfully!`);
+  document.getElementById('franchise-add-staff-form')?.reset();
+  showToast(`✅ Staff member '${name}' registered with ${spn} (${bizCodeType}: ${bizNumber || 'Registered'})!`);
   renderFranchiseStaff();
   
-  // Re-filter contractors map
   if (window.filterContractors) window.filterContractors();
 }
 
@@ -4443,21 +4674,47 @@ function renderFranchiseStaff() {
   const staffList = JSON.parse(localStorage.getItem('iasj_franchise_staff') || '[]');
   
   if (staffList.length === 0) {
-    container.innerHTML = `<div style="padding:1rem; text-align:center; color:var(--text-muted); font-size:0.85rem; border:1px dashed var(--border-light); border-radius:var(--radius-md);">No staff added yet.</div>`;
+    container.innerHTML = `<div style="padding:1.5rem; text-align:center; color:var(--text-muted); font-size:0.85rem; border:1.5px dashed var(--border-light); border-radius:var(--radius-md); background:#fff;">No staff or service providers registered under this franchise yet.</div>`;
     return;
   }
 
-  container.innerHTML = staffList.map(staff => `
-    <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1rem; display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <h4 style="margin:0; color:var(--primary-navy); font-size:1rem; font-weight:700;">${staff.name}</h4>
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
-          <i class="fa-solid fa-envelope"></i> ${staff.email} <span style="margin:0 0.5rem;">|</span> <i class="fa-solid fa-money-check-dollar"></i> ${staff.payId}
+  container.innerHTML = staffList.map(staff => {
+    const cat = staff.category || 'plumbing';
+    const isOnline = staff.status !== 'paused';
+    return `
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <span class="franchise-staff-badge badge-${cat}">
+            ${cat.toUpperCase()}
+          </span>
+          <div>
+            <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+              <h4 style="margin:0; color:var(--primary-navy); font-size:1.02rem; font-weight:800;">
+                ${staff.name} ${staff.isManager ? '<span style="font-size:0.72rem; background:#EDE9FE; color:#7E22CE; padding:0.15rem 0.5rem; border-radius:10px; font-weight:700;">MANAGER</span>' : ''}
+              </h4>
+              ${staff.bizNumber ? `<span style="font-size:0.72rem; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; padding:0.12rem 0.5rem; border-radius:6px; font-weight:700;"><i class="fa-solid fa-briefcase"></i> ${staff.bizCodeType || 'ABN'}: ${staff.bizNumber}</span>` : ''}
+            </div>
+            ${staff.bizName ? `<div style="font-size:0.78rem; font-weight:700; color:#475569; margin-top:0.2rem;"><i class="fa-solid fa-building"></i> ${staff.bizName} ${staff.bizStructure ? '<span style="font-weight:400; color:#64748B;">(' + staff.bizStructure.replace('_', ' ').toUpperCase() + ')</span>' : ''}</div>` : ''}
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem; display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+              <span><i class="fa-solid fa-id-card"></i> <strong>${staff.id || 'SPN-Verified'}</strong></span>
+              <span>•</span>
+              <span><i class="fa-solid fa-phone"></i> ${staff.phone || '0400 000 000'}</span>
+              <span>•</span>
+              <span><i class="fa-solid fa-envelope"></i> ${staff.email || 'staff@franchise.com'}</span>
+              <span>•</span>
+              <span><i class="fa-solid fa-money-check-dollar"></i> ${staff.payId || 'Central Bank'}</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          ${staff.is24_7 ? '<span style="font-size:0.72rem; background:#FFFBEB; color:#B45309; padding:0.2rem 0.55rem; border-radius:12px; font-weight:800; border:1px solid #FDE68A;"><i class="fa-solid fa-bolt"></i> 24/7 ON-CALL</span>' : ''}
+          <span class="badge-status ${isOnline ? 'online' : 'offline'}" style="font-size:0.75rem; font-weight:700;">
+            ${isOnline ? '🟢 Active Dispatch' : '⏸️ Paused'}
+          </span>
         </div>
       </div>
-      <span class="badge-status online">Active</span>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 window.openFranchiseRegisterModal = openFranchiseRegisterModal;
@@ -4466,6 +4723,9 @@ window.openFranchiseDashboard = openFranchiseDashboard;
 window.closeFranchiseDashboard = closeFranchiseDashboard;
 window.handleFranchiseRegisterSubmit = handleFranchiseRegisterSubmit;
 window.handleAddStaffSubmit = handleAddStaffSubmit;
+window.renderFranchiseStaff = renderFranchiseStaff;
+window.handleAddStaffSubmit = handleAddStaffSubmit;
+window.renderFranchiseStaff = renderFranchiseStaff;
 
 // =========================================================================
 // DRAFT PERSISTENCE & AUTO-SAVE CONTROLLER (GOOGLE ACCOUNT LINKED)
@@ -4849,6 +5109,131 @@ function clearCustomerApplicationDraft(notify = true) {
 // -------------------------------------------------------------------------
 let franchiseStaffCounter = 0;
 
+function updateFranchiseStaffStats() {
+  const container = document.getElementById('franchise-staff-container');
+  const pill = document.getElementById('franchise-staff-stats-pill');
+  if (!container || !pill) return;
+  const count = container.querySelectorAll('.franchise-staff-card').length;
+  pill.innerHTML = `<i class="fa-solid fa-users"></i> Staff: ${count} Loaded`;
+}
+
+function handleLinkExistingProviderChange(index, providerId) {
+  if (!providerId) return;
+  const providers = (window.providerDB && window.providerDB.getAllProviders) 
+    ? window.providerDB.getAllProviders() 
+    : (typeof INITIAL_PROVIDERS !== 'undefined' ? INITIAL_PROVIDERS : []);
+  const p = providers.find(item => item.id === providerId || item.serviceProviderNumber === providerId);
+  if (!p) return;
+
+  const nameInput = document.getElementById(`franchise-staff-${index}-name`);
+  const businessInput = document.getElementById(`franchise-staff-${index}-business`);
+  const phoneInput = document.getElementById(`franchise-staff-${index}-phone`);
+  const emailInput = document.getElementById(`franchise-staff-${index}-email`);
+  const catSelect = document.getElementById(`franchise-staff-${index}-category`);
+  const licenseInput = document.getElementById(`franchise-staff-${index}-license`);
+  const suburbInput = document.getElementById(`franchise-staff-${index}-suburb`);
+  const countrySelect = document.getElementById(`franchise-staff-${index}-country`);
+  const radiusInput = document.getElementById(`franchise-staff-${index}-radius`);
+  const areasInput = document.getElementById(`franchise-staff-${index}-areas`);
+  const equipmentInput = document.getElementById(`franchise-staff-${index}-equipment`);
+  const hourlyRateInput = document.getElementById(`franchise-staff-${index}-hourly-rate`);
+
+  const bizNameInput = document.getElementById(`franchise-staff-${index}-biz-name`);
+  const bizCodeTypeSelect = document.getElementById(`franchise-staff-${index}-biz-code-type`);
+  const bizNumberInput = document.getElementById(`franchise-staff-${index}-biz-number`);
+  const bizStructureSelect = document.getElementById(`franchise-staff-${index}-biz-structure`);
+  const bizGstSelect = document.getElementById(`franchise-staff-${index}-biz-gst`);
+  const bizAddressInput = document.getElementById(`franchise-staff-${index}-biz-address`);
+
+  if (nameInput) nameInput.value = p.name || '';
+  if (businessInput) businessInput.value = p.businessName || `${p.name} (Franchise Staff)`;
+  if (phoneInput) phoneInput.value = p.phone || '';
+  if (emailInput) emailInput.value = p.email || '';
+  if (catSelect && p.category) {
+    catSelect.value = p.category;
+    handleFranchiseStaffCategoryChange(index, p.category);
+  }
+  if (licenseInput) licenseInput.value = p.qbccLicense || p.license || '';
+  if (suburbInput) suburbInput.value = p.baseSuburb || p.suburb || '';
+  if (countrySelect) countrySelect.value = p.country || 'AU';
+  if (radiusInput) radiusInput.value = p.radius || 25;
+  if (areasInput && p.serviceAreas) areasInput.value = Array.isArray(p.serviceAreas) ? p.serviceAreas.join(', ') : p.serviceAreas;
+  if (equipmentInput && (p.vehicle || p.equipment || p.tools)) equipmentInput.value = p.vehicle || p.equipment || p.tools || '';
+  if (hourlyRateInput && p.hourlyRate) hourlyRateInput.value = p.hourlyRate;
+
+  // Business Information Fields
+  if (bizNameInput) bizNameInput.value = p.businessLegalName || p.businessName || '';
+  if (bizNumberInput) bizNumberInput.value = p.abn || p.businessNumber || p.bizNumber || '';
+  if (bizCodeTypeSelect && (p.businessCodeType || p.bizCodeType)) {
+    bizCodeTypeSelect.value = p.businessCodeType || p.bizCodeType;
+    handleStaffBizCodeTypeChange(index, bizCodeTypeSelect.value);
+  }
+  if (bizStructureSelect && (p.businessStructure || p.bizStructure)) bizStructureSelect.value = p.businessStructure || p.bizStructure;
+  if (bizGstSelect && (p.gstRegistered !== undefined || p.bizGst)) {
+    bizGstSelect.value = (p.gstRegistered === false || p.bizGst === 'no') ? 'no' : 'yes';
+  }
+  if (bizAddressInput && (p.businessAddress || p.bizAddress)) bizAddressInput.value = p.businessAddress || p.bizAddress;
+
+  // Working hours
+  const cb247 = document.getElementById(`franchise-staff-${index}-shift-247`);
+  if (cb247) cb247.checked = !!(p.workingHours?.is24_7 || p.is24_7);
+
+  // Remuneration
+  if (p.payId) {
+    const payidInput = document.getElementById(`franchise-staff-${index}-payid`);
+    if (payidInput) payidInput.value = p.payId;
+    const routeSelect = document.getElementById(`franchise-staff-${index}-payout-route`);
+    if (routeSelect) {
+      routeSelect.value = 'staff';
+      toggleStaffDirectPayFields(index);
+    }
+  }
+  if (p.bankDetails) {
+    const bsb = document.getElementById(`franchise-staff-${index}-bsb`);
+    const acc = document.getElementById(`franchise-staff-${index}-account`);
+    if (bsb) bsb.value = p.bankDetails.bsb || '';
+    if (acc) acc.value = p.bankDetails.accountNumber || p.bankDetails.account || '';
+  }
+
+  // Services
+  if (p.servicesList && Array.isArray(p.servicesList) && p.servicesList.length > 0) {
+    const sContainer = document.getElementById(`franchise-staff-${index}-services-fee-container`);
+    if (sContainer) {
+      sContainer.innerHTML = '';
+      p.servicesList.forEach(s => addServiceFeeRow(`franchise-staff-${index}`, s));
+    }
+  }
+
+  updateStaffHeaderSummary(index);
+  showToast(`✅ Linked '${p.name}' (${p.serviceProviderNumber || p.category}) to staff roster.`);
+}
+
+function handleStaffBizCodeTypeChange(index, codeType) {
+  const numberInput = document.getElementById(`franchise-staff-${index}-biz-number`);
+  const label = document.getElementById(`franchise-staff-${index}-biz-number-label`);
+  const hint = document.getElementById(`franchise-staff-${index}-biz-number-hint`);
+  if (!numberInput) return;
+
+  const placeholders = {
+    'ABN': 'e.g. 51 824 753 556 (or ACN)',
+    'NZBN': 'e.g. 9429041234567 (13 digits)',
+    'EIN': 'e.g. 12-3456789 (US Tax ID)',
+    'CRN': 'e.g. 12345678 or SC123456 (UK Company / UTR)',
+    'BN': 'e.g. 123456789 RT0001 (Canada BN)',
+    'UEN': 'e.g. 201812345Z (Singapore UEN)',
+    'OTHER': 'e.g. Any combination of numbers, letters, codes'
+  };
+
+  numberInput.placeholder = placeholders[codeType] || 'Enter business number or code';
+  if (label) {
+    label.textContent = `${codeType} Business Number / Code (Any combination of numbers/codes)`;
+  }
+  if (hint) {
+    hint.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10B981;"></i> Format: Accepts any alphanumeric string, hyphens, spaces or country codes.`;
+  }
+  updateStaffHeaderSummary(index);
+}
+
 function addFranchiseStaffMember(data = null) {
   const container = document.getElementById('franchise-staff-container');
   if (!container) return;
@@ -4858,57 +5243,80 @@ function addFranchiseStaffMember(data = null) {
   const staffName = data?.name || `Staff Technician #${staffNumber}`;
   const category = data?.category || 'plumbing';
 
+  // Get existing registered providers to populate quick-link dropdown
+  const allExistingProviders = (window.providerDB && window.providerDB.getAllProviders) 
+    ? window.providerDB.getAllProviders() 
+    : (typeof INITIAL_PROVIDERS !== 'undefined' ? INITIAL_PROVIDERS : []);
+
+  const providerOptions = allExistingProviders.map(p => `
+    <option value="${p.id || p.serviceProviderNumber}" ${data?.linkedProviderId === (p.id || p.serviceProviderNumber) ? 'selected' : ''}>
+      ${p.name} — ${p.category ? p.category.toUpperCase() : 'TRADE'} (${p.serviceProviderNumber || 'SPN'}) • ${p.baseSuburb || 'AU'}
+    </option>
+  `).join('');
+
   const card = document.createElement('div');
   card.className = 'franchise-staff-card';
   card.id = `franchise-staff-card-${index}`;
   card.dataset.index = index;
 
   card.innerHTML = `
-    <!-- Staff Card Header -->
+    <!-- Staff Card Dropdown Header -->
     <div class="franchise-staff-header" onclick="toggleStaffCardCollapse(${index})">
       <div class="franchise-staff-header-info">
-        <span class="franchise-staff-badge" id="franchise-staff-${index}-badge">${category.toUpperCase()}</span>
+        <span class="franchise-staff-badge badge-${category}" id="franchise-staff-${index}-badge">${category.toUpperCase()}</span>
         <div>
           <h4 class="franchise-staff-title" id="franchise-staff-${index}-header-title">
             Staff #${staffNumber}: ${staffName}
           </h4>
           <span class="franchise-staff-sub" id="franchise-staff-${index}-header-sub">
-            ${data?.phone || 'Field Service Technician'} &bull; ${data?.suburb || 'Territory Fleet'}
+            ${data?.phone || 'Field Service Technician'} • ${data?.suburb || 'Territory Fleet'} • 🟢 Active
           </span>
         </div>
       </div>
       <div class="franchise-staff-controls" onclick="event.stopPropagation()">
-        <button type="button" class="btn btn-outline btn-sm" onclick="toggleStaffCardCollapse(${index})" title="Expand / Collapse" style="background:#fff; font-size:0.75rem; padding:0.25rem 0.55rem;">
-          <i class="fa-solid fa-chevron-up" id="franchise-staff-${index}-toggle-icon"></i>
+        <button type="button" class="franchise-dropdown-toggle-pill" onclick="toggleStaffCardCollapse(${index})" title="Toggle Dropdown Box">
+          <i class="fa-solid fa-chevron-up franchise-toggle-icon" id="franchise-staff-${index}-toggle-icon"></i>
+          <span id="franchise-staff-${index}-toggle-text">Dropdown Details</span>
         </button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="removeFranchiseStaffMember(${index})" title="Remove Staff Member" style="background:#fff; color:#DC2626; border-color:#FCA5A5; font-size:0.75rem; padding:0.25rem 0.55rem;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="removeFranchiseStaffMember(${index})" title="Remove Staff Member" style="background:#fff; color:#DC2626; border-color:#FCA5A5; font-size:0.75rem; padding:0.35rem 0.65rem; border-radius:var(--radius-sm);">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>
 
-    <!-- Staff Card Body -->
+    <!-- Staff Card Dropdown Body: Exact Full Details of Service Provider Form -->
     <div class="franchise-staff-body" id="franchise-staff-${index}-body">
-      <!-- A. Profile & Credentials -->
+      
+      <!-- Top Dropdown: Quick-Link Registered Service Provider OR Fresh Staff -->
+      <div class="franchise-provider-link-box">
+        <label for="franchise-staff-${index}-link-existing">
+          <i class="fa-solid fa-link"></i> Select from Existing Service Provider Network (or leave to create fresh staff):
+        </label>
+        <select id="franchise-staff-${index}-link-existing" class="form-control" onchange="handleLinkExistingProviderChange(${index}, this.value)">
+          <option value="">-- [➕ Create New Staff Technician / Service Provider] --</option>
+          ${providerOptions}
+        </select>
+        <div style="font-size:0.75rem; color:#6B21A8; margin-top:0.35rem;">
+          <i class="fa-solid fa-circle-info"></i> Selecting an existing provider automatically fills all trade details, fee structures, and credentials into this dropdown box.
+        </div>
+      </div>
+
+      <!-- 1. Profile & Trade Credentials (Same as Service Provider Form Section 1) -->
       <div class="franchise-staff-section-title" style="margin-top:0;">
-        <i class="fa-solid fa-id-card-clip" style="color:#7E22CE;"></i> A. Staff Profile & Trade Discipline
+        <i class="fa-solid fa-address-card" style="color:var(--brand-orange);"></i> 1. Staff Profile & Trade Credentials
       </div>
       <div class="form-row">
         <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-name">Staff Full Name</label>
+          <label class="input-label" for="franchise-staff-${index}-name">Staff Full Name / Primary Contact</label>
           <input type="text" id="franchise-staff-${index}-name" class="form-control" value="${data?.name || ''}" placeholder="e.g. Luke Sullivan" required oninput="updateStaffHeaderSummary(${index})">
         </div>
         <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-phone">Staff Mobile Phone</label>
-          <input type="tel" id="franchise-staff-${index}-phone" class="form-control" value="${data?.phone || ''}" placeholder="0400 123 456" required oninput="updateStaffHeaderSummary(${index})">
+          <label class="input-label" for="franchise-staff-${index}-business">Business / Fleet Display Name</label>
+          <input type="text" id="franchise-staff-${index}-business" class="form-control" value="${data?.businessName || ''}" placeholder="e.g. Luke Sullivan (Jim's Mowing Field Tech)">
         </div>
       </div>
 
       <div class="form-row">
-        <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-email">Staff Email Address</label>
-          <input type="email" id="franchise-staff-${index}-email" class="form-control" value="${data?.email || ''}" placeholder="e.g. luke@franchise.com">
-        </div>
         <div class="input-group">
           <label class="input-label" for="franchise-staff-${index}-category">Primary Trade Discipline</label>
           <select id="franchise-staff-${index}-category" class="form-control" onchange="handleFranchiseStaffCategoryChange(${index}, this.value)">
@@ -4923,22 +5331,119 @@ function addFranchiseStaffMember(data = null) {
             <option value="civil" ${category === 'civil' ? 'selected' : ''}>Civil & Machine Plant Operator</option>
           </select>
         </div>
-      </div>
-
-      <div class="form-row">
         <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-license">Trade Licence # / Driver Licence / Certification</label>
+          <label class="input-label" for="franchise-staff-${index}-license">Licence # / Certification / Driver Lic</label>
           <input type="text" id="franchise-staff-${index}-license" class="form-control" value="${data?.license || ''}" placeholder="e.g. QBCC #1509214 or Open Driver Licence">
         </div>
+      </div>
+
+      <div class="form-row">
         <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-suburb">Operating Base Suburb</label>
-          <input type="text" id="franchise-staff-${index}-suburb" class="form-control" value="${data?.suburb || ''}" placeholder="e.g. Surfers Paradise QLD" oninput="updateStaffHeaderSummary(${index})">
+          <label class="input-label" for="franchise-staff-${index}-phone">Mobile Phone</label>
+          <input type="tel" id="franchise-staff-${index}-phone" class="form-control" value="${data?.phone || ''}" placeholder="0400 123 456" required oninput="updateStaffHeaderSummary(${index})">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-email">Email Address</label>
+          <input type="email" id="franchise-staff-${index}-email" class="form-control" value="${data?.email || ''}" placeholder="e.g. luke@franchise.com">
+        </div>
+      </div>
+
+      <!-- 2. Staff Business Information & Tax Entity (ABN / International Codes) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-briefcase" style="color:var(--brand-orange);"></i> 2. Staff Business Entity & Tax Registration Details (ABN / International Codes)
+      </div>
+      <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.4rem;">
+          <div style="font-size:0.8rem; font-weight:800; color:#334155;">
+            <i class="fa-solid fa-globe"></i> International Business Registration & Identification Number
+          </div>
+          <span style="font-size:0.72rem; background:#E0F2FE; color:#0369A1; padding:0.15rem 0.55rem; border-radius:10px; font-weight:700;">
+            Any Alphanumeric Format Accepted
+          </span>
+        </div>
+        
+        <div class="form-row">
+          <div class="input-group">
+            <label class="input-label" for="franchise-staff-${index}-biz-name">Registered Business / Legal Trading Name</label>
+            <input type="text" id="franchise-staff-${index}-biz-name" class="form-control" value="${data?.bizName || ''}" placeholder="e.g. Sullivan Plumbing Services Pty Ltd" oninput="updateStaffHeaderSummary(${index})">
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="franchise-staff-${index}-biz-structure">Entity Structure / Type</label>
+            <select id="franchise-staff-${index}-biz-structure" class="form-control">
+              <option value="sole_trader" ${(data?.bizStructure === 'sole_trader' || !data?.bizStructure) ? 'selected' : ''}>Sole Trader / Individual Contractor</option>
+              <option value="pty_ltd" ${data?.bizStructure === 'pty_ltd' ? 'selected' : ''}>Proprietary Limited Company (Pty Ltd)</option>
+              <option value="corporation" ${data?.bizStructure === 'corporation' ? 'selected' : ''}>Corporation / Limited Company (LLC / Ltd)</option>
+              <option value="partnership" ${data?.bizStructure === 'partnership' ? 'selected' : ''}>Partnership</option>
+              <option value="trust" ${data?.bizStructure === 'trust' ? 'selected' : ''}>Trust / Corporate Trustee</option>
+              <option value="other" ${data?.bizStructure === 'other' ? 'selected' : ''}>Other Registered Business Entity</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label class="input-label" for="franchise-staff-${index}-biz-code-type">Country / Tax Code Identifier</label>
+            <select id="franchise-staff-${index}-biz-code-type" class="form-control" onchange="handleStaffBizCodeTypeChange(${index}, this.value)">
+              <option value="ABN" ${(data?.bizCodeType === 'ABN' || !data?.bizCodeType) ? 'selected' : ''}>ABN / ACN (Australia — 11 Digits)</option>
+              <option value="NZBN" ${data?.bizCodeType === 'NZBN' ? 'selected' : ''}>NZBN / GST (New Zealand — 13 Digits)</option>
+              <option value="EIN" ${data?.bizCodeType === 'EIN' ? 'selected' : ''}>EIN / Tax ID (United States — XX-XXXXXXX)</option>
+              <option value="CRN" ${data?.bizCodeType === 'CRN' ? 'selected' : ''}>CRN / Company # / UTR (United Kingdom)</option>
+              <option value="BN" ${data?.bizCodeType === 'BN' ? 'selected' : ''}>BN / CRA # (Canada — 9 Digits)</option>
+              <option value="UEN" ${data?.bizCodeType === 'UEN' ? 'selected' : ''}>UEN (Singapore — 9-10 Characters)</option>
+              <option value="OTHER" ${data?.bizCodeType === 'OTHER' ? 'selected' : ''}>Other Country / Any Alphanumeric Code</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="franchise-staff-${index}-biz-number" id="franchise-staff-${index}-biz-number-label">
+              Business Number / Code (Any combination of numbers/codes)
+            </label>
+            <input type="text" id="franchise-staff-${index}-biz-number" class="form-control" value="${data?.bizNumber || data?.abn || ''}" placeholder="e.g. 51 824 753 556, 94290..., or any alphanumeric code" oninput="updateStaffHeaderSummary(${index})">
+            <div style="font-size:0.72rem; color:#64748B; margin-top:0.25rem;" id="franchise-staff-${index}-biz-number-hint">
+              <i class="fa-solid fa-circle-check" style="color:#10B981;"></i> Accepts any combination of numbers, letters, spaces, or international codes.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:0;">
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="franchise-staff-${index}-biz-gst">GST / VAT Tax Registration Status</label>
+            <select id="franchise-staff-${index}-biz-gst" class="form-control">
+              <option value="yes" ${(data?.bizGst !== 'no') ? 'selected' : ''}>Registered for GST / VAT (Tax Invoicing Active)</option>
+              <option value="no" ${(data?.bizGst === 'no') ? 'selected' : ''}>Not Registered for GST / VAT</option>
+            </select>
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="franchise-staff-${index}-biz-address">Registered Business Address / Head Office</label>
+            <input type="text" id="franchise-staff-${index}-biz-address" class="form-control" value="${data?.bizAddress || ''}" placeholder="e.g. Suite 4, 120 Marine Parade, Southport QLD 4215">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Location & Distance Units (Same as Service Provider Form Section 2) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i> 3. Location & Distance Units (km / mile)
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-suburb">Base Suburb / City & Postcode</label>
+          <input type="text" id="franchise-staff-${index}-suburb" class="form-control" value="${data?.suburb || ''}" placeholder="e.g. Surfers Paradise QLD 4217" oninput="updateStaffHeaderSummary(${index})">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-country">Country / Region</label>
+          <select id="franchise-staff-${index}-country" class="form-control">
+            <option value="AU" ${(data?.country === 'AU' || !data?.country) ? 'selected' : ''}>Australia (km)</option>
+            <option value="NZ" ${data?.country === 'NZ' ? 'selected' : ''}>New Zealand (km)</option>
+            <option value="US" ${data?.country === 'US' ? 'selected' : ''}>United States (miles)</option>
+            <option value="UK" ${data?.country === 'UK' ? 'selected' : ''}>United Kingdom (miles)</option>
+            <option value="CA" ${data?.country === 'CA' ? 'selected' : ''}>Canada (km)</option>
+            <option value="OTHER" ${data?.country === 'OTHER' ? 'selected' : ''}>Other Region</option>
+          </select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="input-group">
-          <label class="input-label" for="franchise-staff-${index}-radius">Service Radius</label>
+          <label class="input-label" for="franchise-staff-${index}-radius">Standard Service Radius</label>
           <input type="number" id="franchise-staff-${index}-radius" class="form-control" value="${data?.radius || 25}" min="5" max="250">
         </div>
         <div class="input-group">
@@ -4954,12 +5459,92 @@ function addFranchiseStaffMember(data = null) {
         </div>
       </div>
 
-      <!-- B. Dropdown Boxes for Services & Fee Structures (Exact Same as Service Providers) -->
+      <div class="input-group">
+        <label class="input-label" for="franchise-staff-${index}-areas">Service Areas Covered (comma separated)</label>
+        <input type="text" id="franchise-staff-${index}-areas" class="form-control" value="${data?.serviceAreas || ''}" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh Heads">
+      </div>
+
+      <!-- 4. Base Pricing, Rates & Distance Charges (Same as Service Provider Form Section 3) -->
       <div class="franchise-staff-section-title">
-        <i class="fa-solid fa-list-check" style="color:#7E22CE;"></i> B. Trade Services & Fee Structures Drop Box System
+        <i class="fa-solid fa-calculator" style="color:var(--brand-orange);"></i> 4. Pricing, Rates & Distance Charges
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:0.75rem; margin-bottom:0.85rem;">
+        <!-- Hourly -->
+        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+          <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+            <input type="checkbox" id="franchise-staff-${index}-rate-hourly" ${(data?.rateHourlyActive !== false) ? 'checked' : ''}> Hourly Rate
+          </label>
+          <div style="display:flex; align-items:center; gap:0.3rem;">
+            <span style="font-weight:700; color:var(--text-muted);">$</span>
+            <input type="number" id="franchise-staff-${index}-hourly-rate" class="form-control" value="${data?.hourlyRate || 95}" min="30" max="400">
+            <span style="font-size:0.75rem; color:var(--text-muted);">/ hr</span>
+          </div>
+        </div>
+
+        <!-- Flat Rate -->
+        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+          <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+            <input type="checkbox" id="franchise-staff-${index}-rate-flat" ${(data?.rateFlatActive) ? 'checked' : ''}> Flat Rate (Standard Jobs)
+          </label>
+          <div style="display:flex; align-items:center; gap:0.3rem;">
+            <span style="font-weight:700; color:var(--text-muted);">$</span>
+            <input type="number" id="franchise-staff-${index}-flat-rate" class="form-control" value="${data?.flatRate || 150}" min="40" max="2000">
+            <span style="font-size:0.75rem; color:var(--text-muted);">flat</span>
+          </div>
+        </div>
+
+        <!-- Callout -->
+        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
+          <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
+            <input type="checkbox" id="franchise-staff-${index}-rate-callout" ${(data?.rateCalloutActive !== false) ? 'checked' : ''}> Base Call-Out Fee
+          </label>
+          <div style="display:flex; align-items:center; gap:0.3rem;">
+            <span style="font-weight:700; color:var(--text-muted);">$</span>
+            <input type="number" id="franchise-staff-${index}-callout-rate" class="form-control" value="${data?.calloutRate || 45}" min="0" max="300">
+            <span style="font-size:0.75rem; color:var(--text-muted);">callout</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distance Travel Charges -->
+      <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem;">
+        <label style="display:flex; align-items:center; gap:0.4rem; font-weight:800; font-size:0.85rem; color:#92400E; cursor:pointer;">
+          <input type="checkbox" id="franchise-staff-${index}-rate-distance" ${(data?.chargeDistance !== false) ? 'checked' : ''}>
+          <i class="fa-solid fa-route"></i> Charge Distance / Travel Fee (Callout per km / Courier Freight per km)
+        </label>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem; margin-top:0.6rem;">
+          <div>
+            <label class="input-label" style="font-size:0.75rem;" for="franchise-staff-${index}-callout-per-km">Call-out Travel Fee per km</label>
+            <div style="display:flex; align-items:center; gap:0.3rem;">
+              <span style="font-weight:700; color:#92400E;">$</span>
+              <input type="number" id="franchise-staff-${index}-callout-per-km" class="form-control" step="0.10" value="${data?.calloutPerKm || 1.50}">
+              <span style="font-size:0.75rem; color:#92400E;">/km</span>
+            </div>
+          </div>
+          <div>
+            <label class="input-label" style="font-size:0.75rem;" for="franchise-staff-${index}-courier-per-km">Freight Rate per km</label>
+            <div style="display:flex; align-items:center; gap:0.3rem;">
+              <span style="font-weight:700; color:#92400E;">$</span>
+              <input type="number" id="franchise-staff-${index}-courier-per-km" class="form-control" step="0.10" value="${data?.courierPerKm || 1.20}">
+              <span style="font-size:0.75rem; color:#92400E;">/km</span>
+            </div>
+          </div>
+          <div>
+            <label class="input-label" style="font-size:0.75rem;" for="franchise-staff-${index}-free-km">Included Free Distance</label>
+            <div style="display:flex; align-items:center; gap:0.3rem;">
+              <input type="number" id="franchise-staff-${index}-free-km" class="form-control" value="${data?.freeKm || 10}">
+              <span style="font-size:0.75rem; color:#92400E;">km free</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Trade Services Offered & Fee Structures Dropdown Box System (Same as Service Provider Form Section 4) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-list-check" style="color:var(--brand-orange);"></i> 5. Services Offered & Fee Structures Dropdown Boxes
       </div>
       <p style="font-size:0.75rem; color:#64748B; margin-bottom:0.75rem;">
-        Specify each individual service, task rate, and fee structure for this staff technician.
+        List the specific services this staff member provides using the drop boxes below. Select the service, choose its fee structure (Hourly, Flat Rate, Call-out + Hourly, Day Rate, etc.), and specify the rate.
       </p>
 
       <div id="franchise-staff-${index}-services-fee-container" class="services-fee-container">
@@ -4967,30 +5552,50 @@ function addFranchiseStaffMember(data = null) {
       </div>
 
       <div style="margin-top:0.75rem; margin-bottom:1.25rem;">
-        <button type="button" class="btn-add-service-row" onclick="addServiceFeeRow('franchise-staff-${index}')" style="background:#FAF5FF; border-color:#DDD6FE; color:#7E22CE;">
-          <i class="fa-solid fa-plus"></i> Add Service / Fee Structure for this Staff Member
+        <button type="button" class="btn-add-service-row" onclick="addServiceFeeRow('franchise-staff-${index}')" style="background:#FAF5FF; border-color:#DDD6FE; color:#7E22CE; font-weight:700;">
+          <i class="fa-solid fa-plus-circle"></i> + Add Another Service & Fee Structure for this Staff Member
         </button>
       </div>
 
-      <!-- C. 24/7 Availability & Shift Schedule -->
-      <div class="franchise-staff-section-title">
-        <i class="fa-solid fa-calendar-days" style="color:#7E22CE;"></i> C. 24/7 Dispatch Shift & Availability Schedule
+      <div class="input-group">
+        <label class="input-label" for="franchise-staff-${index}-equipment">Tools, Machinery & Vehicles Owned</label>
+        <input type="text" id="franchise-staff-${index}-equipment" class="form-control" value="${data?.equipment || ''}" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake">
       </div>
+
+      <!-- 6. Profile Status & 24/7 Shift Calendar Availability (Same as Service Provider Form Section 5) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> 6. Profile Status & 24/7 Shift Calendar Availability
+      </div>
+      <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+        <div>
+          <strong style="font-size:0.85rem; color:var(--primary-navy); display:block;">Initial Profile Status:</strong>
+          <span style="font-size:0.78rem; color:var(--text-muted);">Can be paused or activated anytime from your Franchise Admin Panel.</span>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <label style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.75rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
+            <input type="radio" name="franchise-staff-${index}-profile-status" value="active" ${(data?.profileStatus !== 'paused') ? 'checked' : ''}> 🟢 Active & Ready
+          </label>
+          <label style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.75rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">
+            <input type="radio" name="franchise-staff-${index}-profile-status" value="paused" ${(data?.profileStatus === 'paused') ? 'checked' : ''}> ⏸️ Paused (On Break)
+          </label>
+        </div>
+      </div>
+
       <div style="background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:0.85rem; margin-bottom:1rem;">
         <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; margin-bottom:0.75rem; font-weight:700; color:#581C87;">
-          <input type="checkbox" id="franchise-staff-${index}-shift-247" ${(data?.shift247) ? 'checked' : ''} style="width:18px; height:18px; accent-color:#7E22CE;">
+          <input type="checkbox" id="franchise-staff-${index}-shift-247" ${(data?.shift247 !== false) ? 'checked' : ''} style="width:18px; height:18px; accent-color:#7E22CE;">
           <span><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> 24/7 • 365 Days a Year Registered On-Call Dispatch</span>
         </label>
         
         <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
           <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, '24_7')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
-            Preset: 24/7 Emergency
+            Preset: ⚡ 24/7 Emergency
           </button>
           <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, 'business')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
-            Preset: Mon-Fri Business (8-5)
+            Preset: 🏢 Mon-Fri Business (8-5)
           </button>
           <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, 'weekends')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
-            Preset: Weekends & After-Hours
+            Preset: 🌙 Weekends & After-Hours
           </button>
         </div>
 
@@ -5002,40 +5607,78 @@ function addFranchiseStaffMember(data = null) {
             <input type="checkbox" id="franchise-staff-${index}-shift-aft" ${(data?.shiftAft !== false) ? 'checked' : ''}> Afternoon (12pm - 5pm)
           </label>
           <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-            <input type="checkbox" id="franchise-staff-${index}-shift-eve" ${(data?.shiftEve) ? 'checked' : ''}> Evening (5pm - 10pm)
+            <input type="checkbox" id="franchise-staff-${index}-shift-eve" ${(data?.shiftEve !== false) ? 'checked' : ''}> Evening (5pm - 10pm)
           </label>
           <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-            <input type="checkbox" id="franchise-staff-${index}-shift-overnight" ${(data?.shiftOvernight) ? 'checked' : ''}> Overnight (10pm - 6am)
+            <input type="checkbox" id="franchise-staff-${index}-shift-overnight" ${(data?.shiftOvernight !== false) ? 'checked' : ''}> Overnight (10pm - 6am)
           </label>
         </div>
       </div>
 
-      <!-- D. Payout & Remuneration Routing -->
+      <div style="margin-bottom:1rem;">
+        <label class="checkbox-label" style="font-size:0.82rem; font-weight:700;">
+          <input type="checkbox" id="franchise-staff-${index}-insured" ${(data?.insured !== false) ? 'checked' : ''}>
+          $10M+ Public Liability / Carrier Transit Cover Active for this Staff Member
+        </label>
+      </div>
+
+      <!-- 7. Stored Verification Documents & Licences (Stored on Server) (Same as Service Provider Form Section 6) -->
       <div class="franchise-staff-section-title">
-        <i class="fa-solid fa-money-bill-transfer" style="color:#7E22CE;"></i> D. Staff Remuneration & Payout Routing
+        <i class="fa-solid fa-cloud-arrow-up" style="color:var(--brand-orange);"></i> 7. Licences & Verification Uploads (Stored on Server)
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label">Trade Licence Card / Insurance Scan</label>
+          <input type="file" class="form-control" accept="image/*">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Work Vehicle / Staff Photo Scan</label>
+          <input type="file" class="form-control" accept="image/*">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; font-size:0.75rem; color:#059669; font-weight:700;">
+        <i class="fa-solid fa-shield-check"></i> Documents stored on server and always accessible in your franchise compliance vault.
+      </div>
+
+      <!-- 8. Remuneration & Direct PayID / Banking Settlement (Same as Service Provider Form Section 7) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-building-columns" style="color:var(--brand-orange);"></i> 8. Staff Remuneration & Payout Routing
       </div>
       <div class="form-row">
         <div class="input-group">
           <label class="input-label" for="franchise-staff-${index}-payout-route">Payout Remuneration Route</label>
           <select id="franchise-staff-${index}-payout-route" class="form-control" onchange="toggleStaffDirectPayFields(${index})">
             <option value="franchise" ${(data?.payoutRoute !== 'staff') ? 'selected' : ''}>Route to Franchise Central Bank / PayID</option>
-            <option value="staff" ${(data?.payoutRoute === 'staff') ? 'selected' : ''}>Direct Payout to Staff Member's Bank / PayID</option>
+            <option value="staff" ${(data?.payoutRoute === 'staff') ? 'selected' : ''}>Direct Settlement to Staff Member's Bank / PayID</option>
           </select>
         </div>
         <div class="input-group" id="franchise-staff-${index}-payid-group" style="display:${(data?.payoutRoute === 'staff') ? 'block' : 'none'};">
-          <label class="input-label" for="franchise-staff-${index}-payid">Staff Direct PayID / Mobile</label>
-          <input type="text" id="franchise-staff-${index}-payid" class="form-control" value="${data?.staffPayId || ''}" placeholder="e.g. 0400 123 456">
+          <label class="input-label" for="franchise-staff-${index}-payid">Staff Direct PayID</label>
+          <input type="text" id="franchise-staff-${index}-payid" class="form-control" value="${data?.staffPayId || ''}" placeholder="e.g. 0400 123 456 or staff@payid.com">
         </div>
       </div>
 
       <div class="form-row" id="franchise-staff-${index}-bank-row" style="display:${(data?.payoutRoute === 'staff') ? 'flex' : 'none'};">
         <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-payid-type">Staff PayID Type</label>
+          <select id="franchise-staff-${index}-payid-type" class="form-control">
+            <option value="phone" ${(data?.staffPayIdType === 'phone' || !data?.staffPayIdType) ? 'selected' : ''}>Mobile Phone (04XX XXX XXX)</option>
+            <option value="email" ${data?.staffPayIdType === 'email' ? 'selected' : ''}>Email Address</option>
+            <option value="abn" ${data?.staffPayIdType === 'abn' ? 'selected' : ''}>ABN</option>
+            <option value="org_id" ${data?.staffPayIdType === 'org_id' ? 'selected' : ''}>Organisation ID</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-bank-name">Staff Account Name</label>
+          <input type="text" id="franchise-staff-${index}-bank-name" class="form-control" value="${data?.staffBankName || ''}" placeholder="e.g. Luke Sullivan">
+        </div>
+        <div class="input-group">
           <label class="input-label" for="franchise-staff-${index}-bsb">Staff BSB</label>
-          <input type="text" id="franchise-staff-${index}-bsb" class="form-control" value="${data?.staffBsb || ''}" placeholder="084-004">
+          <input type="text" id="franchise-staff-${index}-bsb" class="form-control" value="${data?.staffBsb || ''}" placeholder="084-004" maxlength="7">
         </div>
         <div class="input-group">
           <label class="input-label" for="franchise-staff-${index}-account">Staff Account Number</label>
-          <input type="text" id="franchise-staff-${index}-account" class="form-control" value="${data?.staffAccount || ''}" placeholder="12345678">
+          <input type="text" id="franchise-staff-${index}-account" class="form-control" value="${data?.staffAccount || ''}" placeholder="12345678" maxlength="10">
         </div>
       </div>
     </div>
@@ -5053,46 +5696,72 @@ function addFranchiseStaffMember(data = null) {
   } else {
     renderDefaultServiceFeeRows(`franchise-staff-${index}`, category);
   }
+
+  updateStaffHeaderSummary(index);
+  updateFranchiseStaffStats();
 }
 
 function updateStaffHeaderSummary(index) {
   const nameInput = document.getElementById(`franchise-staff-${index}-name`);
   const phoneInput = document.getElementById(`franchise-staff-${index}-phone`);
   const suburbInput = document.getElementById(`franchise-staff-${index}-suburb`);
+  const catSelect = document.getElementById(`franchise-staff-${index}-category`);
+  const hourlyInput = document.getElementById(`franchise-staff-${index}-hourly-rate`);
+  const bizNumberInput = document.getElementById(`franchise-staff-${index}-biz-number`);
+  const bizCodeTypeSelect = document.getElementById(`franchise-staff-${index}-biz-code-type`);
   const title = document.getElementById(`franchise-staff-${index}-header-title`);
   const sub = document.getElementById(`franchise-staff-${index}-header-sub`);
+  const badge = document.getElementById(`franchise-staff-${index}-badge`);
   
   const card = document.getElementById(`franchise-staff-card-${index}`);
   const staffNumber = card ? Array.from(card.parentNode.children).indexOf(card) + 1 : 1;
+  const category = catSelect?.value || 'plumbing';
 
   if (title) {
-    title.textContent = `Staff #${staffNumber}: ${nameInput?.value.trim() || 'New Technician'}`;
+    title.textContent = `Staff #${staffNumber}: ${nameInput?.value.trim() || 'New Technician / Provider'}`;
   }
   if (sub) {
-    sub.textContent = `${phoneInput?.value.trim() || 'Field Service Technician'} • ${suburbInput?.value.trim() || 'Territory Fleet'}`;
+    const sCount = card?.querySelectorAll('.service-fee-row')?.length || 2;
+    const rateText = hourlyInput?.value ? `$${hourlyInput.value}/hr` : '';
+    const bizNumber = bizNumberInput?.value.trim() || '';
+    const bizCodeType = bizCodeTypeSelect?.value || 'ABN';
+    const bizText = bizNumber ? `• ${bizCodeType}: ${bizNumber}` : '';
+    sub.textContent = `${phoneInput?.value.trim() || 'Mobile pending'} • ${suburbInput?.value.trim() || 'Territory Fleet'} ${bizText} • ${sCount} Service(s) ${rateText ? '• ' + rateText : ''} • 🟢 Active`;
+  }
+  if (badge) {
+    badge.textContent = category.toUpperCase();
+    badge.className = `franchise-staff-badge badge-${category}`;
   }
 }
 
 function handleFranchiseStaffCategoryChange(index, newCategory) {
   const badge = document.getElementById(`franchise-staff-${index}-badge`);
-  if (badge) badge.textContent = newCategory.toUpperCase();
+  if (badge) {
+    badge.textContent = newCategory.toUpperCase();
+    badge.className = `franchise-staff-badge badge-${newCategory}`;
+  }
   handleCategoryChange(`franchise-staff-${index}`, newCategory);
+  updateStaffHeaderSummary(index);
 }
 
 function toggleStaffCardCollapse(index) {
+  const card = document.getElementById(`franchise-staff-card-${index}`);
   const body = document.getElementById(`franchise-staff-${index}-body`);
   const icon = document.getElementById(`franchise-staff-${index}-toggle-icon`);
+  const text = document.getElementById(`franchise-staff-${index}-toggle-text`);
   if (!body) return;
-  if (body.style.display === 'none') {
+  
+  const isHidden = body.style.display === 'none';
+  if (isHidden) {
     body.style.display = 'block';
-    if (icon) {
-      icon.className = 'fa-solid fa-chevron-up';
-    }
+    if (card) card.classList.remove('collapsed');
+    if (icon) icon.className = 'fa-solid fa-chevron-up franchise-toggle-icon';
+    if (text) text.textContent = 'Collapse';
   } else {
     body.style.display = 'none';
-    if (icon) {
-      icon.className = 'fa-solid fa-chevron-down';
-    }
+    if (card) card.classList.add('collapsed');
+    if (icon) icon.className = 'fa-solid fa-chevron-down franchise-toggle-icon';
+    if (text) text.textContent = 'Dropdown Details';
   }
 }
 
@@ -5142,12 +5811,13 @@ function removeFranchiseStaffMember(index) {
   if (!card || !container) return;
 
   if (container.querySelectorAll('.franchise-staff-card').length <= 1) {
-    showToast('Franchise must have at least one staff technician.');
+    showToast('Franchise must have at least one staff technician or service provider.');
     return;
   }
 
   card.remove();
-  showToast('Staff technician removed from franchise roster.');
+  showToast('Staff member removed from franchise roster.');
+  updateFranchiseStaffStats();
 
   // Renumber remaining cards
   const cards = container.querySelectorAll('.franchise-staff-card');
@@ -5156,7 +5826,7 @@ function removeFranchiseStaffMember(index) {
     const title = document.getElementById(`franchise-staff-${i}-header-title`);
     const nameInput = document.getElementById(`franchise-staff-${i}-name`);
     if (title) {
-      title.textContent = `Staff #${idx + 1}: ${nameInput?.value.trim() || 'New Technician'}`;
+      title.textContent = `Staff #${idx + 1}: ${nameInput?.value.trim() || 'New Technician / Provider'}`;
     }
   });
 }
@@ -5175,23 +5845,53 @@ function saveFranchiseApplicationDraft(notify = false) {
   staffCards.forEach(card => {
     const idx = card.dataset.index;
     const distRadio = document.querySelector(`input[name="franchise-staff-${idx}-dist-unit"]:checked`);
+    const statusRadio = document.querySelector(`input[name="franchise-staff-${idx}-profile-status"]:checked`);
+    
     staffMembers.push({
+      linkedProviderId: document.getElementById(`franchise-staff-${idx}-link-existing`)?.value || '',
       name: document.getElementById(`franchise-staff-${idx}-name`)?.value || '',
+      businessName: document.getElementById(`franchise-staff-${idx}-business`)?.value || '',
+      bizName: document.getElementById(`franchise-staff-${idx}-biz-name`)?.value || '',
+      bizCodeType: document.getElementById(`franchise-staff-${idx}-biz-code-type`)?.value || 'ABN',
+      bizNumber: document.getElementById(`franchise-staff-${idx}-biz-number`)?.value || '',
+      bizStructure: document.getElementById(`franchise-staff-${idx}-biz-structure`)?.value || 'sole_trader',
+      bizGst: document.getElementById(`franchise-staff-${idx}-biz-gst`)?.value || 'yes',
+      bizAddress: document.getElementById(`franchise-staff-${idx}-biz-address`)?.value || '',
       phone: document.getElementById(`franchise-staff-${idx}-phone`)?.value || '',
       email: document.getElementById(`franchise-staff-${idx}-email`)?.value || '',
       category: document.getElementById(`franchise-staff-${idx}-category`)?.value || 'plumbing',
       license: document.getElementById(`franchise-staff-${idx}-license`)?.value || '',
       suburb: document.getElementById(`franchise-staff-${idx}-suburb`)?.value || '',
+      country: document.getElementById(`franchise-staff-${idx}-country`)?.value || 'AU',
       radius: document.getElementById(`franchise-staff-${idx}-radius`)?.value || '25',
       distUnit: distRadio ? distRadio.value : 'km',
+      serviceAreas: document.getElementById(`franchise-staff-${idx}-areas`)?.value || '',
+      
+      rateHourlyActive: document.getElementById(`franchise-staff-${idx}-rate-hourly`)?.checked || false,
+      hourlyRate: document.getElementById(`franchise-staff-${idx}-hourly-rate`)?.value || '95',
+      rateFlatActive: document.getElementById(`franchise-staff-${idx}-rate-flat`)?.checked || false,
+      flatRate: document.getElementById(`franchise-staff-${idx}-flat-rate`)?.value || '150',
+      rateCalloutActive: document.getElementById(`franchise-staff-${idx}-rate-callout`)?.checked || false,
+      calloutRate: document.getElementById(`franchise-staff-${idx}-callout-rate`)?.value || '45',
+      chargeDistance: document.getElementById(`franchise-staff-${idx}-rate-distance`)?.checked || false,
+      calloutPerKm: document.getElementById(`franchise-staff-${idx}-callout-per-km`)?.value || '1.50',
+      courierPerKm: document.getElementById(`franchise-staff-${idx}-courier-per-km`)?.value || '1.20',
+      freeKm: document.getElementById(`franchise-staff-${idx}-free-km`)?.value || '10',
+
       services: collectServicesFeeData(`franchise-staff-${idx}`),
+      equipment: document.getElementById(`franchise-staff-${idx}-equipment`)?.value || '',
+      profileStatus: statusRadio ? statusRadio.value : 'active',
       shift247: document.getElementById(`franchise-staff-${idx}-shift-247`)?.checked || false,
       shiftMorn: document.getElementById(`franchise-staff-${idx}-shift-morn`)?.checked || false,
       shiftAft: document.getElementById(`franchise-staff-${idx}-shift-aft`)?.checked || false,
       shiftEve: document.getElementById(`franchise-staff-${idx}-shift-eve`)?.checked || false,
       shiftOvernight: document.getElementById(`franchise-staff-${idx}-shift-overnight`)?.checked || false,
+      insured: document.getElementById(`franchise-staff-${idx}-insured`)?.checked || false,
+
       payoutRoute: document.getElementById(`franchise-staff-${idx}-payout-route`)?.value || 'franchise',
       staffPayId: document.getElementById(`franchise-staff-${idx}-payid`)?.value || '',
+      staffPayIdType: document.getElementById(`franchise-staff-${idx}-payid-type`)?.value || 'phone',
+      staffBankName: document.getElementById(`franchise-staff-${idx}-bank-name`)?.value || '',
       staffBsb: document.getElementById(`franchise-staff-${idx}-bsb`)?.value || '',
       staffAccount: document.getElementById(`franchise-staff-${idx}-account`)?.value || ''
     });
@@ -5201,10 +5901,14 @@ function saveFranchiseApplicationDraft(notify = false) {
     franchiseName: document.getElementById('franchise-name')?.value || '',
     franchiseAbn: document.getElementById('franchise-abn')?.value || '',
     adminName: document.getElementById('franchise-admin-name')?.value || '',
+    adminTitle: document.getElementById('franchise-admin-title')?.value || '',
     adminEmail: document.getElementById('franchise-admin-email')?.value || '',
     adminPhone: document.getElementById('franchise-admin-phone')?.value || '',
     adminRegion: document.getElementById('franchise-admin-region')?.value || '',
+    adminLicense: document.getElementById('franchise-admin-license')?.value || '',
+    adminIsProvider: document.getElementById('franchise-admin-is-provider')?.checked || false,
     adminPayId: document.getElementById('franchise-admin-payid')?.value || '',
+    adminPayIdType: document.getElementById('franchise-admin-payid-type')?.value || 'email',
     adminBankName: document.getElementById('franchise-admin-bank-name')?.value || '',
     adminBsb: document.getElementById('franchise-admin-bsb')?.value || '',
     adminAccount: document.getElementById('franchise-admin-account')?.value || '',
@@ -5218,9 +5922,10 @@ function saveFranchiseApplicationDraft(notify = false) {
   localStorage.setItem('iasj_draft_franchise_latest', JSON.stringify(draft));
 
   updateDraftStatusUI('franchise-draft-status', `Draft saved ${timeStr}`);
+  updateFranchiseStaffStats();
 
   if (notify) {
-    showToast(`💾 Franchise application draft saved! All Manager and Staff technician details preserved.`);
+    showToast(`💾 Franchise application draft saved! Franchise Manager and ${staffMembers.length} Staff details preserved.`);
   }
 }
 
@@ -5238,6 +5943,7 @@ function restoreFranchiseApplicationDraft() {
     if (container && container.children.length === 0) {
       addFranchiseStaffMember();
     }
+    updateFranchiseStaffStats();
     return;
   }
 
@@ -5248,10 +5954,14 @@ function restoreFranchiseApplicationDraft() {
     if (draft.franchiseName && document.getElementById('franchise-name')) document.getElementById('franchise-name').value = draft.franchiseName;
     if (draft.franchiseAbn && document.getElementById('franchise-abn')) document.getElementById('franchise-abn').value = draft.franchiseAbn;
     if (draft.adminName && document.getElementById('franchise-admin-name')) document.getElementById('franchise-admin-name').value = draft.adminName;
+    if (draft.adminTitle && document.getElementById('franchise-admin-title')) document.getElementById('franchise-admin-title').value = draft.adminTitle;
     if (draft.adminEmail && document.getElementById('franchise-admin-email')) document.getElementById('franchise-admin-email').value = draft.adminEmail;
     if (draft.adminPhone && document.getElementById('franchise-admin-phone')) document.getElementById('franchise-admin-phone').value = draft.adminPhone;
     if (draft.adminRegion && document.getElementById('franchise-admin-region')) document.getElementById('franchise-admin-region').value = draft.adminRegion;
+    if (draft.adminLicense && document.getElementById('franchise-admin-license')) document.getElementById('franchise-admin-license').value = draft.adminLicense;
+    if (document.getElementById('franchise-admin-is-provider')) document.getElementById('franchise-admin-is-provider').checked = !!draft.adminIsProvider;
     if (draft.adminPayId && document.getElementById('franchise-admin-payid')) document.getElementById('franchise-admin-payid').value = draft.adminPayId;
+    if (draft.adminPayIdType && document.getElementById('franchise-admin-payid-type')) document.getElementById('franchise-admin-payid-type').value = draft.adminPayIdType;
     if (draft.adminBankName && document.getElementById('franchise-admin-bank-name')) document.getElementById('franchise-admin-bank-name').value = draft.adminBankName;
     if (draft.adminBsb && document.getElementById('franchise-admin-bsb')) document.getElementById('franchise-admin-bsb').value = draft.adminBsb;
     if (draft.adminAccount && document.getElementById('franchise-admin-account')) document.getElementById('franchise-admin-account').value = draft.adminAccount;
@@ -5272,11 +5982,12 @@ function restoreFranchiseApplicationDraft() {
       banner.style.display = 'flex';
       if (textSpan) {
         const staffCount = draft.staffMembers ? draft.staffMembers.length : 1;
-        textSpan.textContent = `Draft restored from ${draft.savedDisplay || 'previous session'} (${staffCount} staff technician(s) loaded).`;
+        textSpan.textContent = `Draft restored from ${draft.savedDisplay || 'previous session'} (${staffCount} staff technician/provider(s) loaded).`;
       }
     }
 
     updateDraftStatusUI('franchise-draft-status', `Draft resumed (${draft.savedDisplay ? draft.savedDisplay.split(',')[0] : 'Saved'})`);
+    updateFranchiseStaffStats();
   } catch (err) {
     console.warn("Could not restore franchise draft:", err);
   }
@@ -5298,6 +6009,7 @@ function clearFranchiseApplicationDraft(notify = true) {
   }
 
   updateDraftStatusUI('franchise-draft-status', 'Draft cleared');
+  updateFranchiseStaffStats();
 
   // Pre-fill Google user details again if logged in
   const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
@@ -5384,5 +6096,6 @@ window.toggleStaffCardCollapse = toggleStaffCardCollapse;
 window.toggleStaffDirectPayFields = toggleStaffDirectPayFields;
 window.applyStaffCalendarPreset = applyStaffCalendarPreset;
 window.removeFranchiseStaffMember = removeFranchiseStaffMember;
-
-
+window.handleLinkExistingProviderChange = handleLinkExistingProviderChange;
+window.updateFranchiseStaffStats = updateFranchiseStaffStats;
+window.handleStaffBizCodeTypeChange = handleStaffBizCodeTypeChange;

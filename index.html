@@ -53,11 +53,11 @@
         <button class="nav-item-btn" id="tab-btn-recruitment" onclick="switchTab('recruitment-tab')">
           Recruit
         </button>
-        <button class="nav-item-btn" id="tab-btn-register" onclick="openRegisterSelectionPanel()">
-          Register
-        </button>
         <button class="nav-item-btn" id="tab-btn-how-it-works" onclick="switchTab('how-it-works-tab')">
           FAQ
+        </button>
+        <button class="nav-item-btn" id="tab-btn-register" onclick="openRegisterSelectionPanel()">
+          Register
         </button>
       </div>
 
@@ -75,7 +75,7 @@
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
             </svg>
-            <span>Google Sign In</span>
+            <span>Sign In</span>
           </button>
 
           <div class="google-user-chip" id="google-user-chip" style="display:none;" onclick="toggleGoogleUserMenu(event)" title="Google Account & Calendar Options">
@@ -102,38 +102,27 @@
             </div>
 
             <div class="settings-menu-list" style="padding:0.4rem 0;">
-              <a href="https://calendar.google.com" target="_blank" class="settings-menu-option" style="text-decoration:none;">
+              <a href="customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
                 <div class="settings-option-icon" style="background:#EFF6FF; color:#2563EB;">
-                  <i class="fa-solid fa-calendar-day"></i>
+                  <i class="fa-solid fa-sliders"></i>
                 </div>
                 <div class="settings-option-text">
-                  <strong>Open Google Calendar</strong>
-                  <p>View your scheduled bookings & shifts</p>
+                  <strong>Admin Page</strong>
+                  <p>Calendar, rates, turn on/off dates & pause service</p>
                 </div>
-                <i class="fa-solid fa-arrow-up-right-from-square settings-arrow"></i>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
               </a>
 
-              <button class="settings-menu-option" onclick="openProviderAdminPanel(); closeGoogleUserMenu();">
-                <div class="settings-option-icon" style="background:#FFF7ED; color:var(--brand-orange);">
-                  <i class="fa-solid fa-calendar-week"></i>
-                </div>
-                <div class="settings-option-text">
-                  <strong>24/7 Shift & Availability</strong>
-                  <p>Manage on-call schedule & auto-block</p>
-                </div>
-                <i class="fa-solid fa-chevron-right settings-arrow"></i>
-              </button>
-
-              <button class="settings-menu-option" id="google-menu-franchise-dashboard" style="display:none;" onclick="openFranchiseDashboard(); closeGoogleUserMenu();">
+              <a href="franchise.html" class="settings-menu-option" id="google-menu-franchise-dashboard" style="display:none; text-decoration:none;">
                 <div class="settings-option-icon" style="background:#F3E8FF; color:#7E22CE;">
-                  <i class="fa-solid fa-users-gear"></i>
+                  <i class="fa-solid fa-building-user"></i>
                 </div>
                 <div class="settings-option-text">
-                  <strong style="color:white;">Franchise Dashboard</strong>
-                  <p>Manage staff & pay details</p>
+                  <strong>Franchise Registration & Fleet</strong>
+                  <p>Open dedicated franchise page</p>
                 </div>
                 <i class="fa-solid fa-chevron-right settings-arrow"></i>
-              </button>
+              </a>
 
               <button class="settings-menu-option" id="google-menu-switch-to-provider" style="display:none;" onclick="signUpWithGoogle('provider'); closeGoogleUserMenu();">
                 <div class="settings-option-icon" style="background:#F0FDF4; color:#16A34A;">
@@ -741,6 +730,28 @@
             </div>
           </div>
 
+          <!-- Date of Pickup (Calendar) & Time Window -->
+          <div class="form-row">
+            <div class="input-group">
+              <label class="input-label" for="courier-pickup-date">
+                <i class="fa-solid fa-calendar-days" style="color:var(--brand-orange);"></i> Date of Pickup
+              </label>
+              <input type="date" id="courier-pickup-date" class="form-control" onchange="calculateCourierQuote()">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="courier-pickup-time">
+                <i class="fa-solid fa-clock" style="color:var(--brand-orange);"></i> Pickup Time Window
+              </label>
+              <select id="courier-pickup-time" class="form-control" onchange="calculateCourierQuote()">
+                <option value="asap" selected>ASAP (Immediate 24/7 Dispatch)</option>
+                <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
+                <option value="afternoon">Afternoon (12:00 PM - 5:00 PM)</option>
+                <option value="evening">Evening (5:00 PM - 9:00 PM)</option>
+                <option value="night">Night Shift / After-Hours (9:00 PM - 8:00 AM)</option>
+              </select>
+            </div>
+          </div>
+
           <div class="input-group">
             <label class="input-label" for="courier-desc">Item Description & Fragile Handling Notes</label>
             <input type="text" id="courier-desc" class="form-control" placeholder="e.g. 2 sealed boxes of laboratory testing kits, keep upright" value="Box of surgical instruments and medical supplies">
@@ -753,7 +764,7 @@
 
           <div class="input-group">
             <label class="input-label" for="courier-photo-input">
-              <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> Consignment / Cargo Photo (<a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB;">Hosted on ImgBB</a>)
+              <i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> Consignment / Cargo Photo
             </label>
             <input type="file" id="courier-photo-input" class="form-control" accept="image/*" onchange="handleCourierPhotoUpload(event)">
             <div id="courier-photo-preview" style="display:none; margin-top:0.4rem; font-size:0.78rem; color:#2563EB; display:flex; align-items:center; gap:0.5rem;"></div>
@@ -1602,14 +1613,14 @@
         <!-- Embedded Franchise Form Card -->
         <div class="embedded-form-card">
           <form id="franchise-register-form" onsubmit="handleFranchiseRegisterSubmit(event)">
-            <!-- 1. Franchise Entity & General Manager Details -->
+            <!-- 1. Franchise Entity & Franchise Admin Person (The Manager) Details -->
             <div style="margin-bottom:1.5rem;">
-              <h5 style="font-size:0.9rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.4rem; margin-bottom:1rem;">
-                <i class="fa-solid fa-briefcase" style="color:#7E22CE;"></i> 1. Franchise Entity & General Manager Identity
+              <h5 style="font-size:0.95rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; border-bottom:2px solid var(--border-light); padding-bottom:0.4rem; margin-bottom:1rem;">
+                <i class="fa-solid fa-briefcase" style="color:#7E22CE;"></i> 1. Franchise Entity & Franchise Admin Person (The Manager)
               </h5>
               <div class="form-row">
                 <div class="input-group">
-                  <label class="input-label" for="franchise-name">Franchise / Trading Name</label>
+                  <label class="input-label" for="franchise-name">Franchise / Brand Trading Name</label>
                   <input type="text" id="franchise-name" class="form-control" required placeholder="e.g. Jim's Mowing Gold Coast & Hinterland">
                 </div>
                 <div class="input-group">
@@ -1618,36 +1629,76 @@
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="franchise-admin-name">Franchise General Manager Name</label>
-                  <input type="text" id="franchise-admin-name" class="form-control" required placeholder="e.g. David Robertson">
+              <!-- Franchise Admin Person (The Manager) Core Details -->
+              <div style="background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:1.15rem; margin-bottom:1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+                  <strong style="font-size:0.88rem; color:#581C87;">
+                    <i class="fa-solid fa-user-tie"></i> Franchise Admin Person (The Manager)
+                  </strong>
+                  <span style="font-size:0.75rem; background:#EDE9FE; color:#6D28D9; padding:0.2rem 0.6rem; border-radius:12px; font-weight:700;">
+                    Managing Director / Operational Admin
+                  </span>
                 </div>
-                <div class="input-group">
-                  <label class="input-label" for="franchise-admin-phone">Manager Direct Mobile</label>
-                  <input type="tel" id="franchise-admin-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="franchise-admin-name">Franchise Admin Person Name (The Manager)</label>
+                    <input type="text" id="franchise-admin-name" class="form-control" required placeholder="e.g. David Robertson">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="franchise-admin-title">Manager Position / Authority Level</label>
+                    <input type="text" id="franchise-admin-title" class="form-control" placeholder="e.g. General Manager & Operations Director">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="franchise-admin-phone">Manager Direct Mobile Phone</label>
+                    <input type="tel" id="franchise-admin-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="franchise-admin-email">Manager Business Email</label>
+                    <input type="email" id="franchise-admin-email" class="form-control" required placeholder="e.g. manager@franchise.com">
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-bottom:0.5rem;">
+                  <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" for="franchise-admin-region">Operating Territory / Managed Regions</label>
+                    <input type="text" id="franchise-admin-region" class="form-control" required placeholder="e.g. Gold Coast, Logan & Brisbane South">
+                  </div>
+                  <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" for="franchise-admin-license">Manager Licence # / Business Accreditation</label>
+                    <input type="text" id="franchise-admin-license" class="form-control" placeholder="e.g. QBCC Contractor #1509214 or Master Builders #8821">
+                  </div>
+                </div>
+
+                <div style="margin-top:0.85rem; padding-top:0.75rem; border-top:1px dashed #DDD6FE;">
+                  <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.82rem; font-weight:700; color:#581C87;">
+                    <input type="checkbox" id="franchise-admin-is-provider" style="width:17px; height:17px; accent-color:#7E22CE;">
+                    <span><i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange);"></i> Include Franchise Admin Person (The Manager) as an Active Field Service Provider on Platform</span>
+                  </label>
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="franchise-admin-email">Manager Business Email</label>
-                  <input type="email" id="franchise-admin-email" class="form-control" required placeholder="e.g. manager@franchise.com">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="franchise-admin-region">Operating Territory / Regions</label>
-                  <input type="text" id="franchise-admin-region" class="form-control" required placeholder="e.g. Gold Coast, Logan & Brisbane South">
-                </div>
-              </div>
-
+              <!-- Central Remuneration Bank & PayID -->
               <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:var(--radius-sm); padding:1rem; margin-top:0.75rem;">
-                <div style="font-size:0.8rem; font-weight:800; color:#5B21B6; margin-bottom:0.5rem;">
-                  <i class="fa-solid fa-building-columns"></i> Franchise Central Remuneration Account (Royalties & Client Billing)
+                <div style="font-size:0.82rem; font-weight:800; color:#5B21B6; margin-bottom:0.5rem;">
+                  <i class="fa-solid fa-building-columns"></i> Franchise Central Remuneration Account (Client Settlement & Royalties)
                 </div>
                 <div class="form-row" style="margin-bottom:0.5rem;">
                   <div class="input-group" style="margin-bottom:0;">
                     <label class="input-label" for="franchise-admin-payid" style="font-size:0.75rem;">Franchise PayID</label>
                     <input type="text" id="franchise-admin-payid" class="form-control" placeholder="e.g. accounts@franchise.com or 0412 345 678">
+                  </div>
+                  <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" for="franchise-admin-payid-type" style="font-size:0.75rem;">PayID Type</label>
+                    <select id="franchise-admin-payid-type" class="form-control">
+                      <option value="phone">Mobile Phone (04XX XXX XXX)</option>
+                      <option value="email" selected>Email Address</option>
+                      <option value="abn">ABN (Australian Business Number)</option>
+                      <option value="org_id">Organisation ID</option>
+                    </select>
                   </div>
                   <div class="input-group" style="margin-bottom:0;">
                     <label class="input-label" for="franchise-admin-bank-name" style="font-size:0.75rem;">Bank Account Name</label>
@@ -1657,30 +1708,35 @@
                 <div class="form-row" style="margin-bottom:0;">
                   <div class="input-group" style="margin-bottom:0;">
                     <label class="input-label" for="franchise-admin-bsb" style="font-size:0.75rem;">BSB (6 digits)</label>
-                    <input type="text" id="franchise-admin-bsb" class="form-control" placeholder="084-004">
+                    <input type="text" id="franchise-admin-bsb" class="form-control" placeholder="084-004" maxlength="7">
                   </div>
                   <div class="input-group" style="margin-bottom:0;">
                     <label class="input-label" for="franchise-admin-account" style="font-size:0.75rem;">Account Number</label>
-                    <input type="text" id="franchise-admin-account" class="form-control" placeholder="98765432">
+                    <input type="text" id="franchise-admin-account" class="form-control" placeholder="98765432" maxlength="10">
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 2. Franchise Staff Technicians (Dropdown boxes with ALL same requirements of service providers) -->
+            <!-- 2. Franchise Staff Technicians & Service Providers (Dropdown box for every staff added, same full details as service provider form) -->
             <div style="margin-bottom:1.5rem;">
               <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--border-light); padding-bottom:0.5rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem;">
                 <div>
-                  <h5 style="font-size:0.9rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; margin:0;">
-                    <i class="fa-solid fa-users-gear" style="color:#7E22CE;"></i> 2. Franchise Staff Technicians & Field Fleet
+                  <h5 style="font-size:0.95rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; margin:0;">
+                    <i class="fa-solid fa-users-gear" style="color:#7E22CE;"></i> 2. Franchise Staff Technicians & Service Providers Fleet
                   </h5>
                   <p style="font-size:0.78rem; color:#64748B; margin:0.25rem 0 0 0;">
-                    Each staff technician inherits complete service provider capabilities: trade discipline, licences, custom services & fee structures drop boxes, 24/7 calendar availability, and payout settings.
+                    Add each staff member or service provider below. Each staff member is contained within an expandable <strong>Dropdown Box</strong> featuring the exact full details of what they do, identical to the Service Provider Form: trade discipline, licences, custom services & fee structures dropdown boxes, 24/7 calendar availability, document uploads, and direct bank settlement.
                   </p>
                 </div>
-                <button type="button" class="btn btn-sm" onclick="addFranchiseStaffMember()" style="background:#7E22CE; color:#fff; font-weight:700; border:none; padding:0.45rem 1rem; border-radius:var(--radius-sm); cursor:pointer;">
-                  <i class="fa-solid fa-user-plus"></i> Add Staff Technician
-                </button>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                  <span id="franchise-staff-stats-pill" style="font-size:0.75rem; background:#F3E8FF; color:#7E22CE; padding:0.3rem 0.75rem; border-radius:20px; font-weight:800; border:1px solid #DDD6FE;">
+                    <i class="fa-solid fa-users"></i> Staff: 1 Loaded
+                  </span>
+                  <button type="button" class="btn btn-sm" onclick="addFranchiseStaffMember()" style="background:#7E22CE; color:#fff; font-weight:700; border:none; padding:0.5rem 1.1rem; border-radius:var(--radius-sm); cursor:pointer;">
+                    <i class="fa-solid fa-user-plus"></i> Add Staff / Service Provider
+                  </button>
+                </div>
               </div>
 
               <!-- Container for Dynamic Staff Cards -->
@@ -1937,7 +1993,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer-content">
-              <p>Every booking generates an official Australian Tax Invoice docket (e.g. <code>IASJ-XXXXXX</code>) detailing labor, materials, callout fee, distance travel, and 10% GST. Customers can pay instantly online or on-site via our integrated <strong>Stripe Payment Gateway</strong> (supporting all Visa, Mastercard, and digital wallets) with 256-bit encryption.</p>
+              <p>Customers pay the service provider or franchise <strong>directly</strong>. We do not take the customer's payment. Instead, we charge service providers and franchises a <strong>small fee per transaction</strong>. Every booking still generates an official Australian Tax Invoice docket (e.g. <code>IASJ-XXXXXX</code>) detailing labour, materials, callout fee, distance travel, and 10% GST, and all of it is available in your own admin panel.</p>
             </div>
           </div>
 
@@ -1949,6 +2005,197 @@
             </button>
             <div class="faq-answer-content">
               <p>Recruiters and site managers can visit the <strong>Recruit</strong> tab to filter vetted candidate resumes by keywords (e.g., "Plumber", "Licensed Sparky", "Forklift") and location. You can inspect full CVs, verified licences, police checks, and shift availability, then submit an instant placement request directly through the portal.</p>
+            </div>
+          </div>
+
+          <!-- Topic FAQs (linked from the site footer) -->
+          <div class="faq-item" id="faq-labour">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-labour')">
+              <span><i class="fa-solid fa-person-digging" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Labour Services</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We do almost everything, just use the AI to search. Call us on <a href="tel:0495019791"><strong>0495 019 791</strong></a> if you need a hand.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-plumbing">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-plumbing')">
+              <span><i class="fa-solid fa-faucet-drip" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Plumbing &amp; Leaks</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, both independent contractors and franchises.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-electrical">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-electrical')">
+              <span><i class="fa-solid fa-bolt" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Electrical &amp; Sparky</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, both independent contractors and franchises.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-handyman">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-handyman')">
+              <span><i class="fa-solid fa-screwdriver-wrench" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Flatpack &amp; Handyman</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, we have people for everything.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-gardening">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-gardening')">
+              <span><i class="fa-solid fa-leaf" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Gardening &amp; Gutters</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, both independent contractors and franchises.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-painting">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-painting')">
+              <span><i class="fa-solid fa-paint-roller" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Painting &amp; Plastering</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, both independent contractors and franchises.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-courier">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-courier')">
+              <span><i class="fa-solid fa-truck-fast" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Courier Services</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, both independent contractors and franchises.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-documents">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-documents')">
+              <span><i class="fa-solid fa-file-shield" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Documents &amp; Legal</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Yes, we have couriers for this.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-medical">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-medical')">
+              <span><i class="fa-solid fa-briefcase-medical" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Urgent Medical Items</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We have certified couriers, such as those holding <strong>TLIPC1004A Complete courier delivery operations</strong>.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-retail">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-retail')">
+              <span><i class="fa-solid fa-bag-shopping" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Retail Freight Transfer</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We can arrange up to LR sized trucks.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-heavy">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-heavy')">
+              <span><i class="fa-solid fa-pallet" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Heavy Equipment &amp; Pallets</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We can arrange up to LR sized trucks.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-australia-wide">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-australia-wide')">
+              <span><i class="fa-solid fa-earth-oceania" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Australia-Wide Delivery</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We operate internationally, not just Australia-wide, but we are Australia based.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-company">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-company')">
+              <span><i class="fa-solid fa-network-wired" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Company &amp; Network</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We work with any company and network to assist their services.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-how-it-works">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-how-it-works')">
+              <span><i class="fa-solid fa-circle-info" style="color:var(--brand-orange); margin-right:0.6rem;"></i> How It Works</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Tell us what you need in your own words. The AI works out the job, we calculate the price, and a verified contractor or courier turns up. The full step-by-step process for both Labour and Courier is shown above on this page.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-customer-registration">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-customer-registration')">
+              <span><i class="fa-solid fa-user-check" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Customer Registration Page</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Customers register on their own page to get a Customer Reference Number (CRN). <a href="customer.html">Go to the Customer Registration Page</a>.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-provider-registration">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-provider-registration')">
+              <span><i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Service Provider Page</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Independent contractors and couriers register on their own page to receive a Service Provider Number (SPN). <a href="provider.html">Go to the Service Provider Page</a>.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-franchise-registration">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-franchise-registration')">
+              <span><i class="fa-solid fa-building-user" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Franchise Registration Page</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>Franchises register on their own page, with a Franchise Admin and all their staff and service providers. <a href="franchise.html">Go to the Franchise Registration Page</a>.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-franchise-opportunities">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-franchise-opportunities')">
+              <span><i class="fa-solid fa-handshake" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Franchise Opportunities</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>We do not have franchise opportunities of our own, but we let franchises register.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" id="faq-docket-lookup">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-docket-lookup')">
+              <span><i class="fa-solid fa-magnifying-glass" style="color:var(--brand-orange); margin-right:0.6rem;"></i> Docket &amp; Invoice Lookup</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>All of it is in your own admin panel.</p>
             </div>
           </div>
         </div>
@@ -2175,7 +2422,7 @@
         </div>
         <div style="text-align:center;">
           <button class="btn btn-navy btn-lg" onclick="openFranchiseModal()">
-            <i class="fa-solid fa-file-signature"></i> Apply For Territory
+            <i class="fa-solid fa-file-signature"></i> Apply For Territory (Embedded Form)
           </button>
         </div>
       </div>
@@ -2408,6 +2655,9 @@
           <button class="btn btn-navy" style="width:100%; font-weight:800; padding:0.65rem;">
             Register as Customer <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
+          <a href="customer.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#1E40AF; text-decoration:none;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Customer Page
+          </a>
         </div>
 
         <!-- Option 2: Service Provider -->
@@ -2432,6 +2682,9 @@
           <button class="btn btn-primary" style="width:100%; font-weight:800; padding:0.65rem;">
             Register as Provider <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
+          <a href="provider.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#C2410C; text-decoration:none;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Provider Page
+          </a>
         </div>
 
         <!-- Option 3: Franchise Admin -->
@@ -2456,6 +2709,9 @@
           <button class="btn" style="width:100%; font-weight:800; padding:0.65rem; background:#7E22CE; color:white;">
             Register Franchise <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
+          <a href="franchise.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#7E22CE; text-decoration:none;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Franchise Page
+          </a>
         </div>
       </div>
 
@@ -3440,9 +3696,9 @@
             </div>
             <div class="input-group" style="margin-bottom:0;">
               <label class="input-label" style="font-size:0.72rem;">Distance Unit</label>
-              <select id="admin-distance-unit" class="form-control" style="font-size:0.85rem; height:36px;">
-                <option value="km">Per Kilometre (km)</option>
-                <option value="mile">Per Mile (mi)</option>
+              <select id="admin-distance-unit" class="form-control" style="font-size:0.75rem; height:36px; padding:0.25rem 0.4rem;">
+                <option value="km" style="font-size:0.75rem;">Per Kilometre (km)</option>
+                <option value="mile" style="font-size:0.75rem;">Per Mile (mi)</option>
               </select>
             </div>
           </div>
@@ -3568,36 +3824,37 @@
         </div>
 
         <div class="footer-col">
-          <h4>Labour Services</h4>
+          <h4><a href="#" onclick="goToFaq('faq-labour'); return false;" style="color:inherit; text-decoration:none;">Labour Services</a></h4>
           <ul class="footer-links">
-            <li><a href="#" onclick="applySamplePrompt('leaking_tap')">Plumbing & Leaks</a></li>
-            <li><a href="#" onclick="applySamplePrompt('powerpoints')">Electrical & Sparky</a></li>
-            <li><a href="#" onclick="applySamplePrompt('flatpack_assembly')">Flatpack & Handyman</a></li>
-            <li><a href="#" onclick="applySamplePrompt('garden_lawn')">Gardening & Gutters</a></li>
-            <li><a href="#" onclick="applySamplePrompt('drywall_patch')">Painting & Plastering</a></li>
+            <li><a href="#" onclick="goToFaq('faq-plumbing'); return false;">Plumbing &amp; Leaks</a></li>
+            <li><a href="#" onclick="goToFaq('faq-electrical'); return false;">Electrical &amp; Sparky</a></li>
+            <li><a href="#" onclick="goToFaq('faq-handyman'); return false;">Flatpack &amp; Handyman</a></li>
+            <li><a href="#" onclick="goToFaq('faq-gardening'); return false;">Gardening &amp; Gutters</a></li>
+            <li><a href="#" onclick="goToFaq('faq-painting'); return false;">Painting &amp; Plastering</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Courier Services</h4>
+          <h4><a href="#" onclick="goToFaq('faq-courier'); return false;" style="color:inherit; text-decoration:none;">Courier Services</a></h4>
           <ul class="footer-links">
-            <li><a href="#" onclick="switchTab('courier-tab')">Documents & Legal</a></li>
-            <li><a href="#" onclick="switchTab('courier-tab')">Urgent Medical Items</a></li>
-            <li><a href="#" onclick="switchTab('courier-tab')">Retail Freight Transfer</a></li>
-            <li><a href="#" onclick="switchTab('courier-tab')">Heavy Equipment & Pallets</a></li>
-            <li><a href="#" onclick="switchTab('courier-tab')">Australia-Wide Delivery</a></li>
+            <li><a href="#" onclick="goToFaq('faq-documents'); return false;">Documents &amp; Legal</a></li>
+            <li><a href="#" onclick="goToFaq('faq-medical'); return false;">Urgent Medical Items</a></li>
+            <li><a href="#" onclick="goToFaq('faq-retail'); return false;">Retail Freight Transfer</a></li>
+            <li><a href="#" onclick="goToFaq('faq-heavy'); return false;">Heavy Equipment &amp; Pallets</a></li>
+            <li><a href="#" onclick="goToFaq('faq-australia-wide'); return false;">Australia-Wide Delivery</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Company & Network</h4>
+          <h4><a href="#" onclick="goToFaq('faq-company'); return false;" style="color:inherit; text-decoration:none;">Company &amp; Network</a></h4>
           <ul class="footer-links">
-            <li><a href="#" onclick="switchTab('how-it-works-tab')">How It Works</a></li>
-            <li><a href="#" onclick="switchTab('recruitment-tab')">Hire Recruitment</a></li>
-            <li><a href="#" onclick="switchTab('provider-network-tab')">Join As Tradie / Driver</a></li>
-            <li><a href="#" onclick="switchTab('franchise-tab')">Franchise Opportunities</a></li>
-            <li><a href="#" onclick="openTrackModal()">Docket & Invoice Lookup</a></li>
-            <li><a href="tel:1300746753">1300 SIMPLE (1300 746 753)</a></li>
+            <li><a href="#" onclick="goToFaq('faq-how-it-works'); return false;">How It Works</a></li>
+            <li><a href="#" onclick="goToFaq('faq-customer-registration'); return false;"><i class="fa-solid fa-user-check"></i> Customer Registration Page</a></li>
+            <li><a href="#" onclick="goToFaq('faq-provider-registration'); return false;"><i class="fa-solid fa-helmet-safety"></i> Service Provider Page</a></li>
+            <li><a href="#" onclick="goToFaq('faq-franchise-registration'); return false;"><i class="fa-solid fa-building-user"></i> Franchise Registration Page</a></li>
+            <li><a href="#" onclick="goToFaq('faq-franchise-opportunities'); return false;">Franchise Opportunities</a></li>
+            <li><a href="#" onclick="goToFaq('faq-docket-lookup'); return false;">Docket &amp; Invoice Lookup</a></li>
+            <li><a href="tel:0495019791"><i class="fa-solid fa-phone"></i> 0495 019 791</a></li>
           </ul>
         </div>
       </div>
@@ -3618,100 +3875,6 @@
   <script src="js/ai-engine.js"></script>
   <script src="js/app.js"></script>
   <!-- Google Maps JavaScript API is loaded dynamically via .env (GOOGLE_MAPS_API_KEY) -->
-  <!-- =========================================================================
-       FRANCHISE ADMIN REGISTRATION MODAL
-       ========================================================================= -->
-  <div class="modal-overlay" id="franchise-register-modal">
-    <div class="modal-box" style="max-width:560px;">
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:0.6rem;">
-          <div style="width:40px; height:40px; border-radius:8px; background:#F3E8FF; color:#7E22CE; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-            <i class="fa-solid fa-building-user"></i>
-          </div>
-          <div>
-            <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:#ffffff;">Franchise Admin Registration</h2>
-            <span style="font-size:0.75rem; color:#E2E8F0;">Create your franchise account to manage staff</span>
-          </div>
-        </div>
-        <button class="modal-close-btn" onclick="closeFranchiseRegisterModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="franchise-register-form" onsubmit="handleFranchiseRegisterSubmit(event)">
-          <div class="form-group">
-            <label class="form-label">Franchise Name</label>
-            <input type="text" id="franchise-name" class="form-control" placeholder="e.g. Jim's Mowing Gold Coast" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Admin Full Name</label>
-            <input type="text" id="franchise-admin-name" class="form-control" placeholder="e.g. Sarah Jenkins" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Admin Email</label>
-            <input type="email" id="franchise-admin-email" class="form-control" placeholder="e.g. admin@franchise.com" required>
-          </div>
-          <button type="submit" class="btn" style="width:100%; background:#7E22CE; color:white; font-weight:800; padding:0.8rem; margin-top:1rem;">
-            Register Franchise <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       FRANCHISE ADMIN DASHBOARD
-       ========================================================================= -->
-  <div class="modal-overlay" id="franchise-dashboard-modal">
-    <div class="modal-box" style="max-width:700px;">
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:0.6rem;">
-          <div style="width:40px; height:40px; border-radius:8px; background:#F3E8FF; color:#7E22CE; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-            <i class="fa-solid fa-users-gear"></i>
-          </div>
-          <div>
-            <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:#ffffff;">Franchise Dashboard</h2>
-            <span style="font-size:0.75rem; color:#E2E8F0;" id="dashboard-franchise-name">Manage Staff</span>
-          </div>
-        </div>
-        <button class="modal-close-btn" onclick="closeFranchiseDashboard()">&times;</button>
-      </div>
-      <div class="modal-body" style="background:#F8FAFC; border-radius:0 0 var(--radius-lg) var(--radius-lg); padding:1.5rem;">
-        
-        <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
-          <h3 style="font-size:1.1rem; color:var(--primary-navy); font-weight:800; margin-bottom:1rem; border-bottom:1px solid var(--border-light); padding-bottom:0.5rem;">
-            Add New Staff Member
-          </h3>
-          <form id="franchise-add-staff-form" onsubmit="handleAddStaffSubmit(event)">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Staff Full Name</label>
-                <input type="text" id="staff-name" class="form-control" placeholder="e.g. John Doe" required>
-              </div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Staff Email</label>
-                <input type="email" id="staff-email" class="form-control" placeholder="john@example.com" required>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">PayID / Business Bank Account Number</label>
-              <input type="text" id="staff-payid" class="form-control" placeholder="e.g. 0412 345 678 or BSB 064-123 Acct 12345678" required>
-            </div>
-            <button type="submit" class="btn" style="width:100%; background:#16A34A; color:white; font-weight:800; padding:0.6rem;">
-              <i class="fa-solid fa-plus"></i> Register Staff Member
-            </button>
-          </form>
-        </div>
-
-        <h3 style="font-size:1.1rem; color:var(--primary-navy); font-weight:800; margin-bottom:1rem;">Registered Staff</h3>
-        <div id="franchise-staff-list" style="display:flex; flex-direction:column; gap:0.5rem;">
-          <!-- Staff listed here dynamically -->
-          <div style="padding:1rem; text-align:center; color:var(--text-muted); font-size:0.85rem; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
-            No staff added yet.
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
