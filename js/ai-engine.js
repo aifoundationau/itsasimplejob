@@ -392,3 +392,6 @@ Given a user's plain English job request, extract the work requirements and repl
 
 // Global instance
 window.simpleAIEngine = new SimpleAIEngine();
+window.SimpleAIEngine = SimpleAIEngine;
+window.GEMINI_CONFIG = GEMINI_CONFIG;
+

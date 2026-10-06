@@ -832,3 +832,7 @@ window.INITIAL_PROVIDERS = INITIAL_PROVIDERS;
 window.INITIAL_CANDIDATES = INITIAL_CANDIDATES;
 window.providerDB = new ProviderDatabase();
 window.candidateDB = new CandidateDatabase();
+window.ProviderDatabase = ProviderDatabase;
+window.CandidateDatabase = CandidateDatabase;
+window.getDefaultCalendarSchedule = getDefaultCalendarSchedule;
+

@@ -514,12 +514,7 @@
 
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>
-  <script type="module" src="js/firebase-service.js"></script>
-  <script src="js/stripe-service.js"></script>
-  <script src="js/imgbb-service.js"></script>
-  <script src="js/providers-data.js"></script>
-  <script src="js/ai-engine.js"></script>
-  <script src="js/app.js"></script>
+  <script type="module" src="/js/main.js"></script>
 
   <script>
     // Customer Admin Interactive Logic
@@ -812,6 +807,19 @@
     function syncCustomerGoogleCalendarNow() {
       if (typeof showToast === 'function') showToast('Syncing with Google Calendar... All events updated.');
     }
+
+    window.getCustomerSettings = getCustomerSettings;
+    window.saveCustomerSettings = saveCustomerSettings;
+    window.updateCustomerAdminUI = updateCustomerAdminUI;
+    window.toggleCustomerPauseState = toggleCustomerPauseState;
+    window.saveCustomerPauseReason = saveCustomerPauseReason;
+    window.addCustomerBlackoutDate = addCustomerBlackoutDate;
+    window.removeCustomerBlackoutDate = removeCustomerBlackoutDate;
+    window.applyCustomerDatePreset = applyCustomerDatePreset;
+    window.saveCustomerGcalAutoblock = saveCustomerGcalAutoblock;
+    window.saveCustomerWindowPreferences = saveCustomerWindowPreferences;
+    window.saveCustomerRates = saveCustomerRates;
+    window.syncCustomerGoogleCalendarNow = syncCustomerGoogleCalendarNow;
 
     document.addEventListener('DOMContentLoaded', () => {
       updateCustomerAdminUI();

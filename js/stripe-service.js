@@ -163,3 +163,6 @@ class StripePaymentService {
 
 // Global service instantiation
 window.stripePaymentService = new StripePaymentService();
+window.StripePaymentService = StripePaymentService;
+window.STRIPE_CONFIG = STRIPE_CONFIG;
+

@@ -21,8 +21,7 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signOut, 
-  onAuthStateChanged 
+  signOut 
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
 
 // Firebase Project Configuration (Loaded dynamically from .env via window.ENV)

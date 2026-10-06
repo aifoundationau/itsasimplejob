@@ -102,7 +102,7 @@
             </div>
 
             <div class="settings-menu-list" style="padding:0.4rem 0;">
-              <a href="customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
+              <a href="/customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
                 <div class="settings-option-icon" style="background:#EFF6FF; color:#2563EB;">
                   <i class="fa-solid fa-sliders"></i>
                 </div>
@@ -113,7 +113,7 @@
                 <i class="fa-solid fa-chevron-right settings-arrow"></i>
               </a>
 
-              <a href="franchise.html" class="settings-menu-option" id="google-menu-franchise-dashboard" style="display:none; text-decoration:none;">
+              <a href="/franchise.html" class="settings-menu-option" id="google-menu-franchise-dashboard" style="display:none; text-decoration:none;">
                 <div class="settings-option-icon" style="background:#F3E8FF; color:#7E22CE;">
                   <i class="fa-solid fa-building-user"></i>
                 </div>
@@ -2155,7 +2155,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer-content">
-              <p>Customers register on their own page to get a Customer Reference Number (CRN). <a href="customer.html">Go to the Customer Registration Page</a>.</p>
+              <p>Customers register on their own page to get a Customer Reference Number (CRN). <a href="/customer.html">Go to the Customer Registration Page</a>.</p>
             </div>
           </div>
 
@@ -2165,7 +2165,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer-content">
-              <p>Independent contractors and couriers register on their own page to receive a Service Provider Number (SPN). <a href="provider.html">Go to the Service Provider Page</a>.</p>
+              <p>Independent contractors and couriers register on their own page to receive a Service Provider Number (SPN). <a href="/provider.html">Go to the Service Provider Page</a>.</p>
             </div>
           </div>
 
@@ -2175,7 +2175,7 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer-content">
-              <p>Franchises register on their own page, with a Franchise Admin and all their staff and service providers. <a href="franchise.html">Go to the Franchise Registration Page</a>.</p>
+              <p>Franchises register on their own page, with a Franchise Admin and all their staff and service providers. <a href="/franchise.html">Go to the Franchise Registration Page</a>.</p>
             </div>
           </div>
 
@@ -2655,7 +2655,7 @@
           <button class="btn btn-navy" style="width:100%; font-weight:800; padding:0.65rem;">
             Register as Customer <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
-          <a href="customer.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#1E40AF; text-decoration:none;">
+          <a href="/customer.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#1E40AF; text-decoration:none;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Customer Page
           </a>
         </div>
@@ -2682,7 +2682,7 @@
           <button class="btn btn-primary" style="width:100%; font-weight:800; padding:0.65rem;">
             Register as Provider <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
-          <a href="provider.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#C2410C; text-decoration:none;">
+          <a href="/provider.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#C2410C; text-decoration:none;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Provider Page
           </a>
         </div>
@@ -2709,7 +2709,7 @@
           <button class="btn" style="width:100%; font-weight:800; padding:0.65rem; background:#7E22CE; color:white;">
             Register Franchise <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
           </button>
-          <a href="franchise.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#7E22CE; text-decoration:none;">
+          <a href="/franchise.html" onclick="event.stopPropagation();" style="display:block; text-align:center; margin-top:0.6rem; font-size:0.75rem; font-weight:700; color:#7E22CE; text-decoration:none;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dedicated Franchise Page
           </a>
         </div>
@@ -3868,12 +3868,7 @@
 
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>
-  <script type="module" src="js/firebase-service.js"></script>
-  <script src="js/stripe-service.js"></script>
-  <script src="js/imgbb-service.js"></script>
-  <script src="js/providers-data.js"></script>
-  <script src="js/ai-engine.js"></script>
-  <script src="js/app.js"></script>
+  <script type="module" src="/js/main.js"></script>
   <!-- Google Maps JavaScript API is loaded dynamically via .env (GOOGLE_MAPS_API_KEY) -->
 
 </body>

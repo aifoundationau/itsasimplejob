@@ -147,3 +147,6 @@ class ImgBBService {
 
 // Global instantiation
 window.imgbbService = new ImgBBService();
+window.ImgBBService = ImgBBService;
+window.IMGBB_CONFIG = IMGBB_CONFIG;
+

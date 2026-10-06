@@ -1,4 +1,9 @@
 import { defineConfig, loadEnv } from 'vite';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig(({ mode }) => {
   // Load environment variables from .env file
@@ -7,6 +12,21 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       port: 3000,
+    },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      sourcemap: true,
+      rollupOptions: {
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          customer: resolve(__dirname, 'customer.html'),
+          customerAdmin: resolve(__dirname, 'customer-admin.html'),
+          franchise: resolve(__dirname, 'franchise.html'),
+          provider: resolve(__dirname, 'provider.html'),
+          serviceProvider: resolve(__dirname, 'service-provider.html')
+        }
+      }
     },
     plugins: [
       {

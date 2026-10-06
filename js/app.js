@@ -3135,21 +3135,9 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
 
 let lastCreatedSPN = null;
 
-function closeProviderSuccessModal() {
-  document.getElementById('provider-success-modal')?.classList.remove('active');
-}
-
 function handleSuccessModalOpenAdmin() {
   closeProviderSuccessModal();
   openProviderAdminPanel(lastCreatedSPN);
-}
-
-function copySPNToClipboard() {
-  const spn = document.getElementById('modal-spn-number')?.textContent.trim();
-  if (spn && navigator.clipboard) {
-    navigator.clipboard.writeText(spn);
-    showToast(`Copied ${spn} to clipboard!`);
-  }
 }
 
 function toggleFaq(id) {
@@ -6099,3 +6087,78 @@ window.removeFranchiseStaffMember = removeFranchiseStaffMember;
 window.handleLinkExistingProviderChange = handleLinkExistingProviderChange;
 window.updateFranchiseStaffStats = updateFranchiseStaffStats;
 window.handleStaffBizCodeTypeChange = handleStaffBizCodeTypeChange;
+
+// Core Application & Navigation Exports for Bundled Module Compatibility
+window.appState = appState;
+window.SAMPLE_PROMPTS = SAMPLE_PROMPTS;
+window.switchTab = switchTab;
+window.focusAIChat = focusAIChat;
+window.setupAddressAutocomplete = setupAddressAutocomplete;
+window.locateCustomer = locateCustomer;
+window.updateRadiusDisplay = updateRadiusDisplay;
+window.filterContractors = filterContractors;
+window.renderContractorCards = renderContractorCards;
+window.panToContractor = panToContractor;
+window.bookProviderDirectly = bookProviderDirectly;
+window.computeDistanceInKm = computeDistanceInKm;
+window.applySamplePrompt = applySamplePrompt;
+window.clearAIPrompt = clearAIPrompt;
+window.submitAIAnalysis = submitAIAnalysis;
+window.renderAnalysisResults = renderAnalysisResults;
+window.selectMatchedProvider = selectMatchedProvider;
+window.updatePricingCard = updatePricingCard;
+window.selectShift = selectShift;
+window.handleJobPhotoUpload = handleJobPhotoUpload;
+window.removeJobPhoto = removeJobPhoto;
+window.handleCourierPhotoUpload = handleCourierPhotoUpload;
+window.handleProviderPhotoUpload = handleProviderPhotoUpload;
+window.handleCandidatePhotoUpload = handleCandidatePhotoUpload;
+window.confirmBooking = confirmBooking;
+window.selectPackageType = selectPackageType;
+window.calculateCourierQuote = calculateCourierQuote;
+window.fallbackCourierCalculation = fallbackCourierCalculation;
+window.updateCourierPricingUI = updateCourierPricingUI;
+window.bookCourierDispatch = bookCourierDispatch;
+window.handleProviderRegistration = handleProviderRegistration;
+window.addJobToDispatchFeed = addJobToDispatchFeed;
+window.acceptDispatchJob = acceptDispatchJob;
+window.declineDispatchJob = declineDispatchJob;
+window.completeJob = completeJob;
+window.renderInvoiceModal = renderInvoiceModal;
+window.closeBookingModal = closeBookingModal;
+window.printOrDownloadInvoice = printOrDownloadInvoice;
+window.openStripePaymentModal = openStripePaymentModal;
+window.closeStripePaymentModal = closeStripePaymentModal;
+window.handleStripePaymentSubmit = handleStripePaymentSubmit;
+window.openFranchiseModal = openFranchiseModal;
+window.closeFranchiseModal = closeFranchiseModal;
+window.handleFranchiseSubmit = handleFranchiseSubmit;
+window.openTrackModal = openTrackModal;
+window.initSpeechRecognition = initSpeechRecognition;
+window.toggleVoiceSpeech = toggleVoiceSpeech;
+window.showToast = showToast;
+window.renderCandidateCards = renderCandidateCards;
+window.filterCandidates = filterCandidates;
+window.selectCandidateShiftFilter = selectCandidateShiftFilter;
+window.resetRecruitmentFilters = resetRecruitmentFilters;
+window.openCandidateResumeModal = openCandidateResumeModal;
+window.closeCandidateResumeModal = closeCandidateResumeModal;
+window.openHireModalFromResume = openHireModalFromResume;
+window.openHireStaffModal = openHireStaffModal;
+window.closeHireStaffModal = closeHireStaffModal;
+window.handleRecruitmentHireSubmit = handleRecruitmentHireSubmit;
+window.openCandidateRegisterModal = openCandidateRegisterModal;
+window.closeCandidateRegisterModal = closeCandidateRegisterModal;
+window.handleCandidateRegisterSubmit = handleCandidateRegisterSubmit;
+window.getStoredProviderDocs = getStoredProviderDocs;
+window.saveStoredProviderDocs = saveStoredProviderDocs;
+window.getCategoryServices = getCategoryServices;
+window.updateRowPriceInputs = updateRowPriceInputs;
+window.createDefaultMatrixData = createDefaultMatrixData;
+window.getMatrixSchedule = getMatrixSchedule;
+window.updateAdminStatusUI = updateAdminStatusUI;
+window.renderAdminBlackoutChips = renderAdminBlackoutChips;
+window.renderPublicCalendarGrid = renderPublicCalendarGrid;
+window.routeUserToDashboard = routeUserToDashboard;
+window.fallbackCopy = fallbackCopy;
+
