@@ -380,10 +380,13 @@ export async function signInWithGoogle(role = 'customer') {
   }
 
   // Graceful simulation fallback for localhost/development
+  // =====================================================================
+  // TODO: UPDATE THESE EMAILS WITH THE ONES YOU ADDED TO OAUTH
+  // =====================================================================
   const fallbackUser = {
     uid: 'google-uid-' + Math.floor(100000 + Math.random() * 900000),
-    displayName: role === 'provider' ? 'Jack Morrison (Google)' : 'Sarah Jenkins (Google)',
-    email: role === 'provider' ? 'jack.morrison.trades@gmail.com' : 'sarah.jenkins@gmail.com',
+    displayName: role === 'provider' ? 'Jack Morrison (Provider Test)' : 'Sarah Jenkins (Customer Test)',
+    email: role === 'provider' ? 'your_provider_test@email.com' : 'your_customer_test@email.com',
     photoURL: 'https://lh3.googleusercontent.com/a/default-user',
     accessToken: 'ya29.mock_oauth_calendar_token',
     role,

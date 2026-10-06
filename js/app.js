@@ -54,6 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProviderDocumentVault();
   renderCalendarMatrix('inline-calendar-matrix-root', 'inline');
   renderCalendarMatrix('modal-calendar-matrix-root', 'modal');
+  renderDefaultServiceFeeRows('page', 'plumbing');
+  renderDefaultServiceFeeRows('modal', 'plumbing');
+
+  // Initialize form draft auto-save listeners & Google auth banners
+  if (typeof attachDraftAutoSaveListeners === 'function') {
+    attachDraftAutoSaveListeners();
+  }
+  if (typeof updateGoogleAuthBanners === 'function') {
+    updateGoogleAuthBanners();
+  }
+  if (typeof restoreFranchiseApplicationDraft === 'function') {
+    restoreFranchiseApplicationDraft();
+  }
 
   // If Firebase is available, seed providers if database is empty
   if (window.firebaseService?.seedProvidersIfEmpty && window.INITIAL_PROVIDERS) {
@@ -86,6 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
  * Tab Navigation Controller
  */
 function switchTab(tabId) {
+  // Alias register-tab to register-selection-tab
+  if (tabId === 'register-tab') {
+    tabId = 'register-selection-tab';
+  }
+
   // Update view containers
   const views = document.querySelectorAll('.workspace-view');
   views.forEach(view => view.classList.remove('active-view'));
@@ -109,7 +127,6 @@ function switchTab(tabId) {
   } else if (tabId === 'find-contractors-tab') {
     document.getElementById('tab-btn-find-contractors')?.classList.add('active');
     document.getElementById('pill-find-contractors')?.classList.add('active');
-    // Resize Google Map when shown
     setTimeout(() => {
       if (appState.contractorMap && window.google?.maps) {
         google.maps.event.trigger(appState.contractorMap, 'resize');
@@ -121,7 +138,6 @@ function switchTab(tabId) {
   } else if (tabId === 'courier-tab') {
     document.getElementById('tab-btn-courier')?.classList.add('active');
     document.getElementById('pill-courier')?.classList.add('active');
-    // Resize Courier Route Map
     setTimeout(() => {
       if (appState.courierRouteMap && window.google?.maps) {
         google.maps.event.trigger(appState.courierRouteMap, 'resize');
@@ -131,10 +147,39 @@ function switchTab(tabId) {
     document.getElementById('tab-btn-recruitment')?.classList.add('active');
     document.getElementById('pill-recruitment')?.classList.add('active');
     filterCandidates();
-  } else if (tabId === 'register-tab') {
+  } else if (tabId === 'register-selection-tab') {
     document.getElementById('tab-btn-register')?.classList.add('active');
     document.getElementById('pill-register')?.classList.add('active');
-    renderProviderDocumentVault();
+  } else if (tabId === 'provider-application-tab') {
+    document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('pill-register')?.classList.add('active');
+    if (typeof restoreProviderApplicationDraft === 'function') {
+      restoreProviderApplicationDraft();
+    }
+    if (typeof renderProviderDocumentVault === 'function') {
+      renderProviderDocumentVault();
+    }
+    if (typeof updateGoogleAuthBanners === 'function') {
+      updateGoogleAuthBanners();
+    }
+  } else if (tabId === 'customer-application-tab') {
+    document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('pill-register')?.classList.add('active');
+    if (typeof restoreCustomerApplicationDraft === 'function') {
+      restoreCustomerApplicationDraft();
+    }
+    if (typeof updateGoogleAuthBanners === 'function') {
+      updateGoogleAuthBanners();
+    }
+  } else if (tabId === 'franchise-application-tab') {
+    document.getElementById('tab-btn-register')?.classList.add('active');
+    document.getElementById('pill-register')?.classList.add('active');
+    if (typeof restoreFranchiseApplicationDraft === 'function') {
+      restoreFranchiseApplicationDraft();
+    }
+    if (typeof updateGoogleAuthBanners === 'function') {
+      updateGoogleAuthBanners();
+    }
   } else if (tabId === 'how-it-works-tab') {
     document.getElementById('tab-btn-how-it-works')?.classList.add('active');
     document.getElementById('pill-how-it-works')?.classList.add('active');
@@ -147,7 +192,8 @@ function switchTab(tabId) {
   }
 
   appState.activeTab = tabId;
-  window.scrollTo({ top: 400, behavior: 'smooth' });
+  const isFormView = tabId.includes('application') || tabId === 'register-selection-tab';
+  window.scrollTo({ top: isFormView ? 120 : 400, behavior: 'smooth' });
 }
 
 function focusAIChat() {
@@ -968,7 +1014,7 @@ async function handleCandidatePhotoUpload(event) {
 /**
  * Confirm Booking & Generate Tax Invoice
  */
-function confirmBooking() {
+async function confirmBooking() {
   const custName = document.getElementById('cust-name')?.value.trim() || 'Valued Customer';
   const custPhone = document.getElementById('cust-phone')?.value.trim() || '0412 000 000';
   const custAddress = document.getElementById('cust-address')?.value.trim() || 'Broadbeach, Gold Coast';
@@ -1011,6 +1057,20 @@ function confirmBooking() {
     pricing: analysis.pricing,
     status: 'Confirmed & Dispatched'
   };
+
+  // Register Customer into Stripe as a User
+  if (window.stripePaymentService?.registerCustomerUser) {
+    try {
+      const stripeCust = await window.stripePaymentService.registerCustomerUser({
+        name: custName,
+        phone: custPhone,
+        crn: customerRefNumber
+      });
+      booking.customerStripeId = stripeCust.stripeCustomerId;
+    } catch (err) {
+      console.warn("Could not register customer in Stripe:", err);
+    }
+  }
 
   appState.activeBookings.unshift(booking);
 
@@ -1405,6 +1465,43 @@ function renderInvoiceModal(booking) {
           </tr>
         </tbody>
       </table>
+
+      <!-- Direct Payment to Provider (PayID & BSB Bank Account) -->
+      <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+          <strong style="color:#166534; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-building-columns"></i> Pay Directly to Service Provider
+          </strong>
+          <span style="background:#DCFCE7; color:#15803D; font-size:0.72rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:12px;">Zero Fees • Direct to Tradie</span>
+        </div>
+        <p style="font-size:0.76rem; color:#14532D; margin-bottom:0.6rem;">
+          Customers pay our independent verified specialists directly upon inspecting and signing off on the job. Please include Docket <strong>${booking.docketNumber}</strong> in your payment reference.
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; background:#fff; border:1px solid #86EFAC; border-radius:6px; padding:0.75rem 0.85rem;">
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; display:flex; align-items:center; gap:0.3rem;">
+              <i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> INSTANT PAYID (Osko / NPP):
+            </div>
+            <div style="display:flex; align-items:center; gap:0.35rem; margin-top:0.3rem;">
+              <code style="font-size:0.84rem; font-weight:800; color:#1E40AF; background:#EFF6FF; padding:0.25rem 0.45rem; border-radius:4px;">${booking.provider.payId || booking.provider.phone || '0412 889 211'}</code>
+              <button type="button" class="btn btn-sm btn-outline" style="padding:0.2rem 0.45rem; font-size:0.68rem;" onclick="copyToClipboard('${booking.provider.payId || booking.provider.phone || '0412 889 211'}', 'PayID')">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+            <span style="font-size:0.68rem; color:var(--text-muted); display:block; margin-top:0.25rem;">Type: ${(booking.provider.payIdType || 'Mobile Phone').toUpperCase()}</span>
+          </div>
+
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; display:flex; align-items:center; gap:0.3rem;">
+              <i class="fa-solid fa-landmark" style="color:#2563EB;"></i> DIRECT BANK TRANSFER (EFT):
+            </div>
+            <div style="font-size:0.78rem; color:#1F2937; margin-top:0.3rem; line-height:1.35;">
+              <strong>BSB:</strong> <code style="font-size:0.78rem; color:#1E40AF;">${booking.provider.bankDetails?.bsb || '084-004'}</code> &nbsp;|&nbsp; <strong>Acc:</strong> <code style="font-size:0.78rem; color:#1E40AF;">${booking.provider.bankDetails?.accountNumber || '482910481'}</code><br>
+              <span style="font-size:0.7rem; color:var(--text-muted);">Name: ${booking.provider.bankDetails?.accountName || booking.provider.businessName || booking.provider.name}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div style="background:#fff; padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-light); font-size:0.78rem; color:var(--text-muted);">
         <i class="fa-solid fa-circle-info" style="color:var(--brand-orange);"></i> 
@@ -2051,12 +2148,24 @@ document.addEventListener('click', (e) => {
 });
 
 /**
- * Customer Registration Modal Controllers
+ * Customer Registration Modal / Embedded Page Controllers
  */
-function openCustomerRegisterModal() {
+function openCustomerRegisterModal(user = null) {
   document.getElementById('settings-dropdown-panel')?.classList.remove('show');
   document.getElementById('settings-menu-btn')?.classList.remove('active');
-  document.getElementById('customer-register-modal')?.classList.add('active');
+  switchTab('customer-application-tab');
+  const currentUser = user || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (currentUser) {
+    const nameInput = document.getElementById('inline-cust-name');
+    const emailInput = document.getElementById('inline-cust-email');
+    if (nameInput && !nameInput.value) nameInput.value = currentUser.displayName || '';
+    if (emailInput && !emailInput.value) emailInput.value = currentUser.email || '';
+  }
+  if (typeof restoreCustomerApplicationDraft === 'function') {
+    restoreCustomerApplicationDraft();
+  }
 }
 
 function closeCustomerRegisterModal() {
@@ -2349,6 +2458,9 @@ async function handleCustomerRegistrationSubmit(event, isInline = false) {
 
   if (isInline) {
     document.getElementById('inline-customer-register-form')?.reset();
+    if (typeof clearCustomerApplicationDraft === 'function') {
+      clearCustomerApplicationDraft(false);
+    }
   } else {
     closeCustomerRegisterModal();
     document.getElementById('customer-register-form')?.reset();
@@ -2359,13 +2471,392 @@ async function handleCustomerRegistrationSubmit(event, isInline = false) {
 }
 
 /**
- * Service Provider Registration Modal Controllers
+ * Dynamic Services & Fee Structures Drop Box System
  */
-function openServiceProviderRegisterModal() {
+const TRADE_SERVICES_CATALOG = {
+  plumbing: [
+    "Emergency Burst Pipe & Leak Repairs",
+    "Hot Water System Installation & Repair",
+    "Blocked Drain Clearing & CCTV Inspection",
+    "Leaking Tap & Mixer Replacement",
+    "Toilet Suite Repair & Installation",
+    "Gas Fitting, Leak Testing & Compliance",
+    "Backflow Prevention Testing & Certification",
+    "Bathroom & Kitchen Rough-In Plumbing",
+    "Roof, Gutter & Downpipe Leak Repairs",
+    "Water Pressure Diagnosis & Filtration",
+    "+ Custom / Other Plumbing Service"
+  ],
+  electrical: [
+    "Emergency Fault Finding & Circuit Tripping",
+    "Switchboard Upgrade & Safety Switch (RCD)",
+    "Power Point & USB Outlet Installation",
+    "LED Downlight & Architectural Lighting",
+    "Smoke Alarm Interconnect Compliance (2022+)",
+    "EV (Electric Vehicle) Charger Installation",
+    "Ceiling Fan Supply & Installation",
+    "Oven, Cooktop & Stove Electrical Hookup",
+    "Mains Power & Sub-Board Cabling",
+    "Air Conditioning Electrical Feed",
+    "+ Custom / Other Electrical Service"
+  ],
+  courier: [
+    "Urgent Same-Day Express Delivery",
+    "Scheduled Delivery Route & Multi-Drop",
+    "Palletised Freight & Tailgate Lift Transport",
+    "Fragile, Artwork & High-Value Courier",
+    "Heavy Bulky Freight (2-Person Delivery)",
+    "Medical & Pathology Specimen Urgent Run",
+    "Legal Document & Real Estate Contract Express",
+    "After-Hours & Weekend Hotshot Direct Delivery",
+    "Interstate & Regional Express Freight",
+    "+ Custom / Other Courier Service"
+  ],
+  handyman: [
+    "General Home Maintenance & Fixes",
+    "Flat-Pack Furniture Assembly (IKEA etc.)",
+    "TV Wall Mounting & Picture Hanging",
+    "Drywall / Gyprock Hole Patching & Sanding",
+    "Door Hanging, Handle & Lock Replacements",
+    "Gutter Cleaning & Downpipe Flushes",
+    "High-Pressure Washing (Driveways & Patios)",
+    "Flyscreen & Door Screen Remeshing",
+    "Gate, Latch & Fence Repairs",
+    "+ Custom / Other Handyman Service"
+  ],
+  carpentry: [
+    "Timber Decking Build, Re-Oiling & Repair",
+    "Pergola, Carport & Patio Timber Framing",
+    "Internal & External Door Hanging",
+    "Skirting Boards & Architraves Fitting",
+    "Custom Shelving, Robes & Cabinetry",
+    "Timber Flooring Supply & Laying",
+    "Structural Wall Framing & Alterations",
+    "Eaves, Fascias & Weatherboard Repairs",
+    "+ Custom / Other Carpentry Service"
+  ],
+  garden: [
+    "Lawn Mowing, Edging & Whipper Snipping",
+    "Hedge Trimming, Shaping & Shrub Care",
+    "Tree Lopping, Pruning & Branch Removal",
+    "Garden Clean-Up & Green Waste Removal",
+    "Reticulation & Sprinkler System Repairs",
+    "Turf Laying & Soil Preparation",
+    "Garden Bed Mulching & Weeding",
+    "+ Custom / Other Garden Service"
+  ],
+  painting: [
+    "Interior Wall, Ceiling & Trim Painting",
+    "Exterior House & Weatherboard Painting",
+    "Timber Deck Sanding, Staining & Sealing",
+    "Roof Restoration & High-Pressure Spraying",
+    "Plaster Crack Patching & Surface Prep",
+    "Commercial Office & Shop Fitout Painting",
+    "Fence & Garage Door Painting",
+    "+ Custom / Other Painting Service"
+  ],
+  appliance: [
+    "Washing Machine Diagnostics & Repair",
+    "Clothes Dryer Repair & Heating Element",
+    "Dishwasher Diagnostics, Pumps & Leaks",
+    "Electric & Gas Oven / Stove Repair",
+    "Rangehood Extraction & Motor Repair",
+    "Fridge & Freezer Cooling Diagnostics",
+    "+ Custom / Other Appliance Service"
+  ],
+  civil: [
+    "Tight-Access Mini Excavator (1.7T-3.5T) Hire",
+    "Trenching for Plumbing, Power & Drainage",
+    "Site Levelling, Grading & Turf Prep",
+    "Post Hole Boring & Foundation Pier Holes",
+    "Concrete Slab Prep & Driveway Dig-Outs",
+    "Bobcat / Skid Steer Spoil Loading & Clearing",
+    "+ Custom / Other Civil Earthmoving Service"
+  ]
+};
+
+const FEE_STRUCTURE_OPTIONS = [
+  { value: "hourly", label: "Hourly Rate ($ / hr)", defaultRate: 95 },
+  { value: "flat", label: "Fixed / Flat Price ($ flat fee)", defaultRate: 150 },
+  { value: "callout_hourly", label: "Call-Out Fee + Hourly ($ base + $/hr)", defaultCallout: 45, defaultRate: 85 },
+  { value: "day_rate", label: "Day Rate ($ / 8-hr day)", defaultRate: 750 },
+  { value: "half_day", label: "Half-Day Rate ($ / 4-hr block)", defaultRate: 420 },
+  { value: "per_metre", label: "Per Metre / Square Metre ($ / m or m²)", defaultRate: 35 },
+  { value: "per_unit", label: "Per Unit / Item Delivered ($ / item)", defaultRate: 25 },
+  { value: "free_quote", label: "Price on Inspection / Free Quote (TBD)", defaultRate: 0 }
+];
+
+function getCategoryServices(cat) {
+  return TRADE_SERVICES_CATALOG[cat] || TRADE_SERVICES_CATALOG.plumbing;
+}
+
+function renderDefaultServiceFeeRows(prefix, category) {
+  const container = document.getElementById(`${prefix}-services-fee-container`);
+  if (!container) return;
+  container.innerHTML = '';
+  const services = getCategoryServices(category);
+
+  // Add 2 default sensible rows
+  addServiceFeeRow(prefix, {
+    serviceName: services[0] || "Standard Service",
+    feeStructure: "callout_hourly",
+    callout: 45,
+    rate: 95
+  });
+
+  addServiceFeeRow(prefix, {
+    serviceName: services[1] || "Comprehensive Installation",
+    feeStructure: "flat",
+    rate: 180
+  });
+}
+
+function handleCategoryChange(prefix, newCategory) {
+  const container = document.getElementById(`${prefix}-services-fee-container`);
+  if (!container) return;
+  
+  const existingRows = container.querySelectorAll('.service-fee-row');
+  const services = getCategoryServices(newCategory);
+  
+  if (existingRows.length === 0) {
+    renderDefaultServiceFeeRows(prefix, newCategory);
+  } else {
+    existingRows.forEach((row, idx) => {
+      const select = row.querySelector('.service-select');
+      if (select) {
+        const currentVal = select.value;
+        select.innerHTML = services.map(s => `<option value="${s}">${s}</option>`).join('');
+        if (services.includes(currentVal)) {
+          select.value = currentVal;
+        } else {
+          select.value = services[Math.min(idx, services.length - 2)] || services[0];
+        }
+      }
+    });
+  }
+}
+
+function addServiceFeeRow(prefix, data = null) {
+  const container = document.getElementById(`${prefix}-services-fee-container`);
+  if (!container) return;
+
+  const catSelect = document.getElementById(`${prefix}-category`) || 
+                    document.getElementById(prefix === 'page' ? 'page-prov-category' : 'adv-prov-category');
+  const category = catSelect?.value || 'plumbing';
+  const services = getCategoryServices(category);
+
+  const selectedService = data?.name || data?.serviceName || services[0];
+  const feeStructure = data?.feeStructure || "hourly";
+  const rate = data?.rate !== undefined ? data.rate : 95;
+  const callout = data?.callout !== undefined ? data.callout : 45;
+
+  const row = document.createElement('div');
+  row.className = 'service-fee-row';
+  row.innerHTML = `
+    <div class="service-fee-grid">
+      <!-- 1. Service Selection Drop Box -->
+      <div class="service-field-col">
+        <label><i class="fa-solid fa-screwdriver-wrench"></i> Service Offered</label>
+        <select class="form-control service-select" onchange="handleServiceSelectChange(this)">
+          ${services.map(s => `<option value="${s}" ${s === selectedService ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+        <input type="text" class="form-control custom-service-input" placeholder="Type custom service name..." style="display:${selectedService.startsWith('+') ? 'block' : 'none'}; margin-top:0.4rem; font-size:0.82rem;">
+      </div>
+
+      <!-- 2. Fee Structure Drop Box -->
+      <div class="service-field-col">
+        <label><i class="fa-solid fa-money-check-dollar"></i> Fee Structure</label>
+        <select class="form-control fee-structure-select" onchange="handleFeeStructureChange(this)">
+          ${FEE_STRUCTURE_OPTIONS.map(opt => `<option value="${opt.value}" ${opt.value === feeStructure ? 'selected' : ''}>${opt.label}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- 3. Dynamic Rate Inputs -->
+      <div class="service-field-col price-col">
+        <label><i class="fa-solid fa-tag"></i> Rate / Price</label>
+        <div class="price-input-container">
+          <!-- Populated by updateRowPriceInputs -->
+        </div>
+      </div>
+
+      <!-- 4. Remove Button -->
+      <div>
+        <button type="button" class="btn-remove-service" onclick="removeServiceFeeRow(this)" title="Remove service">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(row);
+  const feeSelect = row.querySelector('.fee-structure-select');
+  updateRowPriceInputs(feeSelect, rate, callout);
+}
+
+function removeServiceFeeRow(btn) {
+  const row = btn.closest('.service-fee-row');
+  const container = row?.parentElement;
+  if (row && container) {
+    if (container.querySelectorAll('.service-fee-row').length <= 1) {
+      showToast('You must have at least one service listed.');
+      return;
+    }
+    row.remove();
+  }
+}
+
+function handleServiceSelectChange(selectEl) {
+  const row = selectEl.closest('.service-fee-row');
+  const customInput = row.querySelector('.custom-service-input');
+  if (customInput) {
+    if (selectEl.value.startsWith('+')) {
+      customInput.style.display = 'block';
+      customInput.focus();
+    } else {
+      customInput.style.display = 'none';
+    }
+  }
+}
+
+function handleFeeStructureChange(selectEl) {
+  const opt = FEE_STRUCTURE_OPTIONS.find(o => o.value === selectEl.value);
+  updateRowPriceInputs(selectEl, opt?.defaultRate ?? 95, opt?.defaultCallout ?? 45);
+}
+
+function updateRowPriceInputs(feeSelectEl, defaultRate = 95, defaultCallout = 45) {
+  const row = feeSelectEl.closest('.service-fee-row');
+  const container = row.querySelector('.price-input-container');
+  if (!container) return;
+
+  const struct = feeSelectEl.value;
+  if (struct === 'hourly') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate}" min="0" max="2000" step="5">
+        <span class="price-unit">/ hr</span>
+      </div>
+    `;
+  } else if (struct === 'flat') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate || 150}" min="0" max="10000" step="10">
+        <span class="price-unit">flat</span>
+      </div>
+    `;
+  } else if (struct === 'callout_hourly') {
+    container.innerHTML = `
+      <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:nowrap;">
+        <div class="price-input-wrap" title="Base Callout Fee">
+          <span class="price-curr">$</span>
+          <input type="number" class="callout-input" value="${defaultCallout || 45}" min="0" max="1000" step="5" style="width:45px;">
+          <span class="price-unit">call</span>
+        </div>
+        <span style="font-weight:700; color:var(--text-muted); font-size:0.75rem;">+</span>
+        <div class="price-input-wrap" title="Hourly Rate">
+          <span class="price-curr">$</span>
+          <input type="number" class="rate-input" value="${defaultRate || 85}" min="0" max="2000" step="5" style="width:45px;">
+          <span class="price-unit">/hr</span>
+        </div>
+      </div>
+    `;
+  } else if (struct === 'day_rate') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate || 750}" min="0" max="20000" step="25">
+        <span class="price-unit">/ day</span>
+      </div>
+    `;
+  } else if (struct === 'half_day') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate || 420}" min="0" max="10000" step="20">
+        <span class="price-unit">/ 4hrs</span>
+      </div>
+    `;
+  } else if (struct === 'per_metre') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate || 35}" min="0" max="2000" step="5">
+        <span class="price-unit">/ m²</span>
+      </div>
+    `;
+  } else if (struct === 'per_unit') {
+    container.innerHTML = `
+      <div class="price-input-wrap">
+        <span class="price-curr">$</span>
+        <input type="number" class="rate-input" value="${defaultRate || 25}" min="0" max="2000" step="5">
+        <span class="price-unit">/ item</span>
+      </div>
+    `;
+  } else if (struct === 'free_quote') {
+    container.innerHTML = `
+      <span class="free-quote-badge">
+        <i class="fa-solid fa-clipboard-check"></i> Free Quote / TBD
+      </span>
+    `;
+  }
+}
+
+function collectServicesFeeData(prefix) {
+  const container = document.getElementById(`${prefix}-services-fee-container`);
+  if (!container) return [];
+
+  const rows = container.querySelectorAll('.service-fee-row');
+  const services = [];
+
+  rows.forEach(row => {
+    const select = row.querySelector('.service-select');
+    const customInput = row.querySelector('.custom-service-input');
+    const feeSelect = row.querySelector('.fee-structure-select');
+    const rateInput = row.querySelector('.rate-input');
+    const calloutInput = row.querySelector('.callout-input');
+
+    let serviceName = select ? select.value : 'General Service';
+    if (serviceName.startsWith('+') && customInput?.value.trim()) {
+      serviceName = customInput.value.trim();
+    }
+
+    const feeStructure = feeSelect ? feeSelect.value : 'hourly';
+    const rate = rateInput ? parseFloat(rateInput.value) || 0 : 0;
+    const callout = calloutInput ? parseFloat(calloutInput.value) || 0 : 0;
+
+    services.push({
+      name: serviceName,
+      feeStructure,
+      rate,
+      callout
+    });
+  });
+
+  return services;
+}
+
+/**
+ * Service Provider Registration / Embedded Page Controllers
+ */
+function openServiceProviderRegisterModal(user = null) {
   document.getElementById('settings-dropdown-panel')?.classList.remove('show');
   document.getElementById('settings-menu-btn')?.classList.remove('active');
-  document.getElementById('service-provider-register-modal')?.classList.add('active');
-  renderCalendarMatrix('modal-calendar-matrix-root', 'modal');
+  switchTab('provider-application-tab');
+
+  const currentUser = user || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (currentUser) {
+    const pageName = document.getElementById('page-prov-name');
+    const pageEmail = document.getElementById('page-prov-email');
+    if (pageName && !pageName.value) pageName.value = currentUser.displayName || '';
+    if (pageEmail && !pageEmail.value) pageEmail.value = currentUser.email || '';
+  }
+
+  if (typeof restoreProviderApplicationDraft === 'function') {
+    restoreProviderApplicationDraft();
+  }
 }
 
 function closeServiceProviderRegisterModal() {
@@ -2436,8 +2927,31 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
   const courierPerUnit = distanceChecked ? (parseFloat(document.getElementById(`${prefix}courier-per-km`)?.value) || 1.20) : 0;
   const freeDistance = distanceChecked ? (parseFloat(document.getElementById(`${prefix}free-km`)?.value) || 10) : 0;
 
-  const servicesDesc = document.getElementById(`${prefix}services-desc`)?.value.trim();
+  const servicesList = collectServicesFeeData(isInline ? 'page' : 'modal');
+  let servicesDesc = servicesList.map(s => {
+    let priceStr = '';
+    if (s.feeStructure === 'hourly') priceStr = `$${s.rate}/hr`;
+    else if (s.feeStructure === 'flat') priceStr = `$${s.rate} flat`;
+    else if (s.feeStructure === 'callout_hourly') priceStr = `$${s.callout} callout + $${s.rate}/hr`;
+    else if (s.feeStructure === 'day_rate') priceStr = `$${s.rate}/day`;
+    else if (s.feeStructure === 'half_day') priceStr = `$${s.rate}/4hrs`;
+    else if (s.feeStructure === 'per_metre') priceStr = `$${s.rate}/m²`;
+    else if (s.feeStructure === 'per_unit') priceStr = `$${s.rate}/item`;
+    else if (s.feeStructure === 'free_quote') priceStr = `Free Quote`;
+    return `${s.name} (${priceStr})`;
+  }).join(', ');
+  if (!servicesDesc) {
+    servicesDesc = document.getElementById(`${prefix}services-desc`)?.value.trim() || `${category} standard services`;
+  }
+  const skills = servicesList.length > 0 ? servicesList.map(s => s.name.toLowerCase()) : [category];
   const equipment = document.getElementById(`${prefix}equipment`)?.value.trim();
+
+  // Australian Direct Banking & PayID Details (Customers pay providers directly)
+  const bankAccountName = document.getElementById(`${prefix}bank-name`)?.value.trim() || businessName || name;
+  const bsb = document.getElementById(`${prefix}bsb`)?.value.trim() || '084-004';
+  const accountNumber = document.getElementById(`${prefix}account`)?.value.trim() || '482910481';
+  const payId = document.getElementById(`${prefix}payid`)?.value.trim() || phone;
+  const payIdType = document.getElementById(`${prefix}payid-type`)?.value || 'phone';
 
   // Working Hours & Shifts
   const is24_7 = document.getElementById(`${isInline ? 'page-shift-247' : 'adv-shift-247'}`)?.checked || false;
@@ -2483,6 +2997,14 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
     distanceUnit,
     radius,
     serviceAreas: suburbsList.length > 0 ? suburbsList : [suburb],
+    bankDetails: {
+      accountName: bankAccountName,
+      bsb,
+      accountNumber,
+      bankName: 'National Australia Bank (NAB)'
+    },
+    payId,
+    payIdType,
     pricing: {
       hourlyRate,
       flatRate,
@@ -2496,7 +3018,9 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
       }
     },
     hourlyRate,
+    servicesList,
     servicesOffered: servicesDesc,
+    skills,
     equipmentOwned: equipment,
     insurance: '$10M+ Verified Cover',
     rating: 5.0,
@@ -2521,6 +3045,16 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
     }
   };
 
+  // Register Service Provider into Stripe as a User
+  if (window.stripePaymentService?.registerProviderUser) {
+    try {
+      const stripeUser = await window.stripePaymentService.registerProviderUser(newProvider);
+      newProvider.stripeCustomerId = stripeUser.stripeCustomerId;
+    } catch (err) {
+      console.warn("Could not register provider in Stripe:", err);
+    }
+  }
+
   // Add to in-memory provider database
   window.providerDB.addProvider(newProvider);
 
@@ -2531,6 +3065,9 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
 
   if (isInline) {
     document.getElementById('inline-provider-reg-form')?.reset();
+    if (typeof clearProviderApplicationDraft === 'function') {
+      clearProviderApplicationDraft(false);
+    }
   } else {
     closeServiceProviderRegisterModal();
     document.getElementById('provider-advanced-reg-form')?.reset();
@@ -2538,6 +3075,16 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
 
   // Refresh contractor search
   filterContractors();
+
+  lastCreatedSPN = spn;
+  const currentUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (currentUser) {
+    currentUser.hasCompletedApplication = true;
+    currentUser.spn = spn;
+    currentUser.role = 'provider';
+    localStorage.setItem('iasj_google_user', JSON.stringify(currentUser));
+    updateGoogleAuthUI(currentUser);
+  }
 
   // Open SPN success modal
   const spnElem = document.getElementById('modal-spn-number');
@@ -2547,8 +3094,15 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
   showToast(`Welcome aboard, ${name}! Your official Service Provider Number is ${spn}. Licence stored on server.`);
 }
 
+let lastCreatedSPN = null;
+
 function closeProviderSuccessModal() {
   document.getElementById('provider-success-modal')?.classList.remove('active');
+}
+
+function handleSuccessModalOpenAdmin() {
+  closeProviderSuccessModal();
+  openProviderAdminPanel(lastCreatedSPN);
 }
 
 function copySPNToClipboard() {
@@ -2568,22 +3122,26 @@ function toggleFaq(id) {
 function openRegisterSelectionPanel() {
   document.getElementById('settings-dropdown-panel')?.classList.remove('show');
   document.getElementById('settings-menu-btn')?.classList.remove('active');
-  const panel = document.getElementById('register-selection-panel');
-  if (panel) {
-    panel.classList.add('active');
+  if (typeof switchTab === 'function') {
+    switchTab('register-selection-tab');
   }
 }
 
 function closeRegisterSelectionPanel() {
-  document.getElementById('register-selection-panel')?.classList.remove('active');
+  // If it's a tab, we don't 'close' it, we could switch to a default tab
+  if (typeof switchTab === 'function') {
+    switchTab('ai-book-tab');
+  }
 }
 
 function selectRegistrationType(type) {
   closeRegisterSelectionPanel();
   if (type === 'customer') {
-    openCustomerRegisterModal();
+    switchTab('customer-application-tab');
   } else if (type === 'provider') {
-    openServiceProviderRegisterModal();
+    switchTab('provider-application-tab');
+  } else if (type === 'franchise') {
+    switchTab('franchise-application-tab');
   }
 }
 
@@ -2784,7 +3342,7 @@ function applyCalendarPreset(prefix, presetType) {
     }
   });
 
-  const rootId = prefix === 'inline' 
+  const rootId = (prefix === 'inline' || prefix === 'page')
     ? 'inline-calendar-matrix-root' 
     : (prefix === 'modal' ? 'modal-calendar-matrix-root' : 'admin-calendar-matrix-root');
   renderCalendarMatrix(rootId, prefix);
@@ -2830,6 +3388,16 @@ function openProviderAdminPanel(spnOrId) {
     return;
   }
 
+  const currentUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (currentUser && currentUser.role === 'provider' && !currentUser.hasCompletedApplication && !spnOrId) {
+    const userProv = allProviders.find(p => p.email && p.email.toLowerCase() === (currentUser.email||'').toLowerCase());
+    if (!userProv) {
+      openServiceProviderRegisterModal(currentUser);
+      showToast('Please complete your Service Provider application first.');
+      return;
+    }
+  }
+
   const selector = document.getElementById('admin-provider-selector');
   if (selector) {
     selector.innerHTML = allProviders.map(p => `
@@ -2837,11 +3405,38 @@ function openProviderAdminPanel(spnOrId) {
     `).join('');
   }
 
-  const targetId = spnOrId || allProviders[0].id;
+  let targetId = spnOrId;
+  if (!targetId && currentUser?.spn) {
+    const found = window.providerDB.findBySPN(currentUser.spn);
+    if (found) targetId = found.id;
+  }
+  if (!targetId && currentUser?.email) {
+    const foundEmail = allProviders.find(p => p.email && p.email.toLowerCase() === currentUser.email.toLowerCase());
+    if (foundEmail) targetId = foundEmail.id;
+  }
+  if (!targetId) targetId = allProviders[0].id;
+
   loadProviderIntoAdmin(targetId);
 
   document.getElementById('provider-admin-modal')?.classList.add('active');
   document.getElementById('settings-dropdown-panel')?.classList.remove('show');
+}
+
+function handleProviderAdminClick() {
+  document.getElementById('settings-dropdown-panel')?.classList.remove('show');
+  document.getElementById('settings-menu-btn')?.classList.remove('active');
+
+  const currentUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (currentUser && currentUser.role === 'provider') {
+    if (currentUser.hasCompletedApplication) {
+      openProviderAdminPanel(currentUser.spn);
+    } else {
+      openServiceProviderRegisterModal(currentUser);
+      showToast('Please complete your Service Provider application first.');
+    }
+  } else {
+    openServiceProviderRegisterModal(currentUser);
+  }
 }
 
 function closeProviderAdminPanel() {
@@ -2879,6 +3474,47 @@ function loadProviderIntoAdmin(providerId) {
   const sched = provider.calendarSchedule || createDefaultMatrixData(provider.workingHours?.is24_7 ?? true);
   renderCalendarMatrix('admin-calendar-matrix-root', 'admin', sched);
   renderAdminBlackoutChips();
+
+  // Render configured services list
+  const servicesContainer = document.getElementById('admin-services-list-container');
+  if (servicesContainer) {
+    const list = Array.isArray(provider.servicesList) && provider.servicesList.length > 0 
+      ? provider.servicesList 
+      : (provider.skills || []).map(s => ({
+          name: s.charAt(0).toUpperCase() + s.slice(1),
+          feeStructure: 'hourly',
+          rate: provider.hourlyRate || 95
+        }));
+
+    if (list.length === 0) {
+      servicesContainer.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted);">No individual services configured yet.</span>`;
+    } else {
+      servicesContainer.innerHTML = list.map(item => {
+        let priceBadge = '';
+        if (item.feeStructure === 'hourly') priceBadge = `$${item.rate}/hr`;
+        else if (item.feeStructure === 'flat') priceBadge = `$${item.rate} flat`;
+        else if (item.feeStructure === 'callout_hourly') priceBadge = `$${item.callout} callout + $${item.rate}/hr`;
+        else if (item.feeStructure === 'day_rate') priceBadge = `$${item.rate}/day`;
+        else if (item.feeStructure === 'half_day') priceBadge = `$${item.rate}/4hrs`;
+        else if (item.feeStructure === 'per_metre') priceBadge = `$${item.rate}/m²`;
+        else if (item.feeStructure === 'per_unit') priceBadge = `$${item.rate}/item`;
+        else if (item.feeStructure === 'free_quote') priceBadge = `Free Quote`;
+        else priceBadge = `$${item.rate || 95}`;
+
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid var(--border-light); border-radius:6px; padding:0.5rem 0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-check" style="color:var(--brand-orange); font-size:0.8rem;"></i>
+              <strong style="font-size:0.85rem; color:var(--primary-navy);">${item.name}</strong>
+            </div>
+            <span style="font-size:0.8rem; font-weight:800; color:#1E3A8A; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:4px; padding:0.2rem 0.5rem;">
+              ${priceBadge}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 
   // Update Google Calendar Sync status in admin panel
   const gcalEmail = document.getElementById('admin-gcal-account-email');
@@ -3255,31 +3891,73 @@ async function signUpWithGoogle(role = 'customer') {
       closeRegisterSelectionPanel();
 
       if (role === 'customer') {
-        const nameInput = document.getElementById('cust-reg-name');
-        const emailInput = document.getElementById('cust-reg-email');
-        if (nameInput) nameInput.value = user.displayName || '';
-        if (emailInput) emailInput.value = user.email || '';
+        switchTab('customer-application-tab');
+        const nameInput = document.getElementById('inline-cust-name');
+        const emailInput = document.getElementById('inline-cust-email');
+        if (nameInput && !nameInput.value) nameInput.value = user.displayName || '';
+        if (emailInput && !emailInput.value) emailInput.value = user.email || '';
         
-        const crn = window.firebaseService?.getOrCreateCRN?.('', user.displayName);
-        openCustomerSuccessModal(crn || 'CRN-849102');
-        showToast(`Signed up with Google! Your Customer Reference Number is ${crn || 'CRN-849102'}.`);
-      } else if (role === 'provider') {
-        const nameInput = document.getElementById('adv-prov-name');
-        const emailInput = document.getElementById('adv-prov-email');
-        if (nameInput) nameInput.value = user.displayName || '';
-        if (emailInput) emailInput.value = user.email || '';
-
-        if (window.providerDB && currentAdminProviderId) {
-          const provider = window.providerDB.findById(currentAdminProviderId);
-          if (provider) {
-            provider.googleEmail = user.email;
-            provider.googleCalendarConnected = true;
-            provider.gcalAutoBlock = true;
-            window.providerDB.save();
-          }
+        if (typeof restoreCustomerApplicationDraft === 'function') {
+          restoreCustomerApplicationDraft();
         }
-        openProviderAdminPanel();
-        showToast(`Google Calendar 2-way sync enabled for ${user.displayName}!`);
+        if (typeof updateGoogleAuthBanners === 'function') {
+          updateGoogleAuthBanners(user);
+        }
+        showToast(`Signed up with Google! Welcome ${user.displayName}. Fill out your details or save draft to continue anytime.`);
+      } else if (role === 'provider') {
+        const pageName = document.getElementById('page-prov-name');
+        const pageEmail = document.getElementById('page-prov-email');
+        if (pageName && !pageName.value) pageName.value = user.displayName || '';
+        if (pageEmail && !pageEmail.value) pageEmail.value = user.email || '';
+
+        // Check if this provider has already completed a registration application
+        let existingProvider = null;
+        if (user.spn && window.providerDB) {
+          existingProvider = window.providerDB.findBySPN(user.spn);
+        }
+        if (!existingProvider && window.providerDB && user.email) {
+          existingProvider = window.providerDB.getAll().find(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
+        }
+
+        if (existingProvider) {
+          user.hasCompletedApplication = true;
+          user.spn = existingProvider.serviceProviderNumber || existingProvider.id;
+          localStorage.setItem('iasj_google_user', JSON.stringify(user));
+          existingProvider.googleEmail = user.email;
+          existingProvider.googleCalendarConnected = true;
+          existingProvider.gcalAutoBlock = true;
+          window.providerDB.save();
+          openProviderAdminPanel(existingProvider.id);
+          showToast(`Welcome back, ${existingProvider.name}! Google Calendar 2-way sync connected.`);
+        } else {
+          // USER MUST FILL OUT A COMPLETE SERVICE PROVIDER APPLICATION!
+          switchTab('provider-application-tab');
+          if (typeof restoreProviderApplicationDraft === 'function') {
+            restoreProviderApplicationDraft();
+          }
+          if (typeof updateGoogleAuthBanners === 'function') {
+            updateGoogleAuthBanners(user);
+          }
+          showToast(`Google linked for ${user.displayName}! Complete your Service Provider application or save draft to continue anytime.`);
+        }
+      } else if (role === 'franchise_admin') {
+        switchTab('franchise-application-tab');
+        const nameInput = document.getElementById('franchise-admin-name');
+        const emailInput = document.getElementById('franchise-admin-email');
+        if (nameInput && !nameInput.value) nameInput.value = user.displayName || '';
+        if (emailInput && !emailInput.value) emailInput.value = user.email || '';
+        
+        user.franchiseName = user.displayName + "'s Franchise";
+        // Override local user with franchise name so dashboard can display it
+        localStorage.setItem('iasj_google_user', JSON.stringify(user));
+        
+        if (typeof restoreFranchiseApplicationDraft === 'function') {
+          restoreFranchiseApplicationDraft();
+        }
+        if (typeof updateGoogleAuthBanners === 'function') {
+          updateGoogleAuthBanners(user);
+        }
+        showToast(`Signed up with Google as Franchise Admin! Fill out your details or save draft to continue anytime.`);
       }
       return user;
     }
@@ -3336,7 +4014,34 @@ function updateGoogleAuthUI(user) {
     if (menuName) menuName.textContent = user.displayName || 'Google User';
     if (menuEmail) menuEmail.textContent = user.email || '';
     if (menuRoleBadge) {
-      menuRoleBadge.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Google Calendar Synced (${user.role === 'provider' ? 'Provider' : 'Customer'})`;
+      let roleDisplay = 'Customer';
+      if (user.role === 'provider') roleDisplay = 'Provider';
+      if (user.role === 'franchise_admin') roleDisplay = 'Franchise Admin';
+      menuRoleBadge.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Google Calendar Synced (${roleDisplay})`;
+    }
+
+    const btnSwitchProvider = document.getElementById('google-menu-switch-to-provider');
+    const btnSwitchCustomer = document.getElementById('google-menu-switch-to-customer');
+    const btnSwitchFranchise = document.getElementById('google-menu-switch-to-franchise');
+    const btnFranchiseDashboard = document.getElementById('google-menu-franchise-dashboard');
+    
+    if (btnSwitchProvider && btnSwitchCustomer && btnSwitchFranchise && btnFranchiseDashboard) {
+      btnSwitchProvider.style.display = 'none';
+      btnSwitchCustomer.style.display = 'none';
+      btnSwitchFranchise.style.display = 'none';
+      btnFranchiseDashboard.style.display = 'none';
+      
+      if (user.role === 'customer') {
+        btnSwitchProvider.style.display = 'flex';
+        btnSwitchFranchise.style.display = 'flex';
+      } else if (user.role === 'provider') {
+        btnSwitchCustomer.style.display = 'flex';
+        btnSwitchFranchise.style.display = 'flex';
+      } else if (user.role === 'franchise_admin') {
+        btnFranchiseDashboard.style.display = 'flex';
+        btnSwitchCustomer.style.display = 'flex';
+        btnSwitchProvider.style.display = 'flex';
+      }
     }
 
     if (adminEmail) adminEmail.textContent = user.email || 'connected@gmail.com';
@@ -3355,6 +4060,10 @@ function updateGoogleAuthUI(user) {
       adminBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#D97706;"></i> Disconnected';
     }
     if (adminSyncBox) adminSyncBox.classList.remove('connected');
+  }
+
+  if (typeof updateGoogleAuthBanners === 'function') {
+    updateGoogleAuthBanners(user);
   }
 }
 
@@ -3382,14 +4091,34 @@ function triggerGoogleCalendarManualSync() {
   }, 600);
 }
 
+function routeUserToDashboard(user) {
+  if (!user) return;
+  if (user.role === 'customer') {
+    if (typeof switchTab === 'function') switchTab('ai-book-tab');
+  } else if (user.role === 'provider') {
+    if (user.hasCompletedApplication) {
+      if (typeof openProviderAdminPanel === 'function') openProviderAdminPanel(user.spn);
+    } else {
+      if (typeof openServiceProviderRegisterModal === 'function') openServiceProviderRegisterModal(user);
+    }
+  } else if (user.role === 'franchise_admin') {
+    if (typeof openFranchiseDashboard === 'function') openFranchiseDashboard();
+  }
+}
+
 function initGoogleAuthUI() {
   const existingUser = window.firebaseService?.getCurrentGoogleUser?.();
   if (existingUser) {
     updateGoogleAuthUI(existingUser);
+    // Route on initial load
+    setTimeout(() => routeUserToDashboard(existingUser), 500);
   }
 
   window.addEventListener('googleAuthStateChanged', (e) => {
     updateGoogleAuthUI(e.detail?.user);
+    if (e.detail?.action === 'login') {
+      routeUserToDashboard(e.detail?.user);
+    }
   });
 
   // Close menus when clicking outside
@@ -3411,3 +4140,1249 @@ window.updateGoogleAuthUI = updateGoogleAuthUI;
 window.toggleGoogleCalendarAutoBlock = toggleGoogleCalendarAutoBlock;
 window.triggerGoogleCalendarManualSync = triggerGoogleCalendarManualSync;
 window.initGoogleAuthUI = initGoogleAuthUI;
+
+// Window global bindings for Services & Fee Structures Drop Boxes
+window.addServiceFeeRow = addServiceFeeRow;
+window.removeServiceFeeRow = removeServiceFeeRow;
+window.handleCategoryChange = handleCategoryChange;
+window.handleServiceSelectChange = handleServiceSelectChange;
+window.handleFeeStructureChange = handleFeeStructureChange;
+window.handleProviderAdminClick = handleProviderAdminClick;
+window.handleSuccessModalOpenAdmin = handleSuccessModalOpenAdmin;
+window.collectServicesFeeData = collectServicesFeeData;
+window.renderDefaultServiceFeeRows = renderDefaultServiceFeeRows;
+
+/**
+ * 1-Click Clipboard Copy with Toast Feedback
+ */
+window.copyToClipboard = function(text, label = 'Text') {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`✅ ${label} copied to clipboard: ${text}`);
+    }).catch(() => {
+      fallbackCopy(text, label);
+    });
+  } else {
+    fallbackCopy(text, label);
+  }
+};
+
+function fallbackCopy(text, label) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast(`✅ ${label} copied: ${text}`);
+  } catch (err) {
+    showToast(`Copy: ${text}`);
+  }
+}
+
+
+
+// ==========================================
+// Franchise Admin Logic
+// ==========================================
+function openFranchiseRegisterModal(user = null) {
+  switchTab('franchise-application-tab');
+  const currentUser = user || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (currentUser) {
+    const nameInput = document.getElementById('franchise-admin-name');
+    const emailInput = document.getElementById('franchise-admin-email');
+    if (nameInput && !nameInput.value) nameInput.value = currentUser.displayName || '';
+    if (emailInput && !emailInput.value) emailInput.value = currentUser.email || '';
+  }
+  if (typeof restoreFranchiseApplicationDraft === 'function') {
+    restoreFranchiseApplicationDraft();
+  }
+}
+
+function closeFranchiseRegisterModal() {
+  const panel = document.getElementById('franchise-register-modal');
+  if (panel) panel.classList.remove('active');
+}
+
+function openFranchiseDashboard() {
+  const panel = document.getElementById('franchise-dashboard-modal');
+  const user = window.firebaseService?.getCurrentGoogleUser?.() || JSON.parse(localStorage.getItem('iasj_google_user'));
+  if (user && user.franchiseName) {
+    const title = document.getElementById('dashboard-franchise-name');
+    if (title) title.textContent = user.franchiseName;
+  }
+  renderFranchiseStaff();
+  if (panel) panel.classList.add('active');
+}
+
+function closeFranchiseDashboard() {
+  const panel = document.getElementById('franchise-dashboard-modal');
+  if (panel) panel.classList.remove('active');
+}
+
+async function handleFranchiseRegisterSubmit(e) {
+  e.preventDefault();
+  const franchiseName = document.getElementById('franchise-name')?.value.trim() || 'Franchise Partner';
+  const abn = document.getElementById('franchise-abn')?.value.trim() || '';
+  const adminName = document.getElementById('franchise-admin-name')?.value.trim() || 'Franchise Manager';
+  const adminEmail = document.getElementById('franchise-admin-email')?.value.trim() || '';
+  const adminPhone = document.getElementById('franchise-admin-phone')?.value.trim() || '0412 000 000';
+  const adminRegion = document.getElementById('franchise-admin-region')?.value.trim() || 'Australia';
+  const adminPayId = document.getElementById('franchise-admin-payid')?.value.trim() || adminPhone;
+  const adminBankName = document.getElementById('franchise-admin-bank-name')?.value.trim() || franchiseName;
+  const adminBsb = document.getElementById('franchise-admin-bsb')?.value.trim() || '084-004';
+  const adminAccount = document.getElementById('franchise-admin-account')?.value.trim() || '98765432';
+
+  const user = {
+    uid: 'franchise-' + Date.now(),
+    displayName: adminName,
+    email: adminEmail,
+    role: 'franchise_admin',
+    franchiseName: franchiseName,
+    abn: abn,
+    phone: adminPhone,
+    region: adminRegion,
+    payId: adminPayId,
+    photoURL: 'assets/images/tradie_worker.jpg'
+  };
+
+  localStorage.setItem('iasj_google_user', JSON.stringify(user));
+
+  // Collect and register each staff technician as a provider
+  const staffCards = document.querySelectorAll('#franchise-staff-container .franchise-staff-card');
+  const registeredStaffList = [];
+
+  for (let idx = 0; idx < staffCards.length; idx++) {
+    const card = staffCards[idx];
+    const i = card.dataset.index;
+    const name = document.getElementById(`franchise-staff-${i}-name`)?.value.trim() || `Staff Technician #${idx + 1}`;
+    const phone = document.getElementById(`franchise-staff-${i}-phone`)?.value.trim() || adminPhone;
+    const email = document.getElementById(`franchise-staff-${i}-email`)?.value.trim() || adminEmail;
+    const category = document.getElementById(`franchise-staff-${i}-category`)?.value || 'plumbing';
+    const license = document.getElementById(`franchise-staff-${i}-license`)?.value.trim() || 'Verified Licence';
+    const suburb = document.getElementById(`franchise-staff-${i}-suburb`)?.value.trim() || adminRegion;
+    const radius = parseFloat(document.getElementById(`franchise-staff-${i}-radius`)?.value) || 25;
+    const distRadio = document.querySelector(`input[name="franchise-staff-${i}-dist-unit"]:checked`);
+    const distUnit = distRadio ? distRadio.value : 'km';
+    const services = collectServicesFeeData(`franchise-staff-${i}`);
+
+    const is24_7 = document.getElementById(`franchise-staff-${i}-shift-247`)?.checked || false;
+    const shifts = [];
+    if (is24_7) shifts.push('emergency_24_7');
+    if (document.getElementById(`franchise-staff-${i}-shift-morn`)?.checked) shifts.push('morning');
+    if (document.getElementById(`franchise-staff-${i}-shift-aft`)?.checked) shifts.push('afternoon');
+    if (document.getElementById(`franchise-staff-${i}-shift-eve`)?.checked) shifts.push('evening');
+    if (document.getElementById(`franchise-staff-${i}-shift-overnight`)?.checked) shifts.push('overnight');
+
+    const route = document.getElementById(`franchise-staff-${i}-payout-route`)?.value || 'franchise';
+    const staffPayId = document.getElementById(`franchise-staff-${i}-payid`)?.value.trim() || adminPayId;
+    const staffBsb = document.getElementById(`franchise-staff-${i}-bsb`)?.value.trim() || adminBsb;
+    const staffAccount = document.getElementById(`franchise-staff-${i}-account`)?.value.trim() || adminAccount;
+
+    const spn = window.firebaseService?.generateSPN?.() || (`SPN-${Math.floor(100000 + Math.random() * 900000)}`);
+    const lat = -28.0027 + (Math.random() * 0.1 - 0.05);
+    const lng = 153.4146 + (Math.random() * 0.1 - 0.05);
+
+    const staffProvider = {
+      name,
+      businessName: `${name} (${franchiseName})`,
+      category,
+      serviceProviderNumber: spn,
+      tradeTitle: `${category.toUpperCase()} Specialist (${franchiseName})`,
+      qbccLicense: license,
+      phone,
+      email,
+      suburb,
+      country: 'AU',
+      distanceUnit: distUnit,
+      radius,
+      servicesList: services,
+      servicesOffered: services.map(s => s.name).join(', ') || `${category} services`,
+      skills: services.length > 0 ? services.map(s => s.name.toLowerCase()) : [category],
+      hourlyRate: services.find(s => s.feeStructure === 'hourly')?.rate || 85,
+      location: { lat, lng },
+      serviceAreas: [suburb],
+      bankDetails: route === 'staff' ? {
+        accountName: name,
+        bsb: staffBsb,
+        accountNumber: staffAccount,
+        bankName: 'Staff Designated Account'
+      } : {
+        accountName: adminBankName,
+        bsb: adminBsb,
+        accountNumber: adminAccount,
+        bankName: 'Franchise Central Settlement'
+      },
+      payId: route === 'staff' ? staffPayId : adminPayId,
+      payIdType: 'phone',
+      workingHours: {
+        is24_7,
+        shiftDescription: is24_7 ? "24/7 • 365 Days a Year On-Call" : "Standard Registered Shifts",
+        shifts: shifts.length > 0 ? shifts : ['morning', 'afternoon']
+      },
+      rating: 5.0,
+      reviewCount: 1,
+      status: 'active',
+      franchiseName,
+      franchiseAdmin: adminName,
+      franchiseId: user.uid
+    };
+
+    if (window.providerDB) {
+      window.providerDB.addProvider(staffProvider);
+    }
+    if (window.firebaseService?.saveProviderToFirestore) {
+      await window.firebaseService.saveProviderToFirestore(staffProvider);
+    }
+
+    registeredStaffList.push({
+      id: spn,
+      name,
+      email,
+      phone,
+      category,
+      payId: route === 'staff' ? staffPayId : adminPayId,
+      addedAt: new Date().toISOString()
+    });
+  }
+
+  localStorage.setItem('iasj_franchise_staff', JSON.stringify(registeredStaffList));
+
+  if (window.firebaseService?.savePartnerApplicationToFirestore) {
+    await window.firebaseService.savePartnerApplicationToFirestore({
+      franchiseName,
+      abn,
+      adminName,
+      adminEmail,
+      adminPhone,
+      adminRegion,
+      staffCount: registeredStaffList.length
+    });
+  }
+
+  closeFranchiseRegisterModal();
+  if (typeof clearFranchiseApplicationDraft === 'function') {
+    clearFranchiseApplicationDraft(false);
+  }
+  showToast(`✅ Franchise '${franchiseName}' registered with ${registeredStaffList.length} staff technician(s)!`);
+  
+  window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: user, action: 'login' } }));
+  if (window.filterContractors) window.filterContractors();
+  openFranchiseDashboard();
+}
+
+function handleAddStaffSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('staff-name').value.trim();
+  const email = document.getElementById('staff-email').value.trim();
+  const payId = document.getElementById('staff-payid').value.trim();
+
+  let staffList = JSON.parse(localStorage.getItem('iasj_franchise_staff') || '[]');
+  
+  const newStaff = {
+    id: 'staff-' + Date.now(),
+    name,
+    email,
+    payId,
+    addedAt: new Date().toISOString()
+  };
+
+  staffList.push(newStaff);
+  localStorage.setItem('iasj_franchise_staff', JSON.stringify(staffList));
+  
+  // Also register staff as a provider globally so they appear in searches
+  // Generate random coords nearby for the map
+  const lat = -28.0 + (Math.random() * 0.1 - 0.05);
+  const lng = 153.4 + (Math.random() * 0.1 - 0.05);
+  
+  const providerProfile = {
+    serviceProviderNumber: 'SPN-' + Math.floor(100000 + Math.random() * 900000),
+    name: name,
+    businessName: newStaff.name + ' (Franchise Staff)',
+    phone: '0400 000 000',
+    email: email,
+    location: { lat, lng },
+    radiusKm: 20,
+    services: ['Handyman', 'Plumbing'],
+    status: 'Available',
+    bankDetails: {
+      payId: payId,
+      bsb: '',
+      account: ''
+    }
+  };
+
+  // Add to global provider DB
+  if (window.addProviderToDatabase) {
+    window.addProviderToDatabase(providerProfile);
+  }
+
+  // Sync to Stripe if service exists
+  if (window.stripePaymentService && window.stripePaymentService.registerProviderUser) {
+    window.stripePaymentService.registerProviderUser(providerProfile).catch(err => console.warn('Stripe register staff error:', err));
+  }
+  
+  document.getElementById('franchise-add-staff-form').reset();
+  showToast(`✅ Staff member '${name}' added successfully!`);
+  renderFranchiseStaff();
+  
+  // Re-filter contractors map
+  if (window.filterContractors) window.filterContractors();
+}
+
+function renderFranchiseStaff() {
+  const container = document.getElementById('franchise-staff-list');
+  if (!container) return;
+
+  const staffList = JSON.parse(localStorage.getItem('iasj_franchise_staff') || '[]');
+  
+  if (staffList.length === 0) {
+    container.innerHTML = `<div style="padding:1rem; text-align:center; color:var(--text-muted); font-size:0.85rem; border:1px dashed var(--border-light); border-radius:var(--radius-md);">No staff added yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = staffList.map(staff => `
+    <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1rem; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h4 style="margin:0; color:var(--primary-navy); font-size:1rem; font-weight:700;">${staff.name}</h4>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
+          <i class="fa-solid fa-envelope"></i> ${staff.email} <span style="margin:0 0.5rem;">|</span> <i class="fa-solid fa-money-check-dollar"></i> ${staff.payId}
+        </div>
+      </div>
+      <span class="badge-status online">Active</span>
+    </div>
+  `).join('');
+}
+
+window.openFranchiseRegisterModal = openFranchiseRegisterModal;
+window.closeFranchiseRegisterModal = closeFranchiseRegisterModal;
+window.openFranchiseDashboard = openFranchiseDashboard;
+window.closeFranchiseDashboard = closeFranchiseDashboard;
+window.handleFranchiseRegisterSubmit = handleFranchiseRegisterSubmit;
+window.handleAddStaffSubmit = handleAddStaffSubmit;
+
+// =========================================================================
+// DRAFT PERSISTENCE & AUTO-SAVE CONTROLLER (GOOGLE ACCOUNT LINKED)
+// =========================================================================
+
+function getDraftStorageKey(formType) {
+  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (user?.email) {
+    const sanitizedEmail = user.email.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+    return `iasj_draft_${formType}_${sanitizedEmail}`;
+  }
+  return `iasj_draft_${formType}_guest`;
+}
+
+function updateDraftStatusUI(id, text, isSaving = false) {
+  const elem = document.getElementById(id);
+  if (!elem) return;
+  elem.innerHTML = isSaving 
+    ? `<i class="fa-solid fa-spinner fa-spin" style="color:var(--brand-orange);"></i> <span>${text}</span>`
+    : `<i class="fa-solid fa-cloud-check" style="color:#10B981;"></i> <span>${text}</span>`;
+}
+
+function updateGoogleAuthBanners(user = null) {
+  const currentUser = user || window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+
+  const bannerConfigs = [
+    { id: 'page-prov-google-banner', role: 'provider', roleTitle: 'Service Provider' },
+    { id: 'inline-cust-google-banner', role: 'customer', roleTitle: 'Customer' },
+    { id: 'franchise-google-banner', role: 'franchise_admin', roleTitle: 'Franchise Admin' }
+  ];
+
+  bannerConfigs.forEach(({ id, role, roleTitle }) => {
+    const banner = document.getElementById(id);
+    if (!banner) return;
+
+    if (currentUser) {
+      banner.innerHTML = `
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <img src="${currentUser.photoURL || 'assets/images/tradie_worker.jpg'}" style="width:38px; height:38px; border-radius:50%; border:2px solid #ffffff; object-fit:cover; box-shadow:0 2px 6px rgba(0,0,0,0.25);" alt="User">
+          <div>
+            <div style="font-size:0.88rem; font-weight:700; color:#ffffff;">
+              <i class="fa-solid fa-circle-check" style="color:#10B981; margin-right:4px;"></i> Signed in with Google: ${currentUser.displayName || 'Google User'}
+            </div>
+            <div style="font-size:0.75rem; color:#E2E8F0; margin-top:2px;">
+              <i class="fa-solid fa-envelope" style="margin-right:4px;"></i> ${currentUser.email || ''} &bull; <i class="fa-solid fa-cloud-check" style="color:#38BDF8; margin-right:3px;"></i> Application draft linked to this Google account
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,0.18); color:#ffffff; border-radius:20px; font-size:0.75rem; padding:0.3rem 0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-calendar-check" style="color:#60A5FA;"></i> Google Calendar 2-Way Sync
+          </span>
+          <button type="button" class="btn btn-sm" onclick="handleGoogleSignOut()" style="background:rgba(0,0,0,0.3); color:#F8FAFC; border:1px solid rgba(255,255,255,0.25); font-size:0.75rem; padding:0.3rem 0.65rem; border-radius:14px; cursor:pointer;">
+            <i class="fa-solid fa-right-from-bracket"></i> Switch Account
+          </button>
+        </div>
+      `;
+    } else {
+      banner.innerHTML = `
+        <div style="display:flex; align-items:center; gap:0.65rem;">
+          <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#FCD34D; font-size:1.1rem;">
+            <i class="fa-brands fa-google"></i>
+          </div>
+          <div>
+            <div style="font-size:0.85rem; font-weight:700; color:#FFFFFF;">
+              Save your ${roleTitle} application & continue later with Google
+            </div>
+            <div style="font-size:0.74rem; color:#CBD5E1; margin-top:2px;">
+              Sign in with Google to automatically safeguard your draft details and connect your personal Google Calendar.
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm" onclick="signUpWithGoogle('${role}')" style="background:#FFFFFF; color:#0F172A; font-weight:700; font-size:0.8rem; padding:0.45rem 0.9rem; border-radius:20px; border:none; display:inline-flex; align-items:center; gap:0.45rem; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer;">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="16" height="16" alt="Google">
+          Sign In / Link with Google
+        </button>
+      `;
+    }
+  });
+}
+
+// -------------------------------------------------------------------------
+// 1. Service Provider Application Draft Operations
+// -------------------------------------------------------------------------
+function saveProviderApplicationDraft(notify = false) {
+  const form = document.getElementById('inline-provider-reg-form');
+  if (!form) return;
+
+  const services = collectServicesFeeData('page');
+  
+  const calendarCells = [];
+  const matrixInputs = document.querySelectorAll('#inline-calendar-matrix-root input[type="checkbox"]');
+  matrixInputs.forEach(cb => {
+    if (cb.id) {
+      calendarCells.push({ id: cb.id, checked: cb.checked });
+    }
+  });
+
+  const distUnitRadio = document.querySelector('input[name="page-prov-dist-unit"]:checked');
+  const profileStatusRadio = document.querySelector('input[name="inline-profile-status"]:checked');
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  const draft = {
+    name: document.getElementById('page-prov-name')?.value || '',
+    business: document.getElementById('page-prov-business')?.value || '',
+    category: document.getElementById('page-prov-category')?.value || 'plumbing',
+    license: document.getElementById('page-prov-license')?.value || '',
+    phone: document.getElementById('page-prov-phone')?.value || '',
+    email: document.getElementById('page-prov-email')?.value || '',
+    unitNumber: document.getElementById('page-prov-unit-number')?.value || '',
+    streetAddress: document.getElementById('page-prov-street-address')?.value || '',
+    suburb: document.getElementById('page-prov-suburb')?.value || '',
+    postcode: document.getElementById('page-prov-postcode')?.value || '',
+    country: document.getElementById('page-prov-country')?.value || 'AU',
+    radiusDist: document.getElementById('page-prov-radius-dist')?.value || '25',
+    distUnit: distUnitRadio ? distUnitRadio.value : 'km',
+    suburbsList: document.getElementById('page-prov-suburbs-list')?.value || '',
+    equipment: document.getElementById('page-prov-equipment')?.value || '',
+    servicesDesc: document.getElementById('page-prov-services-desc')?.value || '',
+    callout: document.getElementById('page-prov-callout')?.value || '35',
+    hourly: document.getElementById('page-prov-hourly')?.value || '85',
+    flat: document.getElementById('page-prov-flat')?.value || '130',
+    emergency: document.getElementById('page-prov-emergency')?.value || '120',
+    notes: document.getElementById('page-prov-notes')?.value || '',
+    payoutPreference: document.getElementById('page-prov-payout-preference')?.value || 'bank_transfer',
+    payid: document.getElementById('page-prov-payid')?.value || '',
+    payidType: document.getElementById('page-prov-payid-type')?.value || 'phone',
+    bsb: document.getElementById('page-prov-bsb')?.value || '',
+    accountNumber: document.getElementById('page-prov-account-number')?.value || '',
+    accountName: document.getElementById('page-prov-account-name')?.value || '',
+    profileStatus: profileStatusRadio ? profileStatusRadio.value : 'active',
+    shift247: document.getElementById('page-shift-247')?.checked || false,
+    shiftMorn: document.getElementById('page-shift-morn')?.checked || false,
+    shiftAft: document.getElementById('page-shift-aft')?.checked || false,
+    shiftEve: document.getElementById('page-shift-eve')?.checked || false,
+    shiftOvernight: document.getElementById('page-shift-overnight')?.checked || false,
+    rateHourly: document.getElementById('page-rate-hourly')?.checked || false,
+    rateFlat: document.getElementById('page-rate-flat')?.checked || false,
+    rateCallout: document.getElementById('page-rate-callout')?.checked || false,
+    rateDistance: document.getElementById('page-rate-distance')?.checked || false,
+    services,
+    calendarCells,
+    savedAt: now.toISOString(),
+    savedDisplay: `${timeStr}, ${dateStr}`
+  };
+
+  const key = getDraftStorageKey('provider');
+  localStorage.setItem(key, JSON.stringify(draft));
+  localStorage.setItem('iasj_draft_provider_latest', JSON.stringify(draft));
+
+  updateDraftStatusUI('page-prov-draft-status', `Draft saved ${timeStr}`);
+
+  if (notify) {
+    showToast(`💾 Service Provider application draft saved! You can close your browser and resume anytime.`);
+  }
+}
+
+function restoreProviderApplicationDraft() {
+  const key = getDraftStorageKey('provider');
+  let raw = localStorage.getItem(key);
+  if (!raw) {
+    raw = localStorage.getItem('iasj_draft_provider_latest');
+  }
+  if (!raw) return;
+
+  try {
+    const draft = JSON.parse(raw);
+    if (!draft) return;
+
+    if (draft.name && document.getElementById('page-prov-name')) document.getElementById('page-prov-name').value = draft.name;
+    if (draft.business && document.getElementById('page-prov-business')) document.getElementById('page-prov-business').value = draft.business;
+    if (draft.category && document.getElementById('page-prov-category')) {
+      document.getElementById('page-prov-category').value = draft.category;
+    }
+    if (draft.license && document.getElementById('page-prov-license')) document.getElementById('page-prov-license').value = draft.license;
+    if (draft.phone && document.getElementById('page-prov-phone')) document.getElementById('page-prov-phone').value = draft.phone;
+    if (draft.email && document.getElementById('page-prov-email')) document.getElementById('page-prov-email').value = draft.email;
+    if (draft.unitNumber && document.getElementById('page-prov-unit-number')) document.getElementById('page-prov-unit-number').value = draft.unitNumber;
+    if (draft.streetAddress && document.getElementById('page-prov-street-address')) document.getElementById('page-prov-street-address').value = draft.streetAddress;
+    if (draft.suburb && document.getElementById('page-prov-suburb')) document.getElementById('page-prov-suburb').value = draft.suburb;
+    if (draft.postcode && document.getElementById('page-prov-postcode')) document.getElementById('page-prov-postcode').value = draft.postcode;
+    if (draft.country && document.getElementById('page-prov-country')) document.getElementById('page-prov-country').value = draft.country;
+    if (draft.radiusDist && document.getElementById('page-prov-radius-dist')) document.getElementById('page-prov-radius-dist').value = draft.radiusDist;
+    if (draft.suburbsList && document.getElementById('page-prov-suburbs-list')) document.getElementById('page-prov-suburbs-list').value = draft.suburbsList;
+    if (draft.equipment && document.getElementById('page-prov-equipment')) document.getElementById('page-prov-equipment').value = draft.equipment;
+    if (draft.servicesDesc && document.getElementById('page-prov-services-desc')) document.getElementById('page-prov-services-desc').value = draft.servicesDesc;
+    if (draft.callout && document.getElementById('page-prov-callout')) document.getElementById('page-prov-callout').value = draft.callout;
+    if (draft.hourly && document.getElementById('page-prov-hourly')) document.getElementById('page-prov-hourly').value = draft.hourly;
+    if (draft.flat && document.getElementById('page-prov-flat')) document.getElementById('page-prov-flat').value = draft.flat;
+    if (draft.emergency && document.getElementById('page-prov-emergency')) document.getElementById('page-prov-emergency').value = draft.emergency;
+    if (draft.notes && document.getElementById('page-prov-notes')) document.getElementById('page-prov-notes').value = draft.notes;
+    if (draft.payoutPreference && document.getElementById('page-prov-payout-preference')) document.getElementById('page-prov-payout-preference').value = draft.payoutPreference;
+    if (draft.payid && document.getElementById('page-prov-payid')) document.getElementById('page-prov-payid').value = draft.payid;
+    if (draft.payidType && document.getElementById('page-prov-payid-type')) document.getElementById('page-prov-payid-type').value = draft.payidType;
+    if (draft.bsb && document.getElementById('page-prov-bsb')) document.getElementById('page-prov-bsb').value = draft.bsb;
+    if (draft.accountNumber && document.getElementById('page-prov-account-number')) document.getElementById('page-prov-account-number').value = draft.accountNumber;
+    if (draft.accountName && document.getElementById('page-prov-account-name')) document.getElementById('page-prov-account-name').value = draft.accountName;
+
+    if (draft.distUnit) {
+      const radio = document.querySelector(`input[name="page-prov-dist-unit"][value="${draft.distUnit}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    if (draft.profileStatus) {
+      const radio = document.querySelector(`input[name="inline-profile-status"][value="${draft.profileStatus}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    if (typeof draft.shift247 === 'boolean' && document.getElementById('page-shift-247')) document.getElementById('page-shift-247').checked = draft.shift247;
+    if (typeof draft.shiftMorn === 'boolean' && document.getElementById('page-shift-morn')) document.getElementById('page-shift-morn').checked = draft.shiftMorn;
+    if (typeof draft.shiftAft === 'boolean' && document.getElementById('page-shift-aft')) document.getElementById('page-shift-aft').checked = draft.shiftAft;
+    if (typeof draft.shiftEve === 'boolean' && document.getElementById('page-shift-eve')) document.getElementById('page-shift-eve').checked = draft.shiftEve;
+    if (typeof draft.shiftOvernight === 'boolean' && document.getElementById('page-shift-overnight')) document.getElementById('page-shift-overnight').checked = draft.shiftOvernight;
+
+    if (typeof draft.rateHourly === 'boolean' && document.getElementById('page-rate-hourly')) document.getElementById('page-rate-hourly').checked = draft.rateHourly;
+    if (typeof draft.rateFlat === 'boolean' && document.getElementById('page-rate-flat')) document.getElementById('page-rate-flat').checked = draft.rateFlat;
+    if (typeof draft.rateCallout === 'boolean' && document.getElementById('page-rate-callout')) document.getElementById('page-rate-callout').checked = draft.rateCallout;
+    if (typeof draft.rateDistance === 'boolean' && document.getElementById('page-rate-distance')) document.getElementById('page-rate-distance').checked = draft.rateDistance;
+
+    if (draft.services && Array.isArray(draft.services) && draft.services.length > 0) {
+      renderDefaultServiceFeeRows('page', draft.services);
+    }
+
+    if (draft.calendarCells && Array.isArray(draft.calendarCells)) {
+      draft.calendarCells.forEach(cell => {
+        const el = document.getElementById(cell.id);
+        if (el) el.checked = cell.checked;
+      });
+    }
+
+    const banner = document.getElementById('prov-restored-draft-banner');
+    const textSpan = document.getElementById('prov-draft-time-text');
+    if (banner) {
+      banner.style.display = 'flex';
+      if (textSpan) {
+        textSpan.textContent = `Draft restored from ${draft.savedDisplay || 'previous session'}. You can continue editing or save updates anytime.`;
+      }
+    }
+
+    updateDraftStatusUI('page-prov-draft-status', `Draft resumed (${draft.savedDisplay ? draft.savedDisplay.split(',')[0] : 'Saved'})`);
+  } catch (err) {
+    console.warn("Could not restore provider draft:", err);
+  }
+}
+
+function clearProviderApplicationDraft(notify = true) {
+  const key = getDraftStorageKey('provider');
+  localStorage.removeItem(key);
+  localStorage.removeItem('iasj_draft_provider_latest');
+
+  document.getElementById('inline-provider-reg-form')?.reset();
+  const banner = document.getElementById('prov-restored-draft-banner');
+  if (banner) banner.style.display = 'none';
+
+  renderDefaultServiceFeeRows('page', 'plumbing');
+  updateDraftStatusUI('page-prov-draft-status', 'Draft cleared');
+
+  // Pre-fill Google user details again if logged in
+  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (user) {
+    const pageName = document.getElementById('page-prov-name');
+    const pageEmail = document.getElementById('page-prov-email');
+    if (pageName) pageName.value = user.displayName || '';
+    if (pageEmail) pageEmail.value = user.email || '';
+  }
+
+  if (notify) {
+    showToast('Provider application draft cleared. You have a fresh form.');
+  }
+}
+
+// -------------------------------------------------------------------------
+// 2. Customer Application Draft Operations
+// -------------------------------------------------------------------------
+function saveCustomerApplicationDraft(notify = false) {
+  const form = document.getElementById('inline-customer-register-form');
+  if (!form) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  const draft = {
+    name: document.getElementById('inline-cust-name')?.value || '',
+    type: document.getElementById('inline-cust-type')?.value || 'residential',
+    phone: document.getElementById('inline-cust-phone')?.value || '',
+    email: document.getElementById('inline-cust-email')?.value || '',
+    address: document.getElementById('inline-cust-address')?.value || '',
+    country: document.getElementById('inline-cust-country')?.value || 'AU',
+    idType: document.getElementById('inline-cust-id-type')?.value || 'driver_licence',
+    notes: document.getElementById('inline-cust-notes')?.value || '',
+    savedAt: now.toISOString(),
+    savedDisplay: `${timeStr}, ${dateStr}`
+  };
+
+  const key = getDraftStorageKey('customer');
+  localStorage.setItem(key, JSON.stringify(draft));
+  localStorage.setItem('iasj_draft_customer_latest', JSON.stringify(draft));
+
+  updateDraftStatusUI('inline-cust-draft-status', `Draft saved ${timeStr}`);
+
+  if (notify) {
+    showToast(`💾 Customer application draft saved! You can close your browser and resume anytime.`);
+  }
+}
+
+function restoreCustomerApplicationDraft() {
+  const key = getDraftStorageKey('customer');
+  let raw = localStorage.getItem(key);
+  if (!raw) {
+    raw = localStorage.getItem('iasj_draft_customer_latest');
+  }
+  if (!raw) return;
+
+  try {
+    const draft = JSON.parse(raw);
+    if (!draft) return;
+
+    if (draft.name && document.getElementById('inline-cust-name')) document.getElementById('inline-cust-name').value = draft.name;
+    if (draft.type && document.getElementById('inline-cust-type')) document.getElementById('inline-cust-type').value = draft.type;
+    if (draft.phone && document.getElementById('inline-cust-phone')) document.getElementById('inline-cust-phone').value = draft.phone;
+    if (draft.email && document.getElementById('inline-cust-email')) document.getElementById('inline-cust-email').value = draft.email;
+    if (draft.address && document.getElementById('inline-cust-address')) document.getElementById('inline-cust-address').value = draft.address;
+    if (draft.country && document.getElementById('inline-cust-country')) document.getElementById('inline-cust-country').value = draft.country;
+    if (draft.idType && document.getElementById('inline-cust-id-type')) document.getElementById('inline-cust-id-type').value = draft.idType;
+    if (draft.notes && document.getElementById('inline-cust-notes')) document.getElementById('inline-cust-notes').value = draft.notes;
+
+    const banner = document.getElementById('cust-restored-draft-banner');
+    const textSpan = document.getElementById('cust-draft-time-text');
+    if (banner) {
+      banner.style.display = 'flex';
+      if (textSpan) {
+        textSpan.textContent = `Draft restored from ${draft.savedDisplay || 'previous session'}. You can continue editing or save updates anytime.`;
+      }
+    }
+
+    updateDraftStatusUI('inline-cust-draft-status', `Draft resumed (${draft.savedDisplay ? draft.savedDisplay.split(',')[0] : 'Saved'})`);
+  } catch (err) {
+    console.warn("Could not restore customer draft:", err);
+  }
+}
+
+function clearCustomerApplicationDraft(notify = true) {
+  const key = getDraftStorageKey('customer');
+  localStorage.removeItem(key);
+  localStorage.removeItem('iasj_draft_customer_latest');
+
+  document.getElementById('inline-customer-register-form')?.reset();
+  const banner = document.getElementById('cust-restored-draft-banner');
+  if (banner) banner.style.display = 'none';
+
+  updateDraftStatusUI('inline-cust-draft-status', 'Draft cleared');
+
+  // Pre-fill Google user details again if logged in
+  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (user) {
+    const nameInput = document.getElementById('inline-cust-name');
+    const emailInput = document.getElementById('inline-cust-email');
+    if (nameInput) nameInput.value = user.displayName || '';
+    if (emailInput) emailInput.value = user.email || '';
+  }
+
+  if (notify) {
+    showToast('Customer draft cleared. You have a fresh form.');
+  }
+}
+
+// -------------------------------------------------------------------------
+// 3. Franchise Application & Multi-Staff Board Operations
+// -------------------------------------------------------------------------
+let franchiseStaffCounter = 0;
+
+function addFranchiseStaffMember(data = null) {
+  const container = document.getElementById('franchise-staff-container');
+  if (!container) return;
+
+  const index = franchiseStaffCounter++;
+  const staffNumber = container.querySelectorAll('.franchise-staff-card').length + 1;
+  const staffName = data?.name || `Staff Technician #${staffNumber}`;
+  const category = data?.category || 'plumbing';
+
+  const card = document.createElement('div');
+  card.className = 'franchise-staff-card';
+  card.id = `franchise-staff-card-${index}`;
+  card.dataset.index = index;
+
+  card.innerHTML = `
+    <!-- Staff Card Header -->
+    <div class="franchise-staff-header" onclick="toggleStaffCardCollapse(${index})">
+      <div class="franchise-staff-header-info">
+        <span class="franchise-staff-badge" id="franchise-staff-${index}-badge">${category.toUpperCase()}</span>
+        <div>
+          <h4 class="franchise-staff-title" id="franchise-staff-${index}-header-title">
+            Staff #${staffNumber}: ${staffName}
+          </h4>
+          <span class="franchise-staff-sub" id="franchise-staff-${index}-header-sub">
+            ${data?.phone || 'Field Service Technician'} &bull; ${data?.suburb || 'Territory Fleet'}
+          </span>
+        </div>
+      </div>
+      <div class="franchise-staff-controls" onclick="event.stopPropagation()">
+        <button type="button" class="btn btn-outline btn-sm" onclick="toggleStaffCardCollapse(${index})" title="Expand / Collapse" style="background:#fff; font-size:0.75rem; padding:0.25rem 0.55rem;">
+          <i class="fa-solid fa-chevron-up" id="franchise-staff-${index}-toggle-icon"></i>
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="removeFranchiseStaffMember(${index})" title="Remove Staff Member" style="background:#fff; color:#DC2626; border-color:#FCA5A5; font-size:0.75rem; padding:0.25rem 0.55rem;">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Staff Card Body -->
+    <div class="franchise-staff-body" id="franchise-staff-${index}-body">
+      <!-- A. Profile & Credentials -->
+      <div class="franchise-staff-section-title" style="margin-top:0;">
+        <i class="fa-solid fa-id-card-clip" style="color:#7E22CE;"></i> A. Staff Profile & Trade Discipline
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-name">Staff Full Name</label>
+          <input type="text" id="franchise-staff-${index}-name" class="form-control" value="${data?.name || ''}" placeholder="e.g. Luke Sullivan" required oninput="updateStaffHeaderSummary(${index})">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-phone">Staff Mobile Phone</label>
+          <input type="tel" id="franchise-staff-${index}-phone" class="form-control" value="${data?.phone || ''}" placeholder="0400 123 456" required oninput="updateStaffHeaderSummary(${index})">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-email">Staff Email Address</label>
+          <input type="email" id="franchise-staff-${index}-email" class="form-control" value="${data?.email || ''}" placeholder="e.g. luke@franchise.com">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-category">Primary Trade Discipline</label>
+          <select id="franchise-staff-${index}-category" class="form-control" onchange="handleFranchiseStaffCategoryChange(${index}, this.value)">
+            <option value="plumbing" ${category === 'plumbing' ? 'selected' : ''}>Plumbing & Gas Solutions</option>
+            <option value="electrical" ${category === 'electrical' ? 'selected' : ''}>Licensed Electrical Services</option>
+            <option value="courier" ${category === 'courier' ? 'selected' : ''}>Courier Driver & Express Freight</option>
+            <option value="handyman" ${category === 'handyman' ? 'selected' : ''}>General Handyman & Assembly</option>
+            <option value="carpentry" ${category === 'carpentry' ? 'selected' : ''}>Carpentry & Building Repairs</option>
+            <option value="garden" ${category === 'garden' ? 'selected' : ''}>Lawn, Tree & Garden Care</option>
+            <option value="painting" ${category === 'painting' ? 'selected' : ''}>Painting & Surface Restoration</option>
+            <option value="appliance" ${category === 'appliance' ? 'selected' : ''}>Appliance Diagnostics & Repair</option>
+            <option value="civil" ${category === 'civil' ? 'selected' : ''}>Civil & Machine Plant Operator</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-license">Trade Licence # / Driver Licence / Certification</label>
+          <input type="text" id="franchise-staff-${index}-license" class="form-control" value="${data?.license || ''}" placeholder="e.g. QBCC #1509214 or Open Driver Licence">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-suburb">Operating Base Suburb</label>
+          <input type="text" id="franchise-staff-${index}-suburb" class="form-control" value="${data?.suburb || ''}" placeholder="e.g. Surfers Paradise QLD" oninput="updateStaffHeaderSummary(${index})">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-radius">Service Radius</label>
+          <input type="number" id="franchise-staff-${index}-radius" class="form-control" value="${data?.radius || 25}" min="5" max="250">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Distance Unit</label>
+          <div style="display:flex; align-items:center; gap:1.25rem; height:42px;">
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.85rem; font-weight:600;">
+              <input type="radio" name="franchise-staff-${index}-dist-unit" value="km" ${(data?.distUnit !== 'mile') ? 'checked' : ''}> Kilometres (km)
+            </label>
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.85rem; font-weight:600;">
+              <input type="radio" name="franchise-staff-${index}-dist-unit" value="mile" ${(data?.distUnit === 'mile') ? 'checked' : ''}> Miles (mi)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- B. Dropdown Boxes for Services & Fee Structures (Exact Same as Service Providers) -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-list-check" style="color:#7E22CE;"></i> B. Trade Services & Fee Structures Drop Box System
+      </div>
+      <p style="font-size:0.75rem; color:#64748B; margin-bottom:0.75rem;">
+        Specify each individual service, task rate, and fee structure for this staff technician.
+      </p>
+
+      <div id="franchise-staff-${index}-services-fee-container" class="services-fee-container">
+        <!-- Rendered via renderDefaultServiceFeeRows or data.services -->
+      </div>
+
+      <div style="margin-top:0.75rem; margin-bottom:1.25rem;">
+        <button type="button" class="btn-add-service-row" onclick="addServiceFeeRow('franchise-staff-${index}')" style="background:#FAF5FF; border-color:#DDD6FE; color:#7E22CE;">
+          <i class="fa-solid fa-plus"></i> Add Service / Fee Structure for this Staff Member
+        </button>
+      </div>
+
+      <!-- C. 24/7 Availability & Shift Schedule -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-calendar-days" style="color:#7E22CE;"></i> C. 24/7 Dispatch Shift & Availability Schedule
+      </div>
+      <div style="background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:0.85rem; margin-bottom:1rem;">
+        <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; margin-bottom:0.75rem; font-weight:700; color:#581C87;">
+          <input type="checkbox" id="franchise-staff-${index}-shift-247" ${(data?.shift247) ? 'checked' : ''} style="width:18px; height:18px; accent-color:#7E22CE;">
+          <span><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> 24/7 • 365 Days a Year Registered On-Call Dispatch</span>
+        </label>
+        
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, '24_7')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
+            Preset: 24/7 Emergency
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, 'business')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
+            Preset: Mon-Fri Business (8-5)
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="applyStaffCalendarPreset(${index}, 'weekends')" style="background:#fff; font-size:0.72rem; padding:0.25rem 0.6rem;">
+            Preset: Weekends & After-Hours
+          </button>
+        </div>
+
+        <div style="display:flex; gap:1.25rem; flex-wrap:wrap; font-size:0.82rem;">
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="franchise-staff-${index}-shift-morn" ${(data?.shiftMorn !== false) ? 'checked' : ''}> Morning (6am - 12pm)
+          </label>
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="franchise-staff-${index}-shift-aft" ${(data?.shiftAft !== false) ? 'checked' : ''}> Afternoon (12pm - 5pm)
+          </label>
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="franchise-staff-${index}-shift-eve" ${(data?.shiftEve) ? 'checked' : ''}> Evening (5pm - 10pm)
+          </label>
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="franchise-staff-${index}-shift-overnight" ${(data?.shiftOvernight) ? 'checked' : ''}> Overnight (10pm - 6am)
+          </label>
+        </div>
+      </div>
+
+      <!-- D. Payout & Remuneration Routing -->
+      <div class="franchise-staff-section-title">
+        <i class="fa-solid fa-money-bill-transfer" style="color:#7E22CE;"></i> D. Staff Remuneration & Payout Routing
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-payout-route">Payout Remuneration Route</label>
+          <select id="franchise-staff-${index}-payout-route" class="form-control" onchange="toggleStaffDirectPayFields(${index})">
+            <option value="franchise" ${(data?.payoutRoute !== 'staff') ? 'selected' : ''}>Route to Franchise Central Bank / PayID</option>
+            <option value="staff" ${(data?.payoutRoute === 'staff') ? 'selected' : ''}>Direct Payout to Staff Member's Bank / PayID</option>
+          </select>
+        </div>
+        <div class="input-group" id="franchise-staff-${index}-payid-group" style="display:${(data?.payoutRoute === 'staff') ? 'block' : 'none'};">
+          <label class="input-label" for="franchise-staff-${index}-payid">Staff Direct PayID / Mobile</label>
+          <input type="text" id="franchise-staff-${index}-payid" class="form-control" value="${data?.staffPayId || ''}" placeholder="e.g. 0400 123 456">
+        </div>
+      </div>
+
+      <div class="form-row" id="franchise-staff-${index}-bank-row" style="display:${(data?.payoutRoute === 'staff') ? 'flex' : 'none'};">
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-bsb">Staff BSB</label>
+          <input type="text" id="franchise-staff-${index}-bsb" class="form-control" value="${data?.staffBsb || ''}" placeholder="084-004">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="franchise-staff-${index}-account">Staff Account Number</label>
+          <input type="text" id="franchise-staff-${index}-account" class="form-control" value="${data?.staffAccount || ''}" placeholder="12345678">
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(card);
+
+  // Populate services fee rows for this staff member
+  if (data?.services && Array.isArray(data.services) && data.services.length > 0) {
+    const sContainer = document.getElementById(`franchise-staff-${index}-services-fee-container`);
+    if (sContainer) {
+      sContainer.innerHTML = '';
+      data.services.forEach(s => addServiceFeeRow(`franchise-staff-${index}`, s));
+    }
+  } else {
+    renderDefaultServiceFeeRows(`franchise-staff-${index}`, category);
+  }
+}
+
+function updateStaffHeaderSummary(index) {
+  const nameInput = document.getElementById(`franchise-staff-${index}-name`);
+  const phoneInput = document.getElementById(`franchise-staff-${index}-phone`);
+  const suburbInput = document.getElementById(`franchise-staff-${index}-suburb`);
+  const title = document.getElementById(`franchise-staff-${index}-header-title`);
+  const sub = document.getElementById(`franchise-staff-${index}-header-sub`);
+  
+  const card = document.getElementById(`franchise-staff-card-${index}`);
+  const staffNumber = card ? Array.from(card.parentNode.children).indexOf(card) + 1 : 1;
+
+  if (title) {
+    title.textContent = `Staff #${staffNumber}: ${nameInput?.value.trim() || 'New Technician'}`;
+  }
+  if (sub) {
+    sub.textContent = `${phoneInput?.value.trim() || 'Field Service Technician'} • ${suburbInput?.value.trim() || 'Territory Fleet'}`;
+  }
+}
+
+function handleFranchiseStaffCategoryChange(index, newCategory) {
+  const badge = document.getElementById(`franchise-staff-${index}-badge`);
+  if (badge) badge.textContent = newCategory.toUpperCase();
+  handleCategoryChange(`franchise-staff-${index}`, newCategory);
+}
+
+function toggleStaffCardCollapse(index) {
+  const body = document.getElementById(`franchise-staff-${index}-body`);
+  const icon = document.getElementById(`franchise-staff-${index}-toggle-icon`);
+  if (!body) return;
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    if (icon) {
+      icon.className = 'fa-solid fa-chevron-up';
+    }
+  } else {
+    body.style.display = 'none';
+    if (icon) {
+      icon.className = 'fa-solid fa-chevron-down';
+    }
+  }
+}
+
+function toggleStaffDirectPayFields(index) {
+  const routeSelect = document.getElementById(`franchise-staff-${index}-payout-route`);
+  const payidGroup = document.getElementById(`franchise-staff-${index}-payid-group`);
+  const bankRow = document.getElementById(`franchise-staff-${index}-bank-row`);
+  const isDirect = routeSelect?.value === 'staff';
+  if (payidGroup) payidGroup.style.display = isDirect ? 'block' : 'none';
+  if (bankRow) bankRow.style.display = isDirect ? 'flex' : 'none';
+}
+
+function applyStaffCalendarPreset(index, preset) {
+  const cb247 = document.getElementById(`franchise-staff-${index}-shift-247`);
+  const cbMorn = document.getElementById(`franchise-staff-${index}-shift-morn`);
+  const cbAft = document.getElementById(`franchise-staff-${index}-shift-aft`);
+  const cbEve = document.getElementById(`franchise-staff-${index}-shift-eve`);
+  const cbOvernight = document.getElementById(`franchise-staff-${index}-shift-overnight`);
+
+  if (preset === '24_7') {
+    if (cb247) cb247.checked = true;
+    if (cbMorn) cbMorn.checked = true;
+    if (cbAft) cbAft.checked = true;
+    if (cbEve) cbEve.checked = true;
+    if (cbOvernight) cbOvernight.checked = true;
+    showToast(`Staff #${index + 1}: 24/7 Emergency Dispatch Preset applied.`);
+  } else if (preset === 'business') {
+    if (cb247) cb247.checked = false;
+    if (cbMorn) cbMorn.checked = true;
+    if (cbAft) cbAft.checked = true;
+    if (cbEve) cbEve.checked = false;
+    if (cbOvernight) cbOvernight.checked = false;
+    showToast(`Staff #${index + 1}: Standard Business Hours (8am-5pm) Preset applied.`);
+  } else if (preset === 'weekends') {
+    if (cb247) cb247.checked = false;
+    if (cbMorn) cbMorn.checked = false;
+    if (cbAft) cbAft.checked = false;
+    if (cbEve) cbEve.checked = true;
+    if (cbOvernight) cbOvernight.checked = true;
+    showToast(`Staff #${index + 1}: After-Hours & Weekend Preset applied.`);
+  }
+}
+
+function removeFranchiseStaffMember(index) {
+  const card = document.getElementById(`franchise-staff-card-${index}`);
+  const container = document.getElementById('franchise-staff-container');
+  if (!card || !container) return;
+
+  if (container.querySelectorAll('.franchise-staff-card').length <= 1) {
+    showToast('Franchise must have at least one staff technician.');
+    return;
+  }
+
+  card.remove();
+  showToast('Staff technician removed from franchise roster.');
+
+  // Renumber remaining cards
+  const cards = container.querySelectorAll('.franchise-staff-card');
+  cards.forEach((c, idx) => {
+    const i = c.dataset.index;
+    const title = document.getElementById(`franchise-staff-${i}-header-title`);
+    const nameInput = document.getElementById(`franchise-staff-${i}-name`);
+    if (title) {
+      title.textContent = `Staff #${idx + 1}: ${nameInput?.value.trim() || 'New Technician'}`;
+    }
+  });
+}
+
+function saveFranchiseApplicationDraft(notify = false) {
+  const form = document.getElementById('franchise-register-form');
+  if (!form) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  // Collect staff members
+  const staffMembers = [];
+  const staffCards = document.querySelectorAll('#franchise-staff-container .franchise-staff-card');
+  staffCards.forEach(card => {
+    const idx = card.dataset.index;
+    const distRadio = document.querySelector(`input[name="franchise-staff-${idx}-dist-unit"]:checked`);
+    staffMembers.push({
+      name: document.getElementById(`franchise-staff-${idx}-name`)?.value || '',
+      phone: document.getElementById(`franchise-staff-${idx}-phone`)?.value || '',
+      email: document.getElementById(`franchise-staff-${idx}-email`)?.value || '',
+      category: document.getElementById(`franchise-staff-${idx}-category`)?.value || 'plumbing',
+      license: document.getElementById(`franchise-staff-${idx}-license`)?.value || '',
+      suburb: document.getElementById(`franchise-staff-${idx}-suburb`)?.value || '',
+      radius: document.getElementById(`franchise-staff-${idx}-radius`)?.value || '25',
+      distUnit: distRadio ? distRadio.value : 'km',
+      services: collectServicesFeeData(`franchise-staff-${idx}`),
+      shift247: document.getElementById(`franchise-staff-${idx}-shift-247`)?.checked || false,
+      shiftMorn: document.getElementById(`franchise-staff-${idx}-shift-morn`)?.checked || false,
+      shiftAft: document.getElementById(`franchise-staff-${idx}-shift-aft`)?.checked || false,
+      shiftEve: document.getElementById(`franchise-staff-${idx}-shift-eve`)?.checked || false,
+      shiftOvernight: document.getElementById(`franchise-staff-${idx}-shift-overnight`)?.checked || false,
+      payoutRoute: document.getElementById(`franchise-staff-${idx}-payout-route`)?.value || 'franchise',
+      staffPayId: document.getElementById(`franchise-staff-${idx}-payid`)?.value || '',
+      staffBsb: document.getElementById(`franchise-staff-${idx}-bsb`)?.value || '',
+      staffAccount: document.getElementById(`franchise-staff-${idx}-account`)?.value || ''
+    });
+  });
+
+  const draft = {
+    franchiseName: document.getElementById('franchise-name')?.value || '',
+    franchiseAbn: document.getElementById('franchise-abn')?.value || '',
+    adminName: document.getElementById('franchise-admin-name')?.value || '',
+    adminEmail: document.getElementById('franchise-admin-email')?.value || '',
+    adminPhone: document.getElementById('franchise-admin-phone')?.value || '',
+    adminRegion: document.getElementById('franchise-admin-region')?.value || '',
+    adminPayId: document.getElementById('franchise-admin-payid')?.value || '',
+    adminBankName: document.getElementById('franchise-admin-bank-name')?.value || '',
+    adminBsb: document.getElementById('franchise-admin-bsb')?.value || '',
+    adminAccount: document.getElementById('franchise-admin-account')?.value || '',
+    staffMembers,
+    savedAt: now.toISOString(),
+    savedDisplay: `${timeStr}, ${dateStr}`
+  };
+
+  const key = getDraftStorageKey('franchise');
+  localStorage.setItem(key, JSON.stringify(draft));
+  localStorage.setItem('iasj_draft_franchise_latest', JSON.stringify(draft));
+
+  updateDraftStatusUI('franchise-draft-status', `Draft saved ${timeStr}`);
+
+  if (notify) {
+    showToast(`💾 Franchise application draft saved! All Manager and Staff technician details preserved.`);
+  }
+}
+
+function restoreFranchiseApplicationDraft() {
+  const key = getDraftStorageKey('franchise');
+  let raw = localStorage.getItem(key);
+  if (!raw) {
+    raw = localStorage.getItem('iasj_draft_franchise_latest');
+  }
+  
+  const container = document.getElementById('franchise-staff-container');
+
+  if (!raw) {
+    // If no draft exists and container is empty, initialize 1 staff card
+    if (container && container.children.length === 0) {
+      addFranchiseStaffMember();
+    }
+    return;
+  }
+
+  try {
+    const draft = JSON.parse(raw);
+    if (!draft) return;
+
+    if (draft.franchiseName && document.getElementById('franchise-name')) document.getElementById('franchise-name').value = draft.franchiseName;
+    if (draft.franchiseAbn && document.getElementById('franchise-abn')) document.getElementById('franchise-abn').value = draft.franchiseAbn;
+    if (draft.adminName && document.getElementById('franchise-admin-name')) document.getElementById('franchise-admin-name').value = draft.adminName;
+    if (draft.adminEmail && document.getElementById('franchise-admin-email')) document.getElementById('franchise-admin-email').value = draft.adminEmail;
+    if (draft.adminPhone && document.getElementById('franchise-admin-phone')) document.getElementById('franchise-admin-phone').value = draft.adminPhone;
+    if (draft.adminRegion && document.getElementById('franchise-admin-region')) document.getElementById('franchise-admin-region').value = draft.adminRegion;
+    if (draft.adminPayId && document.getElementById('franchise-admin-payid')) document.getElementById('franchise-admin-payid').value = draft.adminPayId;
+    if (draft.adminBankName && document.getElementById('franchise-admin-bank-name')) document.getElementById('franchise-admin-bank-name').value = draft.adminBankName;
+    if (draft.adminBsb && document.getElementById('franchise-admin-bsb')) document.getElementById('franchise-admin-bsb').value = draft.adminBsb;
+    if (draft.adminAccount && document.getElementById('franchise-admin-account')) document.getElementById('franchise-admin-account').value = draft.adminAccount;
+
+    // Restore Staff Members
+    if (container) {
+      container.innerHTML = '';
+      if (draft.staffMembers && Array.isArray(draft.staffMembers) && draft.staffMembers.length > 0) {
+        draft.staffMembers.forEach(staffData => addFranchiseStaffMember(staffData));
+      } else {
+        addFranchiseStaffMember();
+      }
+    }
+
+    const banner = document.getElementById('franchise-restored-draft-banner');
+    const textSpan = document.getElementById('franchise-draft-time-text');
+    if (banner) {
+      banner.style.display = 'flex';
+      if (textSpan) {
+        const staffCount = draft.staffMembers ? draft.staffMembers.length : 1;
+        textSpan.textContent = `Draft restored from ${draft.savedDisplay || 'previous session'} (${staffCount} staff technician(s) loaded).`;
+      }
+    }
+
+    updateDraftStatusUI('franchise-draft-status', `Draft resumed (${draft.savedDisplay ? draft.savedDisplay.split(',')[0] : 'Saved'})`);
+  } catch (err) {
+    console.warn("Could not restore franchise draft:", err);
+  }
+}
+
+function clearFranchiseApplicationDraft(notify = true) {
+  const key = getDraftStorageKey('franchise');
+  localStorage.removeItem(key);
+  localStorage.removeItem('iasj_draft_franchise_latest');
+
+  document.getElementById('franchise-register-form')?.reset();
+  const banner = document.getElementById('franchise-restored-draft-banner');
+  if (banner) banner.style.display = 'none';
+
+  const container = document.getElementById('franchise-staff-container');
+  if (container) {
+    container.innerHTML = '';
+    addFranchiseStaffMember();
+  }
+
+  updateDraftStatusUI('franchise-draft-status', 'Draft cleared');
+
+  // Pre-fill Google user details again if logged in
+  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+  })();
+  if (user) {
+    const nameInput = document.getElementById('franchise-admin-name');
+    const emailInput = document.getElementById('franchise-admin-email');
+    if (nameInput) nameInput.value = user.displayName || '';
+    if (emailInput) emailInput.value = user.email || '';
+  }
+
+  if (notify) {
+    showToast('Franchise draft cleared. You have a fresh form.');
+  }
+}
+
+// -------------------------------------------------------------------------
+// 4. Draft Auto-Save Debounced Listeners
+// -------------------------------------------------------------------------
+function attachDraftAutoSaveListeners() {
+  function debounce(func, delay = 800) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+
+  const debouncedProviderSave = debounce(() => {
+    updateDraftStatusUI('page-prov-draft-status', 'Auto-saving...', true);
+    saveProviderApplicationDraft(false);
+  }, 900);
+
+  const debouncedCustomerSave = debounce(() => {
+    updateDraftStatusUI('inline-cust-draft-status', 'Auto-saving...', true);
+    saveCustomerApplicationDraft(false);
+  }, 900);
+
+  const debouncedFranchiseSave = debounce(() => {
+    updateDraftStatusUI('franchise-draft-status', 'Auto-saving...', true);
+    saveFranchiseApplicationDraft(false);
+  }, 900);
+
+  const provForm = document.getElementById('inline-provider-reg-form');
+  if (provForm) {
+    provForm.addEventListener('input', debouncedProviderSave);
+    provForm.addEventListener('change', debouncedProviderSave);
+  }
+
+  const custForm = document.getElementById('inline-customer-register-form');
+  if (custForm) {
+    custForm.addEventListener('input', debouncedCustomerSave);
+    custForm.addEventListener('change', debouncedCustomerSave);
+  }
+
+  const franchiseForm = document.getElementById('franchise-register-form');
+  if (franchiseForm) {
+    franchiseForm.addEventListener('input', debouncedFranchiseSave);
+    franchiseForm.addEventListener('change', debouncedFranchiseSave);
+  }
+}
+
+// Global window registrations
+window.getDraftStorageKey = getDraftStorageKey;
+window.updateDraftStatusUI = updateDraftStatusUI;
+window.updateGoogleAuthBanners = updateGoogleAuthBanners;
+window.saveProviderApplicationDraft = saveProviderApplicationDraft;
+window.restoreProviderApplicationDraft = restoreProviderApplicationDraft;
+window.clearProviderApplicationDraft = clearProviderApplicationDraft;
+window.saveCustomerApplicationDraft = saveCustomerApplicationDraft;
+window.restoreCustomerApplicationDraft = restoreCustomerApplicationDraft;
+window.clearCustomerApplicationDraft = clearCustomerApplicationDraft;
+window.saveFranchiseApplicationDraft = saveFranchiseApplicationDraft;
+window.restoreFranchiseApplicationDraft = restoreFranchiseApplicationDraft;
+window.clearFranchiseApplicationDraft = clearFranchiseApplicationDraft;
+window.attachDraftAutoSaveListeners = attachDraftAutoSaveListeners;
+
+// Franchise Staff Technicians window exports
+window.addFranchiseStaffMember = addFranchiseStaffMember;
+window.updateStaffHeaderSummary = updateStaffHeaderSummary;
+window.handleFranchiseStaffCategoryChange = handleFranchiseStaffCategoryChange;
+window.toggleStaffCardCollapse = toggleStaffCardCollapse;
+window.toggleStaffDirectPayFields = toggleStaffDirectPayFields;
+window.applyStaffCalendarPreset = applyStaffCalendarPreset;
+window.removeFranchiseStaffMember = removeFranchiseStaffMember;
+
+

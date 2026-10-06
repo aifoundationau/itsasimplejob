@@ -31,6 +31,59 @@ class StripePaymentService {
   }
 
   /**
+   * Register Customer into Stripe as a User
+   * @param {Object} customer { name, email, phone, crn, abn }
+   */
+  async registerCustomerUser(customer) {
+    const crn = customer.crn || customer.customerRefNumber || 'CRN-' + Math.floor(100000 + Math.random() * 900000);
+    const stripeCustomerId = 'cus_' + Math.random().toString(36).substring(2, 16);
+
+    const stripeRecord = {
+      stripeCustomerId,
+      accountId: this.config.accountId,
+      userType: 'customer',
+      crn,
+      name: customer.name || 'Valued Customer',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      registeredAt: new Date().toISOString()
+    };
+
+    localStorage.setItem('iasj_stripe_customer_id', stripeCustomerId);
+    console.log(`💳 [Stripe User] Registered Customer ${customer.name || 'Valued Customer'} (${crn}) into Stripe with ID: ${stripeCustomerId}`);
+    return stripeRecord;
+  }
+
+  /**
+   * Register Service Provider into Stripe as a User
+   * @param {Object} provider { name, businessName, email, phone, spn, qbccLicense, bankDetails, payId, payIdType }
+   */
+  async registerProviderUser(provider) {
+    const spn = provider.serviceProviderNumber || provider.spn || 'SPN-' + Math.floor(100000 + Math.random() * 900000);
+    const stripeCustomerId = 'cus_prov_' + Math.random().toString(36).substring(2, 14);
+
+    const stripeRecord = {
+      stripeCustomerId,
+      accountId: this.config.accountId,
+      userType: 'provider',
+      spn,
+      name: provider.name,
+      businessName: provider.businessName || provider.name,
+      email: provider.email || '',
+      phone: provider.phone || '',
+      qbccLicense: provider.qbccLicense || '',
+      bsb: provider.bankDetails?.bsb || '',
+      accountNumber: provider.bankDetails?.accountNumber || '',
+      payId: provider.payId || provider.phone || '',
+      payIdType: provider.payIdType || 'phone',
+      registeredAt: new Date().toISOString()
+    };
+
+    console.log(`💳 [Stripe User] Registered Service Provider ${provider.name} (${spn}) into Stripe with ID: ${stripeCustomerId}`);
+    return stripeRecord;
+  }
+
+  /**
    * Process a payment for a booking invoice
    * @param {Object} paymentData { docketNumber, amount, customerName, customerEmail, description }
    */
@@ -62,6 +115,38 @@ class StripePaymentService {
     }
 
     return transactionRecord;
+  }
+
+  /**
+   * Record direct out-of-band payment to service provider (PayID or Direct EFT)
+   * @param {Object} settlementData { docketNumber, amount, provider, paymentMethod, reference }
+   */
+  async recordDirectSettlement(settlementData) {
+    const settlementId = 'settle_direct_' + Math.random().toString(36).substring(2, 10);
+    const record = {
+      settlementId,
+      businessId: 'itsasimplejob',
+      docketNumber: settlementData.docketNumber,
+      spn: settlementData.provider?.serviceProviderNumber || 'SPN-Direct',
+      providerName: settlementData.provider?.name || 'Assigned Tradie',
+      payId: settlementData.provider?.payId || '',
+      bsb: settlementData.provider?.bankDetails?.bsb || '',
+      accountNumber: settlementData.provider?.bankDetails?.accountNumber || '',
+      amountAud: settlementData.amount,
+      amountCents: Math.round(settlementData.amount * 100),
+      currency: 'AUD',
+      paymentMethod: settlementData.paymentMethod || 'payid', // 'payid' or 'direct_eft'
+      status: 'paid_out_of_band',
+      settledAt: new Date().toISOString(),
+      notes: 'Customer transferred funds directly to service provider.'
+    };
+
+    if (window.firebaseService?.recordStripeTransaction) {
+      await window.firebaseService.recordStripeTransaction(record);
+    }
+
+    console.log(`✅ [Direct Settlement] Recorded direct payment for docket ${settlementData.docketNumber} to ${record.providerName} via ${record.paymentMethod.toUpperCase()}`);
+    return record;
   }
 
   /**

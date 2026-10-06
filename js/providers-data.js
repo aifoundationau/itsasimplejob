@@ -588,6 +588,14 @@ class ProviderDatabase {
             ...p,
             status: p.status || "active",
             pausedReason: p.pausedReason || "",
+            bankDetails: p.bankDetails || {
+              accountName: p.businessName || p.name || "Master Trade Services",
+              bsb: p.bsb || "084-004",
+              accountNumber: p.accountNumber || "482910481",
+              bankName: p.bankName || "National Australia Bank (NAB)"
+            },
+            payId: p.payId || p.phone || "0412 889 211",
+            payIdType: p.payIdType || "phone",
             calendarSchedule: p.calendarSchedule || getDefaultCalendarSchedule(p.workingHours?.is24_7 ?? true),
             blackoutDates: p.blackoutDates || []
           }));
@@ -600,6 +608,14 @@ class ProviderDatabase {
       ...p,
       status: p.status || "active",
       pausedReason: p.pausedReason || "",
+      bankDetails: p.bankDetails || {
+        accountName: p.businessName || p.name || "Master Trade Services",
+        bsb: p.bsb || "084-004",
+        accountNumber: p.accountNumber || "482910481",
+        bankName: p.bankName || "National Australia Bank (NAB)"
+      },
+      payId: p.payId || p.phone || "0412 889 211",
+      payIdType: p.payIdType || "phone",
       calendarSchedule: p.calendarSchedule || getDefaultCalendarSchedule(p.workingHours?.is24_7 ?? true),
       blackoutDates: p.blackoutDates || []
     }));
@@ -638,6 +654,14 @@ class ProviderDatabase {
       lat,
       lng,
       baseSuburb: newProvider.baseSuburb || "Gold Coast QLD",
+      bankDetails: newProvider.bankDetails || {
+        accountName: newProvider.bankAccountName || newProvider.businessName || newProvider.name,
+        bsb: newProvider.bsb || "084-004",
+        accountNumber: newProvider.accountNumber || "482910481",
+        bankName: newProvider.bankName || "National Australia Bank (NAB)"
+      },
+      payId: newProvider.payId || newProvider.phone || "0412 889 211",
+      payIdType: newProvider.payIdType || "phone",
       calendarSchedule: newProvider.calendarSchedule || getDefaultCalendarSchedule(newProvider.workingHours?.is24_7 ?? true),
       blackoutDates: newProvider.blackoutDates || [],
       workingHours: newProvider.workingHours || {

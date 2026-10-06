@@ -1,0 +1,94 @@
+  <!-- =========================================================================
+       FRANCHISE ADMIN REGISTRATION MODAL
+       ========================================================================= -->
+  <div class="modal-overlay" id="franchise-register-modal">
+    <div class="modal-box" style="max-width:560px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:40px; height:40px; border-radius:8px; background:#F3E8FF; color:#7E22CE; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-building-user"></i>
+          </div>
+          <div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:var(--primary-navy);">Franchise Admin Registration</h2>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Create your franchise account to manage staff</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeFranchiseRegisterModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="franchise-register-form" onsubmit="handleFranchiseRegisterSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Franchise Name</label>
+            <input type="text" id="franchise-name" class="form-control" placeholder="e.g. Jim's Mowing Gold Coast" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Admin Full Name</label>
+            <input type="text" id="franchise-admin-name" class="form-control" placeholder="e.g. Sarah Jenkins" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Admin Email</label>
+            <input type="email" id="franchise-admin-email" class="form-control" placeholder="e.g. admin@franchise.com" required>
+          </div>
+          <button type="submit" class="btn" style="width:100%; background:#7E22CE; color:white; font-weight:800; padding:0.8rem; margin-top:1rem;">
+            Register Franchise <i class="fa-solid fa-arrow-right" style="margin-left:0.3rem;"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       FRANCHISE ADMIN DASHBOARD
+       ========================================================================= -->
+  <div class="modal-overlay" id="franchise-dashboard-modal">
+    <div class="modal-box" style="max-width:700px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:40px; height:40px; border-radius:8px; background:#F3E8FF; color:#7E22CE; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-users-gear"></i>
+          </div>
+          <div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:#ffffff;">Franchise Dashboard</h2>
+            <span style="font-size:0.75rem; color:#E2E8F0;" id="dashboard-franchise-name">Manage Staff</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeFranchiseDashboard()">&times;</button>
+      </div>
+      <div class="modal-body" style="background:#F8FAFC; border-radius:0 0 var(--radius-lg) var(--radius-lg); padding:1.5rem;">
+        
+        <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+          <h3 style="font-size:1.1rem; color:var(--primary-navy); font-weight:800; margin-bottom:1rem; border-bottom:1px solid var(--border-light); padding-bottom:0.5rem;">
+            Add New Staff Member
+          </h3>
+          <form id="franchise-add-staff-form" onsubmit="handleAddStaffSubmit(event)">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Staff Full Name</label>
+                <input type="text" id="staff-name" class="form-control" placeholder="e.g. John Doe" required>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Staff Email</label>
+                <input type="email" id="staff-email" class="form-control" placeholder="john@example.com" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">PayID / Business Bank Account Number</label>
+              <input type="text" id="staff-payid" class="form-control" placeholder="e.g. 0412 345 678 or BSB 064-123 Acct 12345678" required>
+            </div>
+            <button type="submit" class="btn" style="width:100%; background:#16A34A; color:white; font-weight:800; padding:0.6rem;">
+              <i class="fa-solid fa-plus"></i> Register Staff Member
+            </button>
+          </form>
+        </div>
+
+        <h3 style="font-size:1.1rem; color:var(--primary-navy); font-weight:800; margin-bottom:1rem;">Registered Staff</h3>
+        <div id="franchise-staff-list" style="display:flex; flex-direction:column; gap:0.5rem;">
+          <!-- Staff listed here dynamically -->
+          <div style="padding:1rem; text-align:center; color:var(--text-muted); font-size:0.85rem; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
+            No staff added yet.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
