@@ -270,6 +270,67 @@
             </button>
           </div>
 
+          <!-- 3. Franchise Work Teams & Multi-Person Dispatch Operations -->
+          <div style="margin-bottom:2rem; background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-md); padding:1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #DDD6FE; padding-bottom:0.75rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem;">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <div style="width:38px; height:38px; border-radius:10px; background:#7E22CE; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                  <i class="fa-solid fa-people-group"></i>
+                </div>
+                <div>
+                  <h5 style="font-size:0.95rem; text-transform:uppercase; color:#581C87; letter-spacing:0.5px; margin:0; font-weight:800;">
+                    3. Franchise Collaborative Work Teams (Multi-Person Crews)
+                  </h5>
+                  <span style="font-size:0.76rem; color:#6B21A8;">
+                    Organize registered staff & providers into multi-person teams for construction, horticulture, machinery & large projects
+                  </span>
+                </div>
+              </div>
+              <a href="/customer-admin.html?view=work-teams" class="btn btn-sm" style="background:#7E22CE; color:#fff; font-weight:800; text-decoration:none; padding:0.5rem 1rem; border-radius:var(--radius-sm); display:inline-flex; align-items:center; gap:0.4rem;">
+                <i class="fa-solid fa-sliders"></i> Open Work Teams Admin
+              </a>
+            </div>
+
+            <p style="font-size:0.84rem; color:#4C1D95; margin-bottom:1.25rem; line-height:1.5;">
+              Franchise networks can group their verified staff and registered contractors into specialized crews. Team members can communicate with each other in real-time. The designated <strong>Person in Charge (PIC)</strong> or Franchise Admin can assign specific work required, designate who will do it, set job dates, and define individual provider payout pricing alongside franchise royalty calculations.
+            </p>
+
+            <!-- Pre-Configured Franchise Teams Cards -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;" id="franchise-work-teams-preview">
+              <div style="background:#fff; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:1rem; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                  <span class="sector-pill sector-horticulture"><i class="fa-solid fa-tree"></i> Horticulture</span>
+                  <span style="font-size:0.7rem; color:#7E22CE; font-weight:700;">12% Royalty</span>
+                </div>
+                <h5 style="margin:0 0 0.25rem 0; font-size:0.95rem; color:#1E1B4B; font-weight:800;">GreenEarth Horticulture & Tree Works</h5>
+                <p style="font-size:0.76rem; color:#64748B; margin-bottom:0.75rem;">Commercial tree lopping, chipper fleet, and grounds rehabilitation team.</p>
+                <div style="font-size:0.75rem; color:#475569; margin-bottom:0.75rem;">
+                  <div><strong>PIC:</strong> Chloe Bennett (SPN-101006)</div>
+                  <div><strong>Roster:</strong> 3 Registered Tradies • $65 - $95/hr</div>
+                </div>
+                <a href="/customer-admin.html?view=work-teams&team=team_hort_02" class="btn btn-outline btn-sm" style="width:100%; text-align:center; font-size:0.75rem; font-weight:700; color:#7E22CE; border-color:#D8B4FE; text-decoration:none;">
+                  <i class="fa-solid fa-comments"></i> Open Crew Board & Jobs
+                </a>
+              </div>
+
+              <div style="background:#fff; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:1rem; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                  <span class="sector-pill sector-machinery"><i class="fa-solid fa-truck-front"></i> Machinery</span>
+                  <span style="font-size:0.7rem; color:#7E22CE; font-weight:700;">10% Royalty</span>
+                </div>
+                <h5 style="margin:0 0 0.25rem 0; font-size:0.95rem; color:#1E1B4B; font-weight:800;">Pacific Heavy Earthmoving Fleet</h5>
+                <p style="font-size:0.76rem; color:#64748B; margin-bottom:0.75rem;">14t Excavator, Positrack Bobcat, and 10m Tipper fleet for civil drainage.</p>
+                <div style="font-size:0.75rem; color:#475569; margin-bottom:0.75rem;">
+                  <div><strong>PIC:</strong> Marco Rossi (SPN-101005)</div>
+                  <div><strong>Roster:</strong> 3 Heavy Plant Operators • $85 - $110/hr</div>
+                </div>
+                <a href="/customer-admin.html?view=work-teams&team=team_mach_03" class="btn btn-outline btn-sm" style="width:100%; text-align:center; font-size:0.75rem; font-weight:700; color:#7E22CE; border-color:#D8B4FE; text-decoration:none;">
+                  <i class="fa-solid fa-comments"></i> Open Crew Board & Jobs
+                </a>
+              </div>
+            </div>
+          </div>
+
           <!-- Sticky Actions Bar -->
           <div class="form-sticky-actions">
             <button type="button" class="btn btn-outline" onclick="saveFranchiseApplicationDraft(true)">

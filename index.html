@@ -101,7 +101,6 @@
               </div>
             </div>
 
-            <div class="settings-menu-list" style="padding:0.4rem 0;">
               <a href="/customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
                 <div class="settings-option-icon" style="background:#EFF6FF; color:#2563EB;">
                   <i class="fa-solid fa-sliders"></i>
@@ -109,6 +108,17 @@
                 <div class="settings-option-text">
                   <strong>Admin Page</strong>
                   <p>Calendar, rates, turn on/off dates & pause service</p>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
+              </a>
+
+              <a href="/customer-admin.html?view=work-teams" class="settings-menu-option" id="google-menu-work-teams" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
+                <div class="settings-option-icon" style="background:#FFF7ED; color:var(--brand-orange); border:1px solid #FED7AA;">
+                  <i class="fa-solid fa-people-group"></i>
+                </div>
+                <div class="settings-option-text">
+                  <strong>Work Teams & Multi-Person Crews</strong>
+                  <p>Manage crews, group communication & job dispatch with pricing</p>
                 </div>
                 <i class="fa-solid fa-chevron-right settings-arrow"></i>
               </a>
@@ -195,6 +205,19 @@
                 </div>
                 <i class="fa-solid fa-chevron-right settings-arrow"></i>
               </button>
+
+              <a href="/customer-admin.html?view=work-teams" class="settings-menu-option" style="text-decoration:none;" onclick="document.getElementById('settings-dropdown-panel')?.classList.remove('show');">
+                <div class="settings-option-icon" style="background:#FAF5FF; color:#7E22CE; border:1px solid #E9D5FF;">
+                  <i class="fa-solid fa-people-group"></i>
+                </div>
+                <div class="settings-option-text">
+                  <div class="option-title-row">
+                    <strong style="color:white;">Work Teams & Multi-Person Dispatch</strong>
+                  </div>
+                  <p>Organize multi-person crews, group chat, and assign jobs with individual provider pricing.</p>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
+              </a>
             </div>
           </div>
         </div>
@@ -3722,7 +3745,31 @@
           </div>
         </div>
 
-        <!-- 5. Actions Footer -->
+        <!-- 6. Work Teams & Multi-Person Dispatch in Provider Admin -->
+        <div style="background:#F8FAFC; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <div style="width:34px; height:34px; border-radius:8px; background:#EFF6FF; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                <i class="fa-solid fa-people-group"></i>
+              </div>
+              <div>
+                <h5 style="font-size:0.88rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                  Work Teams & Multi-Person Crews
+                </h5>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Collaborate on multi-person jobs across Construction, Horticulture, Machinery, etc.</span>
+              </div>
+            </div>
+            <a href="/customer-admin.html?view=work-teams" class="btn btn-outline btn-sm" style="font-size:0.75rem; font-weight:700; color:#2563EB; border-color:#BFDBFE; background:#fff; text-decoration:none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Work Teams Admin
+            </a>
+          </div>
+
+          <div id="provider-admin-teams-summary" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <!-- Populated via loadProviderWorkTeamsSummary() in app.js -->
+          </div>
+        </div>
+
+        <!-- 7. Actions Footer -->
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; border-top:1px solid var(--border-light); padding-top:1.25rem;">
           <button type="button" class="btn btn-outline" onclick="scrollToVault(); closeProviderAdminPanel();">
             <i class="fa-solid fa-folder-open"></i> Manage Licences in Vault

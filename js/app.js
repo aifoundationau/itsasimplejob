@@ -3579,7 +3579,60 @@ function loadProviderIntoAdmin(providerId) {
   if (gcalBox) {
     gcalBox.classList.toggle('connected', isGcalConnected);
   }
+
+  // Load Work Teams summary for this provider
+  if (typeof loadProviderWorkTeamsSummary === 'function') {
+    loadProviderWorkTeamsSummary(provider);
+  }
 }
+
+function loadProviderWorkTeamsSummary(provider) {
+  const container = document.getElementById('provider-admin-teams-summary');
+  if (!container || !window.workTeamsService) return;
+
+  const spn = provider.serviceProviderNumber || provider.id;
+  const allTeams = window.workTeamsService.getAllTeams();
+  const myTeams = allTeams.filter(t => 
+    t.ownerId === spn || 
+    t.personInCharge?.spn === spn ||
+    (t.members || []).some(m => m.spn === spn)
+  );
+
+  if (myTeams.length === 0) {
+    container.innerHTML = `
+      <div style="background:#fff; border:1px dashed #CBD5E1; border-radius:6px; padding:0.75rem; text-align:center; font-size:0.8rem; color:var(--text-muted);">
+        Not assigned to any active work teams yet.
+        <div style="margin-top:0.4rem;">
+          <a href="/customer-admin.html?view=work-teams" class="btn btn-outline btn-sm" style="font-size:0.72rem; padding:0.25rem 0.6rem;">
+            <i class="fa-solid fa-plus"></i> Create or Join a Work Team
+          </a>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = myTeams.map(team => {
+    const isPic = team.personInCharge?.spn === spn;
+    return `
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:6px; padding:0.65rem 0.85rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <strong style="font-size:0.88rem; color:var(--primary-navy);">${team.name}</strong>
+            ${isPic ? '<span style="font-size:0.65rem; background:#FEF3C7; color:#92400E; padding:0.1rem 0.4rem; border-radius:4px; font-weight:800;"><i class="fa-solid fa-star"></i> PIC</span>' : ''}
+          </div>
+          <span style="font-size:0.74rem; color:var(--text-muted);">
+            ${team.sectorLabel} • ${team.members?.length || 0} crew members • ${team.jobs?.length || 0} active jobs
+          </span>
+        </div>
+        <a href="/customer-admin.html?view=work-teams&team=${team.id}" class="btn btn-outline btn-sm" style="font-size:0.72rem; padding:0.25rem 0.6rem; color:#2563EB; border-color:#BFDBFE; text-decoration:none;">
+          <i class="fa-solid fa-arrow-right"></i> Open Crew Board
+        </a>
+      </div>
+    `;
+  }).join('');
+}
+window.loadProviderWorkTeamsSummary = loadProviderWorkTeamsSummary;
 
 function toggleProviderAdminPause() {
   if (!currentAdminProviderId) return;

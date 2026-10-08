@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --port 3000",
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force 'node_modules\\.vite' -ErrorAction SilentlyContinue\"",
     "build": "vite build",
     "preview": "vite preview --port 3000"
   },

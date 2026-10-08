@@ -167,662 +167,1613 @@
         </div>
       </div>
 
-      <!-- Customer Profile Header Card -->
-      <div class="admin-card" style="background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%); color:#fff; border:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem;">
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <div style="width:60px; height:60px; border-radius:50%; background:#fff; border:3px solid #93C5FD; display:flex; align-items:center; justify-content:center; color:#1E40AF; font-size:1.75rem;">
-              <i class="fa-solid fa-user-shield" id="customer-avatar-icon"></i>
+      <!-- Top Navigation Tabs Switcher -->
+      <div class="admin-tab-nav" id="admin-main-tabs">
+        <button type="button" class="admin-tab-btn active" id="tab-btn-teams" onclick="switchAdminMainView('work-teams')">
+          <i class="fa-solid fa-people-group" style="color:var(--brand-orange);"></i> Work Teams & Multi-Person Crews
+        </button>
+        <button type="button" class="admin-tab-btn" id="tab-btn-customer" onclick="switchAdminMainView('customer-controls')">
+          <i class="fa-solid fa-sliders"></i> Customer Schedule & Budget Settings
+        </button>
+      </div>
+
+      <!-- =========================================================================
+           VIEW A: WORK TEAMS & MULTI-PERSON DISPATCH (FRANCHISES & SERVICE PROVIDERS)
+           ========================================================================= -->
+      <div id="view-work-teams-panel">
+        
+        <!-- Summary Stats Grid -->
+        <div class="team-stats-grid">
+          <div class="team-stat-card">
+            <div class="team-stat-icon" style="background:#EFF6FF; color:#2563EB;">
+              <i class="fa-solid fa-people-group"></i>
             </div>
             <div>
-              <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#BFDBFE; font-weight:800;">
-                Customer Admin Dashboard
+              <div class="team-stat-number" id="stats-total-teams">3</div>
+              <div class="team-stat-label">Active Work Teams</div>
+            </div>
+          </div>
+          <div class="team-stat-card">
+            <div class="team-stat-icon" style="background:#FEF3C7; color:#D97706;">
+              <i class="fa-solid fa-id-badge"></i>
+            </div>
+            <div>
+              <div class="team-stat-number" id="stats-total-members">10</div>
+              <div class="team-stat-label">Registered Tradies</div>
+            </div>
+          </div>
+          <div class="team-stat-card">
+            <div class="team-stat-icon" style="background:#ECFDF5; color:#059669;">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div>
+              <div class="team-stat-number" id="stats-total-jobs">3</div>
+              <div class="team-stat-label">Active Work Orders</div>
+            </div>
+          </div>
+          <div class="team-stat-card">
+            <div class="team-stat-icon" style="background:#FAF5FF; color:#7E22CE;">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div>
+              <div class="team-stat-number" id="stats-total-value">$7,616</div>
+              <div class="team-stat-label">Total Crew Value</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Team Selector & Action Toolbar -->
+        <div class="work-team-selector-bar">
+          <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; flex:1;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <label for="team-sector-filter" style="font-size:0.78rem; font-weight:700; color:var(--text-muted);"><i class="fa-solid fa-filter"></i> Sector:</label>
+              <select id="team-sector-filter" class="form-control" style="font-size:0.8rem; height:36px; padding:0.2rem 0.5rem; width:auto;" onchange="handleTeamFilterChange()">
+                <option value="all">All Sectors</option>
+                <option value="construction">Construction & Civil</option>
+                <option value="horticulture">Horticulture & Trees</option>
+                <option value="machinery">Heavy Machinery & Plant</option>
+                <option value="electrical">Electrical & Solar</option>
+                <option value="plumbing">Plumbing & Drainage</option>
+              </select>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:220px;">
+              <label for="active-team-select" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); white-space:nowrap;">Active Crew:</label>
+              <select id="active-team-select" class="form-control" style="font-size:0.85rem; height:38px; font-weight:700; color:var(--primary-navy);" onchange="switchActiveWorkTeam(this.value)">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0.5rem;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openCreateTeamModal()" style="font-weight:800; white-space:nowrap;">
+              <i class="fa-solid fa-plus"></i> Create New Work Team
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Work Team Hero Card -->
+        <div class="work-team-hero" id="active-team-hero">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1.25rem;">
+            <div style="flex:1; min-width:280px;">
+              <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+                <span class="sector-pill" id="team-hero-sector-pill">
+                  <i class="fa-solid fa-trowel-bricks"></i> Construction & Civil
+                </span>
+                <span style="font-size:0.75rem; background:rgba(255,255,255,0.15); padding:0.25rem 0.6rem; border-radius:12px; color:#E2E8F0;" id="team-hero-owner-badge">
+                  <i class="fa-solid fa-shield-halved"></i> Service Provider Lead
+                </span>
               </div>
-              <h2 style="margin:0; font-size:1.5rem; font-weight:900; color:#fff;" id="customer-profile-name">
-                David Anderson
+              <h2 style="margin:0 0 0.4rem 0; font-size:1.55rem; font-weight:900; color:#FFFFFF;" id="team-hero-name">
+                Gold Coast Civil & Concreting Crew
               </h2>
-              <div style="font-size:0.82rem; color:#DBEAFE; margin-top:0.2rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
-                <span><i class="fa-solid fa-id-card"></i> <strong id="customer-profile-crn">CRN-882041</strong></span>
-                <span><i class="fa-solid fa-envelope"></i> <span id="customer-profile-email">david.anderson@example.com</span></span>
-                <span><i class="fa-solid fa-phone"></i> <span id="customer-profile-phone">0412 345 678</span></span>
+              <p style="margin:0; font-size:0.85rem; color:#CBD5E1; line-height:1.5;" id="team-hero-desc">
+                Specialized 4-person commercial slab, formwork, reinforcement, and structural concreting team.
+              </p>
+            </div>
+
+            <!-- Person In Charge Spotlight Card -->
+            <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.22); border-radius:var(--radius-sm); padding:0.85rem 1.15rem; min-width:260px;">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <img id="team-hero-pic-avatar" src="assets/images/tradie_worker.jpg" alt="Person In Charge" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid #F59E0B;">
+                <div>
+                  <div style="font-size:0.68rem; color:#FCD34D; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="fa-solid fa-star"></i> PERSON IN CHARGE (PIC)
+                  </div>
+                  <strong style="display:block; font-size:0.95rem; color:#FFFFFF;" id="team-hero-pic-name">
+                    Lachlan 'Lockie' Miller
+                  </strong>
+                  <span style="font-size:0.75rem; color:#E2E8F0;" id="team-hero-pic-phone">
+                    <i class="fa-solid fa-phone"></i> 0412 345 678
+                  </span>
+                </div>
+              </div>
+              <div style="margin-top:0.5rem; padding-top:0.45rem; border-top:1px solid rgba(255,255,255,0.15); font-size:0.72rem; color:#93C5FD;" id="team-hero-pic-trade">
+                SPN-101001 • Licensed Master Plumber & Civil Concreter
               </div>
             </div>
           </div>
-
-          <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
-            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.9rem; text-align:right;">
-              <div style="font-size:0.7rem; color:#BFDBFE; font-weight:700;">APPROVED RATE CAP</div>
-              <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="customer-header-rate-cap">$95.00 / hr</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 1. Pause / Resume Service Status Controller -->
-      <div class="admin-card" id="admin-pause-card">
-        <div class="admin-card-header">
-          <h3 class="admin-card-title">
-            <i class="fa-solid fa-circle-pause" style="color:#F59E0B;"></i> 1. Service Status Controller (Pause / Resume)
-          </h3>
-          <span class="status-badge-live active" id="customer-pause-status-pill">
-            Service Active
-          </span>
         </div>
 
-        <div class="profile-status-box" id="customer-status-box">
-          <div class="profile-status-header">
+        <!-- Section 1: Registered Members Roster -->
+        <div class="admin-card">
+          <div class="admin-card-header">
             <div>
-              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Live Dispatch & Booking Status:</span>
-              <div style="margin-top:0.25rem;">
-                <strong id="customer-status-headline" style="color:#059669; font-size:1.05rem;">
-                  🟢 ACTIVE - Ready for Service Requests & Dispatch
-                </strong>
-              </div>
+              <h3 class="admin-card-title">
+                <i class="fa-solid fa-users" style="color:#2563EB;"></i> 1. Registered Members Roster
+              </h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">
+                Verified platform service providers & technicians operating together in this work team
+              </span>
             </div>
             <div>
-              <button type="button" class="status-switch-btn btn-pause" id="btn-toggle-customer-pause" onclick="toggleCustomerPauseState()">
-                <i class="fa-solid fa-circle-pause"></i> Pause My Service
+              <button type="button" class="btn btn-outline btn-sm" onclick="openAddMemberModal()" style="font-weight:700; color:#2563EB; border-color:#BFDBFE; background:#EFF6FF;">
+                <i class="fa-solid fa-user-plus"></i> Add Registered Member
               </button>
             </div>
           </div>
 
-          <p id="customer-status-desc" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.5;">
-            Your account is currently <strong>ACTIVE</strong>. You can book emergency, after-hours, and scheduled contractors 24/7. When you pause your service, upcoming auto-dispatches and booking notifications will be safely placed on hold.
-          </p>
-
-          <div id="customer-pause-reason-wrapper" style="margin-top:0.75rem;">
-            <label class="input-label" for="customer-pause-reason" style="font-size:0.78rem;">
-              Reason for Pause / Note (e.g. On vacation, home renovations, budget hold):
-            </label>
-            <div style="display:flex; gap:0.5rem;">
-              <input type="text" id="customer-pause-reason" class="form-control" placeholder="e.g. Taking annual leave until next week, property locked">
-              <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerPauseReason()" style="white-space:nowrap; font-weight:700;">
-                <i class="fa-solid fa-check"></i> Save Note
-              </button>
-            </div>
+          <div class="roster-grid" id="team-roster-grid">
+            <!-- Dynamically populated via renderTeamRoster() -->
           </div>
         </div>
-      </div>
 
-      <!-- 2. Interactive Calendar & Turn ON / OFF Dates -->
-      <div class="admin-card">
-        <div class="admin-card-header">
-          <h3 class="admin-card-title">
-            <i class="fa-solid fa-calendar-days" style="color:#2563EB;"></i> 2. Calendar & Turn ON / OFF Dates
-          </h3>
-          <span style="font-size:0.75rem; color:var(--text-muted);">
-            Turn off specific days when you are away or unavailable for visits
-          </span>
-        </div>
-
-        <!-- Google Calendar 2-Way Sync Box -->
-        <div class="gcal-sync-card" style="margin-bottom:1.25rem;">
-          <div class="gcal-sync-header">
+        <!-- Section 2: Group Communication Hub (Team Chat) -->
+        <div class="team-chat-wrapper">
+          <div class="team-chat-header">
             <div style="display:flex; align-items:center; gap:0.6rem;">
-              <div style="width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid #DBEAFE; display:flex; align-items:center; justify-content:center;">
-                <svg width="20" height="20" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
+              <div style="width:34px; height:34px; border-radius:8px; background:#EFF6FF; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                <i class="fa-solid fa-comments"></i>
               </div>
               <div>
-                <h5 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--primary-navy);">
-                  Google Calendar 2-Way Synchronization
-                </h5>
-                <span style="font-size:0.75rem; color:var(--text-muted);" id="customer-gcal-status-text">
-                  Connected as: <strong id="customer-gcal-email">david.anderson@example.com</strong>
+                <h4 style="margin:0; font-size:0.95rem; font-weight:800; color:var(--primary-navy);">
+                  2. Team Inter-Communication & Live Site Board
+                </h4>
+                <span style="font-size:0.74rem; color:var(--text-muted);">
+                  Real-time updates, hazard alerts, materials delivery notices & crew coordination
                 </span>
               </div>
             </div>
-            <div>
-              <span class="gcal-badge-connected" id="customer-gcal-badge">
-                <i class="fa-solid fa-circle-check"></i> Google Calendar Connected
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span class="status-badge-live active" style="font-size:0.72rem; padding:0.2rem 0.6rem;">
+                ● Crew Connected
               </span>
             </div>
           </div>
 
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.45;">
-            Scheduled contractor bookings and maintenance jobs automatically sync to your personal Google Calendar.
-          </p>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #DBEAFE; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:0.75rem;">
-            <div>
-              <strong style="font-size:0.82rem; color:var(--primary-navy); display:block;">
-                <i class="fa-solid fa-calendar-xmark" style="color:#EF4444;"></i> Auto-Block Busy Google Calendar Dates
-              </strong>
-              <span style="font-size:0.74rem; color:var(--text-muted);">
-                Do not allow contractor visits or deliveries when you have existing appointments on your Google Calendar
-              </span>
-            </div>
-            <div>
-              <label class="switch">
-                <input type="checkbox" id="customer-gcal-autoblock" checked onchange="saveCustomerGcalAutoblock(this.checked)">
-                <span class="slider round"></span>
-              </label>
-            </div>
+          <!-- Chat Stream -->
+          <div class="chat-messages-container" id="team-chat-messages">
+            <!-- Dynamically populated via renderTeamChat() -->
           </div>
 
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="syncCustomerGoogleCalendarNow()">
-              <i class="fa-solid fa-rotate"></i> Sync With Google Calendar Now
-            </button>
-            <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm" style="color:#2563EB; border-color:#93C5FD; text-decoration:none;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Calendar
-            </a>
+          <!-- Composer & Quick Actions -->
+          <div class="chat-composer-box">
+            <div class="chat-quick-actions">
+              <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); align-self:center;">Quick Status:</span>
+              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('👷 On site at location. Commencing site setup and safety checklist.', 'general')">👷 On Site</button>
+              <button type="button" class="chat-quick-chip" style="color:#B91C1C; border-color:#FECACA; background:#FEF2F2;" onclick="sendQuickChatMessage('⚠️ Safety Notice: Mandatory exclusion zone active. High-vis & hard hats required.', 'safety')">⚠️ Safety / Hazard</button>
+              <button type="button" class="chat-quick-chip" style="color:#047857; border-color:#A7F3D0; background:#ECFDF5;" onclick="sendQuickChatMessage('📦 Materials delivery arrived on site. Unloading now.', 'materials')">📦 Materials Arrived</button>
+              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('🌧️ Weather hold: Heavy downpour. Pausing outdoor pour for 30 minutes.', 'general')">🌧️ Weather Delay</button>
+              <button type="button" class="chat-quick-chip" style="color:#6D28D9; border-color:#DDD6FE; background:#F5F3FF;" onclick="sendQuickChatMessage('✅ Job milestone signed off and completed.', 'general')">✅ Milestone Done</button>
+            </div>
+
+            <form id="team-chat-form" onsubmit="handleSendChatMessage(event)" style="display:flex; gap:0.5rem;">
+              <input type="text" id="chat-input-text" class="form-control" placeholder="Type a message or instruction to all team members..." required style="font-size:0.85rem;">
+              <select id="chat-message-type" class="form-control" style="width:140px; font-size:0.78rem;">
+                <option value="general">💬 General</option>
+                <option value="safety">⚠️ Safety Alert</option>
+                <option value="materials">📦 Materials</option>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm" style="font-weight:800; white-space:nowrap; padding:0 1.25rem;">
+                <i class="fa-solid fa-paper-plane"></i> Send
+              </button>
+            </form>
           </div>
         </div>
 
-        <!-- Turn Off Dates Controller -->
-        <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1.25rem;">
-          <h5 style="margin:0 0 0.5rem 0; font-size:0.92rem; color:var(--primary-navy); font-weight:800;">
-            <i class="fa-solid fa-ban" style="color:#EF4444;"></i> Turn Off Specific Dates (Blackout Schedule)
-          </h5>
-          <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
-            Add dates when you will NOT be home or do not want any service providers dispatched to your address:
-          </p>
-
-          <!-- Quick Presets -->
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
-            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Quick Presets:</span>
-            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('weekends_off')">Turn Off Weekends</button>
-            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_7_off')">Turn Off Next 7 Days</button>
-            <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_14_off')">Turn Off Next 14 Days (Holiday)</button>
-            <button type="button" class="preset-pill-btn" style="color:#16A34A; border-color:#86EFAC;" onclick="applyCustomerDatePreset('all_on')">Turn All Dates ON</button>
-          </div>
-
-          <!-- Add Date Form -->
-          <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
-            <div class="input-group" style="margin-bottom:0; flex:1;">
-              <label class="input-label" for="new-blackout-date" style="font-size:0.75rem;">Select Date to Turn OFF</label>
-              <input type="date" id="new-blackout-date" class="form-control">
-            </div>
-            <div class="input-group" style="margin-bottom:0; flex:2;">
-              <label class="input-label" for="new-blackout-reason" style="font-size:0.75rem;">Reason (Optional)</label>
-              <input type="text" id="new-blackout-reason" class="form-control" placeholder="e.g. Away on business, flooring being stained">
+        <!-- Section 3: Person in Charge Work Dispatch & Job Orders -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h3 class="admin-card-title">
+                <i class="fa-solid fa-clipboard-list" style="color:#059669;"></i> 3. Person in Charge Work Dispatch & Job Orders
+              </h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">
+                The Person in Charge (PIC) assigns the work required, designates who will do it, sets job dates, and configures individual pricing (including franchise royalties)
+              </span>
             </div>
             <div>
-              <button type="button" class="btn btn-outline btn-sm" onclick="addCustomerBlackoutDate()" style="height:42px; font-weight:700; color:#EF4444; border-color:#FCA5A5;">
-                <i class="fa-solid fa-plus"></i> Turn Off Date
+              <button type="button" class="btn btn-primary btn-sm" onclick="openCreateJobModal()" style="font-weight:800; background:#059669; border-color:#059669;">
+                <i class="fa-solid fa-plus-circle"></i> Assign Work / Dispatch Team
               </button>
             </div>
           </div>
 
-          <!-- Currently Blocked Dates List -->
-          <div>
-            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-              Currently Turned OFF Dates (Click &times; to turn back ON):
-            </span>
-            <div id="customer-blocked-dates-list" style="min-height:36px;">
-              <!-- Populated dynamically via renderBlockedDates() -->
-            </div>
-          </div>
-
-          <!-- Preferred Time Windows -->
-          <div style="margin-top:1.25rem; border-top:1px solid var(--border-light); padding-top:1rem;">
-            <span style="font-size:0.78rem; font-weight:700; color:var(--primary-navy); display:block; margin-bottom:0.5rem;">
-              Preferred Daily Service Windows:
-            </span>
-            <div style="display:flex; gap:1.25rem; flex-wrap:wrap;">
-              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                <input type="checkbox" id="pref-window-morning" checked onchange="saveCustomerWindowPreferences()">
-                <span>Morning (8:00 AM - 12:00 PM)</span>
-              </label>
-              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                <input type="checkbox" id="pref-window-afternoon" checked onchange="saveCustomerWindowPreferences()">
-                <span>Afternoon (12:00 PM - 5:00 PM)</span>
-              </label>
-              <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                <input type="checkbox" id="pref-window-evening" onchange="saveCustomerWindowPreferences()">
-                <span>Evening (5:00 PM - 9:00 PM)</span>
-              </label>
-            </div>
+          <!-- Jobs Container -->
+          <div id="team-jobs-list">
+            <!-- Dynamically populated via renderTeamJobs() -->
           </div>
         </div>
+
       </div>
 
-      <!-- 3. Rates & Pricing Budget Settings (If they want to change) -->
-      <div class="admin-card">
-        <div class="admin-card-header">
-          <h3 class="admin-card-title">
-            <i class="fa-solid fa-dollar-sign" style="color:#10B981;"></i> 3. Rates & Pricing Preferences
-          </h3>
-          <span style="font-size:0.75rem; color:var(--text-muted);">
-            Set your budget limits and approved pricing ceilings for trade services
-          </span>
-        </div>
+      <!-- =========================================================================
+           VIEW B: ORIGINAL CUSTOMER PROFILE & SERVICE SETTINGS
+           ========================================================================= -->
+      <div id="view-customer-controls-panel" style="display:none;">
 
-        <form id="customer-rates-form" onsubmit="event.preventDefault(); saveCustomerRates();">
-          <div class="form-row">
-            <div class="input-group">
-              <label class="input-label" for="cust-rate-hourly-cap">
-                Standard Hourly Rate Cap ($)
-              </label>
-              <div class="input-with-unit">
-                <span class="currency-prefix">$</span>
-                <input type="number" id="cust-rate-hourly-cap" class="form-control" value="95.00" min="40" max="300" step="1.00">
-                <span class="unit-suffix">/ hr</span>
+        <!-- Customer Profile Header Card -->
+        <div class="admin-card" style="background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%); color:#fff; border:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem;">
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <div style="width:60px; height:60px; border-radius:50%; background:#fff; border:3px solid #93C5FD; display:flex; align-items:center; justify-content:center; color:#1E40AF; font-size:1.75rem;">
+                <i class="fa-solid fa-user-shield" id="customer-avatar-icon"></i>
               </div>
-              <span class="input-help">The AI matching engine will prioritize qualified trades under this hourly ceiling.</span>
+              <div>
+                <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#BFDBFE; font-weight:800;">
+                  Customer Admin Dashboard
+                </div>
+                <h2 style="margin:0; font-size:1.5rem; font-weight:900; color:#fff;" id="customer-profile-name">
+                  David Anderson
+                </h2>
+                <div style="font-size:0.82rem; color:#DBEAFE; margin-top:0.2rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                  <span><i class="fa-solid fa-id-card"></i> <strong id="customer-profile-crn">CRN-882041</strong></span>
+                  <span><i class="fa-solid fa-envelope"></i> <span id="customer-profile-email">david.anderson@example.com</span></span>
+                  <span><i class="fa-solid fa-phone"></i> <span id="customer-profile-phone">0412 345 678</span></span>
+                </div>
+              </div>
             </div>
 
-            <div class="input-group">
-              <label class="input-label" for="cust-rate-callout-cap">
-                Standard Callout Fee Cap ($)
-              </label>
-              <div class="input-with-unit">
-                <span class="currency-prefix">$</span>
-                <input type="number" id="cust-rate-callout-cap" class="form-control" value="65.00" min="0" max="250" step="1.00">
-                <span class="unit-suffix">flat</span>
+            <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
+              <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.9rem; text-align:right;">
+                <div style="font-size:0.7rem; color:#BFDBFE; font-weight:700;">APPROVED RATE CAP</div>
+                <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="customer-header-rate-cap">$95.00 / hr</div>
               </div>
-              <span class="input-help">Maximum initial callout / diagnostic attendance fee accepted.</span>
             </div>
           </div>
+        </div>
 
-          <div class="form-row">
-            <div class="input-group">
-              <label class="input-label" for="cust-emergency-rate-allowance">
-                Emergency & After-Hours Rate Multiplier
-              </label>
-              <select id="cust-emergency-rate-allowance" class="form-control">
-                <option value="standard">Standard Rates Only (No Emergency Surcharge)</option>
-                <option value="1.25">Up to +25% Emergency Surcharge Permitted</option>
-                <option value="1.5" selected>Up to +50% After-Hours / Weekend Surcharge Permitted</option>
-                <option value="2.0">Up to 2x Double Time Permitted (Critical Immediate Repairs)</option>
-              </select>
-              <span class="input-help">Controls rate tolerance for urgent 24/7 callouts.</span>
+        <!-- 1. Pause / Resume Service Status Controller -->
+        <div class="admin-card" id="admin-pause-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">
+              <i class="fa-solid fa-circle-pause" style="color:#F59E0B;"></i> 1. Service Status Controller (Pause / Resume)
+            </h3>
+            <span class="status-badge-live active" id="customer-pause-status-pill">
+              Service Active
+            </span>
+          </div>
+
+          <div class="profile-status-box" id="customer-status-box">
+            <div class="profile-status-header">
+              <div>
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Live Dispatch & Booking Status:</span>
+                <div style="margin-top:0.25rem;">
+                  <strong id="customer-status-headline" style="color:#059669; font-size:1.05rem;">
+                    🟢 ACTIVE - Ready for Service Requests & Dispatch
+                  </strong>
+                </div>
+              </div>
+              <div>
+                <button type="button" class="status-switch-btn btn-pause" id="btn-toggle-customer-pause" onclick="toggleCustomerPauseState()">
+                  <i class="fa-solid fa-circle-pause"></i> Pause My Service
+                </button>
+              </div>
             </div>
 
-            <div class="input-group">
-              <label class="input-label" for="cust-max-travel-distance">
-                Maximum Travel Distance
+            <p id="customer-status-desc" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.5;">
+              Your account is currently <strong>ACTIVE</strong>. You can book emergency, after-hours, and scheduled contractors 24/7. When you pause your service, upcoming auto-dispatches and booking notifications will be safely placed on hold.
+            </p>
+
+            <div id="customer-pause-reason-wrapper" style="margin-top:0.75rem;">
+              <label class="input-label" for="customer-pause-reason" style="font-size:0.78rem;">
+                Reason for Pause / Note (e.g. On vacation, home renovations, budget hold):
               </label>
               <div style="display:flex; gap:0.5rem;">
-                <input type="number" id="cust-max-travel-distance" class="form-control" value="35" min="5" max="250" style="flex:1;">
-                <select id="cust-distance-unit" class="form-control" style="width:170px; font-size:0.75rem; padding:0.25rem 0.4rem;">
-                  <option value="km" selected>Per Kilometre (km)</option>
-                  <option value="miles">Per Mile (mi)</option>
-                </select>
+                <input type="text" id="customer-pause-reason" class="form-control" placeholder="e.g. Taking annual leave until next week, property locked">
+                <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerPauseReason()" style="white-space:nowrap; font-weight:700;">
+                  <i class="fa-solid fa-check"></i> Save Note
+                </button>
               </div>
-              <span class="input-help">Maximum radius for contractor dispatch from your property.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Calendar & Turn ON / OFF Dates -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">
+              <i class="fa-solid fa-calendar-days" style="color:#2563EB;"></i> 2. Calendar & Turn ON / OFF Dates
+            </h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);">
+              Turn off specific days when you are away or unavailable for visits
+            </span>
+          </div>
+
+          <!-- Google Calendar 2-Way Sync Box -->
+          <div class="gcal-sync-card" style="margin-bottom:1.25rem;">
+            <div class="gcal-sync-header">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid #DBEAFE; display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h5 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--primary-navy);">
+                    Google Calendar 2-Way Synchronization
+                  </h5>
+                  <span style="font-size:0.75rem; color:var(--text-muted);" id="customer-gcal-status-text">
+                    Connected as: <strong id="customer-gcal-email">david.anderson@example.com</strong>
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span class="gcal-badge-connected" id="customer-gcal-badge">
+                  <i class="fa-solid fa-circle-check"></i> Google Calendar Connected
+                </span>
+              </div>
+            </div>
+
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.45;">
+              Scheduled contractor bookings and maintenance jobs automatically sync to your personal Google Calendar.
+            </p>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #DBEAFE; border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:0.75rem;">
+              <div>
+                <strong style="font-size:0.82rem; color:var(--primary-navy); display:block;">
+                  <i class="fa-solid fa-calendar-xmark" style="color:#EF4444;"></i> Auto-Block Busy Google Calendar Dates
+                </strong>
+                <span style="font-size:0.74rem; color:var(--text-muted);">
+                  Do not allow contractor visits or deliveries when you have existing appointments on your Google Calendar
+                </span>
+              </div>
+              <div>
+                <label class="switch">
+                  <input type="checkbox" id="customer-gcal-autoblock" checked onchange="saveCustomerGcalAutoblock(this.checked)">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="syncCustomerGoogleCalendarNow()">
+                <i class="fa-solid fa-rotate"></i> Sync With Google Calendar Now
+              </button>
+              <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm" style="color:#2563EB; border-color:#93C5FD; text-decoration:none;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Calendar
+              </a>
             </div>
           </div>
 
-          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.75rem;">
-            <button type="submit" class="btn btn-primary" style="font-weight:800; padding:0.65rem 1.4rem;">
-              <i class="fa-solid fa-floppy-disk"></i> Save Rate Changes & Budget Preferences
-            </button>
+          <!-- Turn Off Dates Controller -->
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:1.25rem;">
+            <h5 style="margin:0 0 0.5rem 0; font-size:0.92rem; color:var(--primary-navy); font-weight:800;">
+              <i class="fa-solid fa-ban" style="color:#EF4444;"></i> Turn Off Specific Dates (Blackout Schedule)
+            </h5>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
+              Add dates when you will NOT be home or do not want any service providers dispatched to your address:
+            </p>
+
+            <!-- Quick Presets -->
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Quick Presets:</span>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('weekends_off')">Turn Off Weekends</button>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_7_off')">Turn Off Next 7 Days</button>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_14_off')">Turn Off Next 14 Days (Holiday)</button>
+              <button type="button" class="preset-pill-btn" style="color:#16A34A; border-color:#86EFAC;" onclick="applyCustomerDatePreset('all_on')">Turn All Dates ON</button>
+            </div>
+
+            <!-- Add Date Form -->
+            <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
+              <div class="input-group" style="margin-bottom:0; flex:1;">
+                <label class="input-label" for="new-blackout-date" style="font-size:0.75rem;">Select Date to Turn OFF</label>
+                <input type="date" id="new-blackout-date" class="form-control">
+              </div>
+              <div class="input-group" style="margin-bottom:0; flex:2;">
+                <label class="input-label" for="new-blackout-reason" style="font-size:0.75rem;">Reason (Optional)</label>
+                <input type="text" id="new-blackout-reason" class="form-control" placeholder="e.g. Away on business, flooring being stained">
+              </div>
+              <div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addCustomerBlackoutDate()" style="height:42px; font-weight:700; color:#EF4444; border-color:#FCA5A5;">
+                  <i class="fa-solid fa-plus"></i> Turn Off Date
+                </button>
+              </div>
+            </div>
+
+            <!-- Currently Blocked Dates List -->
+            <div>
+              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                Currently Turned OFF Dates (Click &times; to turn back ON):
+              </span>
+              <div id="customer-blocked-dates-list" style="min-height:36px;">
+                <!-- Populated dynamically via renderBlockedDates() -->
+              </div>
+            </div>
+
+            <!-- Preferred Time Windows -->
+            <div style="margin-top:1.25rem; border-top:1px solid var(--border-light); padding-top:1rem;">
+              <span style="font-size:0.78rem; font-weight:700; color:var(--primary-navy); display:block; margin-bottom:0.5rem;">
+                Preferred Daily Service Windows:
+              </span>
+              <div style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                  <input type="checkbox" id="pref-window-morning" checked onchange="saveCustomerWindowPreferences()">
+                  <span>Morning (8:00 AM - 12:00 PM)</span>
+                </label>
+                <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                  <input type="checkbox" id="pref-window-afternoon" checked onchange="saveCustomerWindowPreferences()">
+                  <span>Afternoon (12:00 PM - 5:00 PM)</span>
+                </label>
+                <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                  <input type="checkbox" id="pref-window-evening" onchange="saveCustomerWindowPreferences()">
+                  <span>Evening (5:00 PM - 9:00 PM)</span>
+                </label>
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
-
-      <!-- 4. Scheduled Bookings & Service History -->
-      <div class="admin-card">
-        <div class="admin-card-header">
-          <h3 class="admin-card-title">
-            <i class="fa-solid fa-list-check" style="color:#6366F1;"></i> 4. Active & Scheduled Bookings
-          </h3>
-          <span style="font-size:0.75rem; color:var(--text-muted);">
-            Manage confirmed visits, view invoices, or reschedule
-          </span>
         </div>
 
-        <div class="table-responsive">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Booking #</th>
-                <th>Trade Service</th>
-                <th>Contractor</th>
-                <th>Date & Time</th>
-                <th>Rate Quoted</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="customer-bookings-table-body">
-              <tr>
-                <td><strong>#BK-90214</strong></td>
-                <td><span style="background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Plumbing</span></td>
-                <td>Lachlan Miller (SPN-101001)</td>
-                <td>Tomorrow, 9:30 AM</td>
-                <td>$85.00/hr</td>
-                <td><span style="color:#059669; font-weight:700;">🟢 Confirmed</span></td>
-                <td>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reschedule</button>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>#BK-88421</strong></td>
-                <td><span style="background:#FFF7ED; color:#C2410C; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Electrical</span></td>
-                <td>Jack Morrison (SPN-101002)</td>
-                <td>Friday, 2:00 PM</td>
-                <td>$90.00/hr</td>
-                <td><span style="color:#2563EB; font-weight:700;">⏳ Dispatched</span></td>
-                <td>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;">Cancel</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 3. Rates & Pricing Budget Settings -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">
+              <i class="fa-solid fa-dollar-sign" style="color:#10B981;"></i> 3. Rates & Pricing Preferences
+            </h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);">
+              Set your budget limits and approved pricing ceilings for trade services
+            </span>
+          </div>
+
+          <form id="customer-rates-form" onsubmit="event.preventDefault(); saveCustomerRates();">
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="cust-rate-hourly-cap">
+                  Standard Hourly Rate Cap ($)
+                </label>
+                <div class="input-with-unit">
+                  <span class="currency-prefix">$</span>
+                  <input type="number" id="cust-rate-hourly-cap" class="form-control" value="95.00" min="40" max="300" step="1.00">
+                  <span class="unit-suffix">/ hr</span>
+                </div>
+                <span class="input-help">The AI matching engine will prioritize qualified trades under this hourly ceiling.</span>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label" for="cust-rate-callout-cap">
+                  Standard Callout Fee Cap ($)
+                </label>
+                <div class="input-with-unit">
+                  <span class="currency-prefix">$</span>
+                  <input type="number" id="cust-rate-callout-cap" class="form-control" value="65.00" min="0" max="250" step="1.00">
+                  <span class="unit-suffix">flat</span>
+                </div>
+                <span class="input-help">Maximum initial callout / diagnostic attendance fee accepted.</span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label" for="cust-emergency-rate-allowance">
+                  Emergency & After-Hours Rate Multiplier
+                </label>
+                <select id="cust-emergency-rate-allowance" class="form-control">
+                  <option value="standard">Standard Rates Only (No Emergency Surcharge)</option>
+                  <option value="1.25">Up to +25% Emergency Surcharge Permitted</option>
+                  <option value="1.5" selected>Up to +50% After-Hours / Weekend Surcharge Permitted</option>
+                  <option value="2.0">Up to 2x Double Time Permitted (Critical Immediate Repairs)</option>
+                </select>
+                <span class="input-help">Controls rate tolerance for urgent 24/7 callouts.</span>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label" for="cust-max-travel-distance">
+                  Maximum Travel Distance
+                </label>
+                <div style="display:flex; gap:0.5rem;">
+                  <input type="number" id="cust-max-travel-distance" class="form-control" value="35" min="5" max="250" style="flex:1;">
+                  <select id="cust-distance-unit" class="form-control" style="width:170px; font-size:0.75rem; padding:0.25rem 0.4rem;">
+                    <option value="km" selected>Per Kilometre (km)</option>
+                    <option value="miles">Per Mile (mi)</option>
+                  </select>
+                </div>
+                <span class="input-help">Maximum radius for contractor dispatch from your property.</span>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.75rem;">
+              <button type="submit" class="btn btn-primary" style="font-weight:800; padding:0.65rem 1.4rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Rate Changes & Budget Preferences
+              </button>
+            </div>
+          </form>
         </div>
+
+        <!-- 4. Scheduled Bookings & Service History -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">
+              <i class="fa-solid fa-list-check" style="color:#6366F1;"></i> 4. Active & Scheduled Bookings
+            </h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);">
+              Manage confirmed visits, view invoices, or reschedule
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Booking #</th>
+                  <th>Trade Service</th>
+                  <th>Contractor</th>
+                  <th>Date & Time</th>
+                  <th>Rate Quoted</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customer-bookings-table-body">
+                <tr>
+                  <td><strong>#BK-90214</strong></td>
+                  <td><span style="background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Plumbing</span></td>
+                  <td>Lachlan Miller (SPN-101001)</td>
+                  <td>Tomorrow, 9:30 AM</td>
+                  <td>$85.00/hr</td>
+                  <td><span style="color:#059669; font-weight:700;">🟢 Confirmed</span></td>
+                  <td>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reschedule</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>#BK-88421</strong></td>
+                  <td><span style="background:#FFF7ED; color:#C2410C; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Electrical</span></td>
+                  <td>Jack Morrison (SPN-101002)</td>
+                  <td>Friday, 2:00 PM</td>
+                  <td>$90.00/hr</td>
+                  <td><span style="color:#2563EB; font-weight:700;">⏳ Dispatched</span></td>
+                  <td>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;">Cancel</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </div>
   </main>
+
+  <!-- =========================================================================
+       MODAL 1: CREATE NEW WORK TEAM
+       ========================================================================= -->
+  <div class="work-team-modal" id="modal-create-team">
+    <div class="work-team-modal-box">
+      <div class="modal-header" style="background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color:#fff; padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:36px; height:36px; border-radius:8px; background:var(--brand-orange); display:flex; align-items:center; justify-content:center; color:#fff;">
+            <i class="fa-solid fa-people-group"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.15rem; color:#fff; font-weight:800;">Create New Work Team</h4>
+            <span style="font-size:0.75rem; color:#94A3B8;">Multi-person team for construction, horticulture, machinery, etc.</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeCreateTeamModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="form-create-team" onsubmit="handleCreateTeamSubmit(event)" style="padding:1.5rem;">
+        <div class="form-row">
+          <div class="input-group" style="flex:2;">
+            <label class="input-label" for="new-team-name">Work Team Name</label>
+            <input type="text" id="new-team-name" class="form-control" required placeholder="e.g. Hinterland Commercial Earthmoving Crew">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label" for="new-team-sector">Sector / Trade Field</label>
+            <select id="new-team-sector" class="form-control" required>
+              <option value="construction">Construction & Civil</option>
+              <option value="horticulture">Horticulture & Landscaping</option>
+              <option value="machinery">Heavy Machinery & Plant</option>
+              <option value="electrical">Electrical & Solar</option>
+              <option value="plumbing">Plumbing & Drainage</option>
+              <option value="cleaning">Commercial Cleaning</option>
+              <option value="logistics">Logistics & Courier Removals</option>
+              <option value="general">Multi-Discipline Trade Team</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label class="input-label" for="new-team-owner-type">Operating Structure</label>
+            <select id="new-team-owner-type" class="form-control" onchange="toggleTeamOwnerFields(this.value)">
+              <option value="provider">Service Provider Lead (Master Contractor)</option>
+              <option value="franchise">Franchise Network Operations</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="new-team-owner-name">Organization / Business Entity Name</label>
+            <input type="text" id="new-team-owner-name" class="form-control" required placeholder="e.g. Lockie's Trade Fleet or Jim's Mowing QLD">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="new-team-desc">Team Scope & Capabilities</label>
+          <textarea id="new-team-desc" class="form-control" rows="2" placeholder="Describe the type of work this multi-person crew handles (e.g. slab preparation, tree lopping with 15t chipper, deep stormwater trenching)..."></textarea>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
+          <h5 style="margin:0 0 0.5rem 0; font-size:0.85rem; font-weight:800; color:var(--primary-navy);">
+            <i class="fa-solid fa-star" style="color:#F59E0B;"></i> Person in Charge (PIC) / Initial Lead
+          </h5>
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="input-group" style="margin-bottom:0; flex:1;">
+              <label class="input-label" for="new-team-pic-name" style="font-size:0.75rem;">Lead Person Name</label>
+              <input type="text" id="new-team-pic-name" class="form-control" required placeholder="e.g. Marco Rossi">
+            </div>
+            <div class="input-group" style="margin-bottom:0; flex:1;">
+              <label class="input-label" for="new-team-pic-phone" style="font-size:0.75rem;">Direct Mobile Phone</label>
+              <input type="tel" id="new-team-pic-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+            </div>
+            <div class="input-group" style="margin-bottom:0; flex:1;">
+              <label class="input-label" for="new-team-pic-trade" style="font-size:0.75rem;">Trade Specialty</label>
+              <input type="text" id="new-team-pic-trade" class="form-control" placeholder="e.g. Excavator Lead & Site Supervisor">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="closeCreateTeamModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;">
+            <i class="fa-solid fa-check-circle"></i> Create Team & Launch Roster
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: ADD REGISTERED MEMBER TO TEAM
+       ========================================================================= -->
+  <div class="work-team-modal" id="modal-add-member">
+    <div class="work-team-modal-box">
+      <div class="modal-header" style="background:#1E3A8A; color:#fff; padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:36px; height:36px; border-radius:8px; background:#fff; color:#1E3A8A; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.15rem; color:#fff; font-weight:800;">Add Registered Member to Work Team</h4>
+            <span style="font-size:0.75rem; color:#BFDBFE;">Select from verified platform tradies or enter member credentials</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeAddMemberModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="form-add-member" onsubmit="handleAddMemberSubmit(event)" style="padding:1.5rem;">
+        
+        <!-- Live Registered Members Picker -->
+        <div style="margin-bottom:1.25rem; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:1rem;">
+          <label class="input-label" for="member-picker-select" style="color:#1E40AF; font-weight:800;">
+            <i class="fa-solid fa-address-book"></i> Choose from Verified Registered Members:
+          </label>
+          <select id="member-picker-select" class="form-control" onchange="autoFillSelectedMember(this.value)">
+            <option value="">-- Choose a registered tradie / provider --</option>
+            <!-- Dynamically populated from getAvailableRegisteredMembers() -->
+          </select>
+          <span class="input-help">Select a registered member to auto-fill their credentials and standard platform rate.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group" style="flex:2;">
+            <label class="input-label" for="add-member-name">Full Name</label>
+            <input type="text" id="add-member-name" class="form-control" required placeholder="e.g. Jack Morrison">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label" for="add-member-spn">SPN / Member ID</label>
+            <input type="text" id="add-member-spn" class="form-control" required placeholder="SPN-101002">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label class="input-label" for="add-member-trade">Trade / Discipline</label>
+            <input type="text" id="add-member-trade" class="form-control" required placeholder="e.g. Formwork Concreter & Steel Specialist">
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="add-member-role">Team Role / Position</label>
+            <input type="text" id="add-member-role" class="form-control" required placeholder="e.g. Senior Formwork Lead or Chipper Operator">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label class="input-label" for="add-member-phone">Contact Mobile Phone</label>
+            <input type="tel" id="add-member-phone" class="form-control" required placeholder="0412 000 000">
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="add-member-rate">Individual Payout Rate ($)</label>
+            <div class="input-with-unit">
+              <span class="currency-prefix">$</span>
+              <input type="number" id="add-member-rate" class="form-control" required value="90.00" min="25" step="1.00">
+              <span class="unit-suffix">/ hr</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1.25rem; padding:0.75rem; background:#FFFBEB; border:1px solid #FCD34D; border-radius:var(--radius-sm);">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.84rem; font-weight:700; color:#92400E;">
+            <input type="checkbox" id="add-member-is-pic" style="width:17px; height:17px; accent-color:#F59E0B;">
+            <span><i class="fa-solid fa-star" style="color:#F59E0B;"></i> Designate this member as the PERSON IN CHARGE (PIC) for this team</span>
+          </label>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="closeAddMemberModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;">
+            <i class="fa-solid fa-user-check"></i> Add to Team Roster
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: PERSON IN CHARGE (PIC) WORK DISPATCH & JOB ORDER
+       ========================================================================= -->
+  <div class="work-team-modal" id="modal-create-job">
+    <div class="work-team-modal-box" style="max-width:760px;">
+      <div class="modal-header" style="background:#059669; color:#fff; padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="width:36px; height:36px; border-radius:8px; background:#fff; color:#059669; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-calendar-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:1.15rem; color:#fff; font-weight:800;">Person In Charge: Dispatch Work Order</h4>
+            <span style="font-size:0.75rem; color:#D1FAE5;">Assign work required, designated crew, job date, and individual pricing</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeCreateJobModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="form-create-job" onsubmit="handleCreateJobSubmit(event)" style="padding:1.5rem;">
+        
+        <div class="form-row">
+          <div class="input-group" style="flex:2;">
+            <label class="input-label" for="job-title">Job / Project Title</label>
+            <input type="text" id="job-title" class="form-control" required placeholder="e.g. Retaining Wall Trenching & Foundation Pour">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label" for="job-date">Date of Job</label>
+            <input type="date" id="job-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group" style="flex:2;">
+            <label class="input-label" for="job-location">Site Address / Job Location</label>
+            <input type="text" id="job-location" class="form-control" required placeholder="e.g. 14 Marine Parade, Southport QLD 4215">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label" for="job-start-time">Start Time</label>
+            <input type="time" id="job-start-time" class="form-control" value="07:00" required>
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label class="input-label" for="job-hours">Estimated Hours</label>
+            <input type="number" id="job-hours" class="form-control" value="8" min="1" max="48" onchange="recalculateJobFinancials()">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="job-work-required">Work Required (Detailed Scope & Instructions)</label>
+          <textarea id="job-work-required" class="form-control" rows="3" required placeholder="Specify detailed work required, equipment to bring, safety gear, laser levels, dumping passes, or council permit codes..."></textarea>
+        </div>
+
+        <!-- Who Will Do It & Pricing for Each Service Provider -->
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <strong style="font-size:0.85rem; color:var(--primary-navy);">
+              <i class="fa-solid fa-user-check" style="color:#059669;"></i> Who Will Do It & Individual Pricing
+            </strong>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Select crew members for this job and configure their individual payout rate</span>
+          </div>
+
+          <div id="job-assigned-members-selector" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <!-- Dynamically populated from active team members -->
+          </div>
+        </div>
+
+        <!-- If For Franchise: Royalties, Margin & Central Settlement -->
+        <div id="job-franchise-settings-box" style="background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; font-weight:800; color:#581C87; cursor:pointer;">
+              <input type="checkbox" id="job-is-franchise" checked style="width:16px; height:16px; accent-color:#7E22CE;" onchange="recalculateJobFinancials()">
+              <span><i class="fa-solid fa-building-user"></i> If For Franchise: Include Central Royalties & Margin</span>
+            </label>
+            <span style="font-size:0.72rem; background:#EDE9FE; color:#6D28D9; padding:0.15rem 0.5rem; border-radius:8px; font-weight:700;">
+              Franchise Dispatch
+            </span>
+          </div>
+
+          <div class="form-row" style="margin-bottom:0.5rem;">
+            <div class="input-group" style="margin-bottom:0; flex:1;">
+              <label class="input-label" for="job-franchise-margin" style="font-size:0.75rem;">Franchise Margin (%)</label>
+              <div class="input-with-unit">
+                <input type="number" id="job-franchise-margin" class="form-control" value="12" min="0" max="50" step="1" onchange="recalculateJobFinancials()">
+                <span class="unit-suffix">%</span>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; flex:2;">
+              <label class="input-label" for="job-franchise-entity" style="font-size:0.75rem;">Franchise Brand / Regional Name</label>
+              <input type="text" id="job-franchise-entity" class="form-control" placeholder="e.g. Jim's Mowing Regional Franchise">
+            </div>
+          </div>
+
+          <!-- Realtime Financial Calculation Pill -->
+          <div class="franchise-financial-pill">
+            <div>
+              <span style="font-size:0.72rem; color:#6D28D9; display:block;">Total Provider Payout:</span>
+              <strong style="font-size:0.95rem; color:#1E1B4B;" id="calc-provider-payout">$0.00</strong>
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:#6D28D9; display:block;">Franchise Cut / Royalty:</span>
+              <strong style="font-size:0.95rem; color:#7E22CE;" id="calc-franchise-cut">$0.00</strong>
+            </div>
+            <div>
+              <span style="font-size:0.72rem; color:#6D28D9; display:block;">Total Customer Invoice Quote:</span>
+              <strong style="font-size:1.15rem; color:#059669;" id="calc-customer-quote">$0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="closeCreateJobModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; background:#059669; border-color:#059669; padding:0.65rem 1.4rem;">
+            <i class="fa-solid fa-paper-plane"></i> Dispatch Work Order to Crew
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>
   <script type="module" src="/js/main.js"></script>
 
   <script>
-    // Customer Admin Interactive Logic
-    const CUSTOMER_SETTINGS_KEY = 'iasj_customer_admin_settings';
+    // State management for Work Teams in Admin Panel
+    let currentActiveTeamId = null;
 
-    function getCustomerSettings() {
-      const defaultSettings = {
-        isPaused: false,
-        pauseReason: '',
-        gcalAutoBlock: true,
-        blockedDates: [
-          { date: '2026-10-18', reason: 'Public Holiday' },
-          { date: '2026-10-25', reason: 'Family Event' }
-        ],
-        preferredWindows: { morning: true, afternoon: true, evening: false },
-        rates: {
-          hourlyCap: 95.00,
-          calloutCap: 65.00,
-          emergencyAllowance: '1.5',
-          maxDistance: 35,
-          distanceUnit: 'km'
-        }
-      };
-      try {
-        const stored = localStorage.getItem(CUSTOMER_SETTINGS_KEY);
-        if (stored) return { ...defaultSettings, ...JSON.parse(stored) };
-      } catch (e) {
-        console.warn('Error reading customer settings:', e);
-      }
-      return defaultSettings;
-    }
+    function switchAdminMainView(viewName) {
+      const teamsPanel = document.getElementById('view-work-teams-panel');
+      const customerPanel = document.getElementById('view-customer-controls-panel');
+      const btnTeams = document.getElementById('tab-btn-teams');
+      const btnCustomer = document.getElementById('tab-btn-customer');
 
-    function saveCustomerSettings(settings) {
-      try {
-        localStorage.setItem(CUSTOMER_SETTINGS_KEY, JSON.stringify(settings));
-      } catch (e) {
-        console.warn('Error saving customer settings:', e);
-      }
-    }
-
-    function updateCustomerAdminUI() {
-      const settings = getCustomerSettings();
-      
-      // Update Google User profile if available
-      try {
-        const googleUser = JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
-        if (googleUser) {
-          if (googleUser.displayName) document.getElementById('customer-profile-name').textContent = googleUser.displayName;
-          if (googleUser.email) {
-            document.getElementById('customer-profile-email').textContent = googleUser.email;
-            document.getElementById('customer-gcal-email').textContent = googleUser.email;
-          }
-          const signinBtn = document.getElementById('btn-admin-signin');
-          if (signinBtn) signinBtn.style.display = 'none';
-        }
-      } catch (e) {}
-
-      // Update Pause / Resume status
-      const statusBox = document.getElementById('customer-status-box');
-      const headline = document.getElementById('customer-status-headline');
-      const pauseBtn = document.getElementById('btn-toggle-customer-pause');
-      const globalBadge = document.getElementById('customer-global-status-badge');
-      const pillBadge = document.getElementById('customer-pause-status-pill');
-      const pauseReasonInput = document.getElementById('customer-pause-reason');
-
-      if (pauseReasonInput) pauseReasonInput.value = settings.pauseReason || '';
-
-      if (settings.isPaused) {
-        if (statusBox) statusBox.classList.add('is-paused');
-        if (headline) {
-          headline.innerHTML = '⏸️ PAUSED - Automated Matching & Dispatch On Hold';
-          headline.style.color = '#B45309';
-        }
-        if (pauseBtn) {
-          pauseBtn.className = 'status-switch-btn';
-          pauseBtn.style.background = '#ECFDF5';
-          pauseBtn.style.color = '#059669';
-          pauseBtn.style.border = '1px solid #10B981';
-          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-play"></i> Resume My Service';
-        }
-        if (globalBadge) {
-          globalBadge.className = 'status-badge-live paused';
-          globalBadge.innerHTML = '⏸️ Service Paused';
-        }
-        if (pillBadge) {
-          pillBadge.className = 'status-badge-live paused';
-          pillBadge.textContent = 'Service Paused';
-        }
+      if (viewName === 'work-teams') {
+        if (teamsPanel) teamsPanel.style.display = 'block';
+        if (customerPanel) customerPanel.style.display = 'none';
+        btnTeams?.classList.add('active');
+        btnCustomer?.classList.remove('active');
+        renderWorkTeamsUI();
       } else {
-        if (statusBox) statusBox.classList.remove('is-paused');
-        if (headline) {
-          headline.innerHTML = '🟢 ACTIVE - Ready for Service Requests & Dispatch';
-          headline.style.color = '#059669';
-        }
-        if (pauseBtn) {
-          pauseBtn.className = 'status-switch-btn btn-pause';
-          pauseBtn.style.background = '#FEF3C7';
-          pauseBtn.style.color = '#B45309';
-          pauseBtn.style.border = '1px solid #F59E0B';
-          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Pause My Service';
-        }
-        if (globalBadge) {
-          globalBadge.className = 'status-badge-live active';
-          globalBadge.innerHTML = '🟢 Service Active';
-        }
-        if (pillBadge) {
-          pillBadge.className = 'status-badge-live active';
-          pillBadge.textContent = 'Service Active';
-        }
-      }
-
-      // Render Blocked Dates
-      renderBlockedDates(settings.blockedDates || []);
-
-      // Preferred Windows
-      if (settings.preferredWindows) {
-        document.getElementById('pref-window-morning').checked = !!settings.preferredWindows.morning;
-        document.getElementById('pref-window-afternoon').checked = !!settings.preferredWindows.afternoon;
-        document.getElementById('pref-window-evening').checked = !!settings.preferredWindows.evening;
-      }
-
-      // Google Calendar Auto-block
-      document.getElementById('customer-gcal-autoblock').checked = settings.gcalAutoBlock !== false;
-
-      // Rates
-      if (settings.rates) {
-        document.getElementById('cust-rate-hourly-cap').value = settings.rates.hourlyCap || 95.00;
-        document.getElementById('cust-rate-callout-cap').value = settings.rates.calloutCap || 65.00;
-        document.getElementById('cust-emergency-rate-allowance').value = settings.rates.emergencyAllowance || '1.5';
-        document.getElementById('cust-max-travel-distance').value = settings.rates.maxDistance || 35;
-        document.getElementById('cust-distance-unit').value = settings.rates.distanceUnit || 'km';
-        document.getElementById('customer-header-rate-cap').textContent = `$${parseFloat(settings.rates.hourlyCap || 95).toFixed(2)} / hr`;
-      }
-    }
-
-    function toggleCustomerPauseState() {
-      const settings = getCustomerSettings();
-      settings.isPaused = !settings.isPaused;
-      saveCustomerSettings(settings);
-      updateCustomerAdminUI();
-      if (typeof showToast === 'function') {
-        showToast(settings.isPaused ? 'Service Paused. Dispatches placed on hold.' : 'Service Resumed. Active for bookings.');
-      }
-    }
-
-    function saveCustomerPauseReason() {
-      const settings = getCustomerSettings();
-      const val = document.getElementById('customer-pause-reason')?.value || '';
-      settings.pauseReason = val;
-      saveCustomerSettings(settings);
-      if (typeof showToast === 'function') {
-        showToast('Pause note saved successfully.');
-      }
-    }
-
-    function renderBlockedDates(blockedList) {
-      const container = document.getElementById('customer-blocked-dates-list');
-      if (!container) return;
-      if (!blockedList || blockedList.length === 0) {
-        container.innerHTML = '<span style="font-size:0.8rem; color:#94A3B8; font-style:italic;">No dates currently turned off. All dates active.</span>';
-        return;
-      }
-      container.innerHTML = blockedList.map(item => `
-        <span class="date-chip date-chip-off">
-          <i class="fa-solid fa-calendar-xmark"></i> ${item.date} ${item.reason ? `(${item.reason})` : ''}
-          <span class="date-chip-remove" onclick="removeCustomerBlackoutDate('${item.date}')" title="Turn Date Back ON">&times;</span>
-        </span>
-      `).join('');
-    }
-
-    function addCustomerBlackoutDate() {
-      const dateInput = document.getElementById('new-blackout-date');
-      const reasonInput = document.getElementById('new-blackout-reason');
-      const date = dateInput?.value;
-      const reason = reasonInput?.value || '';
-
-      if (!date) {
-        if (typeof showToast === 'function') showToast('Please select a date to turn off.');
-        return;
-      }
-
-      const settings = getCustomerSettings();
-      if (!settings.blockedDates) settings.blockedDates = [];
-      if (settings.blockedDates.some(d => d.date === date)) {
-        if (typeof showToast === 'function') showToast('This date is already turned off.');
-        return;
-      }
-
-      settings.blockedDates.push({ date, reason });
-      saveCustomerSettings(settings);
-      dateInput.value = '';
-      if (reasonInput) reasonInput.value = '';
-      updateCustomerAdminUI();
-      if (typeof showToast === 'function') showToast(`Date ${date} turned OFF.`);
-    }
-
-    function removeCustomerBlackoutDate(date) {
-      const settings = getCustomerSettings();
-      settings.blockedDates = (settings.blockedDates || []).filter(d => d.date !== date);
-      saveCustomerSettings(settings);
-      updateCustomerAdminUI();
-      if (typeof showToast === 'function') showToast(`Date ${date} turned Back ON.`);
-    }
-
-    function applyCustomerDatePreset(preset) {
-      const settings = getCustomerSettings();
-      const today = new Date();
-
-      if (preset === 'all_on') {
-        settings.blockedDates = [];
-        saveCustomerSettings(settings);
+        if (teamsPanel) teamsPanel.style.display = 'none';
+        if (customerPanel) customerPanel.style.display = 'block';
+        btnCustomer?.classList.add('active');
+        btnTeams?.classList.remove('active');
         updateCustomerAdminUI();
-        if (typeof showToast === 'function') showToast('All dates turned ON.');
-        return;
-      }
-
-      if (preset === 'next_7_off' || preset === 'next_14_off') {
-        const count = preset === 'next_7_off' ? 7 : 14;
-        const newDates = [];
-        for (let i = 0; i < count; i++) {
-          const d = new Date(today);
-          d.setDate(today.getDate() + i);
-          const dateStr = d.toISOString().split('T')[0];
-          newDates.push({ date: dateStr, reason: 'Vacation / Holiday' });
-        }
-        settings.blockedDates = newDates;
-        saveCustomerSettings(settings);
-        updateCustomerAdminUI();
-        if (typeof showToast === 'function') showToast(`Turned off next ${count} days.`);
-        return;
-      }
-
-      if (preset === 'weekends_off') {
-        const newDates = [];
-        for (let i = 0; i < 30; i++) {
-          const d = new Date(today);
-          d.setDate(today.getDate() + i);
-          const day = d.getDay();
-          if (day === 0 || day === 6) { // Sunday or Saturday
-            newDates.push({ date: d.toISOString().split('T')[0], reason: 'Weekend Off' });
-          }
-        }
-        settings.blockedDates = newDates;
-        saveCustomerSettings(settings);
-        updateCustomerAdminUI();
-        if (typeof showToast === 'function') showToast('Turned off weekend visits for the next 30 days.');
-        return;
       }
     }
 
-    function saveCustomerGcalAutoblock(checked) {
-      const settings = getCustomerSettings();
-      settings.gcalAutoBlock = checked;
-      saveCustomerSettings(settings);
-      if (typeof showToast === 'function') showToast(checked ? 'Google Calendar auto-block enabled.' : 'Google Calendar auto-block disabled.');
+    function renderWorkTeamsUI() {
+      if (!window.workTeamsService) return;
+      const sectorFilter = document.getElementById('team-sector-filter')?.value || 'all';
+      const teams = window.workTeamsService.getAllTeams({ sector: sectorFilter });
+
+      // Update Top Stats
+      const allTeams = window.workTeamsService.getAllTeams();
+      let totalMembersCount = 0;
+      let totalJobsCount = 0;
+      let totalValue = 0;
+
+      allTeams.forEach(t => {
+        totalMembersCount += (t.members || []).length;
+        (t.jobs || []).forEach(j => {
+          totalJobsCount++;
+          totalValue += (j.totalCustomerQuote || 0);
+        });
+      });
+
+      const elTeams = document.getElementById('stats-total-teams');
+      const elMembers = document.getElementById('stats-total-members');
+      const elJobs = document.getElementById('stats-total-jobs');
+      const elVal = document.getElementById('stats-total-value');
+      if (elTeams) elTeams.textContent = allTeams.length;
+      if (elMembers) elMembers.textContent = totalMembersCount;
+      if (elJobs) elJobs.textContent = totalJobsCount;
+      if (elVal) elVal.textContent = `$${Math.round(totalValue).toLocaleString()}`;
+
+      // Populate Select Dropdown
+      const selectEl = document.getElementById('active-team-select');
+      if (selectEl) {
+        if (teams.length === 0) {
+          selectEl.innerHTML = '<option value="">No teams in this sector</option>';
+        } else {
+          selectEl.innerHTML = teams.map(t => `
+            <option value="${t.id}" ${t.id === currentActiveTeamId ? 'selected' : ''}>
+              ${t.name} (${t.members?.length || 0} crew) - ${t.sectorLabel}
+            </option>
+          `).join('');
+        }
+      }
+
+      if (teams.length > 0) {
+        if (!currentActiveTeamId || !teams.some(t => t.id === currentActiveTeamId)) {
+          currentActiveTeamId = teams[0].id;
+        }
+        renderActiveTeamDetails(currentActiveTeamId);
+      }
     }
 
-    function saveCustomerWindowPreferences() {
-      const settings = getCustomerSettings();
-      settings.preferredWindows = {
-        morning: document.getElementById('pref-window-morning')?.checked ?? true,
-        afternoon: document.getElementById('pref-window-afternoon')?.checked ?? true,
-        evening: document.getElementById('pref-window-evening')?.checked ?? false
+    function switchActiveWorkTeam(teamId) {
+      currentActiveTeamId = teamId;
+      renderActiveTeamDetails(teamId);
+    }
+
+    function handleTeamFilterChange() {
+      currentActiveTeamId = null;
+      renderWorkTeamsUI();
+    }
+
+    // Defensive sanitization helper
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderActiveTeamDetails(teamId) {
+      try {
+        if (!window.workTeamsService) return;
+        const team = window.workTeamsService.getTeamById(teamId);
+        if (!team) return;
+
+        currentActiveTeamId = team.id;
+
+        // Update Hero
+        const nameEl = document.getElementById('team-hero-name');
+        const descEl = document.getElementById('team-hero-desc');
+        const sectorPill = document.getElementById('team-hero-sector-pill');
+        const ownerBadge = document.getElementById('team-hero-owner-badge');
+        const picAvatar = document.getElementById('team-hero-pic-avatar');
+        const picName = document.getElementById('team-hero-pic-name');
+        const picPhone = document.getElementById('team-hero-pic-phone');
+        const picTrade = document.getElementById('team-hero-pic-trade');
+
+        if (nameEl) nameEl.textContent = team.name || '';
+        if (descEl) descEl.textContent = team.description || '';
+        if (sectorPill) {
+          sectorPill.className = `sector-pill sector-${escapeHtml(team.sector)}`;
+          sectorPill.innerHTML = `<i class="fa-solid ${escapeHtml(team.sectorIcon || 'fa-users-gear')}"></i> ${escapeHtml(team.sectorLabel || 'Crew')}`;
+        }
+        if (ownerBadge) {
+          ownerBadge.innerHTML = team.ownerType === 'franchise'
+            ? `<i class="fa-solid fa-building-user"></i> Franchise Fleet: ${escapeHtml(team.ownerName || 'Network')}`
+            : `<i class="fa-solid fa-shield-halved"></i> Service Provider Lead: ${escapeHtml(team.ownerName || 'Lead Provider')}`;
+        }
+        if (picAvatar) picAvatar.src = team.personInCharge?.avatar || 'assets/images/tradie_worker.jpg';
+        if (picName) picName.textContent = team.personInCharge?.name || 'Lead Officer';
+        if (picPhone) picPhone.innerHTML = `<i class="fa-solid fa-phone"></i> ${escapeHtml(team.personInCharge?.phone || '0400 000 000')}`;
+        if (picTrade) picTrade.textContent = `${escapeHtml(team.personInCharge?.spn || 'SPN-LEAD')} • ${escapeHtml(team.personInCharge?.title || team.personInCharge?.trade || 'Supervisor')}`;
+
+        // Render Roster, Chat, and Jobs
+        renderTeamRoster(team);
+        renderTeamChat(team);
+        renderTeamJobs(team);
+      } catch (err) {
+        console.error('Error rendering active team details:', err);
+      }
+    }
+
+    function renderTeamRoster(team) {
+      try {
+        const grid = document.getElementById('team-roster-grid');
+        if (!grid) return;
+
+        if (!team.members || team.members.length === 0) {
+          grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--text-muted);">No registered members on roster yet. Click "+ Add Registered Member" to build your crew.</div>';
+          return;
+        }
+
+        grid.innerHTML = team.members.map(m => `
+          <div class="roster-member-card ${m.isPic ? 'is-pic' : ''}">
+            ${m.isPic ? '<span class="pic-badge-tag"><i class="fa-solid fa-star"></i> PIC / Lead</span>' : ''}
+            <div>
+              <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+                <img src="${m.avatar || 'assets/images/tradie_worker.jpg'}" class="roster-member-avatar" alt="${escapeHtml(m.name)}">
+                <div>
+                  <strong style="display:block; font-size:0.95rem; color:var(--primary-navy);">${escapeHtml(m.name)}</strong>
+                  <span style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-solid fa-id-card"></i> ${escapeHtml(m.spn)}</span>
+                </div>
+              </div>
+              <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; margin-bottom:0.25rem;">
+                <i class="fa-solid fa-briefcase"></i> ${escapeHtml(m.trade)}
+              </div>
+              <div style="font-size:0.76rem; color:#475569; margin-bottom:0.5rem; background:#F8FAFC; padding:0.25rem 0.5rem; border-radius:6px; border:1px solid #E2E8F0;">
+                Role: <strong>${escapeHtml(m.role)}</strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                <span><i class="fa-solid fa-phone"></i> ${escapeHtml(m.phone)}</span>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--border-light); padding-top:0.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+              <div>
+                <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Individual Rate:</span>
+                <strong style="font-size:0.95rem; color:#059669;">$${parseFloat(m.pricingRate || 85).toFixed(2)}/hr</strong>
+              </div>
+              <div style="display:flex; gap:0.4rem;">
+                ${!m.isPic ? `
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleSetPic('${escapeHtml(m.spn)}')" title="Set as Person In Charge" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:#D97706; border-color:#FCD34D;">
+                    <i class="fa-solid fa-star"></i> Set PIC
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleRemoveMember('${escapeHtml(m.spn)}')" title="Remove Member" style="padding:0.2rem 0.45rem; font-size:0.72rem; color:#EF4444; border-color:#FECACA;">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : `
+                  <span style="font-size:0.75rem; color:#D97706; font-weight:800;"><i class="fa-solid fa-crown"></i> Team PIC</span>
+                `}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error rendering team roster:', err);
+      }
+    }
+
+    function renderTeamChat(team) {
+      try {
+        const container = document.getElementById('team-chat-messages');
+        if (!container) return;
+
+        const messages = team.chatMessages || [];
+        if (messages.length === 0) {
+          container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">No messages yet. Send a site note or status update above.</div>';
+          return;
+        }
+
+        container.innerHTML = messages.map(msg => {
+          let bubbleClass = 'chat-bubble';
+          if (msg.messageType === 'safety') bubbleClass += ' safety-alert';
+          if (msg.messageType === 'materials') bubbleClass += ' materials-update';
+
+          const roleStyle = msg.senderRole === 'Person In Charge' ? 'background:#FEF3C7; color:#92400E; font-weight:800;' : '';
+
+          return `
+            <div class="${bubbleClass}">
+              <div class="chat-bubble-header">
+                <img src="${msg.senderAvatar || 'assets/images/tradie_worker.jpg'}" style="width:22px; height:22px; border-radius:50%; object-fit:cover;" alt="Avatar">
+                <span class="chat-sender-name">${escapeHtml(msg.senderName)}</span>
+                <span class="chat-sender-role" style="${roleStyle}">${escapeHtml(msg.senderRole)}</span>
+                ${msg.messageType === 'safety' ? '<span style="font-size:0.68rem; background:#EF4444; color:#fff; padding:0.1rem 0.4rem; border-radius:4px; font-weight:800;">HAZARD / SAFETY</span>' : ''}
+                ${msg.messageType === 'materials' ? '<span style="font-size:0.68rem; background:#10B981; color:#fff; padding:0.1rem 0.4rem; border-radius:4px; font-weight:800;">MATERIALS</span>' : ''}
+                <span class="chat-timestamp">${escapeHtml(msg.timestamp)}</span>
+              </div>
+              <p class="chat-bubble-text">${escapeHtml(msg.text)}</p>
+            </div>
+          `;
+        }).join('');
+
+        container.scrollTop = container.scrollHeight;
+      } catch (err) {
+        console.error('Error rendering team chat:', err);
+      }
+    }
+
+    function renderTeamJobs(team) {
+      try {
+        const container = document.getElementById('team-jobs-list');
+        if (!container) return;
+
+        const jobs = team.jobs || [];
+        if (jobs.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted); border:1px dashed var(--border-light); border-radius:var(--radius-md);">
+              <i class="fa-solid fa-clipboard-check" style="font-size:2rem; color:#CBD5E1; margin-bottom:0.5rem; display:block;"></i>
+              <strong>No active work orders dispatched yet for this crew.</strong>
+              <p style="font-size:0.8rem; margin-top:0.35rem;">The Person in Charge (PIC) can dispatch work by clicking "+ Assign Work / Dispatch Team".</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = jobs.map(j => {
+          const isCompleted = j.status === 'completed';
+          const statusBadge = isCompleted 
+            ? '<span style="background:#ECFDF5; color:#065F46; padding:0.25rem 0.65rem; border-radius:12px; font-size:0.75rem; font-weight:800;"><i class="fa-solid fa-circle-check"></i> Completed</span>'
+            : '<span style="background:#EFF6FF; color:#1E40AF; padding:0.25rem 0.65rem; border-radius:12px; font-size:0.75rem; font-weight:800;"><i class="fa-solid fa-clock"></i> Scheduled Dispatch</span>';
+
+          return `
+            <div class="job-card">
+              <div class="job-card-header">
+                <div>
+                  <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                    <strong style="color:#059669; font-size:0.85rem;">${escapeHtml(j.id)}</strong>
+                    ${statusBadge}
+                    ${j.isFranchise ? '<span style="background:#FAF5FF; color:#7E22CE; padding:0.15rem 0.55rem; border-radius:10px; font-size:0.7rem; font-weight:800; border:1px solid #E9D5FF;"><i class="fa-solid fa-building-user"></i> Franchise Job</span>' : ''}
+                  </div>
+                  <h4 style="margin:0 0 0.35rem 0; font-size:1.08rem; color:var(--primary-navy); font-weight:800;">${escapeHtml(j.title)}</h4>
+                  <div style="font-size:0.8rem; color:var(--text-muted); display:flex; gap:0.85rem; flex-wrap:wrap;">
+                    <span><i class="fa-solid fa-calendar-day" style="color:var(--brand-orange);"></i> <strong>${escapeHtml(j.jobDate)}</strong> at ${escapeHtml(j.jobTime)} (${j.estimatedHours || 8} hrs)</span>
+                    <span><i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> ${escapeHtml(j.location)}</span>
+                    <span><i class="fa-solid fa-user-tie" style="color:#2563EB;"></i> PIC: ${escapeHtml(j.createdBy)}</span>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Total Customer Quote:</span>
+                  <strong style="font-size:1.25rem; color:#059669;">$${parseFloat(j.totalCustomerQuote || 0).toFixed(2)}</strong>
+                </div>
+              </div>
+
+              <!-- Scope of Work Required -->
+              <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:0.75rem;">
+                <strong style="font-size:0.78rem; color:var(--primary-navy); display:block; margin-bottom:0.25rem;">
+                  <i class="fa-solid fa-wrench"></i> Work Required:
+                </strong>
+                <p style="font-size:0.82rem; color:#334155; margin:0; line-height:1.45;">${escapeHtml(j.workRequired)}</p>
+              </div>
+
+              <!-- Assigned Members Breakdown Table -->
+              <table class="assigned-roster-table">
+                <thead>
+                  <tr>
+                    <th>Assigned Tradie</th>
+                    <th>Job Task / Role</th>
+                    <th>Payout Rate</th>
+                    <th>Est. Earnings</th>
+                    <th>Task Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(j.assignedMembers || []).map(m => `
+                    <tr>
+                      <td><strong>${escapeHtml(m.name)}</strong> <span style="font-size:0.72rem; color:var(--text-muted);">(${escapeHtml(m.spn)})</span></td>
+                      <td>${escapeHtml(m.role || m.trade)}</td>
+                      <td><strong style="color:#059669;">$${parseFloat(m.pricing || 85).toFixed(2)}/${escapeHtml(m.pricingType || 'hr')}</strong></td>
+                      <td><strong>$${(m.estimatedPayout || 0).toFixed(2)}</strong></td>
+                      <td style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(m.notes || '-')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+
+              <!-- Franchise Royalty Breakdown (If for franchise) -->
+              ${j.isFranchise ? `
+                <div class="franchise-financial-pill">
+                  <div>
+                    <span style="font-size:0.72rem; color:#6D28D9; font-weight:700;">Franchise Network:</span>
+                    <strong style="font-size:0.85rem; color:#1E1B4B;">${escapeHtml(j.franchiseName || 'Central Network')}</strong>
+                  </div>
+                  <div>
+                    <span style="font-size:0.72rem; color:#6D28D9; font-weight:700;">Franchise Cut (${j.franchiseMarginPercent || 12}%):</span>
+                    <strong style="font-size:0.95rem; color:#7E22CE;">+$${(j.franchiseCutAmount || 0).toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span style="font-size:0.72rem; color:#6D28D9; font-weight:700;">Settlement:</span>
+                    <span style="font-size:0.8rem; color:#334155;">Central Bank Account / PayID</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Actions Bar -->
+              <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.75rem; border-top:1px solid #F1F5F9; padding-top:0.65rem;">
+                ${!isCompleted ? `
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'completed')" style="color:#059669; border-color:#86EFAC; font-weight:700;">
+                    <i class="fa-solid fa-check"></i> Sign-Off & Complete Work
+                  </button>
+                ` : `
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'scheduled')" style="color:#2563EB; border-color:#BFDBFE; font-weight:700;">
+                    <i class="fa-solid fa-rotate-left"></i> Re-open Job
+                  </button>
+                `}
+                <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteJob('${escapeHtml(j.id)}')" style="color:#EF4444; border-color:#FECACA;" title="Delete Work Order">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error rendering team jobs:', err);
+      }
+    }
+
+    // Modal Handlers
+    function openCreateTeamModal() {
+      document.getElementById('modal-create-team')?.classList.add('active');
+    }
+    function closeCreateTeamModal() {
+      document.getElementById('modal-create-team')?.classList.remove('active');
+    }
+
+    function handleCreateTeamSubmit(e) {
+      e.preventDefault();
+      if (!window.workTeamsService) return;
+
+      const name = document.getElementById('new-team-name')?.value.trim();
+      const sector = document.getElementById('new-team-sector')?.value;
+      const ownerType = document.getElementById('new-team-owner-type')?.value;
+      const ownerName = document.getElementById('new-team-owner-name')?.value.trim();
+      const desc = document.getElementById('new-team-desc')?.value.trim();
+      const picName = document.getElementById('new-team-pic-name')?.value.trim();
+      const picPhone = document.getElementById('new-team-pic-phone')?.value.trim();
+      const picTrade = document.getElementById('new-team-pic-trade')?.value.trim() || 'Crew Supervisor';
+
+      const picSpn = 'SPN-' + Math.floor(100000 + Math.random() * 900000);
+      const picMember = {
+        spn: picSpn,
+        name: picName,
+        trade: picTrade,
+        role: 'Person in Charge (Crew Lead)',
+        phone: picPhone,
+        email: `${picName.toLowerCase().replace(/[^a-z]/g, '')}@example.com`,
+        avatar: 'assets/images/tradie_worker.jpg',
+        pricingRate: 95,
+        pricingUnit: 'hourly',
+        isPic: true,
+        status: 'active'
       };
-      saveCustomerSettings(settings);
-      if (typeof showToast === 'function') showToast('Time window preferences saved.');
+
+      const newTeam = window.workTeamsService.createTeam({
+        name,
+        sector,
+        ownerType,
+        ownerName,
+        description: desc,
+        personInCharge: {
+          spn: picSpn,
+          name: picName,
+          title: `${picTrade} (PIC)`,
+          phone: picPhone,
+          email: picMember.email,
+          avatar: picMember.avatar,
+          trade: picTrade
+        },
+        members: [picMember]
+      });
+
+      closeCreateTeamModal();
+      document.getElementById('form-create-team')?.reset();
+      currentActiveTeamId = newTeam.id;
+      renderWorkTeamsUI();
+      if (typeof showToast === 'function') {
+        showToast(`Work team '${name}' created successfully!`);
+      }
     }
 
-    function saveCustomerRates() {
-      const settings = getCustomerSettings();
-      const hourlyCap = parseFloat(document.getElementById('cust-rate-hourly-cap')?.value || '95');
-      const calloutCap = parseFloat(document.getElementById('cust-rate-callout-cap')?.value || '65');
-      const emergencyAllowance = document.getElementById('cust-emergency-rate-allowance')?.value || '1.5';
-      const maxDistance = parseFloat(document.getElementById('cust-max-travel-distance')?.value || '35');
-      const distanceUnit = document.getElementById('cust-distance-unit')?.value || 'km';
-
-      settings.rates = {
-        hourlyCap,
-        calloutCap,
-        emergencyAllowance,
-        maxDistance,
-        distanceUnit
-      };
-
-      saveCustomerSettings(settings);
-      document.getElementById('customer-header-rate-cap').textContent = `$${hourlyCap.toFixed(2)} / hr`;
-      if (typeof showToast === 'function') showToast('Rate preferences & budget caps saved successfully!');
+    function openAddMemberModal() {
+      const picker = document.getElementById('member-picker-select');
+      if (picker && window.workTeamsService) {
+        const available = window.workTeamsService.getAvailableRegisteredMembers();
+        picker.innerHTML = '<option value="">-- Choose a registered tradie / provider --</option>' +
+          available.map(m => `
+            <option value="${m.spn}">${m.name} (${m.spn}) - ${m.trade} - $${m.hourlyRate}/hr [${m.source}]</option>
+          `).join('');
+      }
+      document.getElementById('modal-add-member')?.classList.add('active');
+    }
+    function closeAddMemberModal() {
+      document.getElementById('modal-add-member')?.classList.remove('active');
     }
 
-    function syncCustomerGoogleCalendarNow() {
-      if (typeof showToast === 'function') showToast('Syncing with Google Calendar... All events updated.');
+    function autoFillSelectedMember(spn) {
+      if (!spn || !window.workTeamsService) return;
+      const available = window.workTeamsService.getAvailableRegisteredMembers();
+      const member = available.find(m => m.spn === spn);
+      if (member) {
+        document.getElementById('add-member-name').value = member.name;
+        document.getElementById('add-member-spn').value = member.spn;
+        document.getElementById('add-member-trade').value = member.trade;
+        document.getElementById('add-member-role').value = `${member.trade} Specialist`;
+        document.getElementById('add-member-phone').value = member.phone;
+        document.getElementById('add-member-rate').value = member.hourlyRate || 90;
+      }
     }
 
-    window.getCustomerSettings = getCustomerSettings;
-    window.saveCustomerSettings = saveCustomerSettings;
-    window.updateCustomerAdminUI = updateCustomerAdminUI;
-    window.toggleCustomerPauseState = toggleCustomerPauseState;
-    window.saveCustomerPauseReason = saveCustomerPauseReason;
-    window.addCustomerBlackoutDate = addCustomerBlackoutDate;
-    window.removeCustomerBlackoutDate = removeCustomerBlackoutDate;
-    window.applyCustomerDatePreset = applyCustomerDatePreset;
-    window.saveCustomerGcalAutoblock = saveCustomerGcalAutoblock;
-    window.saveCustomerWindowPreferences = saveCustomerWindowPreferences;
-    window.saveCustomerRates = saveCustomerRates;
-    window.syncCustomerGoogleCalendarNow = syncCustomerGoogleCalendarNow;
+    function handleAddMemberSubmit(e) {
+      e.preventDefault();
+      if (!window.workTeamsService || !currentActiveTeamId) return;
+
+      const name = document.getElementById('add-member-name')?.value.trim();
+      const spn = document.getElementById('add-member-spn')?.value.trim();
+      const trade = document.getElementById('add-member-trade')?.value.trim();
+      const role = document.getElementById('add-member-role')?.value.trim();
+      const phone = document.getElementById('add-member-phone')?.value.trim();
+      const rate = parseFloat(document.getElementById('add-member-rate')?.value || 90);
+      const isPic = document.getElementById('add-member-is-pic')?.checked;
+
+      try {
+        window.workTeamsService.addMemberToTeam(currentActiveTeamId, {
+          name,
+          spn,
+          trade,
+          role,
+          phone,
+          pricingRate: rate,
+          isPic
+        });
+        closeAddMemberModal();
+        document.getElementById('form-add-member')?.reset();
+        renderActiveTeamDetails(currentActiveTeamId);
+        if (typeof showToast === 'function') {
+          showToast(`Registered member ${name} (${spn}) added to team roster.`);
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message || 'Error adding member');
+      }
+    }
+
+    function handleRemoveMember(spn) {
+      if (!confirm(`Are you sure you want to remove member (${spn}) from this work team?`)) return;
+      if (window.workTeamsService && currentActiveTeamId) {
+        window.workTeamsService.removeMemberFromTeam(currentActiveTeamId, spn);
+        renderActiveTeamDetails(currentActiveTeamId);
+        if (typeof showToast === 'function') showToast(`Member removed from roster.`);
+      }
+    }
+
+    function handleSetPic(spn) {
+      if (window.workTeamsService && currentActiveTeamId) {
+        window.workTeamsService.setPersonInCharge(currentActiveTeamId, spn);
+        renderActiveTeamDetails(currentActiveTeamId);
+        if (typeof showToast === 'function') showToast(`Designated as Person in Charge (PIC).`);
+      }
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      if (!window.workTeamsService || !currentActiveTeamId) return;
+
+      const input = document.getElementById('chat-input-text');
+      const typeSelect = document.getElementById('chat-message-type');
+      const text = input?.value.trim();
+      if (!text) return;
+
+      const team = window.workTeamsService.getTeamById(currentActiveTeamId);
+      const pic = team?.personInCharge;
+
+      window.workTeamsService.sendTeamMessage(currentActiveTeamId, {
+        senderSpn: pic?.spn || 'PIC',
+        senderName: pic?.name || 'Person In Charge',
+        senderRole: 'Person In Charge',
+        senderAvatar: pic?.avatar || 'assets/images/tradie_worker.jpg',
+        text: text,
+        messageType: typeSelect?.value || 'general'
+      });
+
+      input.value = '';
+      const updated = window.workTeamsService.getTeamById(currentActiveTeamId);
+      if (updated) renderTeamChat(updated);
+    }
+
+    function sendQuickChatMessage(text, type) {
+      if (!window.workTeamsService || !currentActiveTeamId) return;
+      const team = window.workTeamsService.getTeamById(currentActiveTeamId);
+      const pic = team?.personInCharge;
+
+      window.workTeamsService.sendTeamMessage(currentActiveTeamId, {
+        senderSpn: pic?.spn || 'PIC',
+        senderName: pic?.name || 'Person In Charge',
+        senderRole: 'Person In Charge',
+        senderAvatar: pic?.avatar || 'assets/images/tradie_worker.jpg',
+        text: text,
+        messageType: type || 'general'
+      });
+
+      const updated = window.workTeamsService.getTeamById(currentActiveTeamId);
+      if (updated) renderTeamChat(updated);
+      if (typeof showToast === 'function') showToast('Quick status broadcasted to crew.');
+    }
+
+    function openCreateJobModal() {
+      if (!window.workTeamsService || !currentActiveTeamId) return;
+      const team = window.workTeamsService.getTeamById(currentActiveTeamId);
+      if (!team) return;
+
+      // Populate assigned members selector checkboxes
+      const container = document.getElementById('job-assigned-members-selector');
+      if (container) {
+        container.innerHTML = (team.members || []).map((m, idx) => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #E2E8F0; border-radius:6px; padding:0.6rem 0.85rem; flex-wrap:wrap; gap:0.5rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.82rem; font-weight:700; color:var(--primary-navy);">
+              <input type="checkbox" class="job-assignee-check" value="${m.spn}" checked onchange="recalculateJobFinancials()" style="width:16px; height:16px; accent-color:#059669;">
+              <span>${m.name} <span style="font-size:0.72rem; color:var(--text-muted);">(${m.trade})</span></span>
+            </label>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <input type="text" class="form-control job-assignee-role" value="${m.role || m.trade}" placeholder="Task role on job" style="height:32px; font-size:0.75rem; width:150px;">
+              <div class="input-with-unit" style="width:110px;">
+                <span class="currency-prefix">$</span>
+                <input type="number" class="form-control job-assignee-rate" value="${m.pricingRate || 85}" min="20" step="1" onchange="recalculateJobFinancials()" style="height:32px; font-size:0.8rem;">
+                <span class="unit-suffix">/hr</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Default Date to Tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateInput = document.getElementById('job-date');
+      if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
+
+      // Auto-set franchise entity name
+      const franchiseEntityInput = document.getElementById('job-franchise-entity');
+      if (franchiseEntityInput) franchiseEntityInput.value = team.ownerType === 'franchise' ? team.ownerName : '';
+
+      recalculateJobFinancials();
+      document.getElementById('modal-create-job')?.classList.add('active');
+    }
+    function closeCreateJobModal() {
+      document.getElementById('modal-create-job')?.classList.remove('active');
+    }
+
+    function recalculateJobFinancials() {
+      const hours = parseFloat(document.getElementById('job-hours')?.value || 8);
+      const isFranchise = document.getElementById('job-is-franchise')?.checked;
+      const marginPercent = parseFloat(document.getElementById('job-franchise-margin')?.value || 12);
+
+      let totalPayout = 0;
+      const assigneeRows = document.querySelectorAll('#job-assigned-members-selector > div');
+      assigneeRows.forEach(row => {
+        const checked = row.querySelector('.job-assignee-check')?.checked;
+        const rate = parseFloat(row.querySelector('.job-assignee-rate')?.value || 85);
+        if (checked) {
+          totalPayout += (rate * hours);
+        }
+      });
+
+      const franchiseCut = isFranchise ? (totalPayout * (marginPercent / 100)) : 0;
+      const totalQuote = totalPayout + franchiseCut;
+
+      const payoutEl = document.getElementById('calc-provider-payout');
+      const cutEl = document.getElementById('calc-franchise-cut');
+      const quoteEl = document.getElementById('calc-customer-quote');
+      if (payoutEl) payoutEl.textContent = `$${totalPayout.toFixed(2)}`;
+      if (cutEl) cutEl.textContent = `$${franchiseCut.toFixed(2)}`;
+      if (quoteEl) quoteEl.textContent = `$${totalQuote.toFixed(2)}`;
+    }
+
+    function handleCreateJobSubmit(e) {
+      e.preventDefault();
+      if (!window.workTeamsService || !currentActiveTeamId) return;
+
+      const title = document.getElementById('job-title')?.value.trim();
+      const date = document.getElementById('job-date')?.value;
+      const time = document.getElementById('job-start-time')?.value;
+      const hours = parseFloat(document.getElementById('job-hours')?.value || 8);
+      const location = document.getElementById('job-location')?.value.trim();
+      const workRequired = document.getElementById('job-work-required')?.value.trim();
+      const isFranchise = document.getElementById('job-is-franchise')?.checked;
+      const margin = parseFloat(document.getElementById('job-franchise-margin')?.value || 12);
+      const franchiseName = document.getElementById('job-franchise-entity')?.value.trim();
+
+      const team = window.workTeamsService.getTeamById(currentActiveTeamId);
+      const assigned = [];
+
+      const assigneeRows = document.querySelectorAll('#job-assigned-members-selector > div');
+      assigneeRows.forEach(row => {
+        const check = row.querySelector('.job-assignee-check');
+        if (check && check.checked) {
+          const spn = check.value;
+          const memberObj = (team.members || []).find(m => m.spn === spn);
+          const role = row.querySelector('.job-assignee-role')?.value.trim() || (memberObj?.trade || 'Worker');
+          const rate = parseFloat(row.querySelector('.job-assignee-rate')?.value || 85);
+          assigned.push({
+            spn,
+            name: memberObj?.name || spn,
+            trade: memberObj?.trade || 'Tradesperson',
+            role,
+            pricing: rate,
+            pricingType: 'hourly',
+            notes: `Assigned as ${role}`
+          });
+        }
+      });
+
+      if (assigned.length === 0) {
+        if (typeof showToast === 'function') showToast('Please select at least 1 team member to do the work.');
+        return;
+      }
+
+      window.workTeamsService.createTeamJob(currentActiveTeamId, {
+        title,
+        jobDate: date,
+        jobTime: time,
+        estimatedHours: hours,
+        location,
+        workRequired,
+        isFranchise,
+        franchiseName,
+        franchiseMarginPercent: margin,
+        assignedMembers: assigned
+      });
+
+      closeCreateJobModal();
+      document.getElementById('form-create-job')?.reset();
+      renderActiveTeamDetails(currentActiveTeamId);
+      if (typeof showToast === 'function') {
+        showToast(`Work order '${title}' dispatched to crew!`);
+      }
+    }
+
+    function handleJobStatusChange(jobId, status) {
+      if (window.workTeamsService && currentActiveTeamId) {
+        window.workTeamsService.updateJobStatus(currentActiveTeamId, jobId, status);
+        renderActiveTeamDetails(currentActiveTeamId);
+        if (typeof showToast === 'function') {
+          showToast(`Job status updated to ${status}.`);
+        }
+      }
+    }
+
+    function handleDeleteJob(jobId) {
+      if (!confirm('Are you sure you want to cancel and delete this work order?')) return;
+      if (window.workTeamsService && currentActiveTeamId) {
+        window.workTeamsService.deleteJob(currentActiveTeamId, jobId);
+        renderActiveTeamDetails(currentActiveTeamId);
+        if (typeof showToast === 'function') showToast('Work order deleted.');
+      }
+    }
+
+    // Expose Work Teams methods globally
+    window.switchAdminMainView = switchAdminMainView;
+    window.renderWorkTeamsUI = renderWorkTeamsUI;
+    window.switchActiveWorkTeam = switchActiveWorkTeam;
+    window.handleTeamFilterChange = handleTeamFilterChange;
+    window.openCreateTeamModal = openCreateTeamModal;
+    window.closeCreateTeamModal = closeCreateTeamModal;
+    window.handleCreateTeamSubmit = handleCreateTeamSubmit;
+    window.openAddMemberModal = openAddMemberModal;
+    window.closeAddMemberModal = closeAddMemberModal;
+    window.autoFillSelectedMember = autoFillSelectedMember;
+    window.handleAddMemberSubmit = handleAddMemberSubmit;
+    window.handleRemoveMember = handleRemoveMember;
+    window.handleSetPic = handleSetPic;
+    window.handleSendChatMessage = handleSendChatMessage;
+    window.sendQuickChatMessage = sendQuickChatMessage;
+    window.openCreateJobModal = openCreateJobModal;
+    window.closeCreateJobModal = closeCreateJobModal;
+    window.recalculateJobFinancials = recalculateJobFinancials;
+    window.handleCreateJobSubmit = handleCreateJobSubmit;
+    window.handleJobStatusChange = handleJobStatusChange;
+    window.handleDeleteJob = handleDeleteJob;
 
     document.addEventListener('DOMContentLoaded', () => {
-      updateCustomerAdminUI();
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedView = urlParams.get('view') || urlParams.get('tab');
+      const requestedTeam = urlParams.get('team');
+
+      if (requestedTeam) {
+        currentActiveTeamId = requestedTeam;
+      }
+
+      if (requestedView === 'customer-controls' || requestedView === 'customer') {
+        switchAdminMainView('customer-controls');
+      } else {
+        // Default to Work Teams & Multi-Person Dispatch for Franchises and Service Providers
+        switchAdminMainView('work-teams');
+      }
     });
   </script>
 </body>

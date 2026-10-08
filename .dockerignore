@@ -1,0 +1,13 @@
+# .dockerignore
+node_modules
+.vite
+dist
+.git
+.env*
+.agents
+CVS
+.svn
+.hg
+*.log
+.DS_Store
+Thumbs.db
