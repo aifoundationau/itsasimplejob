@@ -23,23 +23,26 @@ import {
   signInWithPopup, 
   signOut 
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
+import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js';
 
 // Firebase Project Configuration (Loaded dynamically from .env via window.ENV)
 export const firebaseConfig = {
-  apiKey: (typeof window !== 'undefined' && window.ENV?.FIREBASE_API_KEY) || "",
+  apiKey: (typeof window !== 'undefined' && window.ENV?.FIREBASE_API_KEY) || "AIzaSyCPeAOWQj8456TeIWDIPsyxyWT7QLrC8J8",
   authDomain: (typeof window !== 'undefined' && window.ENV?.FIREBASE_AUTH_DOMAIN) || "ai-foundation-firebase.firebaseapp.com",
   projectId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_PROJECT_ID) || "ai-foundation-firebase",
   storageBucket: (typeof window !== 'undefined' && window.ENV?.FIREBASE_STORAGE_BUCKET) || "ai-foundation-firebase.firebasestorage.app",
-  messagingSenderId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MESSAGING_SENDER_ID) || "",
-  appId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_APP_ID) || ""
+  messagingSenderId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MESSAGING_SENDER_ID) || "614773274800",
+  appId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_APP_ID) || "1:614773274800:web:bcfa9d363de884cf9ea375",
+  measurementId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MEASUREMENT_ID) || "G-9V4X460YRL"
 };
 
 export const BUSINESS_ID = "itsasimplejob";
 
-// Initialize Firebase App, Firestore & Auth
+// Initialize Firebase App, Firestore, Auth & Analytics
 let app = null;
 let db = null;
 let auth = null;
+let analytics = null;
 let googleProvider = null;
 let isConnected = false;
 
@@ -51,6 +54,12 @@ try {
   googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
   googleProvider.setCustomParameters({ prompt: 'select_account' });
   isConnected = true;
+  isSupported().then(supported => {
+    if (supported) {
+      analytics = getAnalytics(app);
+      console.log("📊 [Firebase] Analytics initialized (ID: G-9V4X460YRL)");
+    }
+  }).catch(() => {});
   console.log("🔥 [Firebase] Initialized Firestore & Google Auth with Google Calendar scope (Tenant: itsasimplejob)");
 } catch (err) {
   console.warn("⚠️ [Firebase] Initialization notice:", err.message);
