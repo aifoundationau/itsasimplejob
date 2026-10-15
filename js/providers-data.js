@@ -1,7 +1,7 @@
 /**
  * It's A Simple Job - Verified Provider, Courier & Recruitment Candidate Network Data
  * Seed database of qualified Australian tradies, handymen, couriers, and recruit candidates.
- * Tagged for multi-tenant Firebase: businessId = 'itsasimplejob'
+ * Tagged for multi-tenant Firebase: businessId = 'its-a-simple-job'
  */
 
 function getDefaultCalendarSchedule(is24_7 = true) {
@@ -23,7 +23,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-101",
     serviceProviderNumber: "SPN-101001",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Lachlan 'Lockie' Miller",
     businessName: "Lockie's Plumbing & Leak Solutions",
     category: "plumbing",
@@ -58,7 +58,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-102",
     serviceProviderNumber: "SPN-101002",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Callum Evans",
     businessName: "Gold Coast Rapid Express Couriers",
     category: "courier",
@@ -94,7 +94,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-103",
     serviceProviderNumber: "SPN-101003",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Dave 'Macca' Mackenzie",
     businessName: "All-Round Aussie Handyman & Repairs",
     category: "handyman",
@@ -129,7 +129,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-104",
     serviceProviderNumber: "SPN-101004",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Marcus & Trent Taylor",
     businessName: "Coastline Sparky & Solar Works",
     category: "electrical",
@@ -164,7 +164,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-105",
     serviceProviderNumber: "SPN-101005",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Darren Boyd",
     businessName: "Boyd's Garden & Grounds Care",
     category: "garden",
@@ -199,7 +199,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-106",
     serviceProviderNumber: "SPN-101006",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Sarah 'Saz' Jennings",
     businessName: "Apex Express Freight & Courier",
     category: "courier",
@@ -235,7 +235,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-107",
     serviceProviderNumber: "SPN-101007",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Toby 'Vancey' Vance",
     businessName: "Coastal Carpentry & Timber Fix",
     category: "carpentry",
@@ -269,7 +269,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-108",
     serviceProviderNumber: "SPN-101008",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Brett 'Wilso' Wilson",
     businessName: "Gold Coast Pro Painting & Drywall",
     category: "painting",
@@ -303,7 +303,7 @@ const INITIAL_PROVIDERS = [
   {
     id: "prov-109",
     serviceProviderNumber: "SPN-101009",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Liam O'Connor",
     businessName: "Hinterland Appliance Doctors",
     category: "appliance",
@@ -344,7 +344,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-201",
     serviceProviderNumber: "SPN-842101",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Liam O'Connor",
     tradeTitle: "Cert III Qualified Carpenter & Framing Lead",
     category: "carpentry",
@@ -382,7 +382,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-202",
     serviceProviderNumber: "SPN-842102",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Marcus Taylor",
     tradeTitle: "Licensed Electrician & High Voltage / Solar Specialist",
     category: "electrical",
@@ -420,7 +420,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-203",
     serviceProviderNumber: "SPN-842103",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Elena Vasquez",
     tradeTitle: "Heavy Rigid (HR) Commercial Driver & Multi-Drop Courier",
     category: "courier",
@@ -458,7 +458,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-204",
     serviceProviderNumber: "SPN-842104",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Jack MacIntyre",
     tradeTitle: "Senior Facilities Maintenance Lead & Multi-Trade Handyman",
     category: "handyman",
@@ -496,7 +496,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-205",
     serviceProviderNumber: "SPN-842105",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Samir Patel",
     tradeTitle: "Civil Pipe Layer & 5-Tonne Excavator Operator",
     category: "civil",
@@ -534,7 +534,7 @@ const INITIAL_CANDIDATES = [
   {
     id: "cand-206",
     serviceProviderNumber: "SPN-842106",
-    businessId: "itsasimplejob",
+    businessId: "its-a-simple-job",
     name: "Sophie Becker",
     tradeTitle: "Commercial & Architectural Painter / Plaster Finisher",
     category: "painting",
@@ -642,7 +642,7 @@ class ProviderDatabase {
     const providerWithDefaults = {
       id,
       serviceProviderNumber: spn,
-      businessId: "itsasimplejob",
+      businessId: "its-a-simple-job",
       status: newProvider.status || "active",
       pausedReason: newProvider.pausedReason || "",
       rating: 5.0,
@@ -760,7 +760,7 @@ class CandidateDatabase {
     const candidate = {
       id,
       serviceProviderNumber: spn,
-      businessId: "itsasimplejob",
+      businessId: "its-a-simple-job",
       policeChecked: true,
       lat: newCand.lat || -28.0024,
       lng: newCand.lng || 153.4310,

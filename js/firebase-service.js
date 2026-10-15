@@ -1,7 +1,7 @@
 /**
  * It's A Simple Job - Firebase Service Layer
  * Multi-Tenant Cloud Firestore Client for 'ai-foundation-firebase'
- * Partitioned with: businessId = 'itsasimplejob'
+ * Partitioned with: businessId = 'its-a-simple-job'
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js';
@@ -23,7 +23,6 @@ import {
   signInWithPopup, 
   signOut 
 } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js';
-import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js';
 
 // Firebase Project Configuration (Loaded dynamically from .env via window.ENV)
 export const firebaseConfig = {
@@ -36,9 +35,23 @@ export const firebaseConfig = {
   measurementId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MEASUREMENT_ID) || "G-9V4X460YRL"
 };
 
-export const BUSINESS_ID = "itsasimplejob";
+// Official Multi-Tenant Partition Tag
+export const BUSINESS_ID = "its-a-simple-job";
 
-// Initialize Firebase App, Firestore, Auth & Analytics
+// Non-blocking timeout helper for database operations
+export async function withTimeout(promise, ms = 3000) {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Operation timed out')), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Initialize Firebase App, Firestore, Auth
 let app = null;
 let db = null;
 let auth = null;
@@ -54,13 +67,21 @@ try {
   googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
   googleProvider.setCustomParameters({ prompt: 'select_account' });
   isConnected = true;
-  isSupported().then(supported => {
-    if (supported) {
-      analytics = getAnalytics(app);
-      console.log("📊 [Firebase] Analytics initialized (ID: G-9V4X460YRL)");
-    }
-  }).catch(() => {});
-  console.log("🔥 [Firebase] Initialized Firestore & Google Auth with Google Calendar scope (Tenant: itsasimplejob)");
+  console.log("🔥 [Firebase] Initialized Firestore & Google Auth (Tenant: its-a-simple-job)");
+
+  // Resilient non-blocking dynamic analytics loading - ad-blockers will never break the app!
+  if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+    import('https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js')
+      .then(({ getAnalytics, isSupported }) => isSupported().then(supported => {
+        if (supported && app) {
+          analytics = getAnalytics(app);
+          console.log("📊 [Firebase] Analytics initialized (ID: " + firebaseConfig.measurementId + ")");
+        }
+      }))
+      .catch(() => {
+        console.log("📊 [Firebase] Analytics script blocked by ad-blocker or unavailable; core services remain fully operational.");
+      });
+  }
 } catch (err) {
   console.warn("⚠️ [Firebase] Initialization notice:", err.message);
 }
@@ -69,13 +90,11 @@ try {
  * Unique Reference Number Generators
  */
 export function generateSPN() {
-  // Service Provider Number format: SPN-XXXXXX (6 digits)
   const num = Math.floor(100000 + Math.random() * 900000);
   return `SPN-${num}`;
 }
 
 export function getOrCreateCRN(custPhone = '', custName = '') {
-  // Check local cache first so repeat visits by same customer reuse CRN
   const cachedCRN = localStorage.getItem('iasj_customer_crn');
   if (cachedCRN) return cachedCRN;
 
@@ -88,7 +107,6 @@ export function getOrCreateCRN(custPhone = '', custName = '') {
 }
 
 export function generateRRN() {
-  // Recruiter Reference Number format: RRN-XXXXXX
   const num = Math.floor(100000 + Math.random() * 900000);
   return `RRN-${num}`;
 }
@@ -111,10 +129,10 @@ export async function saveProviderToFirestore(provider) {
   if (db && isConnected) {
     try {
       const docRef = doc(collection(db, 'providers'), provider.serviceProviderNumber);
-      await setDoc(docRef, payload, { merge: true });
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
       console.log(`✅ [Firestore] Provider saved under SPN: ${provider.serviceProviderNumber}`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Could not write provider to remote, cached locally:", e);
+      console.warn("⚠️ [Firestore] Remote write timed out or offline, cached locally:", e.message);
     }
   }
 
@@ -141,10 +159,35 @@ export async function saveBookingToFirestore(booking) {
   if (db && isConnected) {
     try {
       const docRef = doc(collection(db, 'bookings'), booking.docketNumber);
-      await setDoc(docRef, payload, { merge: true });
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
       console.log(`✅ [Firestore] Booking saved under docket: ${booking.docketNumber} (CRN: ${crn})`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Could not write booking to remote, cached locally:", e);
+      console.warn("⚠️ [Firestore] Remote write timed out or offline, cached locally:", e.message);
+    }
+  }
+
+  return payload;
+}
+
+/**
+ * Customer Profile Registration
+ */
+export async function saveCustomerToFirestore(customer) {
+  const crn = customer.customerRefNumber || getOrCreateCRN(customer.phone, customer.name);
+  const payload = {
+    ...customer,
+    customerRefNumber: crn,
+    businessId: BUSINESS_ID,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (db && isConnected) {
+    try {
+      const docRef = doc(collection(db, 'customers'), crn);
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
+      console.log(`✅ [Firestore] Customer saved under CRN: ${crn}`);
+    } catch (e) {
+      console.warn("⚠️ [Firestore] Customer saved locally, remote offline:", e.message);
     }
   }
 
@@ -169,10 +212,10 @@ export async function saveCandidateToFirestore(candidate) {
   if (db && isConnected) {
     try {
       const docRef = doc(collection(db, 'candidates'), candidate.serviceProviderNumber);
-      await setDoc(docRef, payload, { merge: true });
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
       console.log(`✅ [Firestore] Candidate Resume saved under SPN: ${candidate.serviceProviderNumber}`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Candidate cached locally:", e);
+      console.warn("⚠️ [Firestore] Remote candidate write timed out, cached locally:", e.message);
     }
   }
 
@@ -198,10 +241,10 @@ export async function saveRecruitmentOrderToFirestore(order) {
   if (db && isConnected) {
     try {
       const docRef = doc(collection(db, 'recruitment_orders'), orderId);
-      await setDoc(docRef, payload, { merge: true });
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
       console.log(`✅ [Firestore] Recruitment order saved: ${orderId} (RRN: ${rrn})`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Recruitment order cached locally:", e);
+      console.warn("⚠️ [Firestore] Remote recruitment write timed out, cached locally:", e.message);
     }
   }
 
@@ -220,10 +263,10 @@ export async function savePartnerApplicationToFirestore(appData) {
 
   if (db && isConnected) {
     try {
-      await addDoc(collection(db, 'partner_applications'), payload);
+      await withTimeout(addDoc(collection(db, 'partner_applications'), payload), 3500);
       console.log(`✅ [Firestore] Partner application saved.`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Application cached locally:", e);
+      console.warn("⚠️ [Firestore] Partner write timed out or offline, cached locally:", e.message);
     }
   }
 
@@ -242,7 +285,7 @@ export async function logAIQueryToFirestore(queryData) {
 
   if (db && isConnected) {
     try {
-      await addDoc(collection(db, 'ai_prompts'), payload);
+      await withTimeout(addDoc(collection(db, 'ai_prompts'), payload), 2500);
     } catch (e) {
       // Non-blocking background log
     }
@@ -288,12 +331,12 @@ export async function fetchRemoteProviders() {
       collection(db, 'providers'),
       where('businessId', '==', BUSINESS_ID)
     );
-    const snapshot = await getDocs(q);
+    const snapshot = await withTimeout(getDocs(q), 3500);
     const providers = [];
     snapshot.forEach(doc => providers.push(doc.data()));
     return providers;
   } catch (e) {
-    console.warn("⚠️ [Firestore] Falling back to local providers data:", e.message);
+    console.warn("⚠️ [Firestore] Remote fetch timed out or offline, falling back to local providers data:", e.message);
     return [];
   }
 }
@@ -310,10 +353,10 @@ export async function seedProvidersIfEmpty(initialProviders) {
       where('businessId', '==', BUSINESS_ID),
       limit(1)
     );
-    const snapshot = await getDocs(q);
+    const snapshot = await withTimeout(getDocs(q), 3500);
 
     if (snapshot.empty && initialProviders && initialProviders.length > 0) {
-      console.log(`🌱 [Firestore] Seeding ${initialProviders.length} providers with tag 'itsasimplejob'...`);
+      console.log(`🌱 [Firestore] Seeding ${initialProviders.length} providers with tag '${BUSINESS_ID}'...`);
       for (const prov of initialProviders) {
         await saveProviderToFirestore(prov);
       }
@@ -337,10 +380,10 @@ export async function recordStripeTransaction(transactionRecord) {
   if (db && isConnected) {
     try {
       const docRef = doc(collection(db, 'stripe_transactions'), transactionRecord.paymentIntentId);
-      await setDoc(docRef, payload, { merge: true });
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
       console.log(`💳 [Firestore] Stripe transaction saved under PaymentIntent: ${transactionRecord.paymentIntentId}`);
     } catch (e) {
-      console.warn("⚠️ [Firestore] Could not write transaction to remote:", e);
+      console.warn("⚠️ [Firestore] Remote transaction write timed out or offline:", e.message);
     }
   }
 
@@ -353,7 +396,7 @@ export async function recordStripeTransaction(transactionRecord) {
 export async function signInWithGoogle(role = 'customer') {
   try {
     if (auth && googleProvider) {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await withTimeout(signInWithPopup(auth, googleProvider), 30000);
       const user = result.user;
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
@@ -388,9 +431,6 @@ export async function signInWithGoogle(role = 'customer') {
   }
 
   // Graceful simulation fallback for localhost/development
-  // =====================================================================
-  // TODO: UPDATE THESE EMAILS WITH THE ONES YOU ADDED TO OAUTH
-  // =====================================================================
   const fallbackUser = {
     uid: 'google-uid-' + Math.floor(100000 + Math.random() * 900000),
     displayName: role === 'provider' ? 'Jack Morrison (Provider Test)' : 'Sarah Jenkins (Customer Test)',
@@ -441,11 +481,13 @@ window.firebaseService = {
   auth,
   isConnected,
   BUSINESS_ID,
+  withTimeout,
   generateSPN,
   getOrCreateCRN,
   generateRRN,
   saveProviderToFirestore,
   saveBookingToFirestore,
+  saveCustomerToFirestore,
   saveCandidateToFirestore,
   saveRecruitmentOrderToFirestore,
   savePartnerApplicationToFirestore,

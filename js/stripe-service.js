@@ -95,7 +95,7 @@ class StripePaymentService {
       paymentIntentId,
       chargeId,
       accountId: this.config.accountId,
-      businessId: 'itsasimplejob',
+      businessId: window.firebaseService?.BUSINESS_ID || 'its-a-simple-job',
       docketNumber: paymentData.docketNumber,
       customerName: paymentData.customerName || 'Valued Customer',
       amountAud: paymentData.amount,
@@ -109,9 +109,13 @@ class StripePaymentService {
       receiptUrl: `https://dashboard.stripe.com/test/payments/${paymentIntentId}`
     };
 
-    // If Firebase is available, record payment in Firestore
+    // If Firebase is available, record payment in Firestore without blocking
     if (window.firebaseService?.recordStripeTransaction) {
-      await window.firebaseService.recordStripeTransaction(transactionRecord);
+      try {
+        await window.firebaseService.recordStripeTransaction(transactionRecord);
+      } catch (err) {
+        console.warn("⚠️ [Stripe] Could not record remote transaction:", err.message);
+      }
     }
 
     return transactionRecord;
@@ -125,7 +129,7 @@ class StripePaymentService {
     const settlementId = 'settle_direct_' + Math.random().toString(36).substring(2, 10);
     const record = {
       settlementId,
-      businessId: 'itsasimplejob',
+      businessId: window.firebaseService?.BUSINESS_ID || 'its-a-simple-job',
       docketNumber: settlementData.docketNumber,
       spn: settlementData.provider?.serviceProviderNumber || 'SPN-Direct',
       providerName: settlementData.provider?.name || 'Assigned Tradie',
@@ -142,7 +146,11 @@ class StripePaymentService {
     };
 
     if (window.firebaseService?.recordStripeTransaction) {
-      await window.firebaseService.recordStripeTransaction(record);
+      try {
+        await window.firebaseService.recordStripeTransaction(record);
+      } catch (err) {
+        console.warn("⚠️ [Stripe] Could not record remote settlement:", err.message);
+      }
     }
 
     console.log(`✅ [Direct Settlement] Recorded direct payment for docket ${settlementData.docketNumber} to ${record.providerName} via ${record.paymentMethod.toUpperCase()}`);
