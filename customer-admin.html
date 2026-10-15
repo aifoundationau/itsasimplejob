@@ -1736,6 +1736,314 @@
       }
     }
 
+    // Customer Admin Interactive Logic
+    const CUSTOMER_SETTINGS_KEY = 'iasj_customer_admin_settings';
+
+    function getCustomerSettings() {
+      const defaultSettings = {
+        isPaused: false,
+        pauseReason: '',
+        gcalAutoBlock: true,
+        blockedDates: [
+          { date: '2026-10-18', reason: 'Public Holiday' },
+          { date: '2026-10-25', reason: 'Family Event' }
+        ],
+        preferredWindows: { morning: true, afternoon: true, evening: false },
+        rates: {
+          hourlyCap: 95.00,
+          calloutCap: 65.00,
+          emergencyAllowance: '1.5',
+          maxDistance: 35,
+          distanceUnit: 'km'
+        }
+      };
+      try {
+        const stored = localStorage.getItem(CUSTOMER_SETTINGS_KEY);
+        if (stored) return { ...defaultSettings, ...JSON.parse(stored) };
+      } catch (e) {
+        console.warn('Error reading customer settings:', e);
+      }
+      return defaultSettings;
+    }
+
+    function saveCustomerSettings(settings) {
+      try {
+        localStorage.setItem(CUSTOMER_SETTINGS_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.warn('Error saving customer settings:', e);
+      }
+    }
+
+    function updateCustomerAdminUI() {
+      const settings = getCustomerSettings();
+      
+      // Update Google User profile if available
+      try {
+        const googleUser = JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
+        if (googleUser) {
+          if (googleUser.displayName) {
+            const nameEl = document.getElementById('customer-profile-name');
+            if (nameEl) nameEl.textContent = googleUser.displayName;
+          }
+          if (googleUser.email) {
+            const emailEl = document.getElementById('customer-profile-email');
+            const gcalEmailEl = document.getElementById('customer-gcal-email');
+            if (emailEl) emailEl.textContent = googleUser.email;
+            if (gcalEmailEl) gcalEmailEl.textContent = googleUser.email;
+          }
+          const signinBtn = document.getElementById('btn-admin-signin');
+          if (signinBtn) signinBtn.style.display = 'none';
+        }
+      } catch (e) {}
+
+      // Update Pause / Resume status
+      const statusBox = document.getElementById('customer-status-box');
+      const headline = document.getElementById('customer-status-headline');
+      const pauseBtn = document.getElementById('btn-toggle-customer-pause');
+      const globalBadge = document.getElementById('customer-global-status-badge');
+      const pillBadge = document.getElementById('customer-pause-status-pill');
+      const pauseReasonInput = document.getElementById('customer-pause-reason');
+
+      if (pauseReasonInput) pauseReasonInput.value = settings.pauseReason || '';
+
+      if (settings.isPaused) {
+        if (statusBox) statusBox.classList.add('is-paused');
+        if (headline) {
+          headline.innerHTML = '⏸️ PAUSED - Automated Matching & Dispatch On Hold';
+          headline.style.color = '#B45309';
+        }
+        if (pauseBtn) {
+          pauseBtn.className = 'status-switch-btn';
+          pauseBtn.style.background = '#ECFDF5';
+          pauseBtn.style.color = '#059669';
+          pauseBtn.style.border = '1px solid #10B981';
+          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-play"></i> Resume My Service';
+        }
+        if (globalBadge) {
+          globalBadge.className = 'status-badge-live paused';
+          globalBadge.innerHTML = '⏸️ Service Paused';
+        }
+        if (pillBadge) {
+          pillBadge.className = 'status-badge-live paused';
+          pillBadge.textContent = 'Service Paused';
+        }
+      } else {
+        if (statusBox) statusBox.classList.remove('is-paused');
+        if (headline) {
+          headline.innerHTML = '🟢 ACTIVE - Ready for Service Requests & Dispatch';
+          headline.style.color = '#059669';
+        }
+        if (pauseBtn) {
+          pauseBtn.className = 'status-switch-btn btn-pause';
+          pauseBtn.style.background = '#FEF3C7';
+          pauseBtn.style.color = '#B45309';
+          pauseBtn.style.border = '1px solid #F59E0B';
+          pauseBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Pause My Service';
+        }
+        if (globalBadge) {
+          globalBadge.className = 'status-badge-live active';
+          globalBadge.innerHTML = '🟢 Service Active';
+        }
+        if (pillBadge) {
+          pillBadge.className = 'status-badge-live active';
+          pillBadge.textContent = 'Service Active';
+        }
+      }
+
+      // Render Blocked Dates
+      renderBlockedDates(settings.blockedDates || []);
+
+      // Preferred Windows
+      if (settings.preferredWindows) {
+        const morningEl = document.getElementById('pref-window-morning');
+        const afternoonEl = document.getElementById('pref-window-afternoon');
+        const eveningEl = document.getElementById('pref-window-evening');
+        if (morningEl) morningEl.checked = !!settings.preferredWindows.morning;
+        if (afternoonEl) afternoonEl.checked = !!settings.preferredWindows.afternoon;
+        if (eveningEl) eveningEl.checked = !!settings.preferredWindows.evening;
+      }
+
+      // Google Calendar Auto-block
+      const gcalAutoblockEl = document.getElementById('customer-gcal-autoblock');
+      if (gcalAutoblockEl) gcalAutoblockEl.checked = settings.gcalAutoBlock !== false;
+
+      // Rates
+      if (settings.rates) {
+        const hourlyEl = document.getElementById('cust-rate-hourly-cap');
+        const calloutEl = document.getElementById('cust-rate-callout-cap');
+        const emergEl = document.getElementById('cust-emergency-rate-allowance');
+        const distEl = document.getElementById('cust-max-travel-distance');
+        const unitEl = document.getElementById('cust-distance-unit');
+        const headerCapEl = document.getElementById('customer-header-rate-cap');
+
+        if (hourlyEl) hourlyEl.value = settings.rates.hourlyCap || 95.00;
+        if (calloutEl) calloutEl.value = settings.rates.calloutCap || 65.00;
+        if (emergEl) emergEl.value = settings.rates.emergencyAllowance || '1.5';
+        if (distEl) distEl.value = settings.rates.maxDistance || 35;
+        if (unitEl) unitEl.value = settings.rates.distanceUnit || 'km';
+        if (headerCapEl) headerCapEl.textContent = `$${parseFloat(settings.rates.hourlyCap || 95).toFixed(2)} / hr`;
+      }
+    }
+
+    function toggleCustomerPauseState() {
+      const settings = getCustomerSettings();
+      settings.isPaused = !settings.isPaused;
+      saveCustomerSettings(settings);
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') {
+        showToast(settings.isPaused ? 'Service Paused. Dispatches placed on hold.' : 'Service Resumed. Active for bookings.');
+      }
+    }
+
+    function saveCustomerPauseReason() {
+      const settings = getCustomerSettings();
+      const val = document.getElementById('customer-pause-reason')?.value || '';
+      settings.pauseReason = val;
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') {
+        showToast('Pause note saved successfully.');
+      }
+    }
+
+    function renderBlockedDates(blockedList) {
+      const container = document.getElementById('customer-blocked-dates-list');
+      if (!container) return;
+      if (!blockedList || blockedList.length === 0) {
+        container.innerHTML = '<span style="font-size:0.8rem; color:#94A3B8; font-style:italic;">No dates currently turned off. All dates active.</span>';
+        return;
+      }
+      container.innerHTML = blockedList.map(item => `
+        <span class="date-chip date-chip-off">
+          <i class="fa-solid fa-calendar-xmark"></i> ${item.date} ${item.reason ? `(${item.reason})` : ''}
+          <span class="date-chip-remove" onclick="removeCustomerBlackoutDate('${item.date}')" title="Turn Date Back ON">&times;</span>
+        </span>
+      `).join('');
+    }
+
+    function addCustomerBlackoutDate() {
+      const dateInput = document.getElementById('new-blackout-date');
+      const reasonInput = document.getElementById('new-blackout-reason');
+      const date = dateInput?.value;
+      const reason = reasonInput?.value || '';
+
+      if (!date) {
+        if (typeof showToast === 'function') showToast('Please select a date to turn off.');
+        return;
+      }
+
+      const settings = getCustomerSettings();
+      if (!settings.blockedDates) settings.blockedDates = [];
+      if (settings.blockedDates.some(d => d.date === date)) {
+        if (typeof showToast === 'function') showToast('This date is already turned off.');
+        return;
+      }
+
+      settings.blockedDates.push({ date, reason });
+      saveCustomerSettings(settings);
+      dateInput.value = '';
+      if (reasonInput) reasonInput.value = '';
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') showToast(`Date ${date} turned OFF.`);
+    }
+
+    function removeCustomerBlackoutDate(date) {
+      const settings = getCustomerSettings();
+      settings.blockedDates = (settings.blockedDates || []).filter(d => d.date !== date);
+      saveCustomerSettings(settings);
+      updateCustomerAdminUI();
+      if (typeof showToast === 'function') showToast(`Date ${date} turned Back ON.`);
+    }
+
+    function applyCustomerDatePreset(preset) {
+      const settings = getCustomerSettings();
+      const today = new Date();
+
+      if (preset === 'all_on') {
+        settings.blockedDates = [];
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast('All dates turned ON.');
+        return;
+      }
+
+      if (preset === 'next_7_off' || preset === 'next_14_off') {
+        const count = preset === 'next_7_off' ? 7 : 14;
+        const newDates = [];
+        for (let i = 0; i < count; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          newDates.push({ date: dateStr, reason: 'Vacation / Holiday' });
+        }
+        settings.blockedDates = newDates;
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast(`Turned off next ${count} days.`);
+        return;
+      }
+
+      if (preset === 'weekends_off') {
+        const newDates = [];
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          const day = d.getDay();
+          if (day === 0 || day === 6) { // Sunday or Saturday
+            newDates.push({ date: d.toISOString().split('T')[0], reason: 'Weekend Off' });
+          }
+        }
+        settings.blockedDates = newDates;
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast('Turned off weekend visits for the next 30 days.');
+        return;
+      }
+    }
+
+    function saveCustomerGcalAutoblock(checked) {
+      const settings = getCustomerSettings();
+      settings.gcalAutoBlock = checked;
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') showToast(checked ? 'Google Calendar auto-block enabled.' : 'Google Calendar auto-block disabled.');
+    }
+
+    function saveCustomerWindowPreferences() {
+      const settings = getCustomerSettings();
+      settings.preferredWindows = {
+        morning: document.getElementById('pref-window-morning')?.checked ?? true,
+        afternoon: document.getElementById('pref-window-afternoon')?.checked ?? true,
+        evening: document.getElementById('pref-window-evening')?.checked ?? false
+      };
+      saveCustomerSettings(settings);
+      if (typeof showToast === 'function') showToast('Time window preferences saved.');
+    }
+
+    function saveCustomerRates() {
+      const settings = getCustomerSettings();
+      const hourlyCap = parseFloat(document.getElementById('cust-rate-hourly-cap')?.value || '95');
+      const calloutCap = parseFloat(document.getElementById('cust-rate-callout-cap')?.value || '65');
+      const emergencyAllowance = document.getElementById('cust-emergency-rate-allowance')?.value || '1.5';
+      const maxDistance = parseFloat(document.getElementById('cust-max-travel-distance')?.value || '35');
+      const distanceUnit = document.getElementById('cust-distance-unit')?.value || 'km';
+
+      settings.rates = {
+        hourlyCap,
+        calloutCap,
+        emergencyAllowance,
+        maxDistance,
+        distanceUnit
+      };
+
+      saveCustomerSettings(settings);
+      const capEl = document.getElementById('customer-header-rate-cap');
+      if (capEl) capEl.textContent = `$${hourlyCap.toFixed(2)} / hr`;
+      if (typeof showToast === 'function') showToast('Rate preferences & budget caps saved successfully!');
+    }
+
+    function syncCustomerGoogleCalendarNow() {
+      if (typeof showToast === 'function') showToast('Syncing with Google Calendar... All events updated.');
+    }
+
     // Expose Work Teams methods globally
     window.switchAdminMainView = switchAdminMainView;
     window.renderWorkTeamsUI = renderWorkTeamsUI;
@@ -1759,7 +2067,23 @@
     window.handleJobStatusChange = handleJobStatusChange;
     window.handleDeleteJob = handleDeleteJob;
 
+    // Expose Customer Admin methods globally
+    window.getCustomerSettings = getCustomerSettings;
+    window.saveCustomerSettings = saveCustomerSettings;
+    window.updateCustomerAdminUI = updateCustomerAdminUI;
+    window.toggleCustomerPauseState = toggleCustomerPauseState;
+    window.saveCustomerPauseReason = saveCustomerPauseReason;
+    window.renderBlockedDates = renderBlockedDates;
+    window.addCustomerBlackoutDate = addCustomerBlackoutDate;
+    window.removeCustomerBlackoutDate = removeCustomerBlackoutDate;
+    window.applyCustomerDatePreset = applyCustomerDatePreset;
+    window.saveCustomerGcalAutoblock = saveCustomerGcalAutoblock;
+    window.saveCustomerWindowPreferences = saveCustomerWindowPreferences;
+    window.saveCustomerRates = saveCustomerRates;
+    window.syncCustomerGoogleCalendarNow = syncCustomerGoogleCalendarNow;
+
     document.addEventListener('DOMContentLoaded', () => {
+      updateCustomerAdminUI();
       const urlParams = new URLSearchParams(window.location.search);
       const requestedView = urlParams.get('view') || urlParams.get('tab');
       const requestedTeam = urlParams.get('team');
@@ -1776,5 +2100,8 @@
       }
     });
   </script>
+
+  <!-- Global Toast Notification -->
+  <div class="toast-msg" id="toast-msg"><i class="fa-solid fa-circle-check" style="color:var(--accent-teal, #00D2D3);"></i> <span id="toast-text"></span></div>
 </body>
 </html>

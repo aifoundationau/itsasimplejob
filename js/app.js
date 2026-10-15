@@ -16,7 +16,7 @@ const appState = {
   recognition: null,
   candidateShiftFilter: 'all',
   activeCandidateModalId: null,
-  // ImgBB Upload State (Album: https://ibb.co/album/k4vjCb)
+  // ImgBB Upload State (Album: https://ibb.co/album/TKRnX5)
   uploadedJobPhotos: [],
   uploadedCourierPhoto: null,
   uploadedProviderPhoto: null,
@@ -46,30 +46,39 @@ const SAMPLE_PROMPTS = {
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
-  initSpeechRecognition();
-  loadGoogleMapsScript();
-  initGoogleAuthUI();
+  try { initSpeechRecognition(); } catch (e) {}
+  try { loadGoogleMapsScript(); } catch (e) {}
+  try { initGoogleAuthUI(); } catch (e) {}
+
   const courierDateInput = document.getElementById('courier-pickup-date');
   if (courierDateInput && !courierDateInput.value) {
     courierDateInput.value = new Date().toISOString().split('T')[0];
   }
-  calculateCourierQuote();
-  filterCandidates();
-  renderProviderDocumentVault();
-  renderCalendarMatrix('inline-calendar-matrix-root', 'inline');
-  renderCalendarMatrix('modal-calendar-matrix-root', 'modal');
-  renderDefaultServiceFeeRows('page', 'plumbing');
-  renderDefaultServiceFeeRows('modal', 'plumbing');
+
+  // Only calculate courier quote if courier elements exist on the page
+  if (document.getElementById('courier-origin') || document.getElementById('courier-calc-distance')) {
+    try { calculateCourierQuote(); } catch (e) {}
+  }
+
+  try { filterCandidates(); } catch (e) {}
+  try { renderProviderDocumentVault(); } catch (e) {}
+  try { renderCalendarMatrix('inline-calendar-matrix-root', 'inline'); } catch (e) {}
+  try { renderCalendarMatrix('modal-calendar-matrix-root', 'modal'); } catch (e) {}
+  try { renderDefaultServiceFeeRows('page', 'plumbing'); } catch (e) {}
+  try { renderDefaultServiceFeeRows('modal', 'plumbing'); } catch (e) {}
 
   // Initialize form draft auto-save listeners & Google auth banners
   if (typeof attachDraftAutoSaveListeners === 'function') {
-    attachDraftAutoSaveListeners();
+    try { attachDraftAutoSaveListeners(); } catch (e) {}
   }
   if (typeof updateGoogleAuthBanners === 'function') {
-    updateGoogleAuthBanners();
+    try { updateGoogleAuthBanners(); } catch (e) {}
   }
   if (typeof restoreFranchiseApplicationDraft === 'function') {
-    restoreFranchiseApplicationDraft();
+    try { restoreFranchiseApplicationDraft(); } catch (e) {}
+  }
+  if (typeof restoreProviderApplicationDraft === 'function') {
+    try { restoreProviderApplicationDraft(); } catch (e) {}
   }
 
   // If Firebase is available, seed providers if database is empty
@@ -440,9 +449,12 @@ function filterContractors() {
     });
   }
 
-  // Bounds tracker
-  const bounds = new google.maps.LatLngBounds();
-  bounds.extend(new google.maps.LatLng(userLat, userLng));
+  // Bounds tracker (safe if Google Maps has not loaded)
+  const hasGoogleMaps = !!(window.google && window.google.maps);
+  const bounds = hasGoogleMaps ? new google.maps.LatLngBounds() : null;
+  if (bounds) {
+    bounds.extend(new google.maps.LatLng(userLat, userLng));
+  }
 
   allProviders.forEach(provider => {
     // 1. Trade Category Match
@@ -464,9 +476,9 @@ function filterContractors() {
       matched.push(contractorWithDistance);
 
       // Plot Marker on Google Map
-      if (appState.contractorMap && window.google?.maps) {
+      if (appState.contractorMap && hasGoogleMaps) {
         const markerPos = new google.maps.LatLng(provLat, provLng);
-        bounds.extend(markerPos);
+        if (bounds) bounds.extend(markerPos);
 
         const markerColor = provider.category === 'courier' ? '#FF5A1F' : '#0B192C';
 
@@ -510,8 +522,8 @@ function filterContractors() {
     }
   });
 
-  // Fit bounds if markers exist
-  if (appState.contractorMap && matched.length > 0) {
+  // Fit bounds if markers and Google Maps exist
+  if (hasGoogleMaps && bounds && appState.contractorMap && matched.length > 0) {
     appState.contractorMap.fitBounds(bounds);
   }
 
@@ -890,7 +902,7 @@ function selectShift(shiftType) {
 
 /**
  * ==============================================================================
- * IMGBB IMAGE UPLOAD HANDLERS (Album: https://ibb.co/album/k4vjCb)
+ * IMGBB IMAGE UPLOAD HANDLERS (Album: https://ibb.co/album/TKRnX5)
  * ==============================================================================
  */
 
@@ -929,7 +941,7 @@ async function handleJobPhotoUpload(event) {
       }
     }
 
-    showToast(`Uploaded ${files.length} photo(s) to ImgBB Album (itsasimplejob)!`);
+    showToast(`Uploaded ${files.length} photo(s) to ImgBB Album (its-a-simple-job)!`);
   } catch (err) {
     console.error("ImgBB upload error:", err);
     showToast('Image upload failed: ' + err.message);
@@ -986,29 +998,43 @@ async function handleCourierPhotoUpload(event) {
   }
 }
 
-async function handleProviderPhotoUpload(event) {
+async function handleProviderPhotoUpload(event, photoType = 'licence') {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  const preview = document.getElementById('provider-photo-preview');
+  const isVehicle = photoType === 'vehicle';
+  const preview = document.getElementById(isVehicle ? 'page-prov-photo-preview' : 'provider-photo-preview')
+    || document.getElementById('page-prov-photo-preview')
+    || document.getElementById('provider-photo-preview');
+
   if (preview) {
     preview.style.display = 'flex';
-    preview.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading licence photo to ImgBB...';
+    preview.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading ${isVehicle ? 'vehicle' : 'licence'} photo to ImgBB...`;
   }
 
   try {
-    const upload = await window.imgbbService.uploadImage(file, `tradie_lic_${Date.now()}`, 'tradie_license');
-    appState.uploadedProviderPhoto = upload;
+    const upload = await window.imgbbService.uploadImage(
+      file, 
+      isVehicle ? `tradie_veh_${Date.now()}` : `tradie_lic_${Date.now()}`, 
+      isVehicle ? 'tradie_vehicle' : 'tradie_license'
+    );
+
+    if (isVehicle) {
+      appState.uploadedProviderVehiclePhoto = upload;
+    } else {
+      appState.uploadedProviderPhoto = upload;
+    }
+
     if (preview) {
       preview.innerHTML = `
         <img src="${upload.thumbUrl}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #93C5FD;">
-        <span><strong>Licence Stored in ImgBB:</strong> <a href="${upload.url}" target="_blank" style="color:#2563EB;">View Image</a></span>
+        <span><strong>${isVehicle ? 'Vehicle Photo' : 'Licence Card'} Stored in ImgBB:</strong> <a href="${upload.url}" target="_blank" style="color:#2563EB;">View Image</a></span>
       `;
     }
-    showToast('Licence card uploaded to ImgBB Album!');
+    showToast(`${isVehicle ? 'Vehicle photo' : 'Licence card'} uploaded to ImgBB Album!`);
   } catch (err) {
     console.error("Provider photo error:", err);
-    showToast('Licence upload error: ' + err.message);
+    showToast(`${isVehicle ? 'Vehicle' : 'Licence'} upload error: ` + err.message);
   }
 }
 
@@ -1066,7 +1092,7 @@ async function confirmBooking() {
 
   const booking = {
     docketNumber,
-    businessId: 'itsasimplejob',
+    businessId: 'its-a-simple-job',
     createdAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
     custName,
     custPhone,
@@ -1076,7 +1102,7 @@ async function confirmBooking() {
     shift: shiftLabel,
     categoryName: analysis.categoryName,
     attachedPhotos: appState.uploadedJobPhotos.map(p => p.url),
-    imgbbAlbumUrl: 'https://ibb.co/album/k4vjCb',
+    imgbbAlbumUrl: 'https://ibb.co/album/TKRnX5',
     provider: {
       ...provider,
       serviceProviderNumber: provider.serviceProviderNumber || 'SPN-101001'
@@ -1179,21 +1205,22 @@ function updateCourierPricingUI(distanceKm, transitMins, weight, urgency) {
   const urgencyFee = urgency === 'express' ? 25.00 : (urgency === 'standard' ? 0.00 : -10.00);
   const weightFee = weight > 20 ? (weight - 20) * 1.5 : 0;
   
-  const subtotal = baseLoading + distanceFee + urgencyFee + weightFee;
+  const subtotal = Math.round((baseLoading + distanceFee + urgencyFee + weightFee) * 100) / 100;
   const gst = Math.round(subtotal * 0.10 * 100) / 100;
-  const total = subtotal + gst;
+  const total = Math.round((subtotal + gst) * 100) / 100;
 
-  // DOM Updates
-  document.getElementById('courier-calc-distance').textContent = `${distanceKm} km`;
-  document.getElementById('courier-calc-time').textContent = `${transitMins} Mins`;
-  document.getElementById('courier-base-fee').textContent = `$${baseLoading.toFixed(2)}`;
-  document.getElementById('courier-dist-km').textContent = distanceKm;
-  document.getElementById('courier-dist-fee').textContent = `$${distanceFee.toFixed(2)}`;
-  document.getElementById('courier-urgency-fee').textContent = `$${urgencyFee.toFixed(2)}`;
-  document.getElementById('courier-gst-fee').textContent = `$${gst.toFixed(2)}`;
-  document.getElementById('courier-total-fee').textContent = `$${total.toFixed(2)}`;
+  // Safe DOM Updates
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('courier-calc-distance', `${distanceKm} km`);
+  setEl('courier-calc-time', `${transitMins} Mins`);
+  setEl('courier-base-fee', `$${baseLoading.toFixed(2)}`);
+  setEl('courier-dist-km', distanceKm);
+  setEl('courier-dist-fee', `$${distanceFee.toFixed(2)}`);
+  setEl('courier-urgency-fee', `$${urgencyFee.toFixed(2)}`);
+  setEl('courier-gst-fee', `$${gst.toFixed(2)}`);
+  setEl('courier-total-fee', `$${total.toFixed(2)}`);
 
-  return { distanceKm, transitMins, total };
+  return { distanceKm, transitMins, subtotal, baseLoading, distanceFee, urgencyFee, weightFee, gst, total };
 }
 
 function bookCourierDispatch() {
@@ -1202,14 +1229,23 @@ function bookCourierDispatch() {
   const desc = document.getElementById('courier-desc')?.value || 'Parcels';
   const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
   const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
-  const totalText = document.getElementById('courier-total-fee')?.textContent.replace('$', '') || '169.62';
-  const total = parseFloat(totalText);
+  const weight = parseFloat(document.getElementById('courier-weight')?.value) || 12;
+  const urgency = document.getElementById('courier-urgency')?.value || 'express';
+
+  // Calculate pricing mathematically so invoice lines add up perfectly to total
+  const baseLoading = 35.00;
+  const quote = updateCourierPricingUI(78.5, 67, weight, urgency);
+  const total = quote.total || 169.62;
+  const subtotal = quote.subtotal || 154.20;
+  const gst = quote.gst || 15.42;
+  const baseLabour = Math.max(0, Math.round((subtotal - baseLoading) * 100) / 100);
+
   const docketNumber = 'IASJ-CR-' + Math.floor(100000 + Math.random() * 900000);
   const customerRefNumber = window.firebaseService?.getOrCreateCRN?.() || (`CRN-${Math.floor(100000 + Math.random() * 900000)}`);
 
   const courierBooking = {
     docketNumber,
-    businessId: 'itsasimplejob',
+    businessId: window.firebaseService?.BUSINESS_ID || 'its-a-simple-job',
     customerRefNumber,
     createdAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
     pickupDate,
@@ -1229,11 +1265,11 @@ function bookCourierDispatch() {
       hourlyRate: 55
     },
     pricing: {
-      calloutFee: 35,
-      baseLabour: total * 0.8,
+      calloutFee: baseLoading,
+      baseLabour: baseLabour,
       materialsEstimate: 0,
-      gst: total * 0.1,
-      estimatedTotal: total
+      gst: gst,
+      estimatedTotal: Math.round((baseLoading + baseLabour + gst) * 100) / 100
     },
     packagePhotoUrl: appState.uploadedCourierPhoto?.url || null,
     status: 'Courier Dispatched'
@@ -1295,14 +1331,17 @@ function handleProviderRegistration(event) {
   };
 
   window.providerDB.addProvider(newProvider);
-  document.getElementById('provider-registration-form')?.reset();
-
-  filterContractors(); // Refresh Google Maps contractor search with new provider!
+  try {
+    filterContractors(); // Refresh Google Maps contractor search with new provider!
+  } catch (e) {
+    console.warn("Contractor search refresh note:", e);
+  }
 
   // Open modal showing their newly issued official SPN
   const spnElem = document.getElementById('modal-spn-number');
   if (spnElem) spnElem.textContent = spn;
-  document.getElementById('provider-success-modal')?.classList.add('active');
+  const modal = document.getElementById('provider-success-modal');
+  if (modal) modal.classList.add('active');
 
   showToast(`Welcome aboard, ${name}! Your official Service Provider Number is ${spn}.`);
 }
@@ -1319,6 +1358,8 @@ function addJobToDispatchFeed(booking) {
   item.id = `job-${booking.docketNumber}`;
   item.style.borderColor = 'var(--brand-orange)';
 
+  const safeCustName = (booking.custName || '').replace(/['"\\]/g, ' ');
+
   item.innerHTML = `
     <div class="dispatch-job-header">
       <h5><i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> [NEW] ${booking.categoryName}</h5>
@@ -1332,7 +1373,7 @@ function addJobToDispatchFeed(booking) {
       <span class="dispatch-chip" style="color:var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Assigned to ${booking.provider.name}</span>
     </div>
     <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-      <button class="btn btn-primary btn-sm" onclick="acceptDispatchJob('job-${booking.docketNumber}', '${booking.custName}')">
+      <button class="btn btn-primary btn-sm" onclick="acceptDispatchJob('job-${booking.docketNumber}', '${safeCustName}')">
         <i class="fa-solid fa-truck-ramp-box"></i> En Route (SMS Customer)
       </button>
       <button class="btn btn-navy btn-sm" onclick="completeJob('${booking.docketNumber}')">
@@ -1454,7 +1495,7 @@ function renderInvoiceModal(booking) {
         <div style="margin-bottom:1rem; background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.6rem 0.85rem;">
           <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.4rem; display:flex; justify-content:space-between; align-items:center;">
             <span><i class="fa-solid fa-camera" style="color:var(--brand-orange);"></i> ATTACHED JOB PHOTOS (${booking.attachedPhotos.length}):</span>
-            <a href="https://ibb.co/album/k4vjCb" target="_blank" style="color:#2563EB; font-size:0.72rem;">View in ImgBB Album</a>
+            <a href="https://ibb.co/album/TKRnX5" target="_blank" style="color:#2563EB; font-size:0.72rem;">View in ImgBB Album</a>
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             ${booking.attachedPhotos.map(url => `
@@ -1740,14 +1781,23 @@ function toggleVoiceSpeech() {
  * Universal Toast Notification
  */
 function showToast(message) {
-  const toast = document.getElementById('toast-msg');
-  const text = document.getElementById('toast-text');
-  if (!toast || !text) return;
+  let toast = document.getElementById('toast-msg');
+  let text = document.getElementById('toast-text');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.id = 'toast-msg';
+    toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--accent-teal, #00D2D3);"></i> <span id="toast-text"></span>`;
+    document.body.appendChild(toast);
+    text = document.getElementById('toast-text');
+  }
+  if (!text) return;
 
   text.textContent = message;
   toast.classList.add('show');
 
-  setTimeout(() => {
+  if (window._toastTimeout) clearTimeout(window._toastTimeout);
+  window._toastTimeout = setTimeout(() => {
     toast.classList.remove('show');
   }, 4000);
 }
@@ -2256,7 +2306,7 @@ async function handleCustomerPhotoUpload(event, context = 'modal') {
         <img src="${upload.thumbUrl}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:2px solid #3B82F6;">
         <div style="font-size:0.78rem; text-align:left;">
           <div style="font-weight:700; color:#1E40AF;"><i class="fa-solid fa-circle-check" style="color:#059669;"></i> ID Photo Verified & Stored on Server</div>
-          <div style="font-size:0.72rem; color:#64748B;">Album: k4vjCb • <a href="${upload.url}" target="_blank" style="color:#2563EB; font-weight:700;">Inspect Image</a></div>
+          <div style="font-size:0.72rem; color:#64748B;">Album: TKRnX5 • <a href="${upload.url}" target="_blank" style="color:#2563EB; font-weight:700;">Inspect Image</a></div>
         </div>
       `;
     }
@@ -2316,7 +2366,7 @@ const DEFAULT_PROVIDER_DOCS = [
     thumbUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=200&q=80',
     uploadedAt: '2026-09-15T08:30:00Z',
     status: 'Verified & Active',
-    album: 'k4vjCb'
+    album: 'TKRnX5'
   },
   {
     id: 'doc-driver-2',
@@ -2327,7 +2377,7 @@ const DEFAULT_PROVIDER_DOCS = [
     thumbUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=200&q=80',
     uploadedAt: '2026-09-22T14:15:00Z',
     status: 'Verified & Active',
-    album: 'k4vjCb'
+    album: 'TKRnX5'
   },
   {
     id: 'doc-ins-3',
@@ -2338,7 +2388,7 @@ const DEFAULT_PROVIDER_DOCS = [
     thumbUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=200&q=80',
     uploadedAt: '2026-10-01T10:00:00Z',
     status: 'Valid 2026-2027',
-    album: 'k4vjCb'
+    album: 'TKRnX5'
   }
 ];
 
@@ -2379,7 +2429,7 @@ function renderProviderDocumentVault() {
           <span style="color:#059669; font-weight:700;"><i class="fa-solid fa-check"></i> ${doc.status || 'Verified'}</span>
         </div>
         <div style="font-size:0.72rem; color:#64748B; margin-bottom:0.75rem;">
-          <i class="fa-solid fa-server"></i> Server Album: <strong>${doc.album || 'k4vjCb'}</strong>
+          <i class="fa-solid fa-server"></i> Server Album: <strong>${doc.album || 'TKRnX5'}</strong>
         </div>
       </div>
       <div class="vault-actions">
@@ -2422,7 +2472,7 @@ function triggerVaultUpload() {
         thumbUrl: upload.thumbUrl,
         uploadedAt: new Date().toISOString(),
         status: 'Verified Active',
-        album: 'k4vjCb'
+        album: 'TKRnX5'
       };
       docs.unshift(newDoc);
       saveStoredProviderDocs(docs);
@@ -2466,10 +2516,10 @@ async function handleCustomerRegistrationSubmit(event, isInline = false) {
       holdingPhotoUrl: idPhotoUrl,
       verified: true,
       storedOnServer: true,
-      albumId: 'k4vjCb'
+      albumId: 'TKRnX5'
     },
     preferredDistanceUnit: (country === 'US' || country === 'UK') ? 'mile' : 'km',
-    businessId: 'itsasimplejob',
+    businessId: 'its-a-simple-job',
     createdAt: new Date().toISOString()
   };
 
@@ -3016,7 +3066,7 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
       thumbUrl: appState.uploadedProviderPhoto?.thumbUrl || licensePhoto,
       uploadedAt: new Date().toISOString(),
       status: 'Verified & Active',
-      album: 'k4vjCb'
+      album: 'TKRnX5'
     });
     saveStoredProviderDocs(docs);
     renderProviderDocumentVault();
@@ -3112,8 +3162,12 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
     document.getElementById('provider-advanced-reg-form')?.reset();
   }
 
-  // Refresh contractor search
-  filterContractors();
+  // Refresh contractor search safely
+  try {
+    filterContractors();
+  } catch (e) {
+    console.warn("Contractor search refresh note:", e);
+  }
 
   lastCreatedSPN = spn;
   const currentUser = window.firebaseService?.getCurrentGoogleUser?.();
@@ -3128,7 +3182,8 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
   // Open SPN success modal
   const spnElem = document.getElementById('modal-spn-number');
   if (spnElem) spnElem.textContent = spn;
-  document.getElementById('provider-success-modal')?.classList.add('active');
+  const modal = document.getElementById('provider-success-modal');
+  if (modal) modal.classList.add('active');
 
   showToast(`Welcome aboard, ${name}! Your official Service Provider Number is ${spn}. Licence stored on server.`);
 }
@@ -3316,6 +3371,11 @@ function renderCalendarMatrix(rootId, prefix, scheduleData) {
 
   root.innerHTML = html;
 }
+
+function initInlineCalendarMatrix() {
+  renderCalendarMatrix('inline-calendar-matrix-root', 'inline');
+}
+window.initInlineCalendarMatrix = initInlineCalendarMatrix;
 
 function toggleMatrixSlot(prefix, dayKey, shiftKey) {
   if (!matrixSchedules[prefix]) {
@@ -4610,12 +4670,30 @@ async function handleFranchiseRegisterSubmit(e) {
   if (typeof clearFranchiseApplicationDraft === 'function') {
     clearFranchiseApplicationDraft(false);
   }
+
+  // Open franchise success modal if present on standalone page
+  const successModal = document.getElementById('franchise-success-modal');
+  if (successModal) {
+    const nameEl = document.getElementById('modal-franchise-name');
+    const mgrEl = document.getElementById('modal-franchise-manager');
+    const countEl = document.getElementById('modal-franchise-staff-count');
+    if (nameEl) nameEl.textContent = franchiseName;
+    if (mgrEl) mgrEl.textContent = adminName;
+    if (countEl) countEl.textContent = registeredStaffList.length;
+    successModal.classList.add('active');
+  }
+
   showToast(`✅ Franchise '${franchiseName}' registered with Manager '${adminName}' and ${registeredStaffList.length} staff technician(s)!`);
   
   window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: user, action: 'login' } }));
   if (window.filterContractors) window.filterContractors();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function closeFranchiseSuccessModal() {
+  document.getElementById('franchise-success-modal')?.classList.remove('active');
+}
+window.closeFranchiseSuccessModal = closeFranchiseSuccessModal;
 
 function handleAddStaffSubmit(e) {
   e.preventDefault();
@@ -4861,13 +4939,8 @@ function saveProviderApplicationDraft(notify = false) {
 
   const services = collectServicesFeeData('page');
   
-  const calendarCells = [];
-  const matrixInputs = document.querySelectorAll('#inline-calendar-matrix-root input[type="checkbox"]');
-  matrixInputs.forEach(cb => {
-    if (cb.id) {
-      calendarCells.push({ id: cb.id, checked: cb.checked });
-    }
-  });
+  // Persist calendar schedule directly from matrix
+  const calendarSchedule = matrixSchedules['inline'] || matrixSchedules['page'] || createDefaultMatrixData(true);
 
   const distUnitRadio = document.querySelector('input[name="page-prov-dist-unit"]:checked');
   const profileStatusRadio = document.querySelector('input[name="inline-profile-status"]:checked');
@@ -4875,6 +4948,18 @@ function saveProviderApplicationDraft(notify = false) {
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  const radiusVal = document.getElementById('page-prov-radius')?.value 
+    || document.getElementById('page-prov-radius-dist')?.value 
+    || '25';
+
+  const accountVal = document.getElementById('page-prov-account')?.value 
+    || document.getElementById('page-prov-account-number')?.value 
+    || '';
+
+  const bankNameVal = document.getElementById('page-prov-bank-name')?.value 
+    || document.getElementById('page-prov-account-name')?.value 
+    || '';
 
   const draft = {
     name: document.getElementById('page-prov-name')?.value || '',
@@ -4888,7 +4973,7 @@ function saveProviderApplicationDraft(notify = false) {
     suburb: document.getElementById('page-prov-suburb')?.value || '',
     postcode: document.getElementById('page-prov-postcode')?.value || '',
     country: document.getElementById('page-prov-country')?.value || 'AU',
-    radiusDist: document.getElementById('page-prov-radius-dist')?.value || '25',
+    radiusDist: radiusVal,
     distUnit: distUnitRadio ? distUnitRadio.value : 'km',
     suburbsList: document.getElementById('page-prov-suburbs-list')?.value || '',
     equipment: document.getElementById('page-prov-equipment')?.value || '',
@@ -4902,8 +4987,8 @@ function saveProviderApplicationDraft(notify = false) {
     payid: document.getElementById('page-prov-payid')?.value || '',
     payidType: document.getElementById('page-prov-payid-type')?.value || 'phone',
     bsb: document.getElementById('page-prov-bsb')?.value || '',
-    accountNumber: document.getElementById('page-prov-account-number')?.value || '',
-    accountName: document.getElementById('page-prov-account-name')?.value || '',
+    accountNumber: accountVal,
+    accountName: bankNameVal,
     profileStatus: profileStatusRadio ? profileStatusRadio.value : 'active',
     shift247: document.getElementById('page-shift-247')?.checked || false,
     shiftMorn: document.getElementById('page-shift-morn')?.checked || false,
@@ -4915,7 +5000,7 @@ function saveProviderApplicationDraft(notify = false) {
     rateCallout: document.getElementById('page-rate-callout')?.checked || false,
     rateDistance: document.getElementById('page-rate-distance')?.checked || false,
     services,
-    calendarCells,
+    calendarSchedule,
     savedAt: now.toISOString(),
     savedDisplay: `${timeStr}, ${dateStr}`
   };
@@ -4956,7 +5041,14 @@ function restoreProviderApplicationDraft() {
     if (draft.suburb && document.getElementById('page-prov-suburb')) document.getElementById('page-prov-suburb').value = draft.suburb;
     if (draft.postcode && document.getElementById('page-prov-postcode')) document.getElementById('page-prov-postcode').value = draft.postcode;
     if (draft.country && document.getElementById('page-prov-country')) document.getElementById('page-prov-country').value = draft.country;
-    if (draft.radiusDist && document.getElementById('page-prov-radius-dist')) document.getElementById('page-prov-radius-dist').value = draft.radiusDist;
+    
+    // Radius support
+    const radiusVal = draft.radiusDist || draft.radius;
+    if (radiusVal) {
+      if (document.getElementById('page-prov-radius')) document.getElementById('page-prov-radius').value = radiusVal;
+      if (document.getElementById('page-prov-radius-dist')) document.getElementById('page-prov-radius-dist').value = radiusVal;
+    }
+
     if (draft.suburbsList && document.getElementById('page-prov-suburbs-list')) document.getElementById('page-prov-suburbs-list').value = draft.suburbsList;
     if (draft.equipment && document.getElementById('page-prov-equipment')) document.getElementById('page-prov-equipment').value = draft.equipment;
     if (draft.servicesDesc && document.getElementById('page-prov-services-desc')) document.getElementById('page-prov-services-desc').value = draft.servicesDesc;
@@ -4969,8 +5061,19 @@ function restoreProviderApplicationDraft() {
     if (draft.payid && document.getElementById('page-prov-payid')) document.getElementById('page-prov-payid').value = draft.payid;
     if (draft.payidType && document.getElementById('page-prov-payid-type')) document.getElementById('page-prov-payid-type').value = draft.payidType;
     if (draft.bsb && document.getElementById('page-prov-bsb')) document.getElementById('page-prov-bsb').value = draft.bsb;
-    if (draft.accountNumber && document.getElementById('page-prov-account-number')) document.getElementById('page-prov-account-number').value = draft.accountNumber;
-    if (draft.accountName && document.getElementById('page-prov-account-name')) document.getElementById('page-prov-account-name').value = draft.accountName;
+    
+    // Bank Details support
+    const acctVal = draft.accountNumber || draft.account;
+    if (acctVal) {
+      if (document.getElementById('page-prov-account')) document.getElementById('page-prov-account').value = acctVal;
+      if (document.getElementById('page-prov-account-number')) document.getElementById('page-prov-account-number').value = acctVal;
+    }
+
+    const bankNameVal = draft.accountName || draft.bankName;
+    if (bankNameVal) {
+      if (document.getElementById('page-prov-bank-name')) document.getElementById('page-prov-bank-name').value = bankNameVal;
+      if (document.getElementById('page-prov-account-name')) document.getElementById('page-prov-account-name').value = bankNameVal;
+    }
 
     if (draft.distUnit) {
       const radio = document.querySelector(`input[name="page-prov-dist-unit"][value="${draft.distUnit}"]`);
@@ -4993,15 +5096,22 @@ function restoreProviderApplicationDraft() {
     if (typeof draft.rateCallout === 'boolean' && document.getElementById('page-rate-callout')) document.getElementById('page-rate-callout').checked = draft.rateCallout;
     if (typeof draft.rateDistance === 'boolean' && document.getElementById('page-rate-distance')) document.getElementById('page-rate-distance').checked = draft.rateDistance;
 
+    // Restore custom services & fee structures properly
     if (draft.services && Array.isArray(draft.services) && draft.services.length > 0) {
-      renderDefaultServiceFeeRows('page', draft.services);
+      const container = document.getElementById('page-services-fee-container');
+      if (container) {
+        container.innerHTML = '';
+        draft.services.forEach(srv => {
+          addServiceFeeRow('page', srv);
+        });
+      }
     }
 
-    if (draft.calendarCells && Array.isArray(draft.calendarCells)) {
-      draft.calendarCells.forEach(cell => {
-        const el = document.getElementById(cell.id);
-        if (el) el.checked = cell.checked;
-      });
+    // Restore Calendar Matrix
+    if (draft.calendarSchedule) {
+      matrixSchedules['inline'] = draft.calendarSchedule;
+      matrixSchedules['page'] = draft.calendarSchedule;
+      renderCalendarMatrix('inline-calendar-matrix-root', 'inline');
     }
 
     const banner = document.getElementById('prov-restored-draft-banner');

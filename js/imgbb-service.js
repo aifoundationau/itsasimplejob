@@ -1,6 +1,6 @@
 /**
  * It's A Simple Job - ImgBB Image Hosting & Album Service
- * Connected to Album: https://ibb.co/album/k4vjCb (ID: k4vjCb)
+ * Connected to Album: https://ibb.co/album/TKRnX5 (ID: TKRnX5)
  * Endpoint: https://api.imgbb.com/1/upload
  * 
  * Handles all customer job photos, tradie licence scans, courier freight photos,
@@ -11,8 +11,8 @@
 const IMGBB_CONFIG = {
   apiKey: (typeof window !== 'undefined' && window.ENV?.IMGBB_API_KEY) || "",
   uploadUrl: (typeof window !== 'undefined' && window.ENV?.IMGBB_UPLOAD_URL) || "https://api.imgbb.com/1/upload",
-  albumUrl: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_URL) || "https://ibb.co/album/k4vjCb",
-  albumId: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_ID) || "k4vjCb",
+  albumUrl: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_URL) || "https://ibb.co/album/TKRnX5",
+  albumId: (typeof window !== 'undefined' && window.ENV?.IMGBB_ALBUM_ID) || "TKRnX5",
   maxSizeBytes: 32 * 1024 * 1024 // 32MB ImgBB limit
 };
 
@@ -76,7 +76,7 @@ class ImgBBService {
           albumUrl: this.config.albumUrl,
           albumId: this.config.albumId,
           category,
-          businessId: 'itsasimplejob',
+          businessId: 'its-a-simple-job',
           uploadedAt: new Date().toISOString()
         };
 
@@ -113,7 +113,7 @@ class ImgBBService {
           albumUrl: this.config.albumUrl,
           albumId: this.config.albumId,
           category,
-          businessId: 'itsasimplejob',
+          businessId: 'its-a-simple-job',
           uploadedAt: new Date().toISOString()
         };
 
@@ -135,7 +135,7 @@ class ImgBBService {
           albumUrl: this.config.albumUrl,
           albumId: this.config.albumId,
           category,
-          businessId: 'itsasimplejob',
+          businessId: 'its-a-simple-job',
           uploadedAt: new Date().toISOString()
         };
         this.saveUploadHistory(fallbackRecord);

@@ -346,6 +346,8 @@
             </div>
           </div>
         </form>
+      </div>
+
       <!-- Quick Switch to Other Registration Types -->
       <div style="margin-top:2.5rem; text-align:center;">
         <span style="font-size:0.85rem; color:var(--text-muted);">Looking for a different registration?</span>
@@ -361,6 +363,52 @@
 
     </div>
   </main>
+
+  <!-- Franchise Success Modal -->
+  <div class="modal-overlay" id="franchise-success-modal">
+    <div class="modal-box" style="max-width:540px; text-align:center;">
+      <div style="width:68px; height:68px; border-radius:50%; background:#FAF5FF; color:#7E22CE; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:1rem auto 1rem;">
+        <i class="fa-solid fa-building-user"></i>
+      </div>
+      <h3 style="font-size:1.5rem; color:var(--primary-navy); font-weight:900; margin-bottom:0.5rem;">
+        Franchise & Staff Registered!
+      </h3>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.25rem;">
+        Your franchise entity, regional trading details, and staff roster have been confirmed and stored on our server.
+      </p>
+
+      <div style="background:#FAF5FF; border:2px dashed #D8B4FE; border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem; text-align:left;">
+        <div style="font-size:0.88rem; color:var(--primary-navy); margin-bottom:0.5rem;">
+          <i class="fa-solid fa-building" style="color:#7E22CE;"></i> <strong>Franchise:</strong> <span id="modal-franchise-name" style="font-weight:700;">Jim's Mowing Gold Coast</span>
+        </div>
+        <div style="font-size:0.88rem; color:var(--primary-navy); margin-bottom:0.5rem;">
+          <i class="fa-solid fa-user-tie" style="color:#2563EB;"></i> <strong>Manager:</strong> <span id="modal-franchise-manager" style="font-weight:700;">Jim Penman</span>
+        </div>
+        <div style="font-size:0.88rem; color:var(--primary-navy);">
+          <i class="fa-solid fa-people-group" style="color:#059669;"></i> <strong>Active Staff:</strong> <span id="modal-franchise-staff-count" style="font-weight:800; color:#059669;">1</span> registered technician(s)
+        </div>
+      </div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+        <a href="customer-admin.html?view=work-teams" class="btn btn-primary" style="background:#7E22CE; border-color:#7E22CE; font-weight:800; text-decoration:none;">
+          <i class="fa-solid fa-people-group"></i> Manage Work Teams
+        </a>
+        <a href="index.html" class="btn btn-outline" style="font-weight:700; text-decoration:none;">
+          Return to Main App
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content" style="text-align:center; padding:2rem 0;">
+      <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">
+        &copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584.<br>
+        Australia's First Labour & Courier Service Powered by AI • 24/7, 365 Days a Year Nationwide
+      </p>
+    </div>
+  </footer>
 
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>
@@ -382,5 +430,8 @@
       }
     });
   </script>
+
+  <!-- Global Toast Notification -->
+  <div class="toast-msg" id="toast-msg"><i class="fa-solid fa-circle-check" style="color:var(--accent-teal, #00D2D3);"></i> <span id="toast-text"></span></div>
 </body>
 </html>

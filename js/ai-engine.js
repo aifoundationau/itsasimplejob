@@ -161,29 +161,43 @@ Given a user's plain English job request, extract the work requirements and repl
         }
       ],
       generationConfig: {
+        responseMimeType: "application/json",
         temperature: 0.2,
-        maxOutputTokens: 500
+        maxOutputTokens: 1024
       }
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Gemini API HTTP ${response.status}: ${errBody}`);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Gemini API HTTP ${response.status}: ${errBody}`);
+      }
+
+      const json = await response.json();
+      const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!candidateText) return null;
+
+      // Clean JSON markdown fences if present
+      let cleanedJson = candidateText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const match = cleanedJson.match(/\{[\s\S]*\}/);
+      if (match) cleanedJson = match[0];
+      return JSON.parse(cleanedJson);
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      throw fetchErr;
     }
-
-    const json = await response.json();
-    const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) return null;
-
-    // Clean JSON markdown fences if present
-    const cleanedJson = candidateText.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanedJson);
   }
 
   /**
