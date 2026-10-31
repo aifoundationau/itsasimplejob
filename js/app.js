@@ -46,6 +46,7 @@ const SAMPLE_PROMPTS = {
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
+  try { setupOsmAddressAutocomplete('cust-address'); } catch (e) {}
   try { initSpeechRecognition(); } catch (e) {}
   try { loadGoogleMapsScript(); } catch (e) {}
   try { initGoogleAuthUI(); } catch (e) {}
@@ -326,29 +327,347 @@ function initGoogleMapsServices() {
 }
 
 /**
- * Attach Autocomplete to an input element
+ * Format an OpenStreetMap result into Australian address standards (street, suburb, state, postcode)
  */
-function setupAddressAutocomplete(inputId, onPlaceSelectedCallback) {
-  const input = document.getElementById(inputId);
-  if (!input || !window.google?.maps?.places) return;
+function formatOsmAddress(item) {
+  if (!item) return { title: '', subtitle: '', formatted: '', lat: null, lng: null };
 
-  const autocomplete = new google.maps.places.Autocomplete(input, {
-    componentRestrictions: { country: "au" },
-    fields: ["formatted_address", "geometry", "name"]
+  const lat = parseFloat(item.lat || item.geometry?.coordinates?.[1] || 0);
+  const lng = parseFloat(item.lon || item.geometry?.coordinates?.[0] || 0);
+
+  // If item is from Nominatim
+  if (item.address) {
+    const a = item.address;
+    const houseNumber = a.house_number || '';
+    const road = a.road || a.pedestrian || a.street || a.footway || '';
+    const suburb = a.suburb || a.neighbourhood || a.city_district || a.town || a.village || a.city || item.name || '';
+    let state = a.state || '';
+    if (state === 'Queensland') state = 'QLD';
+    else if (state === 'New South Wales') state = 'NSW';
+    else if (state === 'Victoria') state = 'VIC';
+    else if (state === 'South Australia') state = 'SA';
+    else if (state === 'Western Australia') state = 'WA';
+    else if (state === 'Tasmania') state = 'TAS';
+    else if (state === 'Northern Territory') state = 'NT';
+    else if (state === 'Australian Capital Territory') state = 'ACT';
+
+    const postcode = a.postcode || '';
+    const streetPart = [houseNumber, road].filter(Boolean).join(' ');
+    const localityPart = [suburb, state, postcode].filter(Boolean).join(' ');
+
+    const title = streetPart || suburb || item.name || 'Address';
+    const subtitle = localityPart ? (streetPart ? localityPart : `${state} ${postcode}`.trim()) : 'Australia';
+    const formatted = [title, subtitle].filter(Boolean).join(', ');
+
+    return { title, subtitle, formatted, lat, lng };
+  }
+
+  // If item is from Photon (Komoot OSM)
+  if (item.properties) {
+    const p = item.properties;
+    const houseNumber = p.housenumber || '';
+    const road = p.street || '';
+    const suburb = p.district || p.suburb || p.city || p.locality || p.name || '';
+    let state = p.state || '';
+    if (state === 'Queensland') state = 'QLD';
+    else if (state === 'New South Wales') state = 'NSW';
+    else if (state === 'Victoria') state = 'VIC';
+
+    const postcode = p.postcode || '';
+    const streetPart = [houseNumber, road].filter(Boolean).join(' ');
+    const localityPart = [suburb, state, postcode].filter(Boolean).join(' ');
+
+    const title = streetPart || p.name || 'Address';
+    const subtitle = localityPart || 'Australia';
+    const formatted = [title, subtitle].filter(Boolean).join(', ');
+
+    return { title, subtitle, formatted, lat, lng };
+  }
+
+  // Fallback to display_name
+  const raw = item.display_name || '';
+  const parts = raw.split(',').map(s => s.trim());
+  const title = parts[0] || 'Address';
+  const subtitle = parts.slice(1, 4).join(', ');
+  return { title, subtitle, formatted: raw, lat, lng };
+}
+
+/**
+ * Query OpenStreetMap APIs for Australian address suggestions (with Gold Coast prioritization)
+ */
+async function searchOsmAddress(query) {
+  if (!query || query.trim().length < 2) return [];
+  const cleanQ = query.trim();
+
+  // 1. Try OSM Nominatim (Primary)
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQ)}&format=json&addressdetails=1&limit=6&countrycodes=au&viewbox=153.25,-28.35,153.60,-27.70`;
+    const res = await fetch(nomUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map(item => formatOsmAddress(item));
+      }
+    }
+  } catch (err) {
+    console.warn("Nominatim search unavailable, attempting Photon OSM fallback:", err);
+  }
+
+  // 2. Try Photon OSM API (Fallback)
+  try {
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanQ)}&lat=-28.0280&lon=153.4312&limit=6`;
+    const pRes = await fetch(photonUrl);
+    if (pRes.ok) {
+      const pData = await pRes.json();
+      if (pData.features && Array.isArray(pData.features)) {
+        return pData.features.map(feat => formatOsmAddress(feat));
+      }
+    }
+  } catch (err2) {
+    console.warn("Photon OSM search fallback failed:", err2);
+  }
+
+  return [];
+}
+
+/**
+ * Reverse Geocode coordinates to address string using OpenStreetMap Nominatim
+ */
+async function reverseGeocodeOsm(lat, lng) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = formatOsmAddress(data);
+      if (parsed.formatted) return parsed.formatted;
+    }
+  } catch (e) {
+    console.warn("OSM Reverse geocoding failed:", e);
+  }
+  return null;
+}
+
+/**
+ * Attach OpenStreetMap Autocomplete to an address input with dropdown list
+ */
+function setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  // Find or create suggestions container
+  let dropdown = document.getElementById(`${inputId}-suggestions`);
+  if (!dropdown) {
+    dropdown = document.createElement('ul');
+    dropdown.id = `${inputId}-suggestions`;
+    dropdown.className = 'osm-suggestions-dropdown';
+    dropdown.setAttribute('data-agent-id', `osm-suggestions-${inputId}`);
+    dropdown.setAttribute('data-testid', `osm-suggestions-${inputId}`);
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.setAttribute('aria-label', 'Address suggestions');
+    dropdown.style.display = 'none';
+
+    // Ensure parent wrapper has relative positioning
+    const wrapper = input.closest('.osm-autocomplete-wrapper') || input.parentElement;
+    if (wrapper) {
+      if (getComputedStyle(wrapper).position === 'static') {
+        wrapper.style.position = 'relative';
+      }
+      wrapper.appendChild(dropdown);
+    }
+  }
+
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-controls', dropdown.id);
+  input.setAttribute('aria-expanded', 'false');
+
+  let debounceTimer = null;
+  let activeIndex = -1;
+  let currentResults = [];
+
+  function closeDropdown() {
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+    input.setAttribute('aria-expanded', 'false');
+    activeIndex = -1;
+    currentResults = [];
+  }
+
+  function selectItem(item) {
+    input.value = item.formatted;
+    if (item.lat && item.lng) {
+      appState.userCoords = { lat: item.lat, lng: item.lng };
+      appState.userLocationName = item.formatted;
+    }
+    closeDropdown();
+
+    if (onPlaceSelectedCallback) {
+      onPlaceSelectedCallback({
+        formatted_address: item.formatted,
+        name: item.title,
+        lat: item.lat,
+        lng: item.lng,
+        geometry: {
+          location: {
+            lat: () => item.lat,
+            lng: () => item.lng
+          }
+        }
+      });
+    }
+
+    // Trigger onchange event for input
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (query.length < 2) {
+      closeDropdown();
+      return;
+    }
+
+    // Show loading indicator
+    dropdown.innerHTML = `
+      <li class="osm-loading-spinner" role="status">
+        <i class="fa-solid fa-spinner fa-spin" style="color:var(--brand-orange);"></i>
+        <span>Finding addresses in Gold Coast / Australia...</span>
+      </li>
+    `;
+    dropdown.style.display = 'block';
+    input.setAttribute('aria-expanded', 'true');
+
+    debounceTimer = setTimeout(async () => {
+      const results = await searchOsmAddress(query);
+      currentResults = results;
+      activeIndex = -1;
+
+      if (!results || results.length === 0) {
+        dropdown.innerHTML = `
+          <li class="osm-suggestion-item" style="cursor:default; color:var(--text-muted);">
+            <i class="fa-solid fa-circle-info osm-suggestion-icon" style="color:var(--text-muted);"></i>
+            <div class="osm-suggestion-content">
+              <span class="osm-suggestion-title">No matching Australian address found</span>
+              <span class="osm-suggestion-subtitle">Try entering a street name or suburb (e.g. Broadbeach QLD)</span>
+            </div>
+          </li>
+        `;
+        return;
+      }
+
+      dropdown.innerHTML = results.map((res, idx) => `
+        <li 
+          class="osm-suggestion-item" 
+          id="${inputId}-osm-item-${idx}"
+          role="option" 
+          aria-selected="false"
+          data-agent-id="osm-suggestion-item"
+          data-testid="osm-suggestion-item"
+          data-index="${idx}"
+        >
+          <i class="fa-solid fa-location-dot osm-suggestion-icon"></i>
+          <div class="osm-suggestion-content">
+            <span class="osm-suggestion-title">${res.title}</span>
+            <span class="osm-suggestion-subtitle">${res.subtitle}</span>
+          </div>
+          <span class="osm-suggestion-badge">AU</span>
+        </li>
+      `).join('');
+
+      dropdown.querySelectorAll('.osm-suggestion-item').forEach(el => {
+        el.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const idx = parseInt(el.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && currentResults[idx]) {
+            selectItem(currentResults[idx]);
+          }
+        });
+      });
+    }, 250);
   });
 
-  autocomplete.addListener('place_changed', () => {
-    const place = autocomplete.getPlace();
-    if (onPlaceSelectedCallback) {
-      onPlaceSelectedCallback(place);
+  input.addEventListener('keydown', (e) => {
+    const items = dropdown.querySelectorAll('.osm-suggestion-item[role="option"]');
+    if (!items.length || dropdown.style.display === 'none') return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && activeIndex < currentResults.length) {
+        e.preventDefault();
+        selectItem(currentResults[activeIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+
+  function updateActiveItem(items) {
+    items.forEach((item, idx) => {
+      const isActive = idx === activeIndex;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      if (isActive) item.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      closeDropdown();
+    }
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2 && currentResults.length > 0) {
+      dropdown.style.display = 'block';
+      input.setAttribute('aria-expanded', 'true');
     }
   });
 }
 
 /**
- * Geolocation / "Locate Me" Button Action
+ * Universal Address Autocomplete Setup (OpenStreetMap + Google Places Dual Provider)
  */
-function locateCustomer(targetInputId) {
+function setupAddressAutocomplete(inputId, onPlaceSelectedCallback) {
+  // Always attach OpenStreetMap autocomplete for ultra-reliable zero-key address resolution
+  setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback);
+
+  const input = document.getElementById(inputId);
+  if (!input || !window.google?.maps?.places) return;
+
+  try {
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "au" },
+      fields: ["formatted_address", "geometry", "name"]
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (onPlaceSelectedCallback) {
+        onPlaceSelectedCallback(place);
+      }
+    });
+  } catch (err) {
+    console.warn("Google Places autocomplete initialization skipped:", err);
+  }
+}
+
+/**
+ * Geolocation / "Locate Me" Button Action (Powered by OpenStreetMap & GPS)
+ */
+async function locateCustomer(targetInputId) {
   if (!navigator.geolocation) {
     showToast("Geolocation is not supported by your browser.");
     return;
@@ -357,42 +676,80 @@ function locateCustomer(targetInputId) {
   showToast("📍 Accessing GPS to locate you...");
 
   navigator.geolocation.getCurrentPosition(
-    (position) => {
+    async (position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       appState.userCoords = { lat, lng };
 
-      // Reverse geocode with Google Maps Geocoder if available
-      if (window.google?.maps?.Geocoder) {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-          let addressText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-          if (status === "OK" && results[0]) {
-            addressText = results[0].formatted_address;
-          }
+      let addressText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-          appState.userLocationName = addressText;
-          const input = document.getElementById(targetInputId);
-          if (input) input.value = addressText;
+      // 1. Try OpenStreetMap reverse geocoding
+      try {
+        const osmAddr = await reverseGeocodeOsm(lat, lng);
+        if (osmAddr) {
+          addressText = osmAddr;
+        }
 
-          if (targetInputId === 'contractor-search-location') {
-            if (appState.contractorMap) {
-              appState.contractorMap.panTo(appState.userCoords);
-              appState.contractorMap.setZoom(13);
-            }
-            filterContractors();
-          } else if (targetInputId === 'courier-origin') {
-            calculateCourierQuote();
-          }
-
-          showToast(`📍 Located: ${addressText.split(',')[0]}`);
-        });
-      } else {
-        const input = document.getElementById(targetInputId);
-        if (input) input.value = "Gold Coast QLD (GPS Located)";
-        filterContractors();
-        showToast("📍 Located your GPS position!");
+      // Auto-detect and sync country from OpenStreetMap
+      if (osmAddr && typeof geoTimeState !== 'undefined') {
+        try {
+          const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+          fetch(nomUrl, { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+              if (data?.address?.country_code) {
+                const c = data.address.country_code.toUpperCase();
+                geoTimeState.country = c;
+                appState.userCountry = c;
+                localStorage.setItem('iasj_user_country', c);
+                updateGeoTimeBar();
+              }
+            }).catch(() => {});
+        } catch (e) {}
       }
+
+      } catch (err) {
+        console.warn("OSM reverse geocoding error:", err);
+      }
+
+      // 2. Fallback to Google Maps Geocoder if OSM was blank and Google is ready
+      if ((!addressText || addressText.includes(lat.toFixed(4))) && window.google?.maps?.Geocoder) {
+        try {
+          const geocoder = new google.maps.Geocoder();
+          const googleResult = await new Promise((resolve) => {
+            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              if (status === "OK" && results?.[0]) resolve(results[0].formatted_address);
+              else resolve(null);
+            });
+          });
+          if (googleResult) addressText = googleResult;
+        } catch (gErr) {
+          console.warn("Google reverse geocoding error:", gErr);
+        }
+      }
+
+      if (!addressText || addressText.includes(lat.toFixed(4))) {
+        addressText = "Gold Coast QLD (GPS Located)";
+      }
+
+      appState.userLocationName = addressText;
+      const input = document.getElementById(targetInputId);
+      if (input) {
+        input.value = addressText;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      if (targetInputId === 'contractor-search-location') {
+        if (appState.contractorMap) {
+          appState.contractorMap.panTo(appState.userCoords);
+          appState.contractorMap.setZoom(13);
+        }
+        filterContractors();
+      } else if (targetInputId === 'courier-origin') {
+        calculateCourierQuote();
+      }
+
+      showToast(`📍 Located: ${addressText.split(',')[0]}`);
     },
     (error) => {
       console.warn("Geolocation denied or unavailable:", error);
@@ -402,9 +759,6 @@ function locateCustomer(targetInputId) {
   );
 }
 
-/**
- * Radius Slider Display updater
- */
 function updateRadiusDisplay(value) {
   appState.searchRadiusKm = parseInt(value, 10);
   const pill = document.getElementById('radius-val-display');
@@ -544,6 +898,57 @@ function filterContractors() {
 /**
  * Render Contractor Cards List in Search View
  */
+
+/**
+ * Format an item's price according to Token Economy & Geolocation Directives:
+ * - Strict integers only (Math.round, no decimals) for tokens.
+ * - Displays token icon & amount primarily: 🪙 X Tokens
+ * - Shows AUD / USD price strictly on hover (tooltip / hover tag).
+ * - AUD displays only in AU via geolocation; USD displays elsewhere.
+ * - Admin flags: isTokenSystemEnabled, isAudEnabled, isUsdEnabled.
+ */
+function formatTokenItemPrice(fiatAudAmount, options = {}) {
+  const isTokenEnabled = window.platformSettings?.isTokenSystemEnabled !== false;
+  const isAudEnabled = window.platformSettings?.isAudEnabled !== false;
+  const isUsdEnabled = window.platformSettings?.isUsdEnabled !== false;
+
+  const userCountry = appState?.userCountry || 'AU';
+  const isAustralia = userCountry === 'AU';
+  const fxRate = window.appState?.usdToAudRate || 1.42;
+
+  const numVal = parseFloat(fiatAudAmount) || 0;
+  // Strict integers only (Math.round, no decimals)
+  const tokens = Math.round(numVal / fxRate);
+  const usdAmount = (numVal / fxRate).toFixed(2);
+  const audAmount = numVal.toFixed(2);
+
+  let hoverFiat = '';
+  if (isAustralia && isAudEnabled) {
+    hoverFiat = `${audAmount} AUD`;
+  } else if (isUsdEnabled) {
+    hoverFiat = `${usdAmount} USD`;
+  } else if (isAudEnabled) {
+    hoverFiat = `${audAmount} AUD`;
+  }
+
+  const suffix = options.suffix || '';
+
+  if (isTokenEnabled) {
+    return `
+      <span class="token-price-tag" title="${hoverFiat ? `Price: ${hoverFiat}${suffix}` : ''}" data-agent-id="token-price-tag" data-testid="token-price-tag" data-tokens="${tokens}" data-fiat="${hoverFiat}">
+        <span class="token-amount"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokens} Tokens${suffix}</span>
+        ${hoverFiat ? `<span class="token-fiat-hover">${hoverFiat}${suffix}</span>` : ''}
+      </span>
+    `;
+  } else {
+    return `
+      <span class="fiat-price-tag" data-agent-id="fiat-price-tag" data-testid="fiat-price-tag">
+        <strong>${hoverFiat || `${audAmount} AUD`}${suffix}</strong>
+      </span>
+    `;
+  }
+}
+
 function renderContractorCards(contractors) {
   const container = document.getElementById('contractor-cards-container');
   if (!container) return;
@@ -581,7 +986,7 @@ function renderContractorCards(contractors) {
           </div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:1.05rem; font-weight:900; color:var(--primary-navy);">$${c.hourlyRate}/hr</div>
+          <div style="font-size:1.05rem; font-weight:900; color:var(--primary-navy);">${formatTokenItemPrice(c.hourlyRate, { suffix: '/hr' })}</div>
           <span class="card-dist-badge"><i class="fa-solid fa-location-arrow"></i> ${c.distanceKm} km away</span>
         </div>
       </div>
@@ -809,7 +1214,7 @@ function renderAnalysisResults(analysis) {
 
             <div class="match-score-badge">
               <div class="match-percentage"><i class="fa-solid fa-bullseye"></i> ${provider.matchScore}% Match</div>
-              <div class="provider-price-rate">$${provider.hourlyRate}/hr</div>
+              <div class="provider-price-rate">${formatTokenItemPrice(provider.hourlyRate, { suffix: '/hr' })}</div>
             </div>
           </div>
         `;
@@ -863,13 +1268,14 @@ function selectMatchedProvider(providerId) {
 function updatePricingCard(analysis) {
   const p = analysis.pricing;
 
-  document.getElementById('invoice-est-hours').textContent = analysis.estimatedHours;
-  document.getElementById('invoice-hourly-rate').textContent = p.hourlyRate;
-  document.getElementById('price-labour-val').textContent = `$${p.baseLabour.toFixed(2)}`;
-  document.getElementById('price-callout-val').textContent = `$${p.calloutFee.toFixed(2)}`;
-  document.getElementById('price-materials-val').textContent = `$${p.materialsEstimate.toFixed(2)}`;
-  document.getElementById('price-gst-val').textContent = `$${p.gst.toFixed(2)}`;
-  document.getElementById('price-total-val').textContent = `$${p.estimatedTotal.toFixed(2)}`;
+  const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+  setHtml('invoice-est-hours', analysis.estimatedHours);
+  setHtml('invoice-hourly-rate', formatTokenItemPrice(p.hourlyRate, { suffix: '/hr' }));
+  setHtml('price-labour-val', formatTokenItemPrice(p.baseLabour));
+  setHtml('price-callout-val', formatTokenItemPrice(p.calloutFee));
+  setHtml('price-materials-val', formatTokenItemPrice(p.materialsEstimate));
+  setHtml('price-gst-val', formatTokenItemPrice(p.gst));
+  setHtml('price-total-val', formatTokenItemPrice(p.estimatedTotal));
 }
 
 /**
@@ -932,7 +1338,7 @@ async function handleJobPhotoUpload(event) {
           <a href="${photo.url}" target="_blank" title="View on ImgBB">
             <img src="${photo.thumbUrl}" alt="Job photo" style="width:52px; height:52px; object-fit:cover; display:block;">
           </a>
-          <button type="button" onclick="removeJobPhoto(${idx})" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; border:none; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">&times;</button>
+          <button type="button" onclick="removeJobPhoto(${idx}, this)" title="Delete photo" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; border:none; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">&times;</button>
         </div>
       `).join('');
 
@@ -951,24 +1357,38 @@ async function handleJobPhotoUpload(event) {
   }
 }
 
-function removeJobPhoto(index) {
-  appState.uploadedJobPhotos.splice(index, 1);
-  const previewBox = document.getElementById('ai-job-photos-preview');
-  const thumbsContainer = document.getElementById('ai-job-photos-thumbs');
-  const countIndicator = document.getElementById('imgbb-upload-count');
+function removeJobPhoto(index, btn = null) {
+  const doDelete = () => {
+    appState.uploadedJobPhotos.splice(index, 1);
+    const previewBox = document.getElementById('ai-job-photos-preview');
+    const thumbsContainer = document.getElementById('ai-job-photos-thumbs');
+    const countIndicator = document.getElementById('imgbb-upload-count');
 
-  if (appState.uploadedJobPhotos.length === 0) {
-    if (previewBox) previewBox.style.display = 'none';
-  } else if (thumbsContainer) {
-    thumbsContainer.innerHTML = appState.uploadedJobPhotos.map((photo, idx) => `
-      <div style="position:relative; display:inline-block; border-radius:6px; overflow:hidden; border:1px solid #CBD5E1;">
-        <a href="${photo.url}" target="_blank" title="View on ImgBB">
-          <img src="${photo.thumbUrl}" alt="Job photo" style="width:52px; height:52px; object-fit:cover; display:block;">
-        </a>
-        <button type="button" onclick="removeJobPhoto(${idx})" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; border:none; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;">&times;</button>
-      </div>
-    `).join('');
-    if (countIndicator) countIndicator.textContent = `${appState.uploadedJobPhotos.length} photo(s) in ImgBB Album`;
+    if (appState.uploadedJobPhotos.length === 0) {
+      if (previewBox) previewBox.style.display = 'none';
+    } else if (thumbsContainer) {
+      thumbsContainer.innerHTML = appState.uploadedJobPhotos.map((photo, idx) => `
+        <div style="position:relative; display:inline-block; border-radius:6px; overflow:hidden; border:1px solid #CBD5E1;">
+          <a href="${photo.url}" target="_blank" title="View on ImgBB">
+            <img src="${photo.thumbUrl}" alt="Job photo" style="width:52px; height:52px; object-fit:cover; display:block;">
+          </a>
+          <button type="button" onclick="removeJobPhoto(${idx}, this)" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; border:none; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center;" title="Delete photo">&times;</button>
+        </div>
+      `).join('');
+      if (countIndicator) countIndicator.textContent = `${appState.uploadedJobPhotos.length} photo(s) in ImgBB Album`;
+    }
+    showToast('Photo removed.');
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, doDelete, {
+      label: 'Delete?',
+      compact: true,
+      targetType: 'job_photo',
+      targetId: String(index)
+    });
+  } else {
+    doDelete();
   }
 }
 
@@ -1213,12 +1633,13 @@ function updateCourierPricingUI(distanceKm, transitMins, weight, urgency) {
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setEl('courier-calc-distance', `${distanceKm} km`);
   setEl('courier-calc-time', `${transitMins} Mins`);
-  setEl('courier-base-fee', `$${baseLoading.toFixed(2)}`);
+  const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+  setHtml('courier-base-fee', formatTokenItemPrice(baseLoading));
   setEl('courier-dist-km', distanceKm);
-  setEl('courier-dist-fee', `$${distanceFee.toFixed(2)}`);
-  setEl('courier-urgency-fee', `$${urgencyFee.toFixed(2)}`);
-  setEl('courier-gst-fee', `$${gst.toFixed(2)}`);
-  setEl('courier-total-fee', `$${total.toFixed(2)}`);
+  setHtml('courier-dist-fee', formatTokenItemPrice(distanceFee));
+  setHtml('courier-urgency-fee', formatTokenItemPrice(urgencyFee));
+  setHtml('courier-gst-fee', formatTokenItemPrice(gst));
+  setHtml('courier-total-fee', formatTokenItemPrice(total));
 
   return { distanceKm, transitMins, subtotal, baseLoading, distanceFee, urgencyFee, weightFee, gst, total };
 }
@@ -1423,6 +1844,10 @@ function renderInvoiceModal(booking) {
   const container = document.getElementById('modal-invoice-content');
   if (!modal || !container) return;
 
+  // "Pay via Stripe" always pays the docket shown in this invoice
+  currentPayingBooking = booking;
+  syncStripePayButton(booking);
+
   const gcalUrl = getGoogleCalendarUrl(booking);
   const addGcalBtn = document.getElementById('btn-add-to-google-cal');
   if (addGcalBtn) {
@@ -1598,79 +2023,146 @@ function printOrDownloadInvoice() {
  */
 let currentPayingBooking = null;
 
-function openStripePaymentModal() {
-  const latestBooking = appState.activeBookings[0];
-  if (!latestBooking) {
+function syncStripePayButton(booking) {
+  const payBtn = document.getElementById('btn-open-stripe');
+  if (!payBtn) return;
+
+  payBtn.style.display = window.stripePaymentService?.isAvailable() ? '' : 'none';
+  const isPaid = booking?.stripeTx?.status === 'succeeded';
+  payBtn.disabled = isPaid;
+  payBtn.innerHTML = isPaid
+    ? '<i class="fa-solid fa-circle-check"></i> Paid via Stripe'
+    : '<i class="fa-brands fa-stripe" style="font-size:1.1rem;"></i> Pay via Stripe';
+  payBtn.style.background = isPaid ? '#059669' : '#635BFF';
+  payBtn.style.borderColor = isPaid ? '#059669' : '#635BFF';
+}
+
+function setStripeFormMessage(message) {
+  const box = document.getElementById('stripe-payment-message');
+  if (!box) return;
+  box.textContent = message || '';
+  box.style.display = message ? 'block' : 'none';
+}
+
+async function openStripePaymentModal() {
+  const booking = currentPayingBooking || appState.activeBookings[0];
+  if (!booking) {
     showToast('No active booking docket found.');
     return;
   }
+  currentPayingBooking = booking;
 
-  currentPayingBooking = latestBooking;
-
+  const stripeService = window.stripePaymentService;
+  const elementRoot = document.getElementById('stripe-payment-element');
+  const submitBtn = document.getElementById('btn-stripe-submit');
   const docketElem = document.getElementById('stripe-modal-docket');
   const amountElem = document.getElementById('stripe-modal-amount');
   const nameInput = document.getElementById('stripe-cardholder-name');
+  const testHint = document.getElementById('stripe-test-mode-hint');
 
-  if (docketElem) docketElem.textContent = latestBooking.docketNumber;
-  if (amountElem) amountElem.textContent = `$${latestBooking.pricing.estimatedTotal.toFixed(2)} AUD`;
-  if (nameInput) nameInput.value = latestBooking.custName || 'David Smith';
+  if (docketElem) docketElem.textContent = booking.docketNumber;
+  if (amountElem) amountElem.textContent = `$${booking.pricing.estimatedTotal.toFixed(2)} AUD`;
+  if (nameInput && !nameInput.value) nameInput.value = booking.custName || '';
+  if (testHint) testHint.style.display = stripeService?.config.isTestMode ? 'block' : 'none';
+  if (submitBtn) submitBtn.disabled = true;
+  setStripeFormMessage('');
 
   document.getElementById('stripe-payment-modal')?.classList.add('active');
+
+  if (!stripeService?.isAvailable() || !elementRoot) {
+    if (elementRoot) elementRoot.innerHTML = '';
+    setStripeFormMessage('Online card payments are unavailable right now. Please pay the provider directly using the details on your invoice.');
+    return;
+  }
+
+  elementRoot.innerHTML = '<div style="padding:1.5rem; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fa-solid fa-spinner fa-spin"></i> Connecting to Stripe secure checkout...</div>';
+
+  try {
+    const intent = await stripeService.createPaymentIntent({
+      docketNumber: booking.docketNumber,
+      amount: booking.pricing.estimatedTotal,
+      customerName: booking.custName,
+      description: `Payment for docket ${booking.docketNumber} (${booking.categoryName || 'Trade Service'})`
+    });
+    // Ignore a late reply if checkout was reopened for a different docket
+    if (currentPayingBooking !== booking) return;
+
+    booking.stripePaymentIntentId = intent.paymentIntentId;
+
+    if (intent.status === 'succeeded') {
+      await finalizeStripePayment(booking, intent.paymentIntentId);
+      return;
+    }
+
+    elementRoot.innerHTML = '';
+    const paymentElement = stripeService.mountPaymentElement(elementRoot, intent.clientSecret);
+    paymentElement.on('ready', () => {
+      if (submitBtn) submitBtn.disabled = false;
+    });
+  } catch (err) {
+    console.error("Stripe checkout setup error:", err);
+    elementRoot.innerHTML = '';
+    setStripeFormMessage(`${err.message} You can still pay the provider directly using the details on your invoice.`);
+  }
 }
 
 function closeStripePaymentModal() {
   document.getElementById('stripe-payment-modal')?.classList.remove('active');
+  window.stripePaymentService?.unmountPaymentElement();
+}
+
+/**
+ * Confirm the result with Stripe via our server, then mark the docket paid
+ */
+async function finalizeStripePayment(booking, paymentIntentId) {
+  const stripeService = window.stripePaymentService;
+  const verified = await stripeService.verifyPayment(paymentIntentId);
+
+  if (verified.status === 'processing') {
+    booking.status = 'Payment Processing (Stripe)';
+    closeStripePaymentModal();
+    showToast(`Payment for ${booking.docketNumber} is processing with Stripe. It will be confirmed shortly.`);
+    return;
+  }
+  if (verified.status !== 'succeeded') {
+    throw new Error(`The payment was not completed (Stripe status: ${verified.status}).`);
+  }
+
+  const tx = await stripeService.recordVerifiedPayment(verified, booking);
+  booking.status = 'Paid via Stripe (AUD)';
+  booking.stripeTx = tx;
+
+  syncStripePayButton(booking);
+  closeStripePaymentModal();
+  showToast(`Payment of $${verified.amount.toFixed(2)} AUD confirmed by Stripe (Ref: ${verified.paymentIntentId}).`);
 }
 
 async function handleStripePaymentSubmit(event) {
   event.preventDefault();
 
+  const booking = currentPayingBooking;
+  const stripeService = window.stripePaymentService;
+  if (!booking || !stripeService) return;
+
   const submitBtn = document.getElementById('btn-stripe-submit');
   const originalHtml = submitBtn ? submitBtn.innerHTML : '';
   if (submitBtn) {
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Communicating with Stripe Gateway...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing payment with Stripe...';
     submitBtn.disabled = true;
   }
+  setStripeFormMessage('');
 
   try {
-    const booking = currentPayingBooking || appState.activeBookings[0];
-    const amount = booking ? booking.pricing.estimatedTotal : 150.00;
-    const docket = booking ? booking.docketNumber : 'IASJ-982104';
-    const cardholder = document.getElementById('stripe-cardholder-name')?.value || 'David Smith';
-
-    let tx = null;
-    if (window.stripePaymentService) {
-      tx = await window.stripePaymentService.processInvoicePayment({
-        docketNumber: docket,
-        amount: amount,
-        customerName: cardholder,
-        description: `Payment for docket ${docket} (${booking?.categoryName || 'Trade Service'})`
-      });
-    }
-
-    if (booking) {
-      booking.status = 'Paid via Stripe (AUD)';
-      booking.stripeTx = tx;
-    }
-
-    // Update Pay via Stripe button on the invoice modal
-    const payBtn = document.getElementById('btn-open-stripe');
-    if (payBtn) {
-      payBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Paid via Stripe';
-      payBtn.style.background = '#059669';
-      payBtn.style.borderColor = '#059669';
-      payBtn.disabled = true;
-    }
-
-    closeStripePaymentModal();
-    showToast(`Payment of $${amount.toFixed(2)} AUD processed successfully! (Ref: ${tx ? tx.paymentIntentId : 'pi_test_success'})`);
+    const cardholder = document.getElementById('stripe-cardholder-name')?.value.trim() || '';
+    const paymentIntent = await stripeService.confirmPayment({ billingName: cardholder });
+    await finalizeStripePayment(booking, paymentIntent.id);
   } catch (err) {
     console.error("Stripe payment error:", err);
-    showToast('Payment processing error: ' + err.message);
+    setStripeFormMessage(err.message);
   } finally {
     if (submitBtn) {
       submitBtn.innerHTML = originalHtml;
-      submitBtn.disabled = false;
+      submitBtn.disabled = !stripeService.paymentElement;
     }
   }
 }
@@ -1801,6 +2293,131 @@ function showToast(message) {
     toast.classList.remove('show');
   }, 4000);
 }
+
+/**
+ * Universal Two-Step Confirm Delete Pattern (Global Antigravity Directive)
+ * Prohibits instant destructive deletions. Arms the button on first click,
+ * requiring explicit second click on the confirmation state to execute.
+ * Automatically reverts after timeout or if user clicks outside / clicks cancel.
+ *
+ * @param {HTMLElement} btn - The trigger button or element
+ * @param {Function} onConfirmed - Callback when user explicitly confirms delete
+ * @param {Object} options - { label, timeoutMs, compact, targetType, targetId }
+ */
+function iasjConfirmDelete(btn, onConfirmed, options = {}) {
+  if (!btn) {
+    if (typeof onConfirmed === 'function') onConfirmed();
+    return;
+  }
+
+  // If already armed, do nothing (waiting for user choice)
+  if (btn.dataset.isDeleteArmed === 'true') {
+    return;
+  }
+
+  const originalHtml = btn.dataset.originalHtml || btn.innerHTML;
+  const originalStyle = btn.dataset.originalStyle || (btn.getAttribute('style') || '');
+  const originalClass = btn.dataset.originalClass || btn.className;
+
+  btn.dataset.originalHtml = originalHtml;
+  btn.dataset.originalStyle = originalStyle;
+  btn.dataset.originalClass = originalClass;
+  btn.dataset.isDeleteArmed = 'true';
+
+  const label = options.label || 'Confirm Delete?';
+  const timeoutMs = options.timeoutMs || 6000;
+  const compact = options.compact || false;
+  const armedAt = new Date().toISOString();
+
+  let timerId = null;
+
+  function revert() {
+    if (timerId) clearTimeout(timerId);
+    document.removeEventListener('click', outsideClickListener, true);
+    btn.removeEventListener('click', handleArmedClick, true);
+    btn.innerHTML = originalHtml;
+    btn.setAttribute('style', originalStyle);
+    btn.className = originalClass;
+    delete btn.dataset.isDeleteArmed;
+  }
+
+  function outsideClickListener(e) {
+    if (!btn.contains(e.target)) {
+      revert();
+    }
+  }
+
+  if (compact) {
+    if (btn.classList.contains('date-chip') || btn.classList.contains('date-chip-remove') || btn.closest('.date-chip')) {
+      const chip = btn.classList.contains('date-chip') ? btn : btn.closest('.date-chip') || btn;
+      chip.classList.add('confirm-delete-chip-armed');
+      chip.innerHTML = `
+        <span style="font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> ${label}</span>
+        <button type="button" class="confirm-delete-chip-yes" title="Confirm Delete">Yes</button>
+        <button type="button" class="confirm-delete-chip-no" title="Cancel">✕</button>
+      `;
+    } else {
+      // Photo thumbnail remove button
+      btn.className = 'confirm-delete-photo-armed';
+      btn.innerHTML = `
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Delete?</span>
+        <span class="confirm-delete-cancel-btn" title="Cancel" style="margin-left:2px; font-weight:800;">✕</span>
+      `;
+    }
+  } else {
+    btn.classList.add('confirm-delete-armed');
+    btn.innerHTML = `
+      <span class="confirm-delete-armed-box">
+        <span class="confirm-delete-text">
+          <i class="fa-solid fa-triangle-exclamation"></i> ${label}
+        </span>
+        <span class="confirm-delete-cancel-btn" title="Cancel">✕</span>
+      </span>
+    `;
+  }
+
+  function handleArmedClick(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const cancelClicked = e.target.closest('.confirm-delete-cancel-btn, .confirm-delete-chip-no');
+    if (cancelClicked) {
+      revert();
+      return;
+    }
+
+    // Explicit confirmation
+    revert();
+
+    // Audit log per Section 6.5
+    try {
+      console.info("[Audit] ConfirmDeleteAction executed:", {
+        targetId: options.targetId || 'unknown',
+        targetType: options.targetType || 'work_order',
+        isConfirmed: true,
+        armedAt: armedAt,
+        confirmedAt: new Date().toISOString(),
+        userRole: (window.firebaseService?.getCurrentGoogleUser?.()?.role) || 'customer'
+      });
+    } catch(err) {}
+
+    if (typeof onConfirmed === 'function') {
+      onConfirmed();
+    }
+  }
+
+  btn.addEventListener('click', handleArmedClick, true);
+
+  setTimeout(() => {
+    document.addEventListener('click', outsideClickListener, true);
+  }, 20);
+
+  timerId = setTimeout(() => {
+    revert();
+  }, timeoutMs);
+}
+
 
 // Dynamic Google Maps Script Loader using key from .env via window.ENV
 function loadGoogleMapsScript() {
@@ -2785,12 +3402,26 @@ function addServiceFeeRow(prefix, data = null) {
 function removeServiceFeeRow(btn) {
   const row = btn.closest('.service-fee-row');
   const container = row?.parentElement;
-  if (row && container) {
-    if (container.querySelectorAll('.service-fee-row').length <= 1) {
-      showToast('You must have at least one service listed.');
-      return;
-    }
+  if (!row || !container) return;
+
+  if (container.querySelectorAll('.service-fee-row').length <= 1) {
+    showToast('You must have at least one service listed.');
+    return;
+  }
+
+  const doRemove = () => {
     row.remove();
+    showToast('Service fee row removed.');
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, doRemove, {
+      label: 'Confirm Remove?',
+      targetType: 'service_fee_row',
+      targetId: 'service_row'
+    });
+  } else {
+    doRemove();
   }
 }
 
@@ -3767,9 +4398,24 @@ function addAdminBlackoutDate() {
   }
 }
 
-function removeAdminBlackoutDate(dateStr) {
-  currentAdminBlackoutDates = currentAdminBlackoutDates.filter(d => d !== dateStr);
-  renderAdminBlackoutChips();
+function removeAdminBlackoutDate(dateStr, btn = null) {
+  const doRemove = () => {
+    currentAdminBlackoutDates = currentAdminBlackoutDates.filter(d => d !== dateStr);
+    renderAdminBlackoutChips();
+    showToast(`Blackout date ${dateStr} removed.`);
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    const chip = btn.closest('span') || btn;
+    iasjConfirmDelete(chip, doRemove, {
+      label: 'Remove?',
+      compact: true,
+      targetType: 'blackout_date',
+      targetId: dateStr
+    });
+  } else {
+    doRemove();
+  }
 }
 
 function renderAdminBlackoutChips() {
@@ -3780,9 +4426,9 @@ function renderAdminBlackoutChips() {
     return;
   }
   container.innerHTML = currentAdminBlackoutDates.map(d => `
-    <span style="display:inline-flex; align-items:center; gap:0.4rem; background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; padding:0.25rem 0.6rem; border-radius:var(--radius-full); font-size:0.75rem; font-weight:700;">
+    <span class="date-chip" style="display:inline-flex; align-items:center; gap:0.4rem; background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; padding:0.25rem 0.6rem; border-radius:var(--radius-full); font-size:0.75rem; font-weight:700;">
       <i class="fa-solid fa-calendar-xmark"></i> ${d}
-      <button type="button" onclick="removeAdminBlackoutDate('${d}')" style="background:none; border:none; color:#991B1B; cursor:pointer; font-size:0.85rem; padding:0; margin-left:0.2rem;">&times;</button>
+      <button type="button" onclick="removeAdminBlackoutDate('${d}', this)" title="Remove blackout date" style="background:none; border:none; color:#991B1B; cursor:pointer; font-size:0.85rem; padding:0; margin-left:0.2rem;">&times;</button>
     </span>
   `).join('');
 }
@@ -4034,7 +4680,7 @@ async function triggerGoogleSignIn(role = 'customer') {
     }
   } catch (err) {
     console.error("Google sign in error:", err);
-    showToast('Google sign in error: ' + err.message);
+    showToast(err.message);
   }
 }
 
@@ -4118,7 +4764,7 @@ async function signUpWithGoogle(role = 'customer') {
     }
   } catch (err) {
     console.error("Google signup error:", err);
-    showToast('Sign up error: ' + err.message);
+    showToast(err.message);
   }
 }
 
@@ -4161,18 +4807,51 @@ function updateGoogleAuthUI(user) {
     if (signinBtn) signinBtn.style.display = 'none';
     if (chip) chip.style.display = 'inline-flex';
     
+    const isSa = checkIsSuperadmin(user);
+    if (isSa && user.role !== 'superadmin') {
+      user.role = 'superadmin';
+      user.isSuperadmin = true;
+      localStorage.setItem('iasj_google_user', JSON.stringify(user));
+    }
+
+    let roleDisplay = 'Customer';
+    let roleIcon = 'fa-user';
+    let roleColor = '#2563EB';
+
+    if (user.role === 'superadmin' || isSa) {
+      const activeView = sessionStorage.getItem('iasj_superadmin_view_role');
+      if (activeView && activeView !== 'superadmin') {
+        const viewTitles = {
+          customer: 'Customer View',
+          provider: 'Provider View',
+          franchise_admin: 'Franchise Admin View'
+        };
+        roleDisplay = `Superadmin (${viewTitles[activeView] || activeView})`;
+      } else {
+        roleDisplay = 'Superadmin';
+      }
+      roleIcon = 'fa-crown';
+      roleColor = '#F59E0B';
+    } else if (user.role === 'provider') {
+      roleDisplay = 'Provider';
+      roleIcon = 'fa-helmet-safety';
+      roleColor = 'var(--brand-orange)';
+    } else if (user.role === 'franchise_admin') {
+      roleDisplay = 'Franchise Admin';
+      roleIcon = 'fa-building-user';
+      roleColor = '#7E22CE';
+    }
+
     const firstName = (user.displayName || 'Google User').split(' ')[0];
-    if (navName) navName.textContent = firstName;
+    const shortRole = (user.role === 'superadmin' || isSa) ? ' (Superadmin)' : ` (${roleDisplay})`;
+    if (navName) navName.textContent = firstName + shortRole;
     if (navAvatar) navAvatar.src = user.photoURL || 'assets/images/tradie_worker.jpg';
 
     if (menuAvatar) menuAvatar.src = user.photoURL || 'assets/images/tradie_worker.jpg';
     if (menuName) menuName.textContent = user.displayName || 'Google User';
     if (menuEmail) menuEmail.textContent = user.email || '';
     if (menuRoleBadge) {
-      let roleDisplay = 'Customer';
-      if (user.role === 'provider') roleDisplay = 'Provider';
-      if (user.role === 'franchise_admin') roleDisplay = 'Franchise Admin';
-      menuRoleBadge.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Google Calendar Synced (${roleDisplay})`;
+      menuRoleBadge.innerHTML = `<i class="fa-solid ${roleIcon}" style="color:${roleColor}; margin-right:4px;"></i> Google Calendar Synced (<strong>${roleDisplay}</strong>)`;
     }
 
     const btnSwitchProvider = document.getElementById('google-menu-switch-to-provider');
@@ -5129,31 +5808,43 @@ function restoreProviderApplicationDraft() {
   }
 }
 
-function clearProviderApplicationDraft(notify = true) {
-  const key = getDraftStorageKey('provider');
-  localStorage.removeItem(key);
-  localStorage.removeItem('iasj_draft_provider_latest');
+function clearProviderApplicationDraft(notify = true, btn = null) {
+  const doClear = () => {
+    const key = getDraftStorageKey('provider');
+    localStorage.removeItem(key);
+    localStorage.removeItem('iasj_draft_provider_latest');
 
-  document.getElementById('inline-provider-reg-form')?.reset();
-  const banner = document.getElementById('prov-restored-draft-banner');
-  if (banner) banner.style.display = 'none';
+    document.getElementById('inline-provider-reg-form')?.reset();
+    const banner = document.getElementById('prov-restored-draft-banner');
+    if (banner) banner.style.display = 'none';
 
-  renderDefaultServiceFeeRows('page', 'plumbing');
-  updateDraftStatusUI('page-prov-draft-status', 'Draft cleared');
+    renderDefaultServiceFeeRows('page', 'plumbing');
+    updateDraftStatusUI('page-prov-draft-status', 'Draft cleared');
 
-  // Pre-fill Google user details again if logged in
-  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
-    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
-  })();
-  if (user) {
-    const pageName = document.getElementById('page-prov-name');
-    const pageEmail = document.getElementById('page-prov-email');
-    if (pageName) pageName.value = user.displayName || '';
-    if (pageEmail) pageEmail.value = user.email || '';
-  }
+    // Pre-fill Google user details again if logged in
+    const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+      try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+    })();
+    if (user) {
+      const pageName = document.getElementById('page-prov-name');
+      const pageEmail = document.getElementById('page-prov-email');
+      if (pageName) pageName.value = user.displayName || '';
+      if (pageEmail) pageEmail.value = user.email || '';
+    }
 
-  if (notify) {
-    showToast('Provider application draft cleared. You have a fresh form.');
+    if (notify) {
+      showToast('Provider application draft cleared. You have a fresh form.');
+    }
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, doClear, {
+      label: 'Confirm Clear Draft?',
+      targetType: 'form_draft',
+      targetId: 'provider_draft'
+    });
+  } else {
+    doClear();
   }
 }
 
@@ -5228,30 +5919,42 @@ function restoreCustomerApplicationDraft() {
   }
 }
 
-function clearCustomerApplicationDraft(notify = true) {
-  const key = getDraftStorageKey('customer');
-  localStorage.removeItem(key);
-  localStorage.removeItem('iasj_draft_customer_latest');
+function clearCustomerApplicationDraft(notify = true, btn = null) {
+  const doClear = () => {
+    const key = getDraftStorageKey('customer');
+    localStorage.removeItem(key);
+    localStorage.removeItem('iasj_draft_customer_latest');
 
-  document.getElementById('inline-customer-register-form')?.reset();
-  const banner = document.getElementById('cust-restored-draft-banner');
-  if (banner) banner.style.display = 'none';
+    document.getElementById('inline-customer-register-form')?.reset();
+    const banner = document.getElementById('cust-restored-draft-banner');
+    if (banner) banner.style.display = 'none';
 
-  updateDraftStatusUI('inline-cust-draft-status', 'Draft cleared');
+    updateDraftStatusUI('inline-cust-draft-status', 'Draft cleared');
 
-  // Pre-fill Google user details again if logged in
-  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
-    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
-  })();
-  if (user) {
-    const nameInput = document.getElementById('inline-cust-name');
-    const emailInput = document.getElementById('inline-cust-email');
-    if (nameInput) nameInput.value = user.displayName || '';
-    if (emailInput) emailInput.value = user.email || '';
-  }
+    // Pre-fill Google user details again if logged in
+    const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+      try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+    })();
+    if (user) {
+      const nameInput = document.getElementById('inline-cust-name');
+      const emailInput = document.getElementById('inline-cust-email');
+      if (nameInput) nameInput.value = user.displayName || '';
+      if (emailInput) emailInput.value = user.email || '';
+    }
 
-  if (notify) {
-    showToast('Customer draft cleared. You have a fresh form.');
+    if (notify) {
+      showToast('Customer draft cleared. You have a fresh form.');
+    }
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, doClear, {
+      label: 'Confirm Clear Draft?',
+      targetType: 'form_draft',
+      targetId: 'customer_draft'
+    });
+  } else {
+    doClear();
   }
 }
 
@@ -5429,7 +6132,7 @@ function addFranchiseStaffMember(data = null) {
           <i class="fa-solid fa-chevron-up franchise-toggle-icon" id="franchise-staff-${index}-toggle-icon"></i>
           <span id="franchise-staff-${index}-toggle-text">Dropdown Details</span>
         </button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="removeFranchiseStaffMember(${index})" title="Remove Staff Member" style="background:#fff; color:#DC2626; border-color:#FCA5A5; font-size:0.75rem; padding:0.35rem 0.65rem; border-radius:var(--radius-sm);">
+        <button type="button" class="btn btn-outline btn-sm" onclick="removeFranchiseStaffMember(${index}, this)" title="Remove Staff Member" style="background:#fff; color:#DC2626; border-color:#FCA5A5; font-size:0.75rem; padding:0.35rem 0.65rem; border-radius:var(--radius-sm);">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
@@ -5956,7 +6659,7 @@ function applyStaffCalendarPreset(index, preset) {
   }
 }
 
-function removeFranchiseStaffMember(index) {
+function removeFranchiseStaffMember(index, btn = null) {
   const card = document.getElementById(`franchise-staff-card-${index}`);
   const container = document.getElementById('franchise-staff-container');
   if (!card || !container) return;
@@ -5966,20 +6669,33 @@ function removeFranchiseStaffMember(index) {
     return;
   }
 
-  card.remove();
-  showToast('Staff member removed from franchise roster.');
-  updateFranchiseStaffStats();
+  const targetBtn = btn || card.querySelector('.franchise-staff-controls button:last-child');
+  const doRemove = () => {
+    card.remove();
+    showToast('Staff member removed from franchise roster.');
+    updateFranchiseStaffStats();
 
-  // Renumber remaining cards
-  const cards = container.querySelectorAll('.franchise-staff-card');
-  cards.forEach((c, idx) => {
-    const i = c.dataset.index;
-    const title = document.getElementById(`franchise-staff-${i}-header-title`);
-    const nameInput = document.getElementById(`franchise-staff-${i}-name`);
-    if (title) {
-      title.textContent = `Staff #${idx + 1}: ${nameInput?.value.trim() || 'New Technician / Provider'}`;
-    }
-  });
+    // Renumber remaining cards
+    const cards = container.querySelectorAll('.franchise-staff-card');
+    cards.forEach((c, idx) => {
+      const i = c.dataset.index;
+      const title = document.getElementById(`franchise-staff-${i}-header-title`);
+      const nameInput = document.getElementById(`franchise-staff-${i}-name`);
+      if (title) {
+        title.textContent = `Staff #${idx + 1}: ${nameInput?.value.trim() || 'New Technician / Provider'}`;
+      }
+    });
+  };
+
+  if (targetBtn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(targetBtn, doRemove, {
+      label: 'Confirm Remove?',
+      targetType: 'staff_member',
+      targetId: `staff_${index}`
+    });
+  } else {
+    doRemove();
+  }
 }
 
 function saveFranchiseApplicationDraft(notify = false) {
@@ -6144,37 +6860,49 @@ function restoreFranchiseApplicationDraft() {
   }
 }
 
-function clearFranchiseApplicationDraft(notify = true) {
-  const key = getDraftStorageKey('franchise');
-  localStorage.removeItem(key);
-  localStorage.removeItem('iasj_draft_franchise_latest');
+function clearFranchiseApplicationDraft(notify = true, btn = null) {
+  const doClear = () => {
+    const key = getDraftStorageKey('franchise');
+    localStorage.removeItem(key);
+    localStorage.removeItem('iasj_draft_franchise_latest');
 
-  document.getElementById('franchise-register-form')?.reset();
-  const banner = document.getElementById('franchise-restored-draft-banner');
-  if (banner) banner.style.display = 'none';
+    document.getElementById('franchise-register-form')?.reset();
+    const banner = document.getElementById('franchise-restored-draft-banner');
+    if (banner) banner.style.display = 'none';
 
-  const container = document.getElementById('franchise-staff-container');
-  if (container) {
-    container.innerHTML = '';
-    addFranchiseStaffMember();
-  }
+    const container = document.getElementById('franchise-staff-container');
+    if (container) {
+      container.innerHTML = '';
+      addFranchiseStaffMember();
+    }
 
-  updateDraftStatusUI('franchise-draft-status', 'Draft cleared');
-  updateFranchiseStaffStats();
+    updateDraftStatusUI('franchise-draft-status', 'Draft cleared');
+    updateFranchiseStaffStats();
 
-  // Pre-fill Google user details again if logged in
-  const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
-    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
-  })();
-  if (user) {
-    const nameInput = document.getElementById('franchise-admin-name');
-    const emailInput = document.getElementById('franchise-admin-email');
-    if (nameInput) nameInput.value = user.displayName || '';
-    if (emailInput) emailInput.value = user.email || '';
-  }
+    // Pre-fill Google user details again if logged in
+    const user = window.firebaseService?.getCurrentGoogleUser?.() || (function() {
+      try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch(e) { return null; }
+    })();
+    if (user) {
+      const nameInput = document.getElementById('franchise-admin-name');
+      const emailInput = document.getElementById('franchise-admin-email');
+      if (nameInput) nameInput.value = user.displayName || '';
+      if (emailInput) emailInput.value = user.email || '';
+    }
 
-  if (notify) {
-    showToast('Franchise draft cleared. You have a fresh form.');
+    if (notify) {
+      showToast('Franchise draft cleared. You have a fresh form.');
+    }
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, doClear, {
+      label: 'Confirm Clear Draft?',
+      targetType: 'form_draft',
+      targetId: 'franchise_draft'
+    });
+  } else {
+    doClear();
   }
 }
 
@@ -6257,6 +6985,411 @@ window.SAMPLE_PROMPTS = SAMPLE_PROMPTS;
 window.switchTab = switchTab;
 window.focusAIChat = focusAIChat;
 window.setupAddressAutocomplete = setupAddressAutocomplete;
+
+/* ==========================================================================
+   Thin Geolocation, Weather & Time Footer Bar & Regional Settings Logic
+   ========================================================================== */
+export const COUNTRY_FLAGS = {
+  AU: '🇦🇺',
+  NZ: '🇳🇿',
+  US: '🇺🇸',
+  GB: '🇬🇧',
+  CA: '🇨🇦',
+  IE: '🇮🇪',
+  SG: '🇸🇬'
+};
+
+export const geoTimeState = {
+  country: 'AU',
+  suburb: 'Broadbeach QLD 4218',
+  coords: { lat: -28.0280, lng: 153.4312 },
+  timeFormat: '12h',
+  dateFormat: 'DD/MM/YYYY',
+  timezone: 'Australia/Brisbane',
+  tempUnit: 'C',
+  weather: '24°C Clear',
+  weatherIcon: 'fa-sun',
+  weatherLoaded: false
+};
+
+function detectInitialCountry() {
+  const savedSettings = localStorage.getItem('iasj_regional_settings');
+  if (savedSettings) {
+    try {
+      const parsed = JSON.parse(savedSettings);
+      Object.assign(geoTimeState, parsed);
+      appState.userCountry = geoTimeState.country || 'AU';
+      return geoTimeState.country;
+    } catch (e) {}
+  }
+
+  const savedCountry = localStorage.getItem('iasj_user_country');
+  if (savedCountry) {
+    geoTimeState.country = savedCountry.toUpperCase();
+    appState.userCountry = geoTimeState.country;
+    return geoTimeState.country;
+  }
+
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (tz.includes('Australia') || tz.includes('Brisbane') || tz.includes('Sydney') || tz.includes('Melbourne') || tz.includes('Perth')) {
+      geoTimeState.country = 'AU';
+      geoTimeState.timezone = tz;
+    } else if (tz.includes('Auckland')) {
+      geoTimeState.country = 'NZ';
+      geoTimeState.timezone = tz;
+    } else if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles') || tz.includes('America/')) {
+      geoTimeState.country = 'US';
+      geoTimeState.timezone = tz;
+      geoTimeState.dateFormat = 'MM/DD/YYYY';
+      geoTimeState.tempUnit = 'F';
+    } else if (tz.includes('London')) {
+      geoTimeState.country = 'GB';
+      geoTimeState.timezone = tz;
+    }
+  } catch (e) {}
+
+  appState.userCountry = geoTimeState.country || 'AU';
+  return geoTimeState.country;
+}
+
+async function fetchOpenMeteoWeather(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.current_weather) return;
+
+    const rawTemp = data.current_weather.temperature;
+    const code = data.current_weather.weathercode;
+
+    let displayTemp = Math.round(rawTemp);
+    if (geoTimeState.tempUnit === 'F') {
+      displayTemp = Math.round((rawTemp * 9 / 5) + 32);
+    }
+
+    let desc = 'Clear';
+    let icon = 'fa-sun';
+    if (code === 0) { desc = 'Clear'; icon = 'fa-sun'; }
+    else if (code >= 1 && code <= 3) { desc = 'Partly Cloudy'; icon = 'fa-cloud-sun'; }
+    else if (code >= 45 && code <= 48) { desc = 'Foggy'; icon = 'fa-smog'; }
+    else if (code >= 51 && code <= 67) { desc = 'Rain'; icon = 'fa-cloud-rain'; }
+    else if (code >= 71 && code <= 77) { desc = 'Snow'; icon = 'fa-snowflake'; }
+    else if (code >= 80 && code <= 82) { desc = 'Showers'; icon = 'fa-cloud-showers-heavy'; }
+    else if (code >= 95) { desc = 'Storm'; icon = 'fa-bolt'; }
+
+    geoTimeState.weather = `${displayTemp}°${geoTimeState.tempUnit} ${desc}`;
+    geoTimeState.weatherIcon = icon;
+    geoTimeState.weatherLoaded = true;
+
+    updateGeoTimeBar();
+  } catch (err) {
+    console.warn('Weather fetch warning:', err);
+  }
+}
+
+function updateGeoTimeBar() {
+  const flagEl = document.getElementById('geo-bar-flag');
+  const countryEl = document.getElementById('geo-bar-country-name');
+  const suburbEl = document.getElementById('geo-bar-suburb');
+  const weatherEl = document.getElementById('geo-bar-weather');
+  const weatherIconEl = document.getElementById('geo-bar-weather-icon');
+
+  const flag = COUNTRY_FLAGS[geoTimeState.country] || '🌐';
+  if (flagEl) flagEl.textContent = flag;
+  if (countryEl) countryEl.textContent = geoTimeState.country;
+  if (suburbEl) {
+    const rawSub = geoTimeState.suburb || 'Broadbeach';
+    suburbEl.textContent = rawSub.split(',')[0].trim();
+  }
+  if (weatherEl) weatherEl.textContent = geoTimeState.weather;
+  if (weatherIconEl) {
+    weatherIconEl.className = `fa-solid ${geoTimeState.weatherIcon}`;
+  }
+}
+
+function updateGeoTimeBarTime() {
+  const timeEl = document.getElementById('geo-bar-time');
+  if (!timeEl) return;
+  try {
+    const now = new Date();
+    const is12 = geoTimeState.timeFormat === '12h';
+    const formatter = new Intl.DateTimeFormat('en-AU', {
+      timeZone: geoTimeState.timezone || 'Australia/Brisbane',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: is12
+    });
+    
+    let tzAbbr = 'AEST';
+    const tzStr = geoTimeState.timezone || '';
+    if (tzStr.includes('Sydney') || tzStr.includes('Melbourne')) tzAbbr = 'AEDT';
+    else if (tzStr.includes('Adelaide')) tzAbbr = 'ACDT';
+    else if (tzStr.includes('Perth')) tzAbbr = 'AWST';
+    else if (tzStr.includes('Auckland')) tzAbbr = 'NZDT';
+    else if (tzStr.includes('New_York')) tzAbbr = 'ET';
+    else if (tzStr.includes('Los_Angeles')) tzAbbr = 'PT';
+    else if (tzStr.includes('London')) tzAbbr = 'GMT';
+
+    timeEl.textContent = `${formatter.format(now)} ${tzAbbr}`;
+  } catch (e) {
+    timeEl.textContent = new Date().toLocaleTimeString();
+  }
+}
+
+function openGeoTimeModal() {
+  const modal = document.getElementById('geo-settings-modal');
+  if (!modal) return;
+
+  const selCountry = document.getElementById('geo-select-country');
+  const inSuburb = document.getElementById('geo-input-suburb');
+  const selTimeFormat = document.getElementById('geo-select-time-format');
+  const selDateFormat = document.getElementById('geo-select-date-format');
+  const selTz = document.getElementById('geo-select-timezone');
+  const selTemp = document.getElementById('geo-select-temp-unit');
+
+  if (selCountry) selCountry.value = geoTimeState.country;
+  if (inSuburb) inSuburb.value = geoTimeState.suburb;
+  if (selTimeFormat) selTimeFormat.value = geoTimeState.timeFormat;
+  if (selDateFormat) selDateFormat.value = geoTimeState.dateFormat;
+  if (selTz) selTz.value = geoTimeState.timezone;
+  if (selTemp) selTemp.value = geoTimeState.tempUnit;
+
+  modal.style.display = 'flex';
+}
+
+function closeGeoTimeModal() {
+  const modal = document.getElementById('geo-settings-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleCountrySelectChange(country) {
+  geoTimeState.country = country;
+  if (country === 'AU') {
+    geoTimeState.timezone = 'Australia/Brisbane';
+    geoTimeState.dateFormat = 'DD/MM/YYYY';
+    geoTimeState.tempUnit = 'C';
+  } else if (country === 'NZ') {
+    geoTimeState.timezone = 'Pacific/Auckland';
+    geoTimeState.dateFormat = 'DD/MM/YYYY';
+    geoTimeState.tempUnit = 'C';
+  } else if (country === 'US') {
+    geoTimeState.timezone = 'America/New_York';
+    geoTimeState.dateFormat = 'MM/DD/YYYY';
+    geoTimeState.tempUnit = 'F';
+  } else if (country === 'GB') {
+    geoTimeState.timezone = 'Europe/London';
+    geoTimeState.dateFormat = 'DD/MM/YYYY';
+    geoTimeState.tempUnit = 'C';
+  } else if (country === 'CA') {
+    geoTimeState.timezone = 'America/Toronto';
+    geoTimeState.dateFormat = 'YYYY-MM-DD';
+    geoTimeState.tempUnit = 'C';
+  }
+
+  const selDateFormat = document.getElementById('geo-select-date-format');
+  const selTz = document.getElementById('geo-select-timezone');
+  const selTemp = document.getElementById('geo-select-temp-unit');
+  if (selDateFormat) selDateFormat.value = geoTimeState.dateFormat;
+  if (selTz) selTz.value = geoTimeState.timezone;
+  if (selTemp) selTemp.value = geoTimeState.tempUnit;
+}
+
+function saveGeoTimeSettings() {
+  const selCountry = document.getElementById('geo-select-country')?.value || 'AU';
+  const inSuburb = document.getElementById('geo-input-suburb')?.value.trim() || 'Broadbeach QLD 4218';
+  const selTimeFormat = document.getElementById('geo-select-time-format')?.value || '12h';
+  const selDateFormat = document.getElementById('geo-select-date-format')?.value || 'DD/MM/YYYY';
+  const selTz = document.getElementById('geo-select-timezone')?.value || 'Australia/Brisbane';
+  const selTemp = document.getElementById('geo-select-temp-unit')?.value || 'C';
+
+  geoTimeState.country = selCountry;
+  geoTimeState.suburb = inSuburb;
+  geoTimeState.timeFormat = selTimeFormat;
+  geoTimeState.dateFormat = selDateFormat;
+  geoTimeState.timezone = selTz;
+  geoTimeState.tempUnit = selTemp;
+
+  appState.userCountry = selCountry;
+  if (typeof syncCustomerDistanceUnits === 'function') {
+    syncCustomerDistanceUnits(selCountry);
+  }
+
+  localStorage.setItem('iasj_regional_settings', JSON.stringify(geoTimeState));
+  localStorage.setItem('iasj_user_country', selCountry);
+
+  updateGeoTimeBar();
+  updateGeoTimeBarTime();
+  closeGeoTimeModal();
+
+  if (geoTimeState.coords) {
+    fetchOpenMeteoWeather(geoTimeState.coords.lat, geoTimeState.coords.lng);
+  }
+
+  showToast(`🌍 Settings applied: ${COUNTRY_FLAGS[selCountry] || ''} ${selCountry} • ${inSuburb}`);
+}
+
+async function reDetectGpsLocation() {
+  if (!navigator.geolocation) {
+    showToast("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  showToast("📍 Accessing GPS to detect country and suburb...");
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      geoTimeState.coords = { lat, lng };
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          
+          if (addr.country_code) {
+            const detectedCountry = addr.country_code.toUpperCase();
+            geoTimeState.country = detectedCountry;
+            appState.userCountry = detectedCountry;
+            localStorage.setItem('iasj_user_country', detectedCountry);
+            const selCountry = document.getElementById('geo-select-country');
+            if (selCountry) {
+              selCountry.value = detectedCountry;
+              handleCountrySelectChange(detectedCountry);
+            }
+          }
+
+          const suburb = addr.suburb || addr.city_district || addr.town || addr.city || '';
+          const state = addr.state === 'Queensland' ? 'QLD' : (addr.state || '');
+          const postcode = addr.postcode || '';
+          const suburbText = [suburb, state, postcode].filter(Boolean).join(' ') || data.display_name.split(',')[0];
+          
+          geoTimeState.suburb = suburbText;
+          const inSuburb = document.getElementById('geo-input-suburb');
+          if (inSuburb) inSuburb.value = suburbText;
+
+          fetchOpenMeteoWeather(lat, lng);
+          showToast(`📍 Located: ${suburbText} (${geoTimeState.country})`);
+        }
+      } catch (e) {
+        console.warn('GPS detection error:', e);
+        showToast('Could not resolve suburb name from GPS.');
+      }
+    },
+    (err) => {
+      console.warn('GPS error:', err);
+      showToast('Could not retrieve GPS location.');
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+function initGeoTimeBar() {
+  detectInitialCountry();
+  updateGeoTimeBar();
+  updateGeoTimeBarTime();
+  setInterval(updateGeoTimeBarTime, 1000);
+  fetchOpenMeteoWeather(geoTimeState.coords.lat, geoTimeState.coords.lng);
+
+  // Close modal when clicking outside backdrop or pressing Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeGeoTimeModal();
+  });
+
+  const modal = document.getElementById('geo-settings-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeGeoTimeModal();
+    });
+  }
+}
+
+
+
+/* ==========================================================================
+   Superadmin Multi-Role Perspective Switching
+   ========================================================================== */
+function checkIsSuperadmin(user) {
+  if (!user) {
+    const localUser = window.firebaseService?.getCurrentGoogleUser?.();
+    if (localUser) user = localUser;
+    else return false;
+  }
+  const email = (user.email || '').toLowerCase().trim();
+  const rawAllowed = (window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au') + '';
+  const allowedList = rawAllowed.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  return allowedList.includes(email) || user.isSuperadmin === true || user.role === 'superadmin';
+}
+
+function switchSuperadminViewRole(role) {
+  const roleNames = {
+    superadmin: 'Superadmin (All Access)',
+    customer: 'Customer View',
+    provider: 'Service Provider View',
+    franchise_admin: 'Franchise Admin View'
+  };
+
+  sessionStorage.setItem('iasj_superadmin_view_role', role);
+
+  // Update switcher buttons in dropdown
+  document.querySelectorAll('.superadmin-role-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-role') === role);
+  });
+
+  const currentRoleLabel = document.getElementById('superadmin-current-role-label');
+  if (currentRoleLabel) {
+    currentRoleLabel.textContent = role === 'superadmin' ? 'All Access' : roleNames[role] || role;
+  }
+
+  const floatingBanner = document.getElementById('superadmin-viewing-banner');
+  const viewNameEl = document.getElementById('sa-active-view-name');
+
+  if (role === 'superadmin') {
+    if (floatingBanner) floatingBanner.style.display = 'none';
+  } else {
+    if (floatingBanner) {
+      floatingBanner.style.display = 'block';
+      if (viewNameEl) viewNameEl.textContent = roleNames[role] || role;
+    }
+  }
+
+  // Navigate or adapt layout based on simulated role perspective
+  if (role === 'customer') {
+    if (typeof switchTab === 'function') switchTab('ai-book-tab');
+  } else if (role === 'provider') {
+    if (typeof switchTab === 'function') switchTab('provider-network-tab');
+  } else if (role === 'franchise_admin') {
+    if (typeof switchTab === 'function') switchTab('franchise-tab');
+  }
+
+  if (typeof showToast === 'function') {
+    showToast(`👑 Viewing site as: ${roleNames[role] || role}`);
+  }
+}
+
+function initSuperadminViewMode() {
+  const user = window.firebaseService?.getCurrentGoogleUser?.();
+  const switcherSec = document.getElementById('superadmin-role-switcher-section');
+  const floatingBanner = document.getElementById('superadmin-viewing-banner');
+  const isSa = checkIsSuperadmin(user);
+
+  if (isSa && switcherSec) {
+    switcherSec.style.display = 'block';
+    const activeView = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
+    switchSuperadminViewRole(activeView);
+  } else {
+    if (switcherSec) switcherSec.style.display = 'none';
+    if (floatingBanner) floatingBanner.style.display = 'none';
+  }
+}
+
+
+window.setupOsmAddressAutocomplete = setupOsmAddressAutocomplete;
+window.searchOsmAddress = searchOsmAddress;
+window.reverseGeocodeOsm = reverseGeocodeOsm;
 window.locateCustomer = locateCustomer;
 window.updateRadiusDisplay = updateRadiusDisplay;
 window.filterContractors = filterContractors;
@@ -6325,3 +7458,18 @@ window.renderPublicCalendarGrid = renderPublicCalendarGrid;
 window.routeUserToDashboard = routeUserToDashboard;
 window.fallbackCopy = fallbackCopy;
 
+
+window.openGeoTimeModal = openGeoTimeModal;
+window.closeGeoTimeModal = closeGeoTimeModal;
+window.saveGeoTimeSettings = saveGeoTimeSettings;
+window.handleCountrySelectChange = handleCountrySelectChange;
+window.reDetectGpsLocation = reDetectGpsLocation;
+window.geoTimeState = geoTimeState;
+
+window.checkIsSuperadmin = checkIsSuperadmin;
+window.switchSuperadminViewRole = switchSuperadminViewRole;
+window.initSuperadminViewMode = initSuperadminViewMode;
+
+window.formatTokenItemPrice = formatTokenItemPrice;
+
+window.iasjConfirmDelete = iasjConfirmDelete;

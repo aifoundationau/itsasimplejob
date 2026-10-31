@@ -31,9 +31,12 @@ export const firebaseConfig = {
   projectId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_PROJECT_ID) || "ai-foundation-firebase",
   storageBucket: (typeof window !== 'undefined' && window.ENV?.FIREBASE_STORAGE_BUCKET) || "ai-foundation-firebase.firebasestorage.app",
   messagingSenderId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MESSAGING_SENDER_ID) || "614773274800",
-  appId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_APP_ID) || "1:614773274800:web:bcfa9d363de884cf9ea375",
-  measurementId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MEASUREMENT_ID) || "G-9V4X460YRL"
+  appId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_APP_ID) || "1:614773274800:web:a35e56edaa97ca729ea375",
+  measurementId: (typeof window !== 'undefined' && window.ENV?.FIREBASE_MEASUREMENT_ID) || "G-CKTVQJTZ8V"
 };
+
+// Dedicated Firestore database for this app (named database inside the shared project)
+export const FIRESTORE_DATABASE_ID = (typeof window !== 'undefined' && window.ENV?.FIREBASE_DATABASE_ID) || "itsasimplejob";
 
 // Official Multi-Tenant Partition Tag
 export const BUSINESS_ID = "its-a-simple-job";
@@ -61,13 +64,12 @@ let isConnected = false;
 
 try {
   app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
+  db = getFirestore(app, FIRESTORE_DATABASE_ID);
   auth = getAuth(app);
   googleProvider = new GoogleAuthProvider();
-  googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
   googleProvider.setCustomParameters({ prompt: 'select_account' });
   isConnected = true;
-  console.log("🔥 [Firebase] Initialized Firestore & Google Auth (Tenant: its-a-simple-job)");
+  console.log(`🔥 [Firebase] Initialized Firestore (database: ${FIRESTORE_DATABASE_ID}) & Google Auth`);
 
   // Resilient non-blocking dynamic analytics loading - ad-blockers will never break the app!
   if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
@@ -390,71 +392,87 @@ export async function recordStripeTransaction(transactionRecord) {
   return payload;
 }
 
+const GOOGLE_SIGN_IN_ERRORS = {
+  'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+  'auth/cancelled-popup-request': 'Google sign-in was cancelled.',
+  'auth/popup-blocked': 'Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again.',
+  'auth/unauthorized-domain': 'This website address is not yet authorised for Google sign-in (add it under Firebase Authentication > Settings > Authorised domains).',
+  'auth/operation-not-allowed': 'Google sign-in is not enabled for this app yet.',
+  'auth/network-request-failed': 'Network error during Google sign-in. Check your connection and try again.'
+};
+
 /**
- * Google Sign-In & Google Calendar Integration
+ * Google Sign-In. Fails with a readable error instead of ever inventing a user.
  */
 export async function signInWithGoogle(role = 'customer') {
-  try {
-    if (auth && googleProvider) {
-      const result = await withTimeout(signInWithPopup(auth, googleProvider), 30000);
-      const user = result.user;
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-
-      const userData = {
-        uid: user.uid,
-        displayName: user.displayName || 'Google User',
-        email: user.email,
-        photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
-        accessToken: token,
-        role,
-        googleCalendarConnected: true,
-        connectedAt: new Date().toISOString()
-      };
-
-      localStorage.setItem('iasj_google_user', JSON.stringify(userData));
-
-      if (role === 'customer') {
-        getOrCreateCRN(user.phoneNumber || '', user.displayName || '');
-        localStorage.setItem('iasj_customer_name', user.displayName || '');
-        localStorage.setItem('iasj_customer_email', user.email || '');
-      } else if (role === 'provider') {
-        localStorage.setItem('iasj_provider_name', user.displayName || '');
-        localStorage.setItem('iasj_provider_email', user.email || '');
-      }
-
-      window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: userData, action: 'login' } }));
-      return userData;
-    }
-  } catch (err) {
-    console.warn("⚠️ [Google Auth] Popup signIn notice (trying fallback simulation):", err.message);
+  if (!auth || !googleProvider) {
+    throw new Error('Google sign-in is unavailable right now. Please try again later.');
   }
 
-  // Graceful simulation fallback for localhost/development
-  const fallbackUser = {
-    uid: 'google-uid-' + Math.floor(100000 + Math.random() * 900000),
-    displayName: role === 'provider' ? 'Jack Morrison (Provider Test)' : 'Sarah Jenkins (Customer Test)',
-    email: role === 'provider' ? 'your_provider_test@email.com' : 'your_customer_test@email.com',
-    photoURL: 'https://lh3.googleusercontent.com/a/default-user',
-    accessToken: 'ya29.mock_oauth_calendar_token',
-    role,
-    googleCalendarConnected: true,
+  let result;
+  try {
+    result = await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    console.warn("⚠️ [Google Auth] Sign-in failed:", err.code || err.message);
+    throw new Error(GOOGLE_SIGN_IN_ERRORS[err.code] || 'Google sign-in failed. Please try again.');
+  }
+
+  const user = result.user;
+
+  // Retrieve token custom claims & check superadmin whitelist
+  let claims = {};
+  try {
+    const tokenResult = await user.getIdTokenResult();
+    claims = tokenResult.claims || {};
+  } catch (e) {
+    console.warn("Could not retrieve custom claims:", e);
+  }
+
+  const emailLower = (user.email || '').toLowerCase().trim();
+  const superadminEmails = ((window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au,davidrobertson.info@gmail.com') + '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  let actualRole = role;
+  if (claims.role === 'superadmin' || claims.isSuperAdmin === true || superadminEmails.includes(emailLower)) {
+    actualRole = 'superadmin';
+  } else if (claims.role) {
+    actualRole = claims.role;
+  }
+
+  const userData = {
+    uid: user.uid,
+    displayName: user.displayName || 'Google User',
+    email: user.email,
+    photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+    role: actualRole,
+    isSuperadmin: actualRole === 'superadmin',
     connectedAt: new Date().toISOString()
   };
 
-  localStorage.setItem('iasj_google_user', JSON.stringify(fallbackUser));
+  localStorage.setItem('iasj_google_user', JSON.stringify(userData));
 
   if (role === 'customer') {
-    getOrCreateCRN('0412 345 678', fallbackUser.displayName);
-    localStorage.setItem('iasj_customer_name', fallbackUser.displayName);
-    localStorage.setItem('iasj_customer_email', fallbackUser.email);
+    getOrCreateCRN(user.phoneNumber || '', user.displayName || '');
+    localStorage.setItem('iasj_customer_name', user.displayName || '');
+    localStorage.setItem('iasj_customer_email', user.email || '');
   } else if (role === 'provider') {
-    localStorage.setItem('iasj_provider_name', fallbackUser.displayName);
-    localStorage.setItem('iasj_provider_email', fallbackUser.email);
+    localStorage.setItem('iasj_provider_name', user.displayName || '');
+    localStorage.setItem('iasj_provider_email', user.email || '');
   }
 
-  window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: fallbackUser, action: 'login' } }));
-  return fallbackUser;
+  window.dispatchEvent(new CustomEvent('googleAuthStateChanged', { detail: { user: userData, action: 'login' } }));
+  return userData;
+}
+
+/**
+ * Firebase ID token for calling the /api functions as the signed-in user (null if signed out)
+ */
+export async function getIdToken() {
+  if (!auth) return null;
+  await auth.authStateReady();
+  return auth.currentUser ? auth.currentUser.getIdToken() : null;
 }
 
 export async function signOutGoogle() {
@@ -468,7 +486,20 @@ export async function signOutGoogle() {
 export function getCurrentGoogleUser() {
   try {
     const raw = localStorage.getItem('iasj_google_user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    const emailLower = (user.email || '').toLowerCase().trim();
+    const superadminEmails = ((window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au,davidrobertson.info@gmail.com') + '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (superadminEmails.includes(emailLower) && user.role !== 'superadmin') {
+      user.role = 'superadmin';
+      user.isSuperadmin = true;
+      localStorage.setItem('iasj_google_user', JSON.stringify(user));
+    }
+    return user;
   } catch (e) {
     return null;
   }
@@ -498,7 +529,9 @@ window.firebaseService = {
   recordStripeTransaction,
   signInWithGoogle,
   signOutGoogle,
-  getCurrentGoogleUser
+  getCurrentGoogleUser,
+  getIdToken,
+  FIRESTORE_DATABASE_ID
 };
 
 // Fire ready event

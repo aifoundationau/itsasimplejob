@@ -4364,3 +4364,712 @@ select:focus-visible, textarea:focus-visible {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
+
+/* ==========================================================================
+   OpenStreetMap (OSM) Address Autocomplete & Dropdown
+   ========================================================================== */
+.osm-autocomplete-wrapper {
+  position: relative;
+}
+
+.osm-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card, #FFFFFF);
+  border: 1px solid var(--border-light, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  box-shadow: 0 10px 25px rgba(11, 25, 44, 0.14);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 1050;
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+}
+
+.osm-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
+  color: var(--text-main, #0F172A);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.osm-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.osm-suggestion-item:hover,
+.osm-suggestion-item.active,
+.osm-suggestion-item[aria-selected="true"] {
+  background-color: var(--brand-orange-light, #FFF0EB);
+  color: var(--brand-orange, #FF5A1F);
+}
+
+.osm-suggestion-icon {
+  margin-top: 2px;
+  font-size: 0.85rem;
+  color: var(--brand-orange, #FF5A1F);
+  flex-shrink: 0;
+}
+
+.osm-suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.osm-suggestion-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osm-suggestion-subtitle {
+  font-size: 0.76rem;
+  color: var(--text-muted, #64748B);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osm-suggestion-badge {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #166534;
+  background: #DCFCE7;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.osm-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text-muted, #64748B);
+}
+
+
+/* ==========================================================================
+   Thin Geolocation, Weather & Time Footer Bar & Centered Settings Modal
+   ========================================================================== */
+body {
+  padding-bottom: 34px !important;
+}
+
+.geo-time-footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(11, 25, 44, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  color: #FFFFFF;
+  font-family: var(--font-family);
+  user-select: none;
+}
+
+.geo-time-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  max-width: 100%;
+}
+
+.geo-time-bar-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  cursor: pointer;
+  padding: 0 0.85rem;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  font-size: inherit;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.geo-time-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.geo-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+}
+
+.geo-bar-dot {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.65rem;
+}
+
+.geo-flag {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.geo-bar-config-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--brand-orange, #FF5A1F);
+  font-weight: 700;
+  font-size: 0.72rem;
+  margin-left: 0.2rem;
+  padding: 0.1rem 0.4rem;
+  background: rgba(255, 90, 31, 0.15);
+  border-radius: 4px;
+}
+
+/* Centered Responsive Modal (No Scrollbar) */
+.geo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 16, 30, 0.68);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.geo-modal-box {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg, 16px);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden; /* Guarantee NO scrollbar */
+  display: flex;
+  flex-direction: column;
+  animation: geoModalZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-light, #E2E8F0);
+}
+
+@keyframes geoModalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.geo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--border-light, #E2E8F0);
+  background: #F8FAFC;
+}
+
+.geo-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.geo-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--brand-orange-light, #FFF0EB);
+  color: var(--brand-orange, #FF5A1F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.geo-modal-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary-navy, #0B192C);
+  font-family: var(--font-display, 'Outfit', sans-serif);
+}
+
+.geo-modal-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748B);
+}
+
+.geo-modal-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #64748B);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.geo-modal-close:hover {
+  background: #E2E8F0;
+  color: var(--text-main, #0F172A);
+}
+
+.geo-modal-body {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.geo-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.geo-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main, #0F172A);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.geo-label-hint {
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: var(--brand-orange, #FF5A1F);
+}
+
+.geo-input-action-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.geo-form-control {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border-light, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.82rem;
+  color: var(--text-main, #0F172A);
+  background: #FFFFFF;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.geo-form-control:focus {
+  border-color: var(--brand-orange, #FF5A1F);
+  box-shadow: 0 0 0 2px rgba(255, 90, 31, 0.15);
+}
+
+.geo-btn-gps {
+  background: var(--primary-navy, #0B192C);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 0 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.geo-btn-gps:hover {
+  background: var(--brand-orange, #FF5A1F);
+}
+
+.geo-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.geo-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border-light, #E2E8F0);
+  background: #F8FAFC;
+}
+
+.geo-btn-cancel {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  border: 1px solid var(--border-light, #E2E8F0);
+  background: #FFFFFF;
+  color: var(--text-main, #0F172A);
+}
+
+.geo-btn-save {
+  padding: 0.45rem 1.15rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  background: var(--brand-orange, #FF5A1F);
+  color: #FFFFFF;
+  border: none;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+
+.geo-btn-save:hover {
+  background: var(--brand-orange-hover, #E4480E);
+}
+
+@media (max-width: 640px) {
+  .geo-modal-box {
+    max-width: 95vw;
+  }
+  .geo-form-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .geo-config-text {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   Superadmin Multi-Role Perspective Switcher
+   ========================================================================== */
+.superadmin-switcher-container {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 0.65rem;
+  margin: 0.5rem 0.75rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.superadmin-switcher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.superadmin-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #92400E;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.superadmin-active-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #B45309;
+  background: #FFFBEB;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid #FDE68A;
+}
+
+.superadmin-switcher-desc {
+  font-size: 0.72rem;
+  color: #78350F;
+  font-weight: 600;
+}
+
+.superadmin-role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.superadmin-role-btn {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid #FCD34D;
+  background: #FFFFFF;
+  color: #78350F;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.superadmin-role-btn:hover {
+  background: #FEF9C3;
+  border-color: #F59E0B;
+}
+
+.superadmin-role-btn.active {
+  background: #92400E;
+  color: #FFFFFF;
+  border-color: #78350F;
+}
+
+/* Floating Banner when viewing as other role */
+.superadmin-viewing-banner {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1060;
+  background: rgba(11, 25, 44, 0.94);
+  color: #FFFFFF;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  font-size: 0.78rem;
+  animation: slideDownBanner 0.2s ease-out;
+  user-select: none;
+}
+
+@keyframes slideDownBanner {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.superadmin-viewing-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sa-reset-btn {
+  background: #F59E0B;
+  color: #0B192C;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.sa-reset-btn:hover {
+  background: #D97706;
+}
+
+
+/* ==========================================================================
+   Token Economy & Currency Hover Display
+   ========================================================================== */
+.token-price-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 800;
+  color: var(--primary-navy, #0B192C);
+  cursor: pointer;
+  border-bottom: 1px dotted rgba(245, 158, 11, 0.7);
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.token-price-tag:hover {
+  background-color: rgba(254, 243, 199, 0.75);
+}
+
+.token-coin-icon {
+  color: #F59E0B;
+  margin-right: 4px;
+}
+
+.token-fiat-hover {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: rgba(11, 25, 44, 0.96);
+  color: #FFFFFF;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.token-price-tag:hover .token-fiat-hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.fiat-price-tag {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 800;
+  color: var(--primary-navy, #0B192C);
+}
+
+/* ==========================================================================
+   Two-Step Confirm Delete Pattern (Global Directives)
+   ========================================================================== */
+@keyframes confirmDeletePulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.confirm-delete-armed {
+  animation: confirmDeletePulse 1.4s infinite ease-in-out !important;
+  background-color: #FEF2F2 !important;
+  border-color: #DC2626 !important;
+  color: #DC2626 !important;
+  transition: all 0.2s ease !important;
+}
+
+.confirm-delete-armed-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.confirm-delete-text {
+  color: #DC2626;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.confirm-delete-cancel-btn {
+  color: #64748B;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0 0.35rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.confirm-delete-cancel-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.confirm-delete-chip-armed {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border-color: #B91C1C !important;
+  animation: confirmDeletePulse 1.4s infinite ease-in-out !important;
+}
+
+.confirm-delete-chip-yes {
+  background: #FFFFFF;
+  color: #DC2626;
+  border: none;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-left: 0.25rem;
+}
+
+.confirm-delete-chip-no {
+  background: rgba(0, 0, 0, 0.25);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-left: 0.15rem;
+}
+
+.confirm-delete-photo-armed {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 10 !important;
+  cursor: pointer !important;
+  border: 1px solid #B91C1C !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  animation: confirmDeletePulse 1.4s infinite ease-in-out !important;
+}
+

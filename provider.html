@@ -123,7 +123,7 @@
           <button type="button" class="btn btn-outline btn-sm" onclick="saveProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
             <i class="fa-solid fa-save"></i> Save Now
           </button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
             <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
           </button>
         </div>
@@ -458,7 +458,7 @@
               <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
             </button>
             <div style="display:flex; gap:0.75rem; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true)" style="color:#64748B;">
+              <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true, this)" style="color:#64748B;">
                 <i class="fa-solid fa-rotate-left"></i> Reset Form
               </button>
               <button type="submit" class="btn btn-primary btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">

@@ -19,6 +19,20 @@
 </head>
 <body>
 
+  <!-- Floating Superadmin Role View Banner -->
+  <div id="superadmin-viewing-banner" class="superadmin-viewing-banner" style="display:none;" data-agent-id="superadmin-viewing-banner" data-testid="superadmin-viewing-banner">
+    <div class="superadmin-viewing-content">
+      <span class="sa-viewing-text">
+        <i class="fa-solid fa-crown" style="color:#F59E0B;"></i>
+        Viewing site as: <strong id="sa-active-view-name">Customer</strong>
+      </span>
+      <button type="button" class="sa-reset-btn" onclick="switchSuperadminViewRole('superadmin')" data-agent-id="btn-reset-superadmin-view" data-testid="btn-reset-superadmin-view">
+        <i class="fa-solid fa-rotate-left"></i> Return to Superadmin
+      </button>
+    </div>
+  </div>
+
+
   <!-- Top Announcement Bar -->
   <header class="top-bar">
     <div class="container" style="justify-content:center; text-align:center;">
@@ -101,7 +115,33 @@
               </div>
             </div>
 
-              <a href="/customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
+              
+            <!-- Superadmin Multi-Role Perspective Switcher -->
+            <div id="superadmin-role-switcher-section" class="superadmin-switcher-container" style="display:none;" data-agent-id="superadmin-role-switcher" data-testid="superadmin-role-switcher">
+              <div class="superadmin-switcher-header">
+                <span class="superadmin-badge">
+                  <i class="fa-solid fa-crown" style="color:#F59E0B;"></i> Superadmin Mode
+                </span>
+                <span class="superadmin-active-label" id="superadmin-current-role-label">All Access</span>
+              </div>
+              <div class="superadmin-switcher-desc">View website from role:</div>
+              <div class="superadmin-role-grid">
+                <button type="button" class="superadmin-role-btn active" id="sa-role-btn-superadmin" onclick="switchSuperadminViewRole('superadmin')" data-role="superadmin" data-agent-id="btn-view-role-superadmin" data-testid="btn-view-role-superadmin">
+                  <i class="fa-solid fa-crown"></i> Superadmin
+                </button>
+                <button type="button" class="superadmin-role-btn" id="sa-role-btn-customer" onclick="switchSuperadminViewRole('customer')" data-role="customer" data-agent-id="btn-view-role-customer" data-testid="btn-view-role-customer">
+                  <i class="fa-solid fa-user"></i> Customer
+                </button>
+                <button type="button" class="superadmin-role-btn" id="sa-role-btn-provider" onclick="switchSuperadminViewRole('provider')" data-role="provider" data-agent-id="btn-view-role-provider" data-testid="btn-view-role-provider">
+                  <i class="fa-solid fa-helmet-safety"></i> Provider
+                </button>
+                <button type="button" class="superadmin-role-btn" id="sa-role-btn-franchise" onclick="switchSuperadminViewRole('franchise_admin')" data-role="franchise_admin" data-agent-id="btn-view-role-franchise" data-testid="btn-view-role-franchise">
+                  <i class="fa-solid fa-building-user"></i> Franchise
+                </button>
+              </div>
+            </div>
+
+            <a href="/customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
                 <div class="settings-option-icon" style="background:#EFF6FF; color:#2563EB;">
                   <i class="fa-solid fa-sliders"></i>
                 </div>
@@ -555,14 +595,46 @@
             <input type="tel" id="cust-phone" class="form-control" placeholder="e.g. 0412 345 678" value="0412 889 123">
           </div>
 
-          <div class="input-group">
-            <label class="input-label" for="cust-address">Job Address (Gold Coast / Australia)</label>
+          <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
+            <label class="input-label" for="cust-address">
+              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange); margin-right:4px;"></i>
+              Job Address (Gold Coast / Australia)
+            </label>
             <div class="input-with-action">
-              <input type="text" id="cust-address" class="form-control" placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218" value="42 Surf Parade, Broadbeach QLD 4218">
-              <button type="button" class="btn-locate-gps" onclick="locateCustomer('cust-address')" title="Locate me with GPS">
+              <input
+                type="text"
+                id="cust-address"
+                class="form-control osm-address-input"
+                placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218"
+                value="42 Surf Parade, Broadbeach QLD 4218"
+                autocomplete="off"
+                data-agent-id="input-cust-address"
+                data-testid="input-cust-address"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="cust-address-suggestions"
+              >
+              <button
+                type="button"
+                class="btn-locate-gps"
+                onclick="locateCustomer('cust-address')"
+                title="Locate me with GPS"
+                data-agent-id="btn-gps-locate-cust-address"
+                data-testid="btn-gps-locate-cust-address"
+                aria-label="Locate me with GPS"
+              >
                 <i class="fa-solid fa-location-crosshairs"></i>
               </button>
             </div>
+            <ul
+              id="cust-address-suggestions"
+              class="osm-suggestions-dropdown"
+              data-agent-id="osm-address-suggestions"
+              data-testid="osm-address-suggestions"
+              role="listbox"
+              aria-label="Address suggestions"
+              style="display:none;"
+            ></ul>
           </div>
 
           <div class="input-group">
@@ -1022,7 +1094,7 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="saveProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-save"></i> Save Now
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
             </button>
           </div>
@@ -1357,7 +1429,7 @@
                 <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
               </button>
               <div style="display:flex; gap:0.75rem; align-items:center;">
-                <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true)" style="color:#64748B;">
+                <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true, this)" style="color:#64748B;">
                   <i class="fa-solid fa-rotate-left"></i> Reset Form
                 </button>
                 <button type="submit" class="btn btn-primary btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">
@@ -1450,7 +1522,7 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-save"></i> Save Now
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="clearCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="clearCustomerApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
             </button>
           </div>
@@ -1627,7 +1699,7 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="saveFranchiseApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-save"></i> Save Now
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="clearFranchiseApplicationDraft(true)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="clearFranchiseApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
               <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
             </button>
           </div>
@@ -2547,7 +2619,7 @@
           </div>
           <div>
             <h4 style="margin:0; font-size:1.1rem; color:var(--primary-navy); font-weight:800;">Stripe Secure Payment</h4>
-            <span style="font-size:0.75rem; color:var(--text-muted);">Encrypted with 256-bit SSL via Stripe API Gateway</span>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Card details are handled by Stripe and never touch our servers</span>
           </div>
         </div>
         <button class="modal-close-btn" onclick="closeStripePaymentModal()">&times;</button>
@@ -2569,34 +2641,27 @@
         <form id="stripe-checkout-form" onsubmit="handleStripePaymentSubmit(event)">
           <div class="input-group">
             <label class="input-label" for="stripe-cardholder-name">Cardholder Name</label>
-            <input type="text" id="stripe-cardholder-name" class="form-control" required placeholder="Name on card (e.g. David Smith)">
+            <input type="text" id="stripe-cardholder-name" class="form-control" required placeholder="Name on card" autocomplete="cc-name">
           </div>
 
+          <!-- Stripe Payment Element mounts here (secure Stripe-hosted iframe) -->
           <div class="input-group">
-            <label class="input-label" for="stripe-card-number">Card Details (Test Sandbox: 4242...)</label>
-            <div style="position:relative;">
-              <input type="text" id="stripe-card-number" class="form-control" required maxlength="19" value="4242 •••• •••• 4242" style="font-family:monospace; letter-spacing:1px; padding-left:2.5rem;">
-              <i class="fa-solid fa-credit-card" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#635BFF; font-size:1.1rem;"></i>
-            </div>
+            <label class="input-label">Payment Details</label>
+            <div id="stripe-payment-element" style="min-height:120px;"></div>
           </div>
 
-          <div class="form-row">
-            <div class="input-group">
-              <label class="input-label" for="stripe-expiry">Expiry Date</label>
-              <input type="text" id="stripe-expiry" class="form-control" required maxlength="5" value="12/28" placeholder="MM/YY" style="font-family:monospace;">
-            </div>
-            <div class="input-group">
-              <label class="input-label" for="stripe-cvc">CVC Security Code</label>
-              <input type="text" id="stripe-cvc" class="form-control" required maxlength="4" value="842" placeholder="CVC" style="font-family:monospace;">
-            </div>
+          <div id="stripe-test-mode-hint" style="display:none; background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; border-radius:var(--radius-sm); padding:0.55rem 0.85rem; font-size:0.76rem; margin-bottom:0.85rem;">
+            <i class="fa-solid fa-flask"></i> <strong>Test mode:</strong> use card 4242 4242 4242 4242, any future expiry and any CVC. No real money is charged.
           </div>
+
+          <div id="stripe-payment-message" role="alert" style="display:none; background:#FEF2F2; border:1px solid #FECACA; color:#991B1B; border-radius:var(--radius-sm); padding:0.6rem 0.85rem; font-size:0.8rem; margin-bottom:1rem;"></div>
 
           <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.65rem 0.85rem; font-size:0.76rem; color:var(--text-muted); margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
             <i class="fa-solid fa-lock" style="color:#059669; font-size:1rem;"></i>
-            <span>Encrypted with 256-bit SSL via <strong>Stripe API Gateway</strong>. Tagged in multi-tenant Firestore under <code>its-a-simple-job</code>.</span>
+            <span>Card details are entered in Stripe's secure form and sent directly to <strong>Stripe</strong>. The payment is confirmed with Stripe before your docket is marked paid.</span>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="btn-stripe-submit" style="width:100%; background:#635BFF; border-color:#635BFF; font-weight:700; padding:0.85rem; font-size:1rem;">
+          <button type="submit" class="btn btn-primary" id="btn-stripe-submit" disabled style="width:100%; background:#635BFF; border-color:#635BFF; font-weight:700; padding:0.85rem; font-size:1rem;">
             <i class="fa-solid fa-shield-halved"></i> Authorize & Pay with Stripe
           </button>
         </form>
@@ -3912,6 +3977,216 @@
       </div>
     </div>
   </footer>
+
+  <!-- =========================================================================
+       THIN GEOLOCATION, WEATHER & TIME FOOTER BAR
+       ========================================================================= -->
+  <div id="geo-time-footer-bar" class="geo-time-footer-bar" data-agent-id="geo-time-footer-bar" data-testid="geo-time-footer-bar">
+    <div class="geo-time-bar-content">
+      <button 
+        type="button" 
+        class="geo-time-bar-btn" 
+        onclick="openGeoTimeModal()" 
+        title="Click to configure country, suburb, weather, and time settings"
+        data-agent-id="btn-open-geo-modal" 
+        data-testid="btn-open-geo-modal"
+        aria-haspopup="dialog"
+      >
+        <span class="geo-bar-item" id="geo-bar-country-pill">
+          <span class="geo-flag" id="geo-bar-flag">🇦🇺</span>
+          <span id="geo-bar-country-name">AU</span>
+        </span>
+        <span class="geo-bar-dot">•</span>
+        <span class="geo-bar-item" id="geo-bar-suburb-pill">
+          <i class="fa-solid fa-location-dot" style="color:var(--brand-orange);"></i>
+          <span id="geo-bar-suburb">Broadbeach, QLD</span>
+        </span>
+        <span class="geo-bar-dot">•</span>
+        <span class="geo-bar-item" id="geo-bar-weather-pill">
+          <i class="fa-solid fa-sun" id="geo-bar-weather-icon" style="color:var(--accent-gold);"></i>
+          <span id="geo-bar-weather">24°C Clear</span>
+        </span>
+        <span class="geo-bar-dot">•</span>
+        <span class="geo-bar-item" id="geo-bar-time-pill">
+          <i class="fa-regular fa-clock"></i>
+          <span id="geo-bar-time">--:--</span>
+        </span>
+        <span class="geo-bar-dot">•</span>
+        <span class="geo-bar-config-link">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="geo-config-text">Regional Settings</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CENTERED REGIONAL & GEOLOCATION SETTINGS MODAL (NO SCROLLBAR)
+       ========================================================================= -->
+  <div 
+    id="geo-settings-modal" 
+    class="geo-modal-overlay" 
+    data-agent-id="geo-settings-modal" 
+    data-testid="geo-settings-modal"
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="geo-modal-title"
+    style="display:none;"
+  >
+    <div class="geo-modal-box">
+      <div class="geo-modal-header">
+        <div class="geo-modal-title-wrap">
+          <div class="geo-modal-icon">
+            <i class="fa-solid fa-earth-oceania"></i>
+          </div>
+          <div>
+            <h3 id="geo-modal-title" class="geo-modal-title">Regional, Weather & Time Settings</h3>
+            <p class="geo-modal-subtitle">Auto-detected from your geolocation. Changes apply instantly.</p>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          class="geo-modal-close" 
+          onclick="closeGeoTimeModal()" 
+          title="Close" 
+          data-agent-id="btn-close-geo-modal" 
+          data-testid="btn-close-geo-modal"
+          aria-label="Close settings"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="geo-modal-body">
+        <!-- Country Selector -->
+        <div class="geo-form-group">
+          <label class="geo-label" for="geo-select-country">
+            <i class="fa-solid fa-globe" style="color:var(--brand-orange);"></i> Country
+            <span class="geo-label-hint">(Geolocated Default)</span>
+          </label>
+          <select 
+            id="geo-select-country" 
+            class="geo-form-control" 
+            onchange="handleCountrySelectChange(this.value)"
+            data-agent-id="select-geo-country" 
+            data-testid="select-geo-country"
+          >
+            <option value="AU" selected>🇦🇺 Australia (AUD • Metric km • DD/MM/YYYY)</option>
+            <option value="NZ">🇳🇿 New Zealand (NZD • Metric km • DD/MM/YYYY)</option>
+            <option value="US">🇺🇸 United States (USD • Imperial miles • MM/DD/YYYY)</option>
+            <option value="GB">🇬🇧 United Kingdom (GBP • Miles • DD/MM/YYYY)</option>
+            <option value="CA">🇨🇦 Canada (CAD • Metric km • YYYY-MM-DD)</option>
+            <option value="IE">🇮🇪 Ireland (EUR • Metric km • DD/MM/YYYY)</option>
+            <option value="SG">🇸🇬 Singapore (SGD • Metric km • DD/MM/YYYY)</option>
+          </select>
+        </div>
+
+        <!-- Suburb / Location with GPS quick-detect -->
+        <div class="geo-form-group">
+          <label class="geo-label" for="geo-input-suburb">
+            <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Suburb / City & State
+          </label>
+          <div class="geo-input-action-row">
+            <input 
+              type="text" 
+              id="geo-input-suburb" 
+              class="geo-form-control" 
+              placeholder="e.g. Broadbeach QLD 4218" 
+              value="Broadbeach QLD 4218"
+              data-agent-id="input-geo-suburb" 
+              data-testid="input-geo-suburb"
+            >
+            <button 
+              type="button" 
+              class="geo-btn-gps" 
+              onclick="reDetectGpsLocation()" 
+              title="Detect GPS Suburb & Country via OpenStreetMap"
+              data-agent-id="btn-geo-detect-gps"
+              data-testid="btn-geo-detect-gps"
+            >
+              <i class="fa-solid fa-crosshairs"></i> GPS
+            </button>
+          </div>
+        </div>
+
+        <!-- 2 Column: Time Format & Date Format -->
+        <div class="geo-form-grid-2">
+          <div class="geo-form-group">
+            <label class="geo-label" for="geo-select-time-format">
+              <i class="fa-regular fa-clock"></i> Time Format
+            </label>
+            <select id="geo-select-time-format" class="geo-form-control" data-agent-id="select-time-format" data-testid="select-time-format">
+              <option value="12h" selected>12-Hour (e.g. 07:22 AM)</option>
+              <option value="24h">24-Hour (e.g. 07:22)</option>
+            </select>
+          </div>
+
+          <div class="geo-form-group">
+            <label class="geo-label" for="geo-select-date-format">
+              <i class="fa-regular fa-calendar"></i> Date Format
+            </label>
+            <select id="geo-select-date-format" class="geo-form-control" data-agent-id="select-date-format" data-testid="select-date-format">
+              <option value="DD/MM/YYYY" selected>DD/MM/YYYY (Australian)</option>
+              <option value="DD MMM YYYY">DD MMM YYYY (e.g. 01 Nov 2026)</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY (US Format)</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD (ISO 8601)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2 Column: Timezone & Temperature Unit -->
+        <div class="geo-form-grid-2">
+          <div class="geo-form-group">
+            <label class="geo-label" for="geo-select-timezone">
+              <i class="fa-solid fa-globe"></i> Timezone
+            </label>
+            <select id="geo-select-timezone" class="geo-form-control" data-agent-id="select-timezone" data-testid="select-timezone">
+              <option value="Australia/Brisbane" selected>Brisbane / Gold Coast (AEST UTC+10)</option>
+              <option value="Australia/Sydney">Sydney / Melbourne (AEDT UTC+11)</option>
+              <option value="Australia/Adelaide">Adelaide (ACDT UTC+10:30)</option>
+              <option value="Australia/Perth">Perth (AWST UTC+8)</option>
+              <option value="Australia/Darwin">Darwin (ACST UTC+9:30)</option>
+              <option value="Pacific/Auckland">Auckland / Wellington (NZDT UTC+13)</option>
+              <option value="America/New_York">US Eastern (ET UTC-5)</option>
+              <option value="America/Los_Angeles">US Pacific (PT UTC-8)</option>
+              <option value="Europe/London">London (GMT/BST UTC+0)</option>
+            </select>
+          </div>
+
+          <div class="geo-form-group">
+            <label class="geo-label" for="geo-select-temp-unit">
+              <i class="fa-solid fa-temperature-half"></i> Temperature Unit
+            </label>
+            <select id="geo-select-temp-unit" class="geo-form-control" data-agent-id="select-temp-unit" data-testid="select-temp-unit">
+              <option value="C" selected>Celsius (°C)</option>
+              <option value="F">Fahrenheit (°F)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="geo-modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary geo-btn-cancel" 
+          onclick="closeGeoTimeModal()"
+          data-agent-id="btn-cancel-geo-settings" 
+          data-testid="btn-cancel-geo-settings"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary geo-btn-save" 
+          onclick="saveGeoTimeSettings()"
+          data-agent-id="btn-save-geo-settings" 
+          data-testid="btn-save-geo-settings"
+        >
+          <i class="fa-solid fa-check"></i> Save & Apply
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>

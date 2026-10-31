@@ -1,0 +1,448 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // This security rules file assumes the following data structures:
+    //
+    // Collection: platform_settings
+    // Document ID: settingId ('global', 'fx_usd_aud', etc.)
+    // Fields:
+    //   - isTokenSystemEnabled: bool (optional) - toggle token economy
+    //   - isAudEnabled: bool (optional) - toggle AUD pricing in Australia
+    //   - isUsdEnabled: bool (optional) - toggle USD pricing globally
+    //   - updatedAt: string or timestamp (optional) - last updated ISO timestamp
+    //   - updatedBy: string (optional, max 120 chars) - admin email who made update
+    //   - rate: number (optional, > 0 and < 10) - live USD to AUD exchange rate
+    //   - rateDate: string or null (optional) - date of live FX rate
+    //   - source: string (optional, max 100 chars) - FX feed source provider
+    //   - fetchedAt: number (optional) - epoch ms timestamp of rate fetch
+    //
+    // Collection: users
+    // Document ID: uid (Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required on create, immutable) - Auth UID matching document ID
+    //   - role: string (optional on create, immutable by user) - 'customer' or 'provider'
+    //   - isSuperAdmin / isSuperadmin: bool (optional, immutable by user) - Superadmin flag
+    //   - tokens: number (optional, immutable by user) - token wallet balance (server only)
+    //   - email: string (optional, max 120 chars, immutable by user) - user email
+    //   - displayName: string (optional, max 100 chars) - user display name
+    //   - photoURL: string (optional, max 500 chars) - avatar URL
+    //   - phoneNumber: string (optional, max 30 chars) - phone number
+    //   - address: string (optional, max 250 chars) - physical street address
+    //   - notes: string (optional, max 500 chars) - profile notes
+    //   - createdAt: string or timestamp (optional, immutable)
+    //
+    // Collection: providers
+    // Document ID: providerId / serviceProviderNumber (e.g. 'SPN-123456')
+    // Fields:
+    //   - uid: string (optional, immutable) - Firebase Auth UID of contractor
+    //   - serviceProviderNumber: string (required, immutable) - SPN code
+    //   - name: string (required, 2-100 chars) - contractor or trade business name
+    //   - category: string (optional, max 50 chars) - trade category
+    //   - suburb: string (optional, max 120 chars) - primary service suburb
+    //   - hourlyRate: number (optional, 0-1000) - standard hourly rate
+    //   - bio: string (optional, max 1000 chars) - trade bio and qualifications
+    //   - skills: list (optional, max 30 items) - skills and licences
+    //   - availability: string (optional, max 50 chars) - availability status
+    //   - isActive: bool (optional) - active listing flag
+    //   - isVerified: bool (optional, immutable by provider) - superadmin badge
+    //   - businessId: string (optional, immutable) - multi-tenant partition
+    //   - createdAt: string or timestamp (optional, immutable)
+    //
+    // Collection: bookings
+    // Document ID: bookingId / docketNumber (e.g. 'IASJ-819234')
+    // Fields:
+    //   - docketNumber: string (required, immutable) - unique booking docket
+    //   - customerUid / uid: string (optional, immutable) - customer Firebase Auth UID
+    //   - providerUid / assignedProviderId: string (optional) - assigned contractor UID
+    //   - custName: string (optional, 2-100 chars) - customer name
+    //   - custPhone: string (optional, 8-25 chars) - customer mobile number
+    //   - custAddress: string (optional, 5-250 chars) - job location address
+    //   - custNotes: string (optional, max 500 chars) - customer instructions
+    //   - tradeCategory: string (optional, max 50 chars) - trade type
+    //   - shiftType: string (optional, max 50 chars) - urgency tier
+    //   - status: string (required) - workflow state (e.g. 'pending', 'in-progress')
+    //   - jobPhotos: list (optional, max 10 URLs) - job photos
+    //   - totalAudCents / amountCents / tokens: number (optional, immutable by client)
+    //   - paymentIntentId: string (optional, immutable by client) - Stripe PI ID
+    //   - paid / settled / payoutCompleted: bool (optional, immutable by client)
+    //   - businessId: string (optional, immutable)
+    //   - createdAt: string or timestamp (optional, immutable)
+    //
+    // Collection: candidates
+    // Document ID: candidateId (e.g. 'SPN-998811')
+    // Fields:
+    //   - uid / applicantUid: string (required, immutable) - applicant Auth UID
+    //   - name: string (optional, 2-100 chars) - applicant full name
+    //   - email: string (optional, max 120 chars) - applicant email
+    //   - phone: string (optional, max 25 chars) - applicant contact phone
+    //   - trade: string (optional, max 50 chars) - primary trade specialty
+    //   - experience: string (optional, max 500 chars) - work experience summary
+    //   - resumeUrl: string (optional, max 500 chars) - resume link
+    //   - skills: list (optional, max 30 items) - skills array
+    //   - createdAt: string or timestamp (optional, immutable)
+    //
+    // Collection: partner_applications / franchise_applications
+    // Document ID: appId
+    // Fields:
+    //   - uid / applicantUid: string (required, immutable) - applicant Auth UID
+    //   - name: string (optional, 2-100 chars) - applicant or director name
+    //   - email: string (optional, max 120 chars) - contact email
+    //   - phone: string (optional, max 25 chars) - contact phone
+    //   - territory: string (optional, max 100 chars) - requested territory
+    //   - notes: string (optional, max 1000 chars) - business experience notes
+    //   - status: string (optional, immutable by applicant) - application status
+    //   - createdAt: string or timestamp (optional, immutable)
+    //
+    // Collection: wallets / token_transactions / token_ledger
+    // Document ID: uid / txId
+    // Fields:
+    //   - uid: string (owner Auth UID)
+    //   - available / held / tokens: integer balance
+    //   - Client writes: STRICTLY FORBIDDEN (Firebase Admin SDK ledger only)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if caller is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Comprehensive Superadmin verification (claims, bootstrap UIDs, verified bootstrap emails)
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        // 1. Explicit verified superadmin UIDs
+        request.auth.uid in ['L5euSJAfNKdDOX6mT0qmrCGjUA53', 'ZK79FRQoVlYhsgvMibhi81dRUWj2'] ||
+        // 2. Custom claims set via Firebase Admin SDK
+        (('role' in request.auth.token) && request.auth.token.role == 'superadmin') ||
+        (('isSuperAdmin' in request.auth.token) && request.auth.token.isSuperAdmin == true) ||
+        // 3. Verified bootstrap superadmin email addresses
+        (('email_verified' in request.auth.token) && request.auth.token.email_verified == true &&
+         ('email' in request.auth.token) && request.auth.token.email in ['support@aifoundation.net.au', 'davidrobertson.info@gmail.com'])
+      );
+    }
+
+    // Check if user owns the document path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate email format and length
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() <= 120 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate that immutable fields were not altered in an update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in both create and update)
+    // ===============================================================
+
+    // Platform settings validator
+    function isValidPlatformSetting(data) {
+      return (!('isTokenSystemEnabled' in data) || data.isTokenSystemEnabled is bool) &&
+             (!('isAudEnabled' in data) || data.isAudEnabled is bool) &&
+             (!('isUsdEnabled' in data) || data.isUsdEnabled is bool) &&
+             (!('updatedBy' in data) || (data.updatedBy is string && data.updatedBy.size() <= 120)) &&
+             (!('rate' in data) || (data.rate is number && data.rate > 0 && data.rate < 10)) &&
+             (!('source' in data) || (data.source is string && data.source.size() <= 100));
+    }
+
+    // User profile creation validator (prevents self-privilege escalation)
+    function isValidUserCreate(data) {
+      return data.uid == request.auth.uid &&
+             (!('role' in data) || data.role in ['customer', 'provider']) &&
+             (!('isSuperAdmin' in data) || data.isSuperAdmin == false) &&
+             (!('isSuperadmin' in data) || data.isSuperadmin == false) &&
+             (!('tokens' in data) || data.tokens == 0) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30));
+    }
+
+    // User profile update validator
+    function isValidUserUpdate(data) {
+      return areImmutableFieldsUnchanged(['uid', 'role', 'isSuperAdmin', 'isSuperadmin', 'tokens', 'email', 'createdAt']) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // Provider profile creation validator
+    function isValidProviderCreate(data) {
+      return data.uid == request.auth.uid &&
+             (!('isVerified' in data) || data.isVerified == false) &&
+             (!('rating' in data) || data.rating == 5.0 || data.rating == 0) &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
+             (!('skills' in data) || (data.skills is list && data.skills.size() <= 30));
+    }
+
+    // Provider profile update validator
+    function isValidProviderUpdate(data) {
+      return areImmutableFieldsUnchanged(['uid', 'serviceProviderNumber', 'businessId', 'createdAt', 'isVerified']) &&
+             (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 100)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
+             (!('availability' in data) || (data.availability is string && data.availability.size() <= 50)) &&
+             (!('isActive' in data) || data.isActive is bool);
+    }
+
+    // Booking customer ownership helper
+    function isBookingCustomer() {
+      return isAuthenticated() && (
+        (request.auth.uid == resource.data.customerUid) ||
+        (request.auth.uid == resource.data.uid) ||
+        (('customer' in resource.data) && ('uid' in resource.data.customer) && request.auth.uid == resource.data.customer.uid) ||
+        (('custPhone' in resource.data) && ('phone_number' in request.auth.token) && request.auth.token.phone_number == resource.data.custPhone) ||
+        (('customer' in resource.data) && ('phone' in resource.data.customer) && ('phone_number' in request.auth.token) && request.auth.token.phone_number == resource.data.customer.phone)
+      );
+    }
+
+    // Booking assigned provider ownership helper
+    function isBookingProvider() {
+      return isAuthenticated() && (
+        (request.auth.uid == resource.data.providerUid) ||
+        (request.auth.uid == resource.data.assignedProviderId) ||
+        (('provider' in resource.data) && ('uid' in resource.data.provider) && request.auth.uid == resource.data.provider.uid) ||
+        (('providerId' in resource.data) && request.auth.uid == resource.data.providerId)
+      );
+    }
+
+    // Booking payload validator
+    function isValidBooking(data) {
+      return (!('custName' in data) || (data.custName is string && data.custName.size() >= 2 && data.custName.size() <= 100)) &&
+             (!('custPhone' in data) || (data.custPhone is string && data.custPhone.size() >= 8 && data.custPhone.size() <= 25)) &&
+             (!('custAddress' in data) || (data.custAddress is string && data.custAddress.size() >= 5 && data.custAddress.size() <= 250)) &&
+             (!('custNotes' in data) || (data.custNotes is string && data.custNotes.size() <= 500)) &&
+             (!('tradeCategory' in data) || (data.tradeCategory is string && data.tradeCategory.size() <= 50)) &&
+             (!('shiftType' in data) || (data.shiftType is string && data.shiftType.size() <= 50)) &&
+             (!('jobPhotos' in data) || (data.jobPhotos is list && data.jobPhotos.size() <= 10)) &&
+             (!('businessId' in data) || data.businessId == 'its-a-simple-job');
+    }
+
+    // Candidate application validator
+    function isValidCandidate(data) {
+      return (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 100)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 25)) &&
+             (!('trade' in data) || (data.trade is string && data.trade.size() <= 50)) &&
+             (!('experience' in data) || (data.experience is string && data.experience.size() <= 500)) &&
+             (!('resumeUrl' in data) || (data.resumeUrl is string && data.resumeUrl.size() <= 500)) &&
+             (!('skills' in data) || (data.skills is list && data.skills.size() <= 30));
+    }
+
+    // Partner / Franchise application validator
+    function isValidApplication(data) {
+      return (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 100)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 25)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('territory' in data) || (data.territory is string && data.territory.size() <= 100)) &&
+             (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 100));
+    }
+
+    // Customer profile validator
+    function isValidCustomer(data) {
+      return (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 100)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 25)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // Recruitment order validator
+    function isValidRecruitmentOrder(data) {
+      return (!('title' in data) || (data.title is string && data.title.size() <= 100)) &&
+             (!('tradeCategory' in data) || (data.tradeCategory is string && data.tradeCategory.size() <= 50)) &&
+             (!('contactName' in data) || (data.contactName is string && data.contactName.size() <= 100)) &&
+             (!('contactEmail' in data) || isValidEmail(data.contactEmail)) &&
+             (!('contactPhone' in data) || (data.contactPhone is string && data.contactPhone.size() <= 25)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    // AI prompt audit validator
+    function isValidAiPrompt(data) {
+      return (!('query' in data) || (data.query is string && data.query.size() <= 1000)) &&
+             (!('businessId' in data) || data.businessId == 'its-a-simple-job');
+    }
+
+    // ===============================================================
+    // Collection Security Rules
+    // ===============================================================
+
+    // 1. Platform Settings: Public read for 'global' and 'fx_usd_aud'; writes Superadmin only
+    match /platform_settings/{settingId} {
+      allow read: if isSuperAdmin() || settingId in ['global', 'fx_usd_aud'];
+      allow create, update: if isSuperAdmin() && isValidPlatformSetting(request.resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2. Users: Owner read/update, Superadmin full access; client role escalation strictly forbidden
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isSuperAdmin();
+      allow create: if isSuperAdmin() || (isOwner(uid) && isValidUserCreate(request.resource.data));
+      allow update: if isSuperAdmin() || (isOwner(uid) && isValidUserUpdate(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 3. Providers: Public read for active contractors and directory query; provider updates own profile
+    match /providers/{providerId} {
+      allow read: if resource.data.businessId == 'its-a-simple-job' ||
+                     resource.data.isActive == true ||
+                     isSuperAdmin() ||
+                     (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow create: if isSuperAdmin() ||
+                       (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidProviderCreate(request.resource.data));
+      allow update: if isSuperAdmin() ||
+                       (isAuthenticated() && resource.data.uid == request.auth.uid && isValidProviderUpdate(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 4. Bookings: Customer and assigned provider access; status 'completed' and financial fields locked to server
+    match /bookings/{bookingId} {
+      allow read: if isSuperAdmin() || isBookingCustomer() || isBookingProvider();
+      allow create: if isSuperAdmin() || (
+        isAuthenticated() &&
+        (
+          request.resource.data.customerUid == request.auth.uid ||
+          request.resource.data.uid == request.auth.uid ||
+          (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid)
+        ) &&
+        (request.resource.data.status in ['pending', 'Confirmed & Dispatched']) &&
+        (!('paid' in request.resource.data) || request.resource.data.paid == false) &&
+        (!('settled' in request.resource.data) || request.resource.data.settled == false) &&
+        (!('paymentIntentId' in request.resource.data)) &&
+        (!('payoutCompleted' in request.resource.data) || request.resource.data.payoutCompleted == false) &&
+        isValidBooking(request.resource.data)
+      );
+      allow update: if isSuperAdmin() || (
+        isAuthenticated() &&
+        (isBookingCustomer() || isBookingProvider()) &&
+        // Status changes to 'completed' or financial states are strictly forbidden to clients (Admin SDK only)
+        request.resource.data.status != 'completed' &&
+        request.resource.data.status != 'paid' &&
+        request.resource.data.status != 'settled' &&
+        request.resource.data.status != 'refunded' &&
+        areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens']) &&
+        isValidBooking(request.resource.data)
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // 5. Candidates: Applicant reads/submits application; Superadmin full access
+    match /candidates/{candidateId} {
+      allow read: if isSuperAdmin() ||
+                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
+      allow create: if isSuperAdmin() ||
+                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidCandidate(request.resource.data));
+      allow update: if isSuperAdmin() ||
+                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt']) && isValidCandidate(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 6. Partner & Franchise Applications: Applicant reads/submits application; Superadmin full access
+    match /partner_applications/{appId} {
+      allow read: if isSuperAdmin() ||
+                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
+      allow create: if isSuperAdmin() ||
+                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data));
+      allow update: if isSuperAdmin() ||
+                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    match /franchise_applications/{appId} {
+      allow read: if isSuperAdmin() ||
+                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
+      allow create: if isSuperAdmin() ||
+                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data));
+      allow update: if isSuperAdmin() ||
+                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 7. Token Ledgers & Wallets: Owner read-only; client writes strictly forbidden (Server Admin SDK only)
+    match /token_transactions/{txId} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /token_ledger/{txId} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /wallets/{uid} {
+      allow read: if isOwner(uid) || isSuperAdmin();
+      allow write: if false;
+
+      match /purchases/{purchaseId} {
+        allow read: if isOwner(uid) || isSuperAdmin();
+        allow write: if false;
+      }
+
+      match /ledger/{entryId} {
+        allow read: if isOwner(uid) || isSuperAdmin();
+        allow write: if false;
+      }
+    }
+
+    // 8. Registered Customers: Owner customer profile access; Superadmin full access
+    match /customers/{crn} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid));
+      allow create: if isSuperAdmin() || (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.customerUid == request.auth.uid) && isValidCustomer(request.resource.data));
+      allow update: if isSuperAdmin() || (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid) && areImmutableFieldsUnchanged(['customerRefNumber', 'uid', 'createdAt']) && isValidCustomer(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 9. Recruitment Orders: Hiring employer access; Superadmin full access
+    match /recruitment_orders/{orderId} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow create: if isSuperAdmin() || (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidRecruitmentOrder(request.resource.data));
+      allow update: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid && areImmutableFieldsUnchanged(['orderId', 'uid', 'createdAt', 'status']) && isValidRecruitmentOrder(request.resource.data));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 10. Financial Transactions: Server-managed financial ledger; client writes forbidden
+    match /stripe_transactions/{txId} {
+      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // 11. AI Prompts Audit Trail: Non-sensitive telemetry append-only for authenticated callers
+    match /ai_prompts/{promptId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAuthenticated() && isValidAiPrompt(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // ===============================================================
+    // Root Default Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

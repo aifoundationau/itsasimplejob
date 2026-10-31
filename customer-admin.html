@@ -1226,7 +1226,7 @@
                   <button type="button" class="btn btn-outline btn-sm" onclick="handleSetPic('${escapeHtml(m.spn)}')" title="Set as Person In Charge" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:#D97706; border-color:#FCD34D;">
                     <i class="fa-solid fa-star"></i> Set PIC
                   </button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="handleRemoveMember('${escapeHtml(m.spn)}')" title="Remove Member" style="padding:0.2rem 0.45rem; font-size:0.72rem; color:#EF4444; border-color:#FECACA;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleRemoveMember('${escapeHtml(m.spn)}', this)" title="Remove Member" style="padding:0.2rem 0.45rem; font-size:0.72rem; color:#EF4444; border-color:#FECACA;">
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
                 ` : `
@@ -1386,7 +1386,7 @@
                     <i class="fa-solid fa-rotate-left"></i> Re-open Job
                   </button>
                 `}
-                <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteJob('${escapeHtml(j.id)}')" style="color:#EF4444; border-color:#FECACA;" title="Delete Work Order">
+                <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteJob('${escapeHtml(j.id)}', this)" style="color:#EF4444; border-color:#FECACA;" title="Delete Work Order">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -1523,12 +1523,23 @@
       }
     }
 
-    function handleRemoveMember(spn) {
-      if (!confirm(`Are you sure you want to remove member (${spn}) from this work team?`)) return;
-      if (window.workTeamsService && currentActiveTeamId) {
-        window.workTeamsService.removeMemberFromTeam(currentActiveTeamId, spn);
-        renderActiveTeamDetails(currentActiveTeamId);
-        if (typeof showToast === 'function') showToast(`Member removed from roster.`);
+    function handleRemoveMember(spn, btn = null) {
+      const doRemove = () => {
+        if (window.workTeamsService && currentActiveTeamId) {
+          window.workTeamsService.removeMemberFromTeam(currentActiveTeamId, spn);
+          renderActiveTeamDetails(currentActiveTeamId);
+          if (typeof showToast === 'function') showToast(`Member removed from roster.`);
+        }
+      };
+
+      if (btn && typeof window.iasjConfirmDelete === 'function') {
+        window.iasjConfirmDelete(btn, doRemove, {
+          label: 'Confirm Remove?',
+          targetType: 'roster_member',
+          targetId: spn
+        });
+      } else {
+        doRemove();
       }
     }
 
@@ -1727,12 +1738,23 @@
       }
     }
 
-    function handleDeleteJob(jobId) {
-      if (!confirm('Are you sure you want to cancel and delete this work order?')) return;
-      if (window.workTeamsService && currentActiveTeamId) {
-        window.workTeamsService.deleteJob(currentActiveTeamId, jobId);
-        renderActiveTeamDetails(currentActiveTeamId);
-        if (typeof showToast === 'function') showToast('Work order deleted.');
+    function handleDeleteJob(jobId, btn = null) {
+      const doDelete = () => {
+        if (window.workTeamsService && currentActiveTeamId) {
+          window.workTeamsService.deleteJob(currentActiveTeamId, jobId);
+          renderActiveTeamDetails(currentActiveTeamId);
+          if (typeof showToast === 'function') showToast('Work order deleted.');
+        }
+      };
+
+      if (btn && typeof window.iasjConfirmDelete === 'function') {
+        window.iasjConfirmDelete(btn, doDelete, {
+          label: 'Confirm Delete Job?',
+          targetType: 'work_order',
+          targetId: jobId
+        });
+      } else {
+        doDelete();
       }
     }
 
@@ -1915,7 +1937,7 @@
       container.innerHTML = blockedList.map(item => `
         <span class="date-chip date-chip-off">
           <i class="fa-solid fa-calendar-xmark"></i> ${item.date} ${item.reason ? `(${item.reason})` : ''}
-          <span class="date-chip-remove" onclick="removeCustomerBlackoutDate('${item.date}')" title="Turn Date Back ON">&times;</span>
+          <span class="date-chip-remove" onclick="removeCustomerBlackoutDate('${item.date}', this)" title="Turn Date Back ON">&times;</span>
         </span>
       `).join('');
     }
@@ -1946,12 +1968,26 @@
       if (typeof showToast === 'function') showToast(`Date ${date} turned OFF.`);
     }
 
-    function removeCustomerBlackoutDate(date) {
-      const settings = getCustomerSettings();
-      settings.blockedDates = (settings.blockedDates || []).filter(d => d.date !== date);
-      saveCustomerSettings(settings);
-      updateCustomerAdminUI();
-      if (typeof showToast === 'function') showToast(`Date ${date} turned Back ON.`);
+    function removeCustomerBlackoutDate(date, el = null) {
+      const doRemove = () => {
+        const settings = getCustomerSettings();
+        settings.blockedDates = (settings.blockedDates || []).filter(d => d.date !== date);
+        saveCustomerSettings(settings);
+        updateCustomerAdminUI();
+        if (typeof showToast === 'function') showToast(`Date ${date} turned Back ON.`);
+      };
+
+      const chip = el ? (el.classList.contains('date-chip') ? el : el.closest('.date-chip') || el) : null;
+      if (chip && typeof window.iasjConfirmDelete === 'function') {
+        window.iasjConfirmDelete(chip, doRemove, {
+          label: 'Turn Date ON?',
+          compact: true,
+          targetType: 'blackout_date',
+          targetId: date
+        });
+      } else {
+        doRemove();
+      }
     }
 
     function applyCustomerDatePreset(preset) {

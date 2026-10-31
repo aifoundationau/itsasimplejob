@@ -4,8 +4,12 @@
 
 # Environment & Secrets (Never commit credentials)
 .env*
+safetyprotocols.txt
+* (1)*
 *.pem
 *.key
+*adminsdk*
+*service-account*
 
 # Node.js & Dependencies
 node_modules/
