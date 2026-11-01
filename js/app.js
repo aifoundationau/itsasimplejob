@@ -168,32 +168,36 @@ function switchTab(tabId) {
   } else if (tabId === 'find-contractors-tab') {
     document.getElementById('tab-btn-find-contractors')?.classList.add('active');
     document.getElementById('pill-find-contractors')?.classList.add('active');
-    setTimeout(() => {
-      if (appState.osmMap) {
-        appState.osmMap.invalidateSize();
-      } else {
-        renderOsmContractorMap();
-      }
-      if (appState.contractorMap && window.google?.maps) {
-        google.maps.event.trigger(appState.contractorMap, 'resize');
-        if (appState.userCoords) {
-          appState.contractorMap.setCenter(appState.userCoords);
+    [50, 150, 400].forEach(delay => {
+      setTimeout(() => {
+        if (appState.osmMap) {
+          try { appState.osmMap.invalidateSize(true); } catch(e) {}
+        } else {
+          renderOsmContractorMap();
         }
-      }
-    }, 150);
+        if (appState.contractorMap && window.google?.maps) {
+          google.maps.event.trigger(appState.contractorMap, 'resize');
+          if (appState.userCoords) {
+            appState.contractorMap.setCenter(appState.userCoords);
+          }
+        }
+      }, delay);
+    });
   } else if (tabId === 'courier-tab') {
     document.getElementById('tab-btn-courier')?.classList.add('active');
     document.getElementById('pill-courier')?.classList.add('active');
-    setTimeout(() => {
-      if (appState.osmCourierMap) {
-        appState.osmCourierMap.invalidateSize();
-      } else {
-        renderOsmCourierRouteMap();
-      }
-      if (appState.courierRouteMap && window.google?.maps) {
-        google.maps.event.trigger(appState.courierRouteMap, 'resize');
-      }
-    }, 150);
+    [50, 150, 400].forEach(delay => {
+      setTimeout(() => {
+        if (appState.osmCourierMap) {
+          try { appState.osmCourierMap.invalidateSize(true); } catch(e) {}
+        } else {
+          renderOsmCourierRouteMap();
+        }
+        if (appState.courierRouteMap && window.google?.maps) {
+          google.maps.event.trigger(appState.courierRouteMap, 'resize');
+        }
+      }, delay);
+    });
   } else if (tabId === 'recruitment-tab') {
     document.getElementById('tab-btn-recruitment')?.classList.add('active');
     document.getElementById('pill-recruitment')?.classList.add('active');
@@ -322,6 +326,17 @@ function renderOsmContractorMap() {
   }).addTo(map);
 
   appState.osmMap = map;
+
+  // Auto-resize on tab switch or viewport orientation change (Android / Mobile support)
+  if (window.ResizeObserver && !container._iasjRo) {
+    const ro = new ResizeObserver(() => {
+      if (container.offsetWidth > 40 && container.offsetHeight > 40 && appState.osmMap) {
+        try { appState.osmMap.invalidateSize(true); } catch(e) {}
+      }
+    });
+    ro.observe(container);
+    container._iasjRo = ro;
+  }
 
   // Add search center marker
   const userIcon = L.divIcon({
@@ -453,6 +468,17 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
   }).addTo(map);
 
   appState.osmCourierMap = map;
+
+  // Auto-resize on tab switch or viewport orientation change (Android / Mobile support)
+  if (window.ResizeObserver && !container._iasjRo) {
+    const ro = new ResizeObserver(() => {
+      if (container.offsetWidth > 40 && container.offsetHeight > 40 && appState.osmCourierMap) {
+        try { appState.osmCourierMap.invalidateSize(true); } catch(e) {}
+      }
+    });
+    ro.observe(container);
+    container._iasjRo = ro;
+  }
 
   const originIcon = L.divIcon({
     className: 'osm-pickup-pin',
@@ -810,6 +836,11 @@ function setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback) {
     }
   }
 
+  // Prevent touch/mouse gestures in dropdown from closing it prematurely
+  dropdown.addEventListener('pointerdown', (e) => e.stopPropagation());
+  dropdown.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  dropdown.addEventListener('mousedown', (e) => e.stopPropagation());
+
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('aria-autocomplete', 'list');
   input.setAttribute('aria-controls', dropdown.id);
@@ -914,13 +945,18 @@ function setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback) {
       `).join('');
 
       dropdown.querySelectorAll('.osm-suggestion-item').forEach(el => {
-        el.addEventListener('mousedown', (e) => {
+        const handleSelect = (e) => {
           e.preventDefault();
+          e.stopPropagation();
           const idx = parseInt(el.getAttribute('data-index'), 10);
           if (!isNaN(idx) && currentResults[idx]) {
             selectItem(currentResults[idx]);
           }
-        });
+        };
+        el.addEventListener('pointerdown', handleSelect);
+        el.addEventListener('touchstart', handleSelect, { passive: false });
+        el.addEventListener('mousedown', handleSelect);
+        el.addEventListener('click', handleSelect);
       });
     }, 250);
   });
@@ -1094,7 +1130,24 @@ async function locateCustomer(targetInputId) {
     },
     (error) => {
       console.warn("Geolocation denied or unavailable:", error);
-      showToast("Could not retrieve exact GPS. Defaulting to Gold Coast.");
+      const fallbackAddress = "42 Surf Parade, Broadbeach QLD 4218";
+      appState.userCoords = { lat: -28.0280, lng: 153.4312 };
+      appState.userLocationName = fallbackAddress;
+      const input = document.getElementById(targetInputId);
+      if (input) {
+        input.value = fallbackAddress;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (targetInputId === 'contractor-search-location') {
+        if (appState.osmMap) {
+          appState.osmMap.setView([-28.0280, 153.4312], 13);
+          updateOsmContractorMarkers();
+        }
+        filterContractors();
+      } else if (targetInputId === 'courier-origin') {
+        calculateCourierQuote();
+      }
+      showToast("GPS unavailable on this connection. Defaulted to Broadbeach, Gold Coast.");
     },
     { enableHighAccuracy: true, timeout: 8000 }
   );
@@ -1410,6 +1463,21 @@ function computeDistanceInKm(lat1, lon1, lat2, lon2) {
  * Sample Prompt Loader
  */
 function applySamplePrompt(key) {
+  if (key === 'urgent_courier') {
+    switchTab('courier-tab');
+    const origInput = document.getElementById('courier-origin');
+    const destInput = document.getElementById('courier-dest');
+    if (origInput) origInput.value = 'Gold Coast Private Hospital, 14 Hill St, Southport QLD 4215';
+    if (destInput) destInput.value = 'Royal Brisbane & Women Hospital, Butterfield St, Herston QLD 4029';
+    const descInput = document.getElementById('courier-desc');
+    if (descInput) descInput.value = '2 boxes of critical surgical supplies (12kg total)';
+    const weightInput = document.getElementById('courier-weight');
+    if (weightInput) weightInput.value = '12';
+    try { calculateCourierQuote(); } catch(e) {}
+    showToast('Y" Courier details automated from prompt: Southport to Brisbane Hospital');
+    return;
+  }
+
   switchTab('ai-book-tab');
   const input = document.getElementById('ai-prompt-input');
   if (input && SAMPLE_PROMPTS[key]) {
@@ -1570,6 +1638,24 @@ function renderAnalysisResults(analysis) {
 
   // 5. Update Pricing Breakdown & Hours in Sidebar
   updatePricingCard(analysis);
+
+  // 6. Automatically automate the customer address box from AI detection
+  if (analysis.detectedLocation) {
+    const custAddrInput = document.getElementById('cust-address');
+    if (custAddrInput) {
+      const locationAddressMap = {
+        'Broadbeach QLD': '42 Surf Parade, Broadbeach QLD 4218',
+        'Southport QLD': '10 Smith Street, Southport QLD 4215',
+        'Robina QLD': '19 Cheltenham Drive, Robina QLD 4226',
+        'Burleigh Heads QLD': '3 Connor Street, Burleigh Heads QLD 4220',
+        'Surfers Paradise QLD': '8 Cavill Avenue, Surfers Paradise QLD 4217'
+      };
+      const autoAddress = locationAddressMap[analysis.detectedLocation] || `${analysis.detectedLocation}, Australia`;
+      custAddrInput.value = autoAddress;
+      custAddrInput.dispatchEvent(new Event('change', { bubbles: true }));
+      appState.userLocationName = autoAddress;
+    }
+  }
 }
 
 /**

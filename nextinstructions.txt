@@ -10,25 +10,29 @@ Created: 2026-11-01
 - All 11 redundant browser-downloaded files safely purged.
 
 [COMPLETED] TASK 3: AUDIT DOM AUTOMATION ATTRIBUTES
-- Injected data-agent-id, data-testid, and aria-label across all 507 interactive elements in index.html, customer-admin.html, customer.html, provider.html, and franchise.html.
+- Injected data-agent-id, data-testid, and aria-label across all 507 interactive elements.
 - Documented Section 8 (InteractiveElementDomContract) in data-contracts.MD.
-- Verified 100% attribute coverage and zero build errors with Vite.
+
+[COMPLETED] TASK 4: RESOLVE ANDROID MAPS & ADDRESS AUTOMATION
+- Injected Leaflet CDN fallback in index.html <head> for instant style/script readiness.
+- Fixed container clipping with .ai-agent-container { overflow: visible; } and mobile map heights.
+- Bound touch event handlers (pointerdown, touchstart, mousedown, click) on address suggestions.
+- Attached ResizeObserver to #contractor-map and #courier-route-map with multi-delay size invalidation.
+- Automated customer address from AI analysis results and prompt chips.
+- Hardened GPS fallback for Android Chrome / non-secure HTTP origins.
+- Exposed dev server on local network: http://10.193.145.140:3002/
+- Documented Section 3.4 (UniversalMobileLeafletTouchContract) in data-contracts.MD.
 
 --------------------------------------------------------------------------------
-CURRENT TASK: GIT REPOSITORY COMMIT & SYNC
+CURRENT TASK: COMMIT & PUSH TO GITHUB (VERCEL DEPLOYMENT SYNC)
 --------------------------------------------------------------------------------
-Context: Working tree cleanliness directive.
+Context: Android phone testing requires the latest commits to be deployed on Vercel
+and pushed to GitHub remote.
 Steps:
-1. Audit topology and verify production build (npm run build verified).
-2. Stage modified files (`git add customer-admin.html customer.html data-contracts.MD franchise.html index.html nextinstructions.txt provider.html`).
-3. Commit with standard semantic message:
-   `git commit -m "feat: inject deterministic data-agent-id, data-testid, and aria bindings across all interactive elements"`
-4. Push / sync to GitHub remote (`git push origin main`).
-
---------------------------------------------------------------------------------
-NEXT UPCOMING TASK: VERIFY CLOUD FIRESTORE SECURITY RULES & DISPATCH WORKFLOWS
---------------------------------------------------------------------------------
-1. Check Cloud Firestore security rules for database 'itsasimplejob' to ensure role permissions match latest custom claims and customer-admin portal capabilities.
-2. Test end-to-end booking dispatch flow on http://localhost:3002/ with instant SMS docket notification simulation.
+1. Audit topology and verify production build (npm run build passed in 1.33s).
+2. Stage modified files (`git add css/style.css data-contracts.MD index.html js/app.js nextinstructions.txt`).
+3. Commit: `feat: universal android mobile maps, touch autocomplete, and prompt address automation`.
+4. Push to remote: `git push origin main`.
+5. Verify live Vercel production deployment.
 
 ================================================================================

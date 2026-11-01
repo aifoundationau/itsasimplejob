@@ -805,7 +805,7 @@ button, input, select, textarea {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-xl);
-  overflow: hidden;
+  overflow: visible;
 }
 
 @media (max-width: 960px) {
@@ -5130,3 +5130,27 @@ body {
   animation: confirmDeletePulse 1.4s infinite ease-in-out !important;
 }
 
+
+/* Universal Mobile Layout for Leaflet Maps & Autocomplete Dropdowns */
+@media (max-width: 960px) {
+  .map-outer-container {
+    position: relative !important;
+    top: auto !important;
+    margin-bottom: 1.5rem;
+  }
+  #contractor-map {
+    height: 380px !important;
+    min-height: 340px;
+  }
+  #courier-route-map {
+    height: 260px !important;
+    min-height: 240px;
+  }
+  .osm-suggestions-dropdown {
+    z-index: 99999 !important;
+    max-height: 220px;
+  }
+  .ai-agent-container {
+    overflow: visible !important;
+  }
+}

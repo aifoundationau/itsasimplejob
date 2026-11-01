@@ -246,6 +246,57 @@ The application defaults to an ultra-reliable, zero-key Leaflet OpenStreetMap en
 
 ---
 
+### 3.4 Universal Mobile (Android/iOS) Leaflet & Touch Autocomplete Contract
+Enforces zero-latency touch event bindings, ResizeObserver responsiveness, and fluid mobile geometry across Android Chrome, Samsung Internet, and iOS Safari.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UniversalMobileLeafletTouchContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "touchEventsSupported",
+    "resizeObserverActive",
+    "multiIntervalInvalidation",
+    "insecureOriginGpsFallback",
+    "aiPromptAddressAutomation"
+  ],
+  "properties": {
+    "touchEventsSupported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["pointerdown", "touchstart", "mousedown", "click"]
+      },
+      "description": "Deterministic event matrix preventing blur-cancel on Android virtual keyboards"
+    },
+    "resizeObserverActive": {
+      "type": "boolean",
+      "enum": [true],
+      "description": "ResizeObserver attached to container to force map invalidation on mobile tab display"
+    },
+    "multiIntervalInvalidation": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "description": "Array of millisecond delays [50, 150, 400] for post-tab-switch Leaflet tile recomputation"
+    },
+    "insecureOriginGpsFallback": {
+      "type": "boolean",
+      "enum": [true],
+      "description": "Provides fallback location when navigator.geolocation is restricted on HTTP non-secure origins"
+    },
+    "aiPromptAddressAutomation": {
+      "type": "boolean",
+      "enum": [true],
+      "description": "Automatically populates cust-address or courier-origin/dest from NLP prompt analysis"
+    }
+  }
+}
+```
+
+---
+
 ## 4. UI Booking & Dispatch Contracts
 
 ### 4.1 Front Page Job Booking Contract (`confirmBooking`)
