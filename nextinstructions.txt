@@ -23,16 +23,25 @@ Created: 2026-11-01
 - Exposed dev server on local network: http://10.193.145.140:3002/
 - Documented Section 3.4 (UniversalMobileLeafletTouchContract) in data-contracts.MD.
 
+[COMPLETED] TASK 5: GIT REPOSITORY COMMIT & VERCEL PRODUCTION DEPLOYMENT
+- Committed: feat: universal android mobile maps, touch autocomplete, and prompt address automation (476e5ed).
+- Pushed to GitHub remote: origin/main.
+- Verified live production deployment on Vercel: https://www.itsasimplejob.com (READY).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: COMMIT & PUSH TO GITHUB (VERCEL DEPLOYMENT SYNC)
+CURRENT TASK: AUDIT CLOUD FIRESTORE DATABASE SECURITY RULES
 --------------------------------------------------------------------------------
-Context: Android phone testing requires the latest commits to be deployed on Vercel
-and pushed to GitHub remote.
+Context: Global directive mandates checking Firebase database rules and ensuring
+they are up to date for database 'itsasimplejob'.
 Steps:
-1. Audit topology and verify production build (npm run build passed in 1.33s).
-2. Stage modified files (`git add css/style.css data-contracts.MD index.html js/app.js nextinstructions.txt`).
-3. Commit: `feat: universal android mobile maps, touch autocomplete, and prompt address automation`.
-4. Push to remote: `git push origin main`.
-5. Verify live Vercel production deployment.
+1. Verify Cloud Firestore security rules for database 'itsasimplejob' under project 'ai-foundation-firebase'.
+2. Ensure custom claims, role protections (customer, provider, franchise, superadmin), and work orders collections match recent data contracts.
+3. Test read/write permissions for authenticated vs unauthenticated users.
+
+--------------------------------------------------------------------------------
+NEXT UPCOMING TASK: VERIFY BOOKING DISPATCH & NOTIFICATION PIPELINE
+--------------------------------------------------------------------------------
+1. Test end-to-end booking dispatch flow on http://localhost:3002/ with instant SMS docket notification simulation.
+2. Confirm work order creation in Firestore and live status updates in customer-admin.html.
 
 ================================================================================
