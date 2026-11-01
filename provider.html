@@ -51,7 +51,7 @@
 
       <div class="nav-actions">
         <!-- Sign In Button -->
-        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('provider')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED;" title="Sign in with Google">
+        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('provider')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED;" title="Sign in with Google" data-agent-id="sign-in-with-google" data-testid="sign-in-with-google" aria-label="Sign in with Google">
           <svg width="14" height="14" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -98,7 +98,7 @@
             <div id="page-prov-draft-status" class="draft-auto-saved-pill">
               <i class="fa-solid fa-cloud-check"></i> <span>Draft auto-saved</span>
             </div>
-            <button type="button" class="btn-draft-save" onclick="saveProviderApplicationDraft(true)">
+            <button type="button" class="btn-draft-save" onclick="saveProviderApplicationDraft(true)" data-agent-id="btn-draft-save" data-testid="btn-draft-save" aria-label="Btn Draft Save">
               <i class="fa-solid fa-floppy-disk" style="color:var(--brand-orange);"></i> Save Draft & Continue Later
             </button>
           </div>
@@ -120,10 +120,10 @@
           </div>
         </div>
         <div style="display:flex; gap:0.5rem;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="saveProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="saveProviderApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;" data-agent-id="btn-9" data-testid="btn-9" aria-label="Btn 9">
             <i class="fa-solid fa-save"></i> Save Now
           </button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearProviderApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;" data-agent-id="btn-8" data-testid="btn-8" aria-label="Btn 8">
             <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
           </button>
         </div>
@@ -140,18 +140,18 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-name">Full Name / Primary Contact</label>
-                <input type="text" id="page-prov-name" class="form-control" required placeholder="e.g. Jack Sullivan">
+                <input type="text" id="page-prov-name" class="form-control" required placeholder="e.g. Jack Sullivan" data-agent-id="page-prov-name" data-testid="page-prov-name" aria-label="e.g. Jack Sullivan">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-business">Business / Trading Name</label>
-                <input type="text" id="page-prov-business" class="form-control" required placeholder="e.g. Sullivan & Sons Plumbing & Gas">
+                <input type="text" id="page-prov-business" class="form-control" required placeholder="e.g. Sullivan & Sons Plumbing & Gas" data-agent-id="page-prov-business" data-testid="page-prov-business" aria-label="e.g. Sullivan & Sons Plumbing & Gas">
               </div>
             </div>
 
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-category">Primary Trade Discipline</label>
-                <select id="page-prov-category" class="form-control" required onchange="handleCategoryChange('page', this.value)">
+                <select id="page-prov-category" class="form-control" required onchange="handleCategoryChange('page', this.value)" data-agent-id="page-prov-category" data-testid="page-prov-category" aria-label="Page Prov Category">
                   <option value="plumbing">Plumbing & Gas Solutions</option>
                   <option value="electrical">Licensed Electrical Services</option>
                   <option value="courier">Courier Driver & Express Freight</option>
@@ -165,18 +165,18 @@
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-license">Licence # / Certification / Driver Lic</label>
-                <input type="text" id="page-prov-license" class="form-control" required placeholder="e.g. QBCC #1509214 or MR Commercial Lic">
+                <input type="text" id="page-prov-license" class="form-control" required placeholder="e.g. QBCC #1509214 or MR Commercial Lic" data-agent-id="page-prov-license" data-testid="page-prov-license" aria-label="e.g. QBCC #1509214 or MR Commercial Lic">
               </div>
             </div>
 
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-phone">Mobile Phone</label>
-                <input type="tel" id="page-prov-phone" class="form-control" required placeholder="0400 123 456">
+                <input type="tel" id="page-prov-phone" class="form-control" required placeholder="0400 123 456" data-agent-id="page-prov-phone" data-testid="page-prov-phone" aria-label="0400 123 456">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-email">Email Address</label>
-                <input type="email" id="page-prov-email" class="form-control" required placeholder="jack@sullivanplumbing.com.au">
+                <input type="email" id="page-prov-email" class="form-control" required placeholder="jack@sullivanplumbing.com.au" data-agent-id="page-prov-email" data-testid="page-prov-email" aria-label="jack@sullivanplumbing.com.au">
               </div>
             </div>
           </div>
@@ -189,11 +189,11 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-suburb">Base Suburb / City & Postcode</label>
-                <input type="text" id="page-prov-suburb" class="form-control" required placeholder="e.g. Broadbeach QLD 4218">
+                <input type="text" id="page-prov-suburb" class="form-control" required placeholder="e.g. Broadbeach QLD 4218" data-agent-id="page-prov-suburb" data-testid="page-prov-suburb" aria-label="e.g. Broadbeach QLD 4218">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-country">Country / Region</label>
-                <select id="page-prov-country" class="form-control" onchange="handleProviderCountryChange(this.value)">
+                <select id="page-prov-country" class="form-control" onchange="handleProviderCountryChange(this.value)" data-agent-id="page-prov-country" data-testid="page-prov-country" aria-label="Page Prov Country">
                   <option value="AU" selected>Australia (km)</option>
                   <option value="NZ">New Zealand (km)</option>
                   <option value="US">United States (miles)</option>
@@ -211,10 +211,10 @@
               </div>
               <div style="display:flex; gap:1rem;">
                 <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
-                  <input type="radio" name="page-prov-dist-unit" value="km" checked onchange="updateProviderDistUnit('km')"> Kilometres (km)
+                  <input type="radio" name="page-prov-dist-unit" value="km" checked onchange="updateProviderDistUnit('km')" data-agent-id="page-prov-dist-unit-2" data-testid="page-prov-dist-unit-2" aria-label="Page Prov Dist Unit"> Kilometres (km)
                 </label>
                 <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
-                  <input type="radio" name="page-prov-dist-unit" value="mile" onchange="updateProviderDistUnit('mile')"> Miles (mi)
+                  <input type="radio" name="page-prov-dist-unit" value="mile" onchange="updateProviderDistUnit('mile')" data-agent-id="page-prov-dist-unit" data-testid="page-prov-dist-unit" aria-label="Page Prov Dist Unit"> Miles (mi)
                 </label>
               </div>
             </div>
@@ -222,11 +222,11 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-radius">Standard Service Radius (<span class="unit-span">km</span>)</label>
-                <input type="number" id="page-prov-radius" class="form-control" value="25" min="5" max="250">
+                <input type="number" id="page-prov-radius" class="form-control" value="25" min="5" max="250" data-agent-id="page-prov-radius" data-testid="page-prov-radius" aria-label="Page Prov Radius">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-suburbs-list">Service Areas Covered (comma separated)</label>
-                <input type="text" id="page-prov-suburbs-list" class="form-control" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh">
+                <input type="text" id="page-prov-suburbs-list" class="form-control" placeholder="e.g. Surfers Paradise, Southport, Robina, Burleigh" data-agent-id="page-prov-suburbs-list" data-testid="page-prov-suburbs-list" aria-label="e.g. Surfers Paradise, Southport, Robina, Burleigh">
               </div>
             </div>
           </div>
@@ -241,11 +241,11 @@
               <!-- Hourly -->
               <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
                 <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
-                  <input type="checkbox" id="page-rate-hourly" checked> Hourly Rate
+                  <input type="checkbox" id="page-rate-hourly" checked data-agent-id="page-rate-hourly" data-testid="page-rate-hourly" aria-label="Page Rate Hourly"> Hourly Rate
                 </label>
                 <div style="display:flex; align-items:center; gap:0.3rem;">
                   <span style="font-weight:700; color:var(--text-muted);">$</span>
-                  <input type="number" id="page-prov-hourly" class="form-control" value="95" min="30" max="400">
+                  <input type="number" id="page-prov-hourly" class="form-control" value="95" min="30" max="400" data-agent-id="page-prov-hourly" data-testid="page-prov-hourly" aria-label="Page Prov Hourly">
                   <span style="font-size:0.75rem; color:var(--text-muted);">/ hr</span>
                 </div>
               </div>
@@ -253,11 +253,11 @@
               <!-- Flat Rate -->
               <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
                 <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
-                  <input type="checkbox" id="page-rate-flat" checked> Flat Rate (Standard Jobs)
+                  <input type="checkbox" id="page-rate-flat" checked data-agent-id="page-rate-flat" data-testid="page-rate-flat" aria-label="Page Rate Flat"> Flat Rate (Standard Jobs)
                 </label>
                 <div style="display:flex; align-items:center; gap:0.3rem;">
                   <span style="font-weight:700; color:var(--text-muted);">$</span>
-                  <input type="number" id="page-prov-flat" class="form-control" value="130" min="40" max="2000">
+                  <input type="number" id="page-prov-flat" class="form-control" value="130" min="40" max="2000" data-agent-id="page-prov-flat" data-testid="page-prov-flat" aria-label="Page Prov Flat">
                   <span style="font-size:0.75rem; color:var(--text-muted);">flat</span>
                 </div>
               </div>
@@ -265,11 +265,11 @@
               <!-- Callout -->
               <div style="background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.75rem;">
                 <label style="display:flex; align-items:center; gap:0.35rem; font-weight:700; font-size:0.82rem; margin-bottom:0.4rem;">
-                  <input type="checkbox" id="page-rate-callout" checked> Base Call-Out Fee
+                  <input type="checkbox" id="page-rate-callout" checked data-agent-id="page-rate-callout" data-testid="page-rate-callout" aria-label="Page Rate Callout"> Base Call-Out Fee
                 </label>
                 <div style="display:flex; align-items:center; gap:0.3rem;">
                   <span style="font-weight:700; color:var(--text-muted);">$</span>
-                  <input type="number" id="page-prov-callout" class="form-control" value="35" min="0" max="300">
+                  <input type="number" id="page-prov-callout" class="form-control" value="35" min="0" max="300" data-agent-id="page-prov-callout" data-testid="page-prov-callout" aria-label="Page Prov Callout">
                   <span style="font-size:0.75rem; color:var(--text-muted);">callout</span>
                 </div>
               </div>
@@ -278,7 +278,7 @@
             <!-- Distance Charges -->
             <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
               <label style="display:flex; align-items:center; gap:0.4rem; font-weight:800; font-size:0.85rem; color:#92400E; cursor:pointer;">
-                <input type="checkbox" id="page-rate-distance" checked onchange="toggleDistanceChargeFields(this.checked)">
+                <input type="checkbox" id="page-rate-distance" checked onchange="toggleDistanceChargeFields(this.checked)" data-agent-id="page-rate-distance" data-testid="page-rate-distance" aria-label="Page Rate Distance">
                 <i class="fa-solid fa-route"></i> Charge Distance / Travel Fee (Callout per <span class="unit-span">km</span> / Courier per <span class="unit-span">km</span>)
               </label>
 
@@ -287,7 +287,7 @@
                   <label class="input-label" style="font-size:0.75rem;" for="page-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
                   <div style="display:flex; align-items:center; gap:0.3rem;">
                     <span style="font-weight:700; color:#92400E;">$</span>
-                    <input type="number" id="page-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20">
+                    <input type="number" id="page-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20" data-agent-id="page-prov-callout-per-km" data-testid="page-prov-callout-per-km" aria-label="Page Prov Callout Per Km">
                     <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
                   </div>
                 </div>
@@ -296,7 +296,7 @@
                   <label class="input-label" style="font-size:0.75rem;" for="page-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
                   <div style="display:flex; align-items:center; gap:0.3rem;">
                     <span style="font-weight:700; color:#92400E;">$</span>
-                    <input type="number" id="page-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20">
+                    <input type="number" id="page-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20" data-agent-id="page-prov-courier-per-km" data-testid="page-prov-courier-per-km" aria-label="Page Prov Courier Per Km">
                     <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
                   </div>
                 </div>
@@ -304,7 +304,7 @@
                 <div>
                   <label class="input-label" style="font-size:0.75rem;" for="page-prov-free-km">Included Free Distance</label>
                   <div style="display:flex; align-items:center; gap:0.3rem;">
-                    <input type="number" id="page-prov-free-km" class="form-control" value="10" min="0" max="100">
+                    <input type="number" id="page-prov-free-km" class="form-control" value="10" min="0" max="100" data-agent-id="page-prov-free-km" data-testid="page-prov-free-km" aria-label="Page Prov Free Km">
                     <span style="font-size:0.75rem; color:#92400E;"><span class="unit-span">km</span> free</span>
                   </div>
                 </div>
@@ -318,7 +318,7 @@
               <h5 style="font-size:0.85rem; text-transform:uppercase; color:var(--primary-navy); letter-spacing:0.5px; margin:0;">
                 <i class="fa-solid fa-list-check" style="color:var(--brand-orange);"></i> 4. Services Offered & Fee Structures
               </h5>
-              <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="font-weight:700; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED; font-size:0.78rem;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="font-weight:700; color:var(--brand-orange); border-color:#FED7AA; background:#FFF7ED; font-size:0.78rem;" data-agent-id="btn-7" data-testid="btn-7" aria-label="Btn 7">
                 <i class="fa-solid fa-plus-circle"></i> Add Another Service
               </button>
             </div>
@@ -331,13 +331,13 @@
               <!-- Injected via JavaScript -->
             </div>
 
-            <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="width:100%; border:1px dashed #FDBA74; color:#C2410C; background:#FFFDFB; font-weight:700; margin-bottom:1rem; padding:0.55rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addServiceFeeRow('page')" style="width:100%; border:1px dashed #FDBA74; color:#C2410C; background:#FFFDFB; font-weight:700; margin-bottom:1rem; padding:0.55rem;" data-agent-id="btn-6" data-testid="btn-6" aria-label="Btn 6">
               <i class="fa-solid fa-plus-circle"></i> + Add Another Service & Fee Structure
             </button>
 
             <div class="input-group">
               <label class="input-label" for="page-prov-equipment">Tools, Machinery & Vehicles Owned</label>
-              <input type="text" id="page-prov-equipment" class="form-control" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake">
+              <input type="text" id="page-prov-equipment" class="form-control" placeholder="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake" data-agent-id="page-prov-equipment" data-testid="page-prov-equipment" aria-label="e.g. 1-Tonne Van with Racks, CCTV Pipe Camera, Electric Drain Snake">
             </div>
           </div>
 
@@ -355,10 +355,10 @@
               </div>
               <div style="display:flex; gap:0.5rem;">
                 <label class="radio-pill active" id="label-inline-status-active" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
-                  <input type="radio" name="inline-profile-status" value="active" checked onchange="handleStatusRadioChange('inline', 'active')"> 🟢 Active & Ready
+                  <input type="radio" name="inline-profile-status" value="active" checked onchange="handleStatusRadioChange('inline', 'active')" data-agent-id="inline-profile-status-2" data-testid="inline-profile-status-2" aria-label="Inline Profile Status"> 🟢 Active & Ready
                 </label>
                 <label class="radio-pill" id="label-inline-status-paused" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:var(--radius-full); font-size:0.78rem; font-weight:700; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">
-                  <input type="radio" name="inline-profile-status" value="paused" onchange="handleStatusRadioChange('inline', 'paused')"> ⏸️ Paused (On Break)
+                  <input type="radio" name="inline-profile-status" value="paused" onchange="handleStatusRadioChange('inline', 'paused')" data-agent-id="inline-profile-status" data-testid="inline-profile-status" aria-label="Inline Profile Status"> ⏸️ Paused (On Break)
                 </label>
               </div>
             </div>
@@ -371,10 +371,10 @@
                   <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Click shift cells to turn ON/OFF for each day</span>
                 </div>
                 <div class="matrix-presets">
-                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'all')">⚡ 24/7 All On</button>
-                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'core')">🏢 Mon–Fri Day (7am–5pm)</button>
-                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'after_hours')">🌙 After-Hours & W/Ends</button>
-                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'clear')">Clear All</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'all')" data-agent-id="matrix-preset-btn-4" data-testid="matrix-preset-btn-4" aria-label="Matrix Preset Btn 4">⚡ 24/7 All On</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'core')" data-agent-id="matrix-preset-btn-3" data-testid="matrix-preset-btn-3" aria-label="Matrix Preset Btn 3">🏢 Mon–Fri Day (7am–5pm)</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'after_hours')" data-agent-id="matrix-preset-btn-2" data-testid="matrix-preset-btn-2" aria-label="Matrix Preset Btn 2">🌙 After-Hours & W/Ends</button>
+                  <button type="button" class="matrix-preset-btn" onclick="applyCalendarPreset('inline', 'clear')" data-agent-id="matrix-preset-btn" data-testid="matrix-preset-btn" aria-label="Matrix Preset Btn">Clear All</button>
                 </div>
               </div>
 
@@ -383,7 +383,7 @@
 
             <div style="margin-top:0.6rem;">
               <label class="checkbox-label">
-                <input type="checkbox" id="page-shift-insured" checked required> $10M+ Public Liability / Carrier Transit Cover Active
+                <input type="checkbox" id="page-shift-insured" checked required data-agent-id="page-shift-insured" data-testid="page-shift-insured" aria-label="Page Shift Insured"> $10M+ Public Liability / Carrier Transit Cover Active
               </label>
             </div>
           </div>
@@ -396,11 +396,11 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-photo-license">Trade Licence Card / Insurance Scan</label>
-                <input type="file" id="page-prov-photo-license" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'licence')">
+                <input type="file" id="page-prov-photo-license" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'licence')" data-agent-id="page-prov-photo-license" data-testid="page-prov-photo-license" aria-label="Page Prov Photo License">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-photo-vehicle">Work Vehicle / Profile Photo</label>
-                <input type="file" id="page-prov-photo-vehicle" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'vehicle')">
+                <input type="file" id="page-prov-photo-vehicle" class="form-control" accept="image/*" onchange="handleProviderPhotoUpload(event, 'vehicle')" data-agent-id="page-prov-photo-vehicle" data-testid="page-prov-photo-vehicle" aria-label="Page Prov Photo Vehicle">
               </div>
             </div>
             <div id="page-prov-photo-preview" style="display:none; font-size:0.75rem; color:#059669; font-weight:700;"></div>
@@ -418,26 +418,26 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-bank-name">Account Name (Trading / Legal Entity)</label>
-                <input type="text" id="page-prov-bank-name" class="form-control" placeholder="e.g. Sullivan & Sons Plumbing Pty Ltd">
+                <input type="text" id="page-prov-bank-name" class="form-control" placeholder="e.g. Sullivan & Sons Plumbing Pty Ltd" data-agent-id="page-prov-bank-name" data-testid="page-prov-bank-name" aria-label="e.g. Sullivan & Sons Plumbing Pty Ltd">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-payid">PayID (Instant NPP - Phone / Email / ABN)</label>
-                <input type="text" id="page-prov-payid" class="form-control" placeholder="0400 123 456 or accounts@sullivan.com.au">
+                <input type="text" id="page-prov-payid" class="form-control" placeholder="0400 123 456 or accounts@sullivan.com.au" data-agent-id="page-prov-payid" data-testid="page-prov-payid" aria-label="0400 123 456 or accounts@sullivan.com.au">
               </div>
             </div>
 
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="page-prov-bsb">BSB Number (6 Digits)</label>
-                <input type="text" id="page-prov-bsb" class="form-control" placeholder="e.g. 084-004" maxlength="7">
+                <input type="text" id="page-prov-bsb" class="form-control" placeholder="e.g. 084-004" maxlength="7" data-agent-id="page-prov-bsb" data-testid="page-prov-bsb" aria-label="e.g. 084-004">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-account">Account Number</label>
-                <input type="text" id="page-prov-account" class="form-control" placeholder="e.g. 12345678" maxlength="10">
+                <input type="text" id="page-prov-account" class="form-control" placeholder="e.g. 12345678" maxlength="10" data-agent-id="page-prov-account" data-testid="page-prov-account" aria-label="e.g. 12345678">
               </div>
               <div class="input-group">
                 <label class="input-label" for="page-prov-payid-type">PayID Type</label>
-                <select id="page-prov-payid-type" class="form-control">
+                <select id="page-prov-payid-type" class="form-control" data-agent-id="page-prov-payid-type" data-testid="page-prov-payid-type" aria-label="Page Prov Payid Type">
                   <option value="phone">Mobile Phone (04XX XXX XXX)</option>
                   <option value="email">Email Address</option>
                   <option value="abn">ABN (Australian Business Number)</option>
@@ -454,14 +454,14 @@
 
           <!-- Sticky Actions Bar -->
           <div class="form-sticky-actions">
-            <button type="button" class="btn btn-outline" onclick="saveProviderApplicationDraft(true)">
+            <button type="button" class="btn btn-outline" onclick="saveProviderApplicationDraft(true)" data-agent-id="btn-5" data-testid="btn-5" aria-label="Btn 5">
               <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
             </button>
             <div style="display:flex; gap:0.75rem; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true, this)" style="color:#64748B;">
+              <button type="button" class="btn btn-outline" onclick="clearProviderApplicationDraft(true, this)" style="color:#64748B;" data-agent-id="btn-4" data-testid="btn-4" aria-label="Btn 4">
                 <i class="fa-solid fa-rotate-left"></i> Reset Form
               </button>
-              <button type="submit" class="btn btn-primary btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">
+              <button type="submit" class="btn btn-primary btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;" data-agent-id="btn-3" data-testid="btn-3" aria-label="Btn 3">
                 <i class="fa-solid fa-circle-check"></i> Submit Service Provider Application & Issue SPN
               </button>
             </div>
@@ -481,7 +481,7 @@
             </div>
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <span class="vault-server-badge"><i class="fa-solid fa-server"></i> Stored on Server (Album: TKRnX5)</span>
-              <button class="btn btn-outline btn-sm" onclick="triggerVaultUpload()">
+              <button class="btn btn-outline btn-sm" onclick="triggerVaultUpload()" data-agent-id="btn-2" data-testid="btn-2" aria-label="Btn 2">
                 <i class="fa-solid fa-plus"></i> Add Document
               </button>
             </div>
@@ -527,7 +527,7 @@
         <span id="modal-spn-number" style="font-family:monospace; font-size:1.8rem; font-weight:900; color:var(--brand-orange); letter-spacing:2px;">
           SPN-000000
         </span>
-        <button class="btn btn-outline btn-sm" onclick="copySPNToClipboard()" title="Copy SPN">
+        <button class="btn btn-outline btn-sm" onclick="copySPNToClipboard()" title="Copy SPN" data-agent-id="copy-spn" data-testid="copy-spn" aria-label="Copy SPN">
           <i class="fa-solid fa-copy"></i>
         </button>
       </div>
@@ -536,7 +536,7 @@
         <a href="index.html" class="btn btn-outline" style="font-weight:700; text-decoration:none;">
           Return to App
         </a>
-        <button class="btn btn-primary" onclick="closeProviderSuccessModal(); window.location.href='index.html';">
+        <button class="btn btn-primary" onclick="closeProviderSuccessModal(); window.location.href='index.html';" data-agent-id="btn" data-testid="btn" aria-label="Btn">
           <i class="fa-solid fa-gauge-high"></i> View On Contractors Map
         </button>
       </div>

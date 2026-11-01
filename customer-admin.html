@@ -135,7 +135,7 @@
 
       <div class="nav-actions">
         <!-- Sign In Button -->
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-signin" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-signin" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google" data-agent-id="btn-admin-signin" data-testid="btn-admin-signin" aria-label="Sign in with Google">
           <svg width="14" height="14" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -169,10 +169,10 @@
 
       <!-- Top Navigation Tabs Switcher -->
       <div class="admin-tab-nav" id="admin-main-tabs">
-        <button type="button" class="admin-tab-btn active" id="tab-btn-teams" onclick="switchAdminMainView('work-teams')">
+        <button type="button" class="admin-tab-btn active" id="tab-btn-teams" onclick="switchAdminMainView('work-teams')" data-agent-id="tab-btn-teams" data-testid="tab-btn-teams" aria-label="Tab Btn Teams">
           <i class="fa-solid fa-people-group" style="color:var(--brand-orange);"></i> Work Teams & Multi-Person Crews
         </button>
-        <button type="button" class="admin-tab-btn" id="tab-btn-customer" onclick="switchAdminMainView('customer-controls')">
+        <button type="button" class="admin-tab-btn" id="tab-btn-customer" onclick="switchAdminMainView('customer-controls')" data-agent-id="tab-btn-customer" data-testid="tab-btn-customer" aria-label="Tab Btn Customer">
           <i class="fa-solid fa-sliders"></i> Customer Schedule & Budget Settings
         </button>
       </div>
@@ -227,7 +227,7 @@
           <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; flex:1;">
             <div style="display:flex; align-items:center; gap:0.4rem;">
               <label for="team-sector-filter" style="font-size:0.78rem; font-weight:700; color:var(--text-muted);"><i class="fa-solid fa-filter"></i> Sector:</label>
-              <select id="team-sector-filter" class="form-control" style="font-size:0.8rem; height:36px; padding:0.2rem 0.5rem; width:auto;" onchange="handleTeamFilterChange()">
+              <select id="team-sector-filter" class="form-control" style="font-size:0.8rem; height:36px; padding:0.2rem 0.5rem; width:auto;" onchange="handleTeamFilterChange()" data-agent-id="team-sector-filter" data-testid="team-sector-filter" aria-label="Team Sector Filter">
                 <option value="all">All Sectors</option>
                 <option value="construction">Construction & Civil</option>
                 <option value="horticulture">Horticulture & Trees</option>
@@ -239,14 +239,14 @@
 
             <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:220px;">
               <label for="active-team-select" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); white-space:nowrap;">Active Crew:</label>
-              <select id="active-team-select" class="form-control" style="font-size:0.85rem; height:38px; font-weight:700; color:var(--primary-navy);" onchange="switchActiveWorkTeam(this.value)">
+              <select id="active-team-select" class="form-control" style="font-size:0.85rem; height:38px; font-weight:700; color:var(--primary-navy);" onchange="switchActiveWorkTeam(this.value)" data-agent-id="active-team-select" data-testid="active-team-select" aria-label="Active Team Select">
                 <!-- Populated dynamically -->
               </select>
             </div>
           </div>
 
           <div style="display:flex; gap:0.5rem;">
-            <button type="button" class="btn btn-primary btn-sm" onclick="openCreateTeamModal()" style="font-weight:800; white-space:nowrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openCreateTeamModal()" style="font-weight:800; white-space:nowrap;" data-agent-id="btn-18" data-testid="btn-18" aria-label="Btn 18">
               <i class="fa-solid fa-plus"></i> Create New Work Team
             </button>
           </div>
@@ -307,7 +307,7 @@
               </span>
             </div>
             <div>
-              <button type="button" class="btn btn-outline btn-sm" onclick="openAddMemberModal()" style="font-weight:700; color:#2563EB; border-color:#BFDBFE; background:#EFF6FF;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="openAddMemberModal()" style="font-weight:700; color:#2563EB; border-color:#BFDBFE; background:#EFF6FF;" data-agent-id="btn-17" data-testid="btn-17" aria-label="Btn 17">
                 <i class="fa-solid fa-user-plus"></i> Add Registered Member
               </button>
             </div>
@@ -350,21 +350,21 @@
           <div class="chat-composer-box">
             <div class="chat-quick-actions">
               <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); align-self:center;">Quick Status:</span>
-              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('👷 On site at location. Commencing site setup and safety checklist.', 'general')">👷 On Site</button>
-              <button type="button" class="chat-quick-chip" style="color:#B91C1C; border-color:#FECACA; background:#FEF2F2;" onclick="sendQuickChatMessage('⚠️ Safety Notice: Mandatory exclusion zone active. High-vis & hard hats required.', 'safety')">⚠️ Safety / Hazard</button>
-              <button type="button" class="chat-quick-chip" style="color:#047857; border-color:#A7F3D0; background:#ECFDF5;" onclick="sendQuickChatMessage('📦 Materials delivery arrived on site. Unloading now.', 'materials')">📦 Materials Arrived</button>
-              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('🌧️ Weather hold: Heavy downpour. Pausing outdoor pour for 30 minutes.', 'general')">🌧️ Weather Delay</button>
-              <button type="button" class="chat-quick-chip" style="color:#6D28D9; border-color:#DDD6FE; background:#F5F3FF;" onclick="sendQuickChatMessage('✅ Job milestone signed off and completed.', 'general')">✅ Milestone Done</button>
+              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('👷 On site at location. Commencing site setup and safety checklist.', 'general')" data-agent-id="chat-quick-chip-5" data-testid="chat-quick-chip-5" aria-label="Chat Quick Chip 5">👷 On Site</button>
+              <button type="button" class="chat-quick-chip" style="color:#B91C1C; border-color:#FECACA; background:#FEF2F2;" onclick="sendQuickChatMessage('⚠️ Safety Notice: Mandatory exclusion zone active. High-vis & hard hats required.', 'safety')" data-agent-id="chat-quick-chip-4" data-testid="chat-quick-chip-4" aria-label="Chat Quick Chip 4">⚠️ Safety / Hazard</button>
+              <button type="button" class="chat-quick-chip" style="color:#047857; border-color:#A7F3D0; background:#ECFDF5;" onclick="sendQuickChatMessage('📦 Materials delivery arrived on site. Unloading now.', 'materials')" data-agent-id="chat-quick-chip-3" data-testid="chat-quick-chip-3" aria-label="Chat Quick Chip 3">📦 Materials Arrived</button>
+              <button type="button" class="chat-quick-chip" onclick="sendQuickChatMessage('🌧️ Weather hold: Heavy downpour. Pausing outdoor pour for 30 minutes.', 'general')" data-agent-id="chat-quick-chip-2" data-testid="chat-quick-chip-2" aria-label="Chat Quick Chip 2">🌧️ Weather Delay</button>
+              <button type="button" class="chat-quick-chip" style="color:#6D28D9; border-color:#DDD6FE; background:#F5F3FF;" onclick="sendQuickChatMessage('✅ Job milestone signed off and completed.', 'general')" data-agent-id="chat-quick-chip" data-testid="chat-quick-chip" aria-label="Chat Quick Chip">✅ Milestone Done</button>
             </div>
 
             <form id="team-chat-form" onsubmit="handleSendChatMessage(event)" style="display:flex; gap:0.5rem;">
-              <input type="text" id="chat-input-text" class="form-control" placeholder="Type a message or instruction to all team members..." required style="font-size:0.85rem;">
-              <select id="chat-message-type" class="form-control" style="width:140px; font-size:0.78rem;">
+              <input type="text" id="chat-input-text" class="form-control" placeholder="Type a message or instruction to all team members..." required style="font-size:0.85rem;" data-agent-id="chat-input-text" data-testid="chat-input-text" aria-label="Type a message or instruction to all team members...">
+              <select id="chat-message-type" class="form-control" style="width:140px; font-size:0.78rem;" data-agent-id="chat-message-type" data-testid="chat-message-type" aria-label="Chat Message Type">
                 <option value="general">💬 General</option>
                 <option value="safety">⚠️ Safety Alert</option>
                 <option value="materials">📦 Materials</option>
               </select>
-              <button type="submit" class="btn btn-primary btn-sm" style="font-weight:800; white-space:nowrap; padding:0 1.25rem;">
+              <button type="submit" class="btn btn-primary btn-sm" style="font-weight:800; white-space:nowrap; padding:0 1.25rem;" data-agent-id="btn-16" data-testid="btn-16" aria-label="Btn 16">
                 <i class="fa-solid fa-paper-plane"></i> Send
               </button>
             </form>
@@ -383,7 +383,7 @@
               </span>
             </div>
             <div>
-              <button type="button" class="btn btn-primary btn-sm" onclick="openCreateJobModal()" style="font-weight:800; background:#059669; border-color:#059669;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="openCreateJobModal()" style="font-weight:800; background:#059669; border-color:#059669;" data-agent-id="btn-15" data-testid="btn-15" aria-label="Btn 15">
                 <i class="fa-solid fa-plus-circle"></i> Assign Work / Dispatch Team
               </button>
             </div>
@@ -455,7 +455,7 @@
                 </div>
               </div>
               <div>
-                <button type="button" class="status-switch-btn btn-pause" id="btn-toggle-customer-pause" onclick="toggleCustomerPauseState()">
+                <button type="button" class="status-switch-btn btn-pause" id="btn-toggle-customer-pause" onclick="toggleCustomerPauseState()" data-agent-id="btn-toggle-customer-pause" data-testid="btn-toggle-customer-pause" aria-label="Btn Toggle Customer Pause">
                   <i class="fa-solid fa-circle-pause"></i> Pause My Service
                 </button>
               </div>
@@ -470,8 +470,8 @@
                 Reason for Pause / Note (e.g. On vacation, home renovations, budget hold):
               </label>
               <div style="display:flex; gap:0.5rem;">
-                <input type="text" id="customer-pause-reason" class="form-control" placeholder="e.g. Taking annual leave until next week, property locked">
-                <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerPauseReason()" style="white-space:nowrap; font-weight:700;">
+                <input type="text" id="customer-pause-reason" class="form-control" placeholder="e.g. Taking annual leave until next week, property locked" data-agent-id="customer-pause-reason" data-testid="customer-pause-reason" aria-label="e.g. Taking annual leave until next week, property locked">
+                <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerPauseReason()" style="white-space:nowrap; font-weight:700;" data-agent-id="btn-14" data-testid="btn-14" aria-label="Btn 14">
                   <i class="fa-solid fa-check"></i> Save Note
                 </button>
               </div>
@@ -533,14 +533,14 @@
               </div>
               <div>
                 <label class="switch">
-                  <input type="checkbox" id="customer-gcal-autoblock" checked onchange="saveCustomerGcalAutoblock(this.checked)">
+                  <input type="checkbox" id="customer-gcal-autoblock" checked onchange="saveCustomerGcalAutoblock(this.checked)" data-agent-id="customer-gcal-autoblock" data-testid="customer-gcal-autoblock" aria-label="Customer Gcal Autoblock">
                   <span class="slider round"></span>
                 </label>
               </div>
             </div>
 
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="syncCustomerGoogleCalendarNow()">
+              <button type="button" class="btn btn-outline btn-sm" onclick="syncCustomerGoogleCalendarNow()" data-agent-id="btn-13" data-testid="btn-13" aria-label="Btn 13">
                 <i class="fa-solid fa-rotate"></i> Sync With Google Calendar Now
               </button>
               <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm" style="color:#2563EB; border-color:#93C5FD; text-decoration:none;">
@@ -561,24 +561,24 @@
             <!-- Quick Presets -->
             <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
               <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Quick Presets:</span>
-              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('weekends_off')">Turn Off Weekends</button>
-              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_7_off')">Turn Off Next 7 Days</button>
-              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_14_off')">Turn Off Next 14 Days (Holiday)</button>
-              <button type="button" class="preset-pill-btn" style="color:#16A34A; border-color:#86EFAC;" onclick="applyCustomerDatePreset('all_on')">Turn All Dates ON</button>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('weekends_off')" data-agent-id="preset-pill-btn-4" data-testid="preset-pill-btn-4" aria-label="Preset Pill Btn 4">Turn Off Weekends</button>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_7_off')" data-agent-id="preset-pill-btn-3" data-testid="preset-pill-btn-3" aria-label="Preset Pill Btn 3">Turn Off Next 7 Days</button>
+              <button type="button" class="preset-pill-btn" onclick="applyCustomerDatePreset('next_14_off')" data-agent-id="preset-pill-btn-2" data-testid="preset-pill-btn-2" aria-label="Preset Pill Btn 2">Turn Off Next 14 Days (Holiday)</button>
+              <button type="button" class="preset-pill-btn" style="color:#16A34A; border-color:#86EFAC;" onclick="applyCustomerDatePreset('all_on')" data-agent-id="preset-pill-btn" data-testid="preset-pill-btn" aria-label="Preset Pill Btn">Turn All Dates ON</button>
             </div>
 
             <!-- Add Date Form -->
             <div class="form-row" style="margin-bottom:1rem; align-items:flex-end;">
               <div class="input-group" style="margin-bottom:0; flex:1;">
                 <label class="input-label" for="new-blackout-date" style="font-size:0.75rem;">Select Date to Turn OFF</label>
-                <input type="date" id="new-blackout-date" class="form-control">
+                <input type="date" id="new-blackout-date" class="form-control" data-agent-id="new-blackout-date" data-testid="new-blackout-date" aria-label="New Blackout Date">
               </div>
               <div class="input-group" style="margin-bottom:0; flex:2;">
                 <label class="input-label" for="new-blackout-reason" style="font-size:0.75rem;">Reason (Optional)</label>
-                <input type="text" id="new-blackout-reason" class="form-control" placeholder="e.g. Away on business, flooring being stained">
+                <input type="text" id="new-blackout-reason" class="form-control" placeholder="e.g. Away on business, flooring being stained" data-agent-id="new-blackout-reason" data-testid="new-blackout-reason" aria-label="e.g. Away on business, flooring being stained">
               </div>
               <div>
-                <button type="button" class="btn btn-outline btn-sm" onclick="addCustomerBlackoutDate()" style="height:42px; font-weight:700; color:#EF4444; border-color:#FCA5A5;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="addCustomerBlackoutDate()" style="height:42px; font-weight:700; color:#EF4444; border-color:#FCA5A5;" data-agent-id="btn-12" data-testid="btn-12" aria-label="Btn 12">
                   <i class="fa-solid fa-plus"></i> Turn Off Date
                 </button>
               </div>
@@ -601,15 +601,15 @@
               </span>
               <div style="display:flex; gap:1.25rem; flex-wrap:wrap;">
                 <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                  <input type="checkbox" id="pref-window-morning" checked onchange="saveCustomerWindowPreferences()">
+                  <input type="checkbox" id="pref-window-morning" checked onchange="saveCustomerWindowPreferences()" data-agent-id="pref-window-morning" data-testid="pref-window-morning" aria-label="Pref Window Morning">
                   <span>Morning (8:00 AM - 12:00 PM)</span>
                 </label>
                 <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                  <input type="checkbox" id="pref-window-afternoon" checked onchange="saveCustomerWindowPreferences()">
+                  <input type="checkbox" id="pref-window-afternoon" checked onchange="saveCustomerWindowPreferences()" data-agent-id="pref-window-afternoon" data-testid="pref-window-afternoon" aria-label="Pref Window Afternoon">
                   <span>Afternoon (12:00 PM - 5:00 PM)</span>
                 </label>
                 <label style="font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                  <input type="checkbox" id="pref-window-evening" onchange="saveCustomerWindowPreferences()">
+                  <input type="checkbox" id="pref-window-evening" onchange="saveCustomerWindowPreferences()" data-agent-id="pref-window-evening" data-testid="pref-window-evening" aria-label="Pref Window Evening">
                   <span>Evening (5:00 PM - 9:00 PM)</span>
                 </label>
               </div>
@@ -636,7 +636,7 @@
                 </label>
                 <div class="input-with-unit">
                   <span class="currency-prefix">$</span>
-                  <input type="number" id="cust-rate-hourly-cap" class="form-control" value="95.00" min="40" max="300" step="1.00">
+                  <input type="number" id="cust-rate-hourly-cap" class="form-control" value="95.00" min="40" max="300" step="1.00" data-agent-id="cust-rate-hourly-cap" data-testid="cust-rate-hourly-cap" aria-label="Cust Rate Hourly Cap">
                   <span class="unit-suffix">/ hr</span>
                 </div>
                 <span class="input-help">The AI matching engine will prioritize qualified trades under this hourly ceiling.</span>
@@ -648,7 +648,7 @@
                 </label>
                 <div class="input-with-unit">
                   <span class="currency-prefix">$</span>
-                  <input type="number" id="cust-rate-callout-cap" class="form-control" value="65.00" min="0" max="250" step="1.00">
+                  <input type="number" id="cust-rate-callout-cap" class="form-control" value="65.00" min="0" max="250" step="1.00" data-agent-id="cust-rate-callout-cap" data-testid="cust-rate-callout-cap" aria-label="Cust Rate Callout Cap">
                   <span class="unit-suffix">flat</span>
                 </div>
                 <span class="input-help">Maximum initial callout / diagnostic attendance fee accepted.</span>
@@ -660,7 +660,7 @@
                 <label class="input-label" for="cust-emergency-rate-allowance">
                   Emergency & After-Hours Rate Multiplier
                 </label>
-                <select id="cust-emergency-rate-allowance" class="form-control">
+                <select id="cust-emergency-rate-allowance" class="form-control" data-agent-id="cust-emergency-rate-allowance" data-testid="cust-emergency-rate-allowance" aria-label="Cust Emergency Rate Allowance">
                   <option value="standard">Standard Rates Only (No Emergency Surcharge)</option>
                   <option value="1.25">Up to +25% Emergency Surcharge Permitted</option>
                   <option value="1.5" selected>Up to +50% After-Hours / Weekend Surcharge Permitted</option>
@@ -674,8 +674,8 @@
                   Maximum Travel Distance
                 </label>
                 <div style="display:flex; gap:0.5rem;">
-                  <input type="number" id="cust-max-travel-distance" class="form-control" value="35" min="5" max="250" style="flex:1;">
-                  <select id="cust-distance-unit" class="form-control" style="width:170px; font-size:0.75rem; padding:0.25rem 0.4rem;">
+                  <input type="number" id="cust-max-travel-distance" class="form-control" value="35" min="5" max="250" style="flex:1;" data-agent-id="cust-max-travel-distance" data-testid="cust-max-travel-distance" aria-label="Cust Max Travel Distance">
+                  <select id="cust-distance-unit" class="form-control" style="width:170px; font-size:0.75rem; padding:0.25rem 0.4rem;" data-agent-id="cust-distance-unit" data-testid="cust-distance-unit" aria-label="Cust Distance Unit">
                     <option value="km" selected>Per Kilometre (km)</option>
                     <option value="miles">Per Mile (mi)</option>
                   </select>
@@ -685,7 +685,7 @@
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.75rem;">
-              <button type="submit" class="btn btn-primary" style="font-weight:800; padding:0.65rem 1.4rem;">
+              <button type="submit" class="btn btn-primary" style="font-weight:800; padding:0.65rem 1.4rem;" data-agent-id="btn-11" data-testid="btn-11" aria-label="Btn 11">
                 <i class="fa-solid fa-floppy-disk"></i> Save Rate Changes & Budget Preferences
               </button>
             </div>
@@ -725,7 +725,7 @@
                   <td>$85.00/hr</td>
                   <td><span style="color:#059669; font-weight:700;">🟢 Confirmed</span></td>
                   <td>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reschedule</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;" data-agent-id="btn-10" data-testid="btn-10" aria-label="Btn 10">Reschedule</button>
                   </td>
                 </tr>
                 <tr>
@@ -736,7 +736,7 @@
                   <td>$90.00/hr</td>
                   <td><span style="color:#2563EB; font-weight:700;">⏳ Dispatched</span></td>
                   <td>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;">Cancel</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;" data-agent-id="btn-9" data-testid="btn-9" aria-label="Btn 9">Cancel</button>
                   </td>
                 </tr>
               </tbody>
@@ -764,18 +764,18 @@
             <span style="font-size:0.75rem; color:#94A3B8;">Multi-person team for construction, horticulture, machinery, etc.</span>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" onclick="closeCreateTeamModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <button type="button" class="modal-close-btn" onclick="closeCreateTeamModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;" data-agent-id="modal-close-btn-3" data-testid="modal-close-btn-3" aria-label="Modal Close Btn 3">&times;</button>
       </div>
 
       <form id="form-create-team" onsubmit="handleCreateTeamSubmit(event)" style="padding:1.5rem;">
         <div class="form-row">
           <div class="input-group" style="flex:2;">
             <label class="input-label" for="new-team-name">Work Team Name</label>
-            <input type="text" id="new-team-name" class="form-control" required placeholder="e.g. Hinterland Commercial Earthmoving Crew">
+            <input type="text" id="new-team-name" class="form-control" required placeholder="e.g. Hinterland Commercial Earthmoving Crew" data-agent-id="new-team-name" data-testid="new-team-name" aria-label="e.g. Hinterland Commercial Earthmoving Crew">
           </div>
           <div class="input-group" style="flex:1;">
             <label class="input-label" for="new-team-sector">Sector / Trade Field</label>
-            <select id="new-team-sector" class="form-control" required>
+            <select id="new-team-sector" class="form-control" required data-agent-id="new-team-sector" data-testid="new-team-sector" aria-label="New Team Sector">
               <option value="construction">Construction & Civil</option>
               <option value="horticulture">Horticulture & Landscaping</option>
               <option value="machinery">Heavy Machinery & Plant</option>
@@ -791,20 +791,20 @@
         <div class="form-row">
           <div class="input-group">
             <label class="input-label" for="new-team-owner-type">Operating Structure</label>
-            <select id="new-team-owner-type" class="form-control" onchange="toggleTeamOwnerFields(this.value)">
+            <select id="new-team-owner-type" class="form-control" onchange="toggleTeamOwnerFields(this.value)" data-agent-id="new-team-owner-type" data-testid="new-team-owner-type" aria-label="New Team Owner Type">
               <option value="provider">Service Provider Lead (Master Contractor)</option>
               <option value="franchise">Franchise Network Operations</option>
             </select>
           </div>
           <div class="input-group">
             <label class="input-label" for="new-team-owner-name">Organization / Business Entity Name</label>
-            <input type="text" id="new-team-owner-name" class="form-control" required placeholder="e.g. Lockie's Trade Fleet or Jim's Mowing QLD">
+            <input type="text" id="new-team-owner-name" class="form-control" required placeholder="e.g. Lockie's Trade Fleet or Jim's Mowing QLD" data-agent-id="new-team-owner-name" data-testid="new-team-owner-name" aria-label="e.g. Lockie's Trade Fleet or Jim's Mowing QLD">
           </div>
         </div>
 
         <div class="input-group">
           <label class="input-label" for="new-team-desc">Team Scope & Capabilities</label>
-          <textarea id="new-team-desc" class="form-control" rows="2" placeholder="Describe the type of work this multi-person crew handles (e.g. slab preparation, tree lopping with 15t chipper, deep stormwater trenching)..."></textarea>
+          <textarea id="new-team-desc" class="form-control" rows="2" placeholder="Describe the type of work this multi-person crew handles (e.g. slab preparation, tree lopping with 15t chipper, deep stormwater trenching)..." data-agent-id="new-team-desc" data-testid="new-team-desc" aria-label="Describe the type of work this multi-person crew handles (e.g. slab preparation, tree lopping with 15t chipper, deep stormwater trenching)..."></textarea>
         </div>
 
         <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
@@ -814,22 +814,22 @@
           <div class="form-row" style="margin-bottom:0;">
             <div class="input-group" style="margin-bottom:0; flex:1;">
               <label class="input-label" for="new-team-pic-name" style="font-size:0.75rem;">Lead Person Name</label>
-              <input type="text" id="new-team-pic-name" class="form-control" required placeholder="e.g. Marco Rossi">
+              <input type="text" id="new-team-pic-name" class="form-control" required placeholder="e.g. Marco Rossi" data-agent-id="new-team-pic-name" data-testid="new-team-pic-name" aria-label="e.g. Marco Rossi">
             </div>
             <div class="input-group" style="margin-bottom:0; flex:1;">
               <label class="input-label" for="new-team-pic-phone" style="font-size:0.75rem;">Direct Mobile Phone</label>
-              <input type="tel" id="new-team-pic-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+              <input type="tel" id="new-team-pic-phone" class="form-control" required placeholder="e.g. 0412 345 678" data-agent-id="new-team-pic-phone" data-testid="new-team-pic-phone" aria-label="e.g. 0412 345 678">
             </div>
             <div class="input-group" style="margin-bottom:0; flex:1;">
               <label class="input-label" for="new-team-pic-trade" style="font-size:0.75rem;">Trade Specialty</label>
-              <input type="text" id="new-team-pic-trade" class="form-control" placeholder="e.g. Excavator Lead & Site Supervisor">
+              <input type="text" id="new-team-pic-trade" class="form-control" placeholder="e.g. Excavator Lead & Site Supervisor" data-agent-id="new-team-pic-trade" data-testid="new-team-pic-trade" aria-label="e.g. Excavator Lead & Site Supervisor">
             </div>
           </div>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-          <button type="button" class="btn btn-outline" onclick="closeCreateTeamModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;">
+          <button type="button" class="btn btn-outline" onclick="closeCreateTeamModal()" data-agent-id="btn-8" data-testid="btn-8" aria-label="Btn 8">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;" data-agent-id="btn-7" data-testid="btn-7" aria-label="Btn 7">
             <i class="fa-solid fa-check-circle"></i> Create Team & Launch Roster
           </button>
         </div>
@@ -852,7 +852,7 @@
             <span style="font-size:0.75rem; color:#BFDBFE;">Select from verified platform tradies or enter member credentials</span>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" onclick="closeAddMemberModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <button type="button" class="modal-close-btn" onclick="closeAddMemberModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;" data-agent-id="modal-close-btn-2" data-testid="modal-close-btn-2" aria-label="Modal Close Btn 2">&times;</button>
       </div>
 
       <form id="form-add-member" onsubmit="handleAddMemberSubmit(event)" style="padding:1.5rem;">
@@ -862,7 +862,7 @@
           <label class="input-label" for="member-picker-select" style="color:#1E40AF; font-weight:800;">
             <i class="fa-solid fa-address-book"></i> Choose from Verified Registered Members:
           </label>
-          <select id="member-picker-select" class="form-control" onchange="autoFillSelectedMember(this.value)">
+          <select id="member-picker-select" class="form-control" onchange="autoFillSelectedMember(this.value)" data-agent-id="member-picker-select" data-testid="member-picker-select" aria-label="Member Picker Select">
             <option value="">-- Choose a registered tradie / provider --</option>
             <!-- Dynamically populated from getAvailableRegisteredMembers() -->
           </select>
@@ -872,35 +872,35 @@
         <div class="form-row">
           <div class="input-group" style="flex:2;">
             <label class="input-label" for="add-member-name">Full Name</label>
-            <input type="text" id="add-member-name" class="form-control" required placeholder="e.g. Jack Morrison">
+            <input type="text" id="add-member-name" class="form-control" required placeholder="e.g. Jack Morrison" data-agent-id="add-member-name" data-testid="add-member-name" aria-label="e.g. Jack Morrison">
           </div>
           <div class="input-group" style="flex:1;">
             <label class="input-label" for="add-member-spn">SPN / Member ID</label>
-            <input type="text" id="add-member-spn" class="form-control" required placeholder="SPN-101002">
+            <input type="text" id="add-member-spn" class="form-control" required placeholder="SPN-101002" data-agent-id="add-member-spn" data-testid="add-member-spn" aria-label="SPN-101002">
           </div>
         </div>
 
         <div class="form-row">
           <div class="input-group">
             <label class="input-label" for="add-member-trade">Trade / Discipline</label>
-            <input type="text" id="add-member-trade" class="form-control" required placeholder="e.g. Formwork Concreter & Steel Specialist">
+            <input type="text" id="add-member-trade" class="form-control" required placeholder="e.g. Formwork Concreter & Steel Specialist" data-agent-id="add-member-trade" data-testid="add-member-trade" aria-label="e.g. Formwork Concreter & Steel Specialist">
           </div>
           <div class="input-group">
             <label class="input-label" for="add-member-role">Team Role / Position</label>
-            <input type="text" id="add-member-role" class="form-control" required placeholder="e.g. Senior Formwork Lead or Chipper Operator">
+            <input type="text" id="add-member-role" class="form-control" required placeholder="e.g. Senior Formwork Lead or Chipper Operator" data-agent-id="add-member-role" data-testid="add-member-role" aria-label="e.g. Senior Formwork Lead or Chipper Operator">
           </div>
         </div>
 
         <div class="form-row">
           <div class="input-group">
             <label class="input-label" for="add-member-phone">Contact Mobile Phone</label>
-            <input type="tel" id="add-member-phone" class="form-control" required placeholder="0412 000 000">
+            <input type="tel" id="add-member-phone" class="form-control" required placeholder="0412 000 000" data-agent-id="add-member-phone" data-testid="add-member-phone" aria-label="0412 000 000">
           </div>
           <div class="input-group">
             <label class="input-label" for="add-member-rate">Individual Payout Rate ($)</label>
             <div class="input-with-unit">
               <span class="currency-prefix">$</span>
-              <input type="number" id="add-member-rate" class="form-control" required value="90.00" min="25" step="1.00">
+              <input type="number" id="add-member-rate" class="form-control" required value="90.00" min="25" step="1.00" data-agent-id="add-member-rate" data-testid="add-member-rate" aria-label="Add Member Rate">
               <span class="unit-suffix">/ hr</span>
             </div>
           </div>
@@ -908,14 +908,14 @@
 
         <div style="margin-bottom:1.25rem; padding:0.75rem; background:#FFFBEB; border:1px solid #FCD34D; border-radius:var(--radius-sm);">
           <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.84rem; font-weight:700; color:#92400E;">
-            <input type="checkbox" id="add-member-is-pic" style="width:17px; height:17px; accent-color:#F59E0B;">
+            <input type="checkbox" id="add-member-is-pic" style="width:17px; height:17px; accent-color:#F59E0B;" data-agent-id="add-member-is-pic" data-testid="add-member-is-pic" aria-label="Add Member Is Pic">
             <span><i class="fa-solid fa-star" style="color:#F59E0B;"></i> Designate this member as the PERSON IN CHARGE (PIC) for this team</span>
           </label>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-          <button type="button" class="btn btn-outline" onclick="closeAddMemberModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;">
+          <button type="button" class="btn btn-outline" onclick="closeAddMemberModal()" data-agent-id="btn-6" data-testid="btn-6" aria-label="Btn 6">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; padding:0.65rem 1.4rem;" data-agent-id="btn-5" data-testid="btn-5" aria-label="Btn 5">
             <i class="fa-solid fa-user-check"></i> Add to Team Roster
           </button>
         </div>
@@ -938,7 +938,7 @@
             <span style="font-size:0.75rem; color:#D1FAE5;">Assign work required, designated crew, job date, and individual pricing</span>
           </div>
         </div>
-        <button type="button" class="modal-close-btn" onclick="closeCreateJobModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <button type="button" class="modal-close-btn" onclick="closeCreateJobModal()" style="color:#fff; background:transparent; border:none; font-size:1.5rem; cursor:pointer;" data-agent-id="modal-close-btn" data-testid="modal-close-btn" aria-label="Modal Close Btn">&times;</button>
       </div>
 
       <form id="form-create-job" onsubmit="handleCreateJobSubmit(event)" style="padding:1.5rem;">
@@ -946,32 +946,32 @@
         <div class="form-row">
           <div class="input-group" style="flex:2;">
             <label class="input-label" for="job-title">Job / Project Title</label>
-            <input type="text" id="job-title" class="form-control" required placeholder="e.g. Retaining Wall Trenching & Foundation Pour">
+            <input type="text" id="job-title" class="form-control" required placeholder="e.g. Retaining Wall Trenching & Foundation Pour" data-agent-id="job-title" data-testid="job-title" aria-label="e.g. Retaining Wall Trenching & Foundation Pour">
           </div>
           <div class="input-group" style="flex:1;">
             <label class="input-label" for="job-date">Date of Job</label>
-            <input type="date" id="job-date" class="form-control" required>
+            <input type="date" id="job-date" class="form-control" required data-agent-id="job-date" data-testid="job-date" aria-label="Job Date">
           </div>
         </div>
 
         <div class="form-row">
           <div class="input-group" style="flex:2;">
             <label class="input-label" for="job-location">Site Address / Job Location</label>
-            <input type="text" id="job-location" class="form-control" required placeholder="e.g. 14 Marine Parade, Southport QLD 4215">
+            <input type="text" id="job-location" class="form-control" required placeholder="e.g. 14 Marine Parade, Southport QLD 4215" data-agent-id="job-location" data-testid="job-location" aria-label="e.g. 14 Marine Parade, Southport QLD 4215">
           </div>
           <div class="input-group" style="flex:1;">
             <label class="input-label" for="job-start-time">Start Time</label>
-            <input type="time" id="job-start-time" class="form-control" value="07:00" required>
+            <input type="time" id="job-start-time" class="form-control" value="07:00" required data-agent-id="job-start-time" data-testid="job-start-time" aria-label="Job Start Time">
           </div>
           <div class="input-group" style="flex:1;">
             <label class="input-label" for="job-hours">Estimated Hours</label>
-            <input type="number" id="job-hours" class="form-control" value="8" min="1" max="48" onchange="recalculateJobFinancials()">
+            <input type="number" id="job-hours" class="form-control" value="8" min="1" max="48" onchange="recalculateJobFinancials()" data-agent-id="job-hours" data-testid="job-hours" aria-label="Job Hours">
           </div>
         </div>
 
         <div class="input-group">
           <label class="input-label" for="job-work-required">Work Required (Detailed Scope & Instructions)</label>
-          <textarea id="job-work-required" class="form-control" rows="3" required placeholder="Specify detailed work required, equipment to bring, safety gear, laser levels, dumping passes, or council permit codes..."></textarea>
+          <textarea id="job-work-required" class="form-control" rows="3" required placeholder="Specify detailed work required, equipment to bring, safety gear, laser levels, dumping passes, or council permit codes..." data-agent-id="job-work-required" data-testid="job-work-required" aria-label="Specify detailed work required, equipment to bring, safety gear, laser levels, dumping passes, or council permit codes..."></textarea>
         </div>
 
         <!-- Who Will Do It & Pricing for Each Service Provider -->
@@ -992,7 +992,7 @@
         <div id="job-franchise-settings-box" style="background:#FAF5FF; border:1px solid #E9D5FF; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
             <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; font-weight:800; color:#581C87; cursor:pointer;">
-              <input type="checkbox" id="job-is-franchise" checked style="width:16px; height:16px; accent-color:#7E22CE;" onchange="recalculateJobFinancials()">
+              <input type="checkbox" id="job-is-franchise" checked style="width:16px; height:16px; accent-color:#7E22CE;" onchange="recalculateJobFinancials()" data-agent-id="job-is-franchise" data-testid="job-is-franchise" aria-label="Job Is Franchise">
               <span><i class="fa-solid fa-building-user"></i> If For Franchise: Include Central Royalties & Margin</span>
             </label>
             <span style="font-size:0.72rem; background:#EDE9FE; color:#6D28D9; padding:0.15rem 0.5rem; border-radius:8px; font-weight:700;">
@@ -1004,13 +1004,13 @@
             <div class="input-group" style="margin-bottom:0; flex:1;">
               <label class="input-label" for="job-franchise-margin" style="font-size:0.75rem;">Franchise Margin (%)</label>
               <div class="input-with-unit">
-                <input type="number" id="job-franchise-margin" class="form-control" value="12" min="0" max="50" step="1" onchange="recalculateJobFinancials()">
+                <input type="number" id="job-franchise-margin" class="form-control" value="12" min="0" max="50" step="1" onchange="recalculateJobFinancials()" data-agent-id="job-franchise-margin" data-testid="job-franchise-margin" aria-label="Job Franchise Margin">
                 <span class="unit-suffix">%</span>
               </div>
             </div>
             <div class="input-group" style="margin-bottom:0; flex:2;">
               <label class="input-label" for="job-franchise-entity" style="font-size:0.75rem;">Franchise Brand / Regional Name</label>
-              <input type="text" id="job-franchise-entity" class="form-control" placeholder="e.g. Jim's Mowing Regional Franchise">
+              <input type="text" id="job-franchise-entity" class="form-control" placeholder="e.g. Jim's Mowing Regional Franchise" data-agent-id="job-franchise-entity" data-testid="job-franchise-entity" aria-label="e.g. Jim's Mowing Regional Franchise">
             </div>
           </div>
 
@@ -1032,8 +1032,8 @@
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-          <button type="button" class="btn btn-outline" onclick="closeCreateJobModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="font-weight:900; background:#059669; border-color:#059669; padding:0.65rem 1.4rem;">
+          <button type="button" class="btn btn-outline" onclick="closeCreateJobModal()" data-agent-id="btn-4" data-testid="btn-4" aria-label="Btn 4">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:900; background:#059669; border-color:#059669; padding:0.65rem 1.4rem;" data-agent-id="btn-3" data-testid="btn-3" aria-label="Btn 3">
             <i class="fa-solid fa-paper-plane"></i> Dispatch Work Order to Crew
           </button>
         </div>
@@ -1223,10 +1223,10 @@
               </div>
               <div style="display:flex; gap:0.4rem;">
                 ${!m.isPic ? `
-                  <button type="button" class="btn btn-outline btn-sm" onclick="handleSetPic('${escapeHtml(m.spn)}')" title="Set as Person In Charge" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:#D97706; border-color:#FCD34D;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleSetPic('${escapeHtml(m.spn)}')" title="Set as Person In Charge" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:#D97706; border-color:#FCD34D;" data-agent-id="set-as-person-in-charge" data-testid="set-as-person-in-charge" aria-label="Set as Person In Charge">
                     <i class="fa-solid fa-star"></i> Set PIC
                   </button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="handleRemoveMember('${escapeHtml(m.spn)}', this)" title="Remove Member" style="padding:0.2rem 0.45rem; font-size:0.72rem; color:#EF4444; border-color:#FECACA;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleRemoveMember('${escapeHtml(m.spn)}', this)" title="Remove Member" style="padding:0.2rem 0.45rem; font-size:0.72rem; color:#EF4444; border-color:#FECACA;" data-agent-id="remove-member" data-testid="remove-member" aria-label="Remove Member">
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
                 ` : `
@@ -1378,15 +1378,15 @@
               <!-- Actions Bar -->
               <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.75rem; border-top:1px solid #F1F5F9; padding-top:0.65rem;">
                 ${!isCompleted ? `
-                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'completed')" style="color:#059669; border-color:#86EFAC; font-weight:700;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'completed')" style="color:#059669; border-color:#86EFAC; font-weight:700;" data-agent-id="btn-2" data-testid="btn-2" aria-label="Btn 2">
                     <i class="fa-solid fa-check"></i> Sign-Off & Complete Work
                   </button>
                 ` : `
-                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'scheduled')" style="color:#2563EB; border-color:#BFDBFE; font-weight:700;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="handleJobStatusChange('${escapeHtml(j.id)}', 'scheduled')" style="color:#2563EB; border-color:#BFDBFE; font-weight:700;" data-agent-id="btn" data-testid="btn" aria-label="Btn">
                     <i class="fa-solid fa-rotate-left"></i> Re-open Job
                   </button>
                 `}
-                <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteJob('${escapeHtml(j.id)}', this)" style="color:#EF4444; border-color:#FECACA;" title="Delete Work Order">
+                <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteJob('${escapeHtml(j.id)}', this)" style="color:#EF4444; border-color:#FECACA;" title="Delete Work Order" data-agent-id="delete-work-order" data-testid="delete-work-order" aria-label="Delete Work Order">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -1607,14 +1607,14 @@
         container.innerHTML = (team.members || []).map((m, idx) => `
           <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #E2E8F0; border-radius:6px; padding:0.6rem 0.85rem; flex-wrap:wrap; gap:0.5rem;">
             <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.82rem; font-weight:700; color:var(--primary-navy);">
-              <input type="checkbox" class="job-assignee-check" value="${m.spn}" checked onchange="recalculateJobFinancials()" style="width:16px; height:16px; accent-color:#059669;">
+              <input type="checkbox" class="job-assignee-check" value="${m.spn}" checked onchange="recalculateJobFinancials()" style="width:16px; height:16px; accent-color:#059669;" data-agent-id="job-assignee-check" data-testid="job-assignee-check" aria-label="Job Assignee Check">
               <span>${m.name} <span style="font-size:0.72rem; color:var(--text-muted);">(${m.trade})</span></span>
             </label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="text" class="form-control job-assignee-role" value="${m.role || m.trade}" placeholder="Task role on job" style="height:32px; font-size:0.75rem; width:150px;">
+              <input type="text" class="form-control job-assignee-role" value="${m.role || m.trade}" placeholder="Task role on job" style="height:32px; font-size:0.75rem; width:150px;" data-agent-id="task-role-on-job" data-testid="task-role-on-job" aria-label="Task role on job">
               <div class="input-with-unit" style="width:110px;">
                 <span class="currency-prefix">$</span>
-                <input type="number" class="form-control job-assignee-rate" value="${m.pricingRate || 85}" min="20" step="1" onchange="recalculateJobFinancials()" style="height:32px; font-size:0.8rem;">
+                <input type="number" class="form-control job-assignee-rate" value="${m.pricingRate || 85}" min="20" step="1" onchange="recalculateJobFinancials()" style="height:32px; font-size:0.8rem;" data-agent-id="job-assignee-rate" data-testid="job-assignee-rate" aria-label="Job Assignee Rate">
                 <span class="unit-suffix">/hr</span>
               </div>
             </div>

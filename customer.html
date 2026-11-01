@@ -51,7 +51,7 @@
 
       <div class="nav-actions">
         <!-- Sign In Button -->
-        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google">
+        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('customer')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Sign in with Google" data-agent-id="sign-in-with-google" data-testid="sign-in-with-google" aria-label="Sign in with Google">
           <svg width="14" height="14" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -98,7 +98,7 @@
             <div id="inline-cust-draft-status" class="draft-auto-saved-pill">
               <i class="fa-solid fa-cloud-check"></i> <span>Draft auto-saved</span>
             </div>
-            <button type="button" class="btn-draft-save" onclick="saveCustomerApplicationDraft(true)">
+            <button type="button" class="btn-draft-save" onclick="saveCustomerApplicationDraft(true)" data-agent-id="btn-draft-save" data-testid="btn-draft-save" aria-label="Btn Draft Save">
               <i class="fa-solid fa-floppy-disk" style="color:#1E40AF;"></i> Save Draft & Continue Later
             </button>
           </div>
@@ -120,10 +120,10 @@
           </div>
         </div>
         <div style="display:flex; gap:0.5rem;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="saveCustomerApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;" data-agent-id="btn-6" data-testid="btn-6" aria-label="Btn 6">
             <i class="fa-solid fa-save"></i> Save Now
           </button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="clearCustomerApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearCustomerApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;" data-agent-id="btn-5" data-testid="btn-5" aria-label="Btn 5">
             <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
           </button>
         </div>
@@ -135,11 +135,11 @@
           <div class="form-row">
             <div class="input-group">
               <label class="input-label" for="inline-cust-name">Full Name</label>
-              <input type="text" id="inline-cust-name" class="form-control" required placeholder="e.g. Sarah Jenkins">
+              <input type="text" id="inline-cust-name" class="form-control" required placeholder="e.g. Sarah Jenkins" data-agent-id="inline-cust-name" data-testid="inline-cust-name" aria-label="e.g. Sarah Jenkins">
             </div>
             <div class="input-group">
               <label class="input-label" for="inline-cust-type">Account Type</label>
-              <select id="inline-cust-type" class="form-control">
+              <select id="inline-cust-type" class="form-control" data-agent-id="inline-cust-type" data-testid="inline-cust-type" aria-label="Inline Cust Type">
                 <option value="residential">Residential / Homeowner</option>
                 <option value="business">Business / Commercial Client</option>
                 <option value="property_manager">Real Estate / Property Manager</option>
@@ -150,22 +150,22 @@
           <div class="form-row">
             <div class="input-group">
               <label class="input-label" for="inline-cust-phone">Mobile Phone (for SMS Dispatch)</label>
-              <input type="tel" id="inline-cust-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+              <input type="tel" id="inline-cust-phone" class="form-control" required placeholder="e.g. 0412 345 678" data-agent-id="inline-cust-phone" data-testid="inline-cust-phone" aria-label="e.g. 0412 345 678">
             </div>
             <div class="input-group">
               <label class="input-label" for="inline-cust-email">Email Address</label>
-              <input type="email" id="inline-cust-email" class="form-control" required placeholder="e.g. s.jenkins@example.com">
+              <input type="email" id="inline-cust-email" class="form-control" required placeholder="e.g. s.jenkins@example.com" data-agent-id="inline-cust-email" data-testid="inline-cust-email" aria-label="e.g. s.jenkins@example.com">
             </div>
           </div>
 
           <div class="form-row">
             <div class="input-group">
               <label class="input-label" for="inline-cust-address">Primary Street Address & Suburb</label>
-              <input type="text" id="inline-cust-address" class="form-control" required placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218">
+              <input type="text" id="inline-cust-address" class="form-control" required placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218" data-agent-id="inline-cust-address" data-testid="inline-cust-address" aria-label="e.g. 42 Surf Parade, Broadbeach QLD 4218">
             </div>
             <div class="input-group">
               <label class="input-label" for="inline-cust-country">Country / Region</label>
-              <select id="inline-cust-country" class="form-control">
+              <select id="inline-cust-country" class="form-control" data-agent-id="inline-cust-country" data-testid="inline-cust-country" aria-label="Inline Cust Country">
                 <option value="AU" selected>Australia (km)</option>
                 <option value="NZ">New Zealand (km)</option>
                 <option value="US">United States (miles)</option>
@@ -191,7 +191,7 @@
             <div class="form-row" style="margin-bottom:0.75rem;">
               <div class="input-group" style="margin-bottom:0;">
                 <label class="input-label" for="inline-cust-id-type" style="font-size:0.78rem;">Select ID Document Type</label>
-                <select id="inline-cust-id-type" class="form-control" style="font-size:0.85rem;">
+                <select id="inline-cust-id-type" class="form-control" style="font-size:0.85rem;" data-agent-id="inline-cust-id-type" data-testid="inline-cust-id-type" aria-label="Inline Cust Id Type">
                   <option value="driver_licence">Driver Licence</option>
                   <option value="passport">Passport</option>
                   <option value="proof_of_age">State Photo Card / Proof of Age</option>
@@ -200,7 +200,7 @@
               </div>
               <div class="input-group" style="margin-bottom:0;">
                 <label class="input-label" for="inline-cust-id-file" style="font-size:0.78rem;">Upload Photo of You Holding ID</label>
-                <input type="file" id="inline-cust-id-file" class="form-control" accept="image/*" required onchange="handleCustomerPhotoUpload(event, 'inline')">
+                <input type="file" id="inline-cust-id-file" class="form-control" accept="image/*" required onchange="handleCustomerPhotoUpload(event, 'inline')" data-agent-id="inline-cust-id-file" data-testid="inline-cust-id-file" aria-label="Inline Cust Id File">
               </div>
             </div>
 
@@ -216,7 +216,7 @@
 
           <div class="input-group">
             <label class="input-label" for="inline-cust-notes">Property Access / Special Instructions</label>
-            <textarea id="inline-cust-notes" class="form-control" rows="2" placeholder="e.g. Side gate access, dogs on premises, parking in driveway..."></textarea>
+            <textarea id="inline-cust-notes" class="form-control" rows="2" placeholder="e.g. Side gate access, dogs on premises, parking in driveway..." data-agent-id="inline-cust-notes" data-testid="inline-cust-notes" aria-label="e.g. Side gate access, dogs on premises, parking in driveway..."></textarea>
           </div>
 
           <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.6rem;">
@@ -228,14 +228,14 @@
 
           <!-- Sticky Actions Bar -->
           <div class="form-sticky-actions">
-            <button type="button" class="btn btn-outline" onclick="saveCustomerApplicationDraft(true)">
+            <button type="button" class="btn btn-outline" onclick="saveCustomerApplicationDraft(true)" data-agent-id="btn-4" data-testid="btn-4" aria-label="Btn 4">
               <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
             </button>
             <div style="display:flex; gap:0.75rem; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="clearCustomerApplicationDraft(true, this)" style="color:#64748B;">
+              <button type="button" class="btn btn-outline" onclick="clearCustomerApplicationDraft(true, this)" style="color:#64748B;" data-agent-id="btn-3" data-testid="btn-3" aria-label="Btn 3">
                 <i class="fa-solid fa-rotate-left"></i> Reset Form
               </button>
-              <button type="submit" class="btn btn-navy btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;">
+              <button type="submit" class="btn btn-navy btn-lg" style="font-weight:900; padding:0.85rem 1.75rem;" data-agent-id="btn-2" data-testid="btn-2" aria-label="Btn 2">
                 <i class="fa-solid fa-circle-check"></i> Register Customer & Issue CRN
               </button>
             </div>
@@ -276,7 +276,7 @@
         <span id="modal-crn-number" style="font-family:monospace; font-size:1.8rem; font-weight:900; color:#1E40AF; letter-spacing:2px;">
           CRN-000000
         </span>
-        <button class="btn btn-outline btn-sm" onclick="copyCRNToClipboard()" title="Copy CRN">
+        <button class="btn btn-outline btn-sm" onclick="copyCRNToClipboard()" title="Copy CRN" data-agent-id="copy-crn" data-testid="copy-crn" aria-label="Copy CRN">
           <i class="fa-solid fa-copy"></i>
         </button>
       </div>
@@ -285,7 +285,7 @@
         <a href="index.html" class="btn btn-primary" style="font-weight:800; text-decoration:none; padding:0.65rem 1.25rem;">
           <i class="fa-solid fa-bolt"></i> Book a Tradie or Courier
         </a>
-        <button class="btn btn-outline" onclick="closeCustomerSuccessModal()">
+        <button class="btn btn-outline" onclick="closeCustomerSuccessModal()" data-agent-id="btn" data-testid="btn" aria-label="Btn">
           Close
         </button>
       </div>

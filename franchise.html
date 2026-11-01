@@ -51,7 +51,7 @@
 
       <div class="nav-actions">
         <!-- Sign In Button -->
-        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('franchise_admin')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; color:#7E22CE; border-color:#D8B4FE; background:#FAF5FF;" title="Sign in with Google">
+        <button type="button" class="btn btn-outline btn-sm" onclick="signUpWithGoogle('franchise_admin')" style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; color:#7E22CE; border-color:#D8B4FE; background:#FAF5FF;" title="Sign in with Google" data-agent-id="sign-in-with-google" data-testid="sign-in-with-google" aria-label="Sign in with Google">
           <svg width="14" height="14" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -98,7 +98,7 @@
             <div id="franchise-draft-status" class="draft-auto-saved-pill">
               <i class="fa-solid fa-cloud-check"></i> <span>Draft auto-saved</span>
             </div>
-            <button type="button" class="btn-draft-save" onclick="saveFranchiseApplicationDraft(true)">
+            <button type="button" class="btn-draft-save" onclick="saveFranchiseApplicationDraft(true)" data-agent-id="btn-draft-save" data-testid="btn-draft-save" aria-label="Btn Draft Save">
               <i class="fa-solid fa-floppy-disk" style="color:#7E22CE;"></i> Save Draft & Continue Later
             </button>
           </div>
@@ -120,10 +120,10 @@
           </div>
         </div>
         <div style="display:flex; gap:0.5rem;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="saveFranchiseApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="saveFranchiseApplicationDraft(true)" style="background:#fff; font-size:0.75rem; padding:0.35rem 0.7rem;" data-agent-id="btn-6" data-testid="btn-6" aria-label="Btn 6">
             <i class="fa-solid fa-save"></i> Save Now
           </button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="clearFranchiseApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearFranchiseApplicationDraft(true, this)" style="background:#fff; font-size:0.75rem; color:#DC2626; border-color:#FCA5A5; padding:0.35rem 0.7rem;" data-agent-id="btn-5" data-testid="btn-5" aria-label="Btn 5">
             <i class="fa-solid fa-trash-can"></i> Clear Draft & Start Fresh
           </button>
         </div>
@@ -141,11 +141,11 @@
             <div class="form-row">
               <div class="input-group">
                 <label class="input-label" for="franchise-name">Franchise / Brand Trading Name</label>
-                <input type="text" id="franchise-name" class="form-control" required placeholder="e.g. Jim's Mowing Gold Coast & Hinterland">
+                <input type="text" id="franchise-name" class="form-control" required placeholder="e.g. Jim's Mowing Gold Coast & Hinterland" data-agent-id="franchise-name" data-testid="franchise-name" aria-label="e.g. Jim's Mowing Gold Coast & Hinterland">
               </div>
               <div class="input-group">
                 <label class="input-label" for="franchise-abn">ABN / ACN / Company Number</label>
-                <input type="text" id="franchise-abn" class="form-control" placeholder="e.g. 51 824 753 556">
+                <input type="text" id="franchise-abn" class="form-control" placeholder="e.g. 51 824 753 556" data-agent-id="franchise-abn" data-testid="franchise-abn" aria-label="e.g. 51 824 753 556">
               </div>
             </div>
 
@@ -163,39 +163,39 @@
               <div class="form-row">
                 <div class="input-group">
                   <label class="input-label" for="franchise-admin-name">Franchise Admin Person Name (The Manager)</label>
-                  <input type="text" id="franchise-admin-name" class="form-control" required placeholder="e.g. David Robertson">
+                  <input type="text" id="franchise-admin-name" class="form-control" required placeholder="e.g. David Robertson" data-agent-id="franchise-admin-name" data-testid="franchise-admin-name" aria-label="e.g. David Robertson">
                 </div>
                 <div class="input-group">
                   <label class="input-label" for="franchise-admin-title">Manager Position / Authority Level</label>
-                  <input type="text" id="franchise-admin-title" class="form-control" placeholder="e.g. General Manager & Operations Director">
+                  <input type="text" id="franchise-admin-title" class="form-control" placeholder="e.g. General Manager & Operations Director" data-agent-id="franchise-admin-title" data-testid="franchise-admin-title" aria-label="e.g. General Manager & Operations Director">
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="input-group">
                   <label class="input-label" for="franchise-admin-phone">Manager Direct Mobile Phone</label>
-                  <input type="tel" id="franchise-admin-phone" class="form-control" required placeholder="e.g. 0412 345 678">
+                  <input type="tel" id="franchise-admin-phone" class="form-control" required placeholder="e.g. 0412 345 678" data-agent-id="franchise-admin-phone" data-testid="franchise-admin-phone" aria-label="e.g. 0412 345 678">
                 </div>
                 <div class="input-group">
                   <label class="input-label" for="franchise-admin-email">Manager Business Email</label>
-                  <input type="email" id="franchise-admin-email" class="form-control" required placeholder="e.g. manager@franchise.com">
+                  <input type="email" id="franchise-admin-email" class="form-control" required placeholder="e.g. manager@franchise.com" data-agent-id="franchise-admin-email" data-testid="franchise-admin-email" aria-label="e.g. manager@franchise.com">
                 </div>
               </div>
 
               <div class="form-row" style="margin-bottom:0.5rem;">
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-region">Operating Territory / Managed Regions</label>
-                  <input type="text" id="franchise-admin-region" class="form-control" required placeholder="e.g. Gold Coast, Logan & Brisbane South">
+                  <input type="text" id="franchise-admin-region" class="form-control" required placeholder="e.g. Gold Coast, Logan & Brisbane South" data-agent-id="franchise-admin-region" data-testid="franchise-admin-region" aria-label="e.g. Gold Coast, Logan & Brisbane South">
                 </div>
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-license">Manager Licence # / Business Accreditation</label>
-                  <input type="text" id="franchise-admin-license" class="form-control" placeholder="e.g. QBCC Contractor #1509214 or Master Builders #8821">
+                  <input type="text" id="franchise-admin-license" class="form-control" placeholder="e.g. QBCC Contractor #1509214 or Master Builders #8821" data-agent-id="franchise-admin-license" data-testid="franchise-admin-license" aria-label="e.g. QBCC Contractor #1509214 or Master Builders #8821">
                 </div>
               </div>
 
               <div style="margin-top:0.85rem; padding-top:0.75rem; border-top:1px dashed #DDD6FE;">
                 <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.82rem; font-weight:700; color:#581C87;">
-                  <input type="checkbox" id="franchise-admin-is-provider" style="width:17px; height:17px; accent-color:#7E22CE;">
+                  <input type="checkbox" id="franchise-admin-is-provider" style="width:17px; height:17px; accent-color:#7E22CE;" data-agent-id="franchise-admin-is-provider" data-testid="franchise-admin-is-provider" aria-label="Franchise Admin Is Provider">
                   <span><i class="fa-solid fa-helmet-safety" style="color:var(--brand-orange);"></i> Include Franchise Admin Person (The Manager) as an Active Field Service Provider on Platform</span>
                 </label>
               </div>
@@ -209,11 +209,11 @@
               <div class="form-row" style="margin-bottom:0.5rem;">
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-payid" style="font-size:0.75rem;">Franchise PayID</label>
-                  <input type="text" id="franchise-admin-payid" class="form-control" placeholder="e.g. accounts@franchise.com or 0412 345 678">
+                  <input type="text" id="franchise-admin-payid" class="form-control" placeholder="e.g. accounts@franchise.com or 0412 345 678" data-agent-id="franchise-admin-payid" data-testid="franchise-admin-payid" aria-label="e.g. accounts@franchise.com or 0412 345 678">
                 </div>
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-payid-type" style="font-size:0.75rem;">PayID Type</label>
-                  <select id="franchise-admin-payid-type" class="form-control">
+                  <select id="franchise-admin-payid-type" class="form-control" data-agent-id="franchise-admin-payid-type" data-testid="franchise-admin-payid-type" aria-label="Franchise Admin Payid Type">
                     <option value="phone">Mobile Phone (04XX XXX XXX)</option>
                     <option value="email" selected>Email Address</option>
                     <option value="abn">ABN (Australian Business Number)</option>
@@ -222,17 +222,17 @@
                 </div>
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-bank-name" style="font-size:0.75rem;">Bank Account Name</label>
-                  <input type="text" id="franchise-admin-bank-name" class="form-control" placeholder="e.g. Jim's Mowing GC Pty Ltd">
+                  <input type="text" id="franchise-admin-bank-name" class="form-control" placeholder="e.g. Jim's Mowing GC Pty Ltd" data-agent-id="franchise-admin-bank-name" data-testid="franchise-admin-bank-name" aria-label="e.g. Jim's Mowing GC Pty Ltd">
                 </div>
               </div>
               <div class="form-row" style="margin-bottom:0;">
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-bsb" style="font-size:0.75rem;">BSB (6 digits)</label>
-                  <input type="text" id="franchise-admin-bsb" class="form-control" placeholder="084-004" maxlength="7">
+                  <input type="text" id="franchise-admin-bsb" class="form-control" placeholder="084-004" maxlength="7" data-agent-id="franchise-admin-bsb" data-testid="franchise-admin-bsb" aria-label="084-004">
                 </div>
                 <div class="input-group" style="margin-bottom:0;">
                   <label class="input-label" for="franchise-admin-account" style="font-size:0.75rem;">Account Number</label>
-                  <input type="text" id="franchise-admin-account" class="form-control" placeholder="98765432" maxlength="10">
+                  <input type="text" id="franchise-admin-account" class="form-control" placeholder="98765432" maxlength="10" data-agent-id="franchise-admin-account" data-testid="franchise-admin-account" aria-label="98765432">
                 </div>
               </div>
             </div>
@@ -253,7 +253,7 @@
                 <span id="franchise-staff-stats-pill" style="font-size:0.75rem; background:#F3E8FF; color:#7E22CE; padding:0.3rem 0.75rem; border-radius:20px; font-weight:800; border:1px solid #DDD6FE;">
                   <i class="fa-solid fa-users"></i> Staff: 1 Loaded
                 </span>
-                <button type="button" class="btn btn-sm" onclick="addFranchiseStaffMember()" style="background:#7E22CE; color:#fff; font-weight:700; border:none; padding:0.5rem 1.1rem; border-radius:var(--radius-sm); cursor:pointer;">
+                <button type="button" class="btn btn-sm" onclick="addFranchiseStaffMember()" style="background:#7E22CE; color:#fff; font-weight:700; border:none; padding:0.5rem 1.1rem; border-radius:var(--radius-sm); cursor:pointer;" data-agent-id="btn-4" data-testid="btn-4" aria-label="Btn 4">
                   <i class="fa-solid fa-user-plus"></i> Add Staff / Service Provider
                 </button>
               </div>
@@ -265,7 +265,7 @@
             </div>
 
             <!-- Add Another Staff Button -->
-            <button type="button" class="btn-add-franchise-staff" onclick="addFranchiseStaffMember()">
+            <button type="button" class="btn-add-franchise-staff" onclick="addFranchiseStaffMember()" data-agent-id="btn-add-franchise-staff" data-testid="btn-add-franchise-staff" aria-label="Btn Add Franchise Staff">
               <i class="fa-solid fa-circle-plus" style="font-size:1.15rem;"></i> Add Another Staff Technician to Franchise
             </button>
           </div>
@@ -333,14 +333,14 @@
 
           <!-- Sticky Actions Bar -->
           <div class="form-sticky-actions">
-            <button type="button" class="btn btn-outline" onclick="saveFranchiseApplicationDraft(true)">
+            <button type="button" class="btn btn-outline" onclick="saveFranchiseApplicationDraft(true)" data-agent-id="btn-3" data-testid="btn-3" aria-label="Btn 3">
               <i class="fa-solid fa-floppy-disk"></i> Save Draft & Continue Later
             </button>
             <div style="display:flex; gap:0.75rem; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="clearFranchiseApplicationDraft(true, this)" style="color:#64748B;">
+              <button type="button" class="btn btn-outline" onclick="clearFranchiseApplicationDraft(true, this)" style="color:#64748B;" data-agent-id="btn-2" data-testid="btn-2" aria-label="Btn 2">
                 <i class="fa-solid fa-rotate-left"></i> Reset Form
               </button>
-              <button type="submit" class="btn btn-lg" style="background:#7E22CE; color:white; font-weight:900; padding:0.85rem 1.75rem;">
+              <button type="submit" class="btn btn-lg" style="background:#7E22CE; color:white; font-weight:900; padding:0.85rem 1.75rem;" data-agent-id="btn" data-testid="btn" aria-label="Btn">
                 <i class="fa-solid fa-building-user"></i> Register Franchise & Onboard Staff
               </button>
             </div>

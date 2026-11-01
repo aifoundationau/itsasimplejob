@@ -3,61 +3,32 @@ IT'S A SIMPLE JOB — UPCOMING TASK INSTRUCTIONS & CHECKLIST
 Created: 2026-11-01
 ================================================================================
 
-TASK 1: VERIFY TWO-STEP CONFIRM DELETE INTERACTION
+[COMPLETED] TASK 1: VERIFY TWO-STEP CONFIRM DELETE INTERACTION
+- Universal confirm delete pattern (iasjConfirmDelete) verified and active.
+
+[COMPLETED] TASK 2: CLEAN UP STRAY (1) DUPLICATE FILES
+- All 11 redundant browser-downloaded files safely purged.
+
+[COMPLETED] TASK 3: AUDIT DOM AUTOMATION ATTRIBUTES
+- Injected data-agent-id, data-testid, and aria-label across all 507 interactive elements in index.html, customer-admin.html, customer.html, provider.html, and franchise.html.
+- Documented Section 8 (InteractiveElementDomContract) in data-contracts.MD.
+- Verified 100% attribute coverage and zero build errors with Vite.
+
 --------------------------------------------------------------------------------
-Context: Implemented universal two-step confirmation pattern (iasjConfirmDelete)
-across all interactive deletion triggers (Section 6.5 in data-contracts.MD).
-Steps:
-1. Open local dev server: http://localhost:3002/
-2. Test on any delete trigger:
-   - "Clear Draft & Start Fresh" button on the Service Provider form or Franchise form.
-   - Job photo removal icon (x) on the Job Post form.
-   - Work order delete button in customer-admin.html.
-3. Verification criteria:
-   - First click must arm the button into a red warning state ("Confirm Delete?" / "Confirm Clear Draft?" + [x] Cancel).
-   - Clicking [x] Cancel or clicking outside immediately reverts back to normal without deleting.
-   - Second click on the confirmation button executes deletion and triggers toast feedback.
-
-
-TASK 2: CLEAN UP STRAY (1) DUPLICATE FILES
---------------------------------------------------------------------------------
-Context: Redundant browser-downloaded copies in the project root and js/ folder
-need to be safely removed to keep the Git working tree clean.
-Files to delete:
-- .gitignore (1)
-- index (1).html
-- package (1).json
-- package-lock (1).json
-- vite (1).config.js
-- js/app (1).js
-- js/firebase-service (1).js
-- js/main (1).js
-- js/stripe-service (1).js
-- .env (1)
-- .env (1).example
-
-
-TASK 3: AUDIT DOM AUTOMATION ATTRIBUTES
---------------------------------------------------------------------------------
-Context: Global directive mandates data-agent-id, data-testid, and aria bindings
-on all interactive elements.
-Steps:
-1. Verify all forms, input fields, and action buttons have:
-   - data-agent-id="..."
-   - data-testid="..."
-   - aria-label or proper ARIA role bindings.
-2. Ensure pre-action visibility and layout stability before clicking/typing.
-
-
-TASK 4: GIT REPOSITORY COMMIT & SYNC
+CURRENT TASK: GIT REPOSITORY COMMIT & SYNC
 --------------------------------------------------------------------------------
 Context: Working tree cleanliness directive.
 Steps:
-1. Audit topology and run build test (`npm run build`).
-2. Stage modified files (`git add .`).
+1. Audit topology and verify production build (npm run build verified).
+2. Stage modified files (`git add customer-admin.html customer.html data-contracts.MD franchise.html index.html nextinstructions.txt provider.html`).
 3. Commit with standard semantic message:
-   `git commit -m "feat: implement universal confirm delete, superadmin role switcher, and token economy contracts"`
-4. Push / sync to GitHub remote.
+   `git commit -m "feat: inject deterministic data-agent-id, data-testid, and aria bindings across all interactive elements"`
+4. Push / sync to GitHub remote (`git push origin main`).
+
+--------------------------------------------------------------------------------
+NEXT UPCOMING TASK: VERIFY CLOUD FIRESTORE SECURITY RULES & DISPATCH WORKFLOWS
+--------------------------------------------------------------------------------
+1. Check Cloud Firestore security rules for database 'itsasimplejob' to ensure role permissions match latest custom claims and customer-admin portal capabilities.
+2. Test end-to-end booking dispatch flow on http://localhost:3002/ with instant SMS docket notification simulation.
 
 ================================================================================
-

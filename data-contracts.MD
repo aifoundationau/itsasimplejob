@@ -101,8 +101,6 @@ Stored locally in `localStorage['iasj_regional_settings']` and synchronized acro
 }
 ```
 
-
-
 ---
 
 ## 3. OpenStreetMap (OSM) Address Autocomplete & Reverse Geocoding Contract
@@ -139,54 +137,6 @@ Emitted by `formatOsmAddress(item)` when selecting an address from the front pag
       "type": ["number", "null"],
       "minimum": -180,
       "maximum": 180
-    }
-  }
-}
-```
-
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
     }
   }
 }
@@ -427,54 +377,6 @@ The application defaults to an ultra-reliable, zero-key Leaflet OpenStreetMap en
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
-  }
-}
-```
-
 ---
 
 ## 5. API Serverless Endpoints Data Contracts
@@ -626,54 +528,6 @@ Retrieves a user's ledgered token balance and transaction history.
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
-  }
-}
-```
-
 ---
 
 ## 6. Superadmin Platform Configuration Contract
@@ -707,56 +561,7 @@ Controls global feature flags in Cloud Firestore (`platform_settings/global`).
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
-  }
-}
-```
-
 ---
-
 
 ### 6.2 Superadmin Multi-Role Perspective Contract
 Stores the active simulated role perspective for superadmins in `sessionStorage['iasj_superadmin_view_role']`.
@@ -786,56 +591,7 @@ Stores the active simulated role perspective for superadmins in `sessionStorage[
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
-  }
-}
-```
-
 ---
-
 
 ### 6.3 Firebase Cloud Firestore Security Rules Deployment Contract
 Governs live security rule deployment for database `itsasimplejob` under project `ai-foundation-firebase`.
@@ -867,56 +623,7 @@ Governs live security rule deployment for database `itsasimplejob` under project
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
-  }
-}
-```
-
 ---
-
 
 ### 6.4 Token Price Item Display & Currency Hover Contract
 Enforces integer tokens as primary value across all service items, with AUD/USD strictly on hover based on geolocation.
@@ -957,54 +664,6 @@ Enforces integer tokens as primary value across all service items, with AUD/USD 
     "isAudEnabled": { "type": "boolean" },
     "isUsdEnabled": { "type": "boolean" },
     "isTokenSystemEnabled": { "type": "boolean" }
-  }
-}
-```
-
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
-
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
-  "properties": {
-    "inputId": {
-      "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
-    },
-    "engine": {
-      "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
-    },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
-      "type": "string",
-      "enum": ["AU"]
-    }
   }
 }
 ```
@@ -1077,49 +736,45 @@ Enforces strict two-step confirmation on all interactive deletion triggers acros
 }
 ```
 
-### 3.2 Connected Address Input Bindings Contract
-All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+---
 
-| Input ID | Label | Purpose | Selection Callback |
-| :--- | :--- | :--- | :--- |
-| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
-| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
-| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
-| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
-| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+## 8. DOM Automation & Accessibility Testability Contract
+
+All interactive elements (`<button>`, `<input>`, `<select>`, `<textarea>`) across the entire web application are strictly required to expose deterministic automation hooks and accessibility bindings.
+
+### 8.1 Interactive Element DOM Attributes Schema
 
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConnectedOsmInputBindingContract",
+  "title": "InteractiveElementDomContract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "required": [
+    "data-agent-id",
+    "data-testid",
+    "aria-label"
+  ],
   "properties": {
-    "inputId": {
+    "data-agent-id": {
       "type": "string",
-      "enum": [
-        "cust-address",
-        "courier-origin",
-        "courier-dest",
-        "contractor-search-location",
-        "inline-cust-address"
-      ]
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 2,
+      "maxLength": 80,
+      "description": "Deterministic slug identifier used by AI browser automation agents"
     },
-    "engine": {
+    "data-testid": {
       "type": "string",
-      "enum": ["photon_osm", "nominatim_osm"]
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 2,
+      "maxLength": 80,
+      "description": "Standard selector hook for Playwright / Cypress / Vitest E2E testing suites"
     },
-    "isLive": {
-      "type": "boolean",
-      "enum": [true]
-    },
-    "hasGpsAction": {
-      "type": "boolean"
-    },
-    "countryRestriction": {
+    "aria-label": {
       "type": "string",
-      "enum": ["AU"]
+      "minLength": 2,
+      "maxLength": 100,
+      "description": "Accessible label for screen readers and UI accessibility trees"
     }
   }
 }
@@ -1127,7 +782,7 @@ All interactive location inputs are bound to the OpenStreetMap engine with live 
 
 ---
 
-## 7. Change Log & Maintenance Rules
+## 9. Change Log & Maintenance Rules
 
 - Whenever a form field, API endpoint, or database collection schema is created or modified, **`data-contracts.MD` must be updated concurrently**.
 - All data contracts must adhere to `additionalProperties: false` to ensure total payload determinism.
