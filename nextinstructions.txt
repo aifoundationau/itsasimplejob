@@ -8,7 +8,7 @@ TASK 1: VERIFY TWO-STEP CONFIRM DELETE INTERACTION
 Context: Implemented universal two-step confirmation pattern (iasjConfirmDelete)
 across all interactive deletion triggers (Section 6.5 in data-contracts.MD).
 Steps:
-1. Open local dev server: http://localhost:3001/
+1. Open local dev server: http://localhost:3002/
 2. Test on any delete trigger:
    - "Clear Draft & Start Fresh" button on the Service Provider form or Franchise form.
    - Job photo removal icon (x) on the Job Post form.

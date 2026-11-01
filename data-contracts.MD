@@ -101,6 +101,8 @@ Stored locally in `localStorage['iasj_regional_settings']` and synchronized acro
 }
 ```
 
+
+
 ---
 
 ## 3. OpenStreetMap (OSM) Address Autocomplete & Reverse Geocoding Contract
@@ -137,6 +139,156 @@ Emitted by `formatOsmAddress(item)` when selecting an address from the front pag
       "type": ["number", "null"],
       "minimum": -180,
       "maximum": 180
+    }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
+  }
+}
+```
+
+### 3.3 Leaflet OpenStreetMap Interactive Map Engine Contract
+The application defaults to an ultra-reliable, zero-key Leaflet OpenStreetMap engine to prevent Google Maps `ApiTargetBlockedMapError` and gray canvas failures.
+
+| Container ID | Map Type | Default Center | Features |
+| :--- | :--- | :--- | :--- |
+| `contractor-map` | Directory Map | Gold Coast (-28.0280, 153.4312) | User pin pulse dot, trade pins with category icons, popup contractor cards, radius filtering |
+| `courier-route-map` | Route Map | Centered between Origin/Dest | Green pickup pin, red destination pin, brand-orange dashed polyline |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LeafletOsmMapEngineContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mapContainerId",
+    "engine",
+    "tileUrl",
+    "centerLat",
+    "centerLng",
+    "zoomLevel",
+    "hasInteractivePins"
+  ],
+  "properties": {
+    "mapContainerId": {
+      "type": "string",
+      "enum": ["contractor-map", "courier-route-map"]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["leaflet_osm"]
+    },
+    "tileUrl": {
+      "type": "string",
+      "enum": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]
+    },
+    "centerLat": {
+      "type": "number"
+    },
+    "centerLng": {
+      "type": "number"
+    },
+    "zoomLevel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 19
+    },
+    "hasInteractivePins": {
+      "type": "boolean"
     }
   }
 }
@@ -222,23 +374,102 @@ Emitted by `formatOsmAddress(item)` when selecting an address from the front pag
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "CourierQuoteContract",
+  "title": "CourierRoutePricingContract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["origin", "dest", "weightKg", "urgency", "distanceKm", "totalAudCents"],
+  "required": [
+    "origin",
+    "dest",
+    "weightKg",
+    "isAsap",
+    "asapSurchargePct",
+    "over20kmSurchargePct",
+    "distanceKm",
+    "totalTokens",
+    "totalFiat",
+    "fiatCurrency"
+  ],
   "properties": {
     "origin": { "type": "string", "minLength": 3 },
     "dest": { "type": "string", "minLength": 3 },
-    "weightKg": { "type": "integer", "minimum": 1, "maximum": 1000 },
-    "urgency": {
-      "type": "string",
-      "enum": ["standard", "express"]
+    "weightKg": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "description": "Standard parcel weight capped at 20kg"
+    },
+    "isAsap": { "type": "boolean" },
+    "asapSurchargePct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Superadmin configured ASAP percentage (+10%, +20%, +30% etc.)"
+    },
+    "over20kmSurchargePct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Superadmin configured distance percentage surcharge per km over 20km"
     },
     "distanceKm": { "type": "number", "minimum": 0.1 },
-    "totalAudCents": {
+    "totalTokens": {
       "type": "integer",
-      "minimum": 500,
-      "description": "Total delivery cost strictly in integer AUD cents"
+      "minimum": 1,
+      "description": "Strict integer tokens (Math.round, no decimals)"
+    },
+    "totalFiat": { "type": "number", "minimum": 0.01 },
+    "fiatCurrency": {
+      "type": "string",
+      "enum": ["AUD", "USD"],
+      "description": "AUD for Australia and New Zealand via geolocation; USD for all other regions"
+    }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
     }
   }
 }
@@ -395,6 +626,54 @@ Retrieves a user's ledgered token balance and transaction history.
 }
 ```
 
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
+  }
+}
+```
+
 ---
 
 ## 6. Superadmin Platform Configuration Contract
@@ -423,6 +702,54 @@ Controls global feature flags in Cloud Firestore (`platform_settings/global`).
     "superadminEmails": {
       "type": "array",
       "items": { "type": "string", "format": "email" }
+    }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
     }
   }
 }
@@ -459,6 +786,54 @@ Stores the active simulated role perspective for superadmins in `sessionStorage[
 }
 ```
 
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
+  }
+}
+```
+
 ---
 
 
@@ -488,6 +863,54 @@ Governs live security rule deployment for database `itsasimplejob` under project
     "deployedAt": { "type": "string", "format": "date-time" },
     "deployedBy": { "type": "string", "format": "email" },
     "status": { "type": "string", "enum": ["ACTIVE", "DEPRECATED"] }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
   }
 }
 ```
@@ -534,6 +957,54 @@ Enforces integer tokens as primary value across all service items, with AUD/USD 
     "isAudEnabled": { "type": "boolean" },
     "isUsdEnabled": { "type": "boolean" },
     "isTokenSystemEnabled": { "type": "boolean" }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
+    }
   }
 }
 ```
@@ -601,6 +1072,54 @@ Enforces strict two-step confirmation on all interactive deletion triggers acros
       "type": "string",
       "maxLength": 60,
       "description": "User-facing label displayed on the confirmation button"
+    }
+  }
+}
+```
+
+### 3.2 Connected Address Input Bindings Contract
+All interactive location inputs are bound to the OpenStreetMap engine with live validation, status badges, and deterministic callbacks:
+
+| Input ID | Label | Purpose | Selection Callback |
+| :--- | :--- | :--- | :--- |
+| `cust-address` | Job Address (Gold Coast / Australia) | Front-page instant booking address | Updates `appState.userCoords` & matches local providers |
+| `courier-origin` | Pickup Origin | Courier dispatch origin location | Recalculates courier route distance, speed, and token quote |
+| `courier-dest` | Delivery Destination | Courier dropoff destination location | Recalculates courier route distance, speed, and token quote |
+| `contractor-search-location` | Search Location | Directory map search & filtering | Centers map & filters local trades within chosen radius |
+| `inline-cust-address` | Primary Street Address & Suburb | Customer application & verification | Validates address and populates customer profile |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConnectedOsmInputBindingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputId", "engine", "isLive", "hasGpsAction", "countryRestriction"],
+  "properties": {
+    "inputId": {
+      "type": "string",
+      "enum": [
+        "cust-address",
+        "courier-origin",
+        "courier-dest",
+        "contractor-search-location",
+        "inline-cust-address"
+      ]
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["photon_osm", "nominatim_osm"]
+    },
+    "isLive": {
+      "type": "boolean",
+      "enum": [true]
+    },
+    "hasGpsAction": {
+      "type": "boolean"
+    },
+    "countryRestriction": {
+      "type": "string",
+      "enum": ["AU"]
     }
   }
 }

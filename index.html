@@ -562,25 +562,35 @@
             </strong>
             
             <div class="price-row">
-              <span id="label-labour-hours">Labour (<span id="invoice-est-hours">1.5</span> hrs @ $<span id="invoice-hourly-rate">95</span>/hr)</span>
-              <span id="price-labour-val">$143.00</span>
+              <span id="label-labour-hours">Labour (<span id="invoice-est-hours">1.5</span> hrs @ <span id="invoice-hourly-rate"><span class="price-token-hover-tag" title="Equivalent: 67 Tokens/hr"><span class="price-display-amount">$95.00 AUD/hr</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 67 Tokens/hr</span></span></span>)</span>
+              <span id="price-labour-val">
+                <span class="price-token-hover-tag" title="Equivalent: 100 Tokens"><span class="price-display-amount">$142.50 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 100 Tokens</span></span>
+              </span>
             </div>
             <div class="price-row">
               <span>Local Callout & Vehicle Transit</span>
-              <span id="price-callout-val">$35.00</span>
+              <span id="price-callout-val">
+                <span class="price-token-hover-tag" title="Equivalent: 25 Tokens"><span class="price-display-amount">$35.00 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 25 Tokens</span></span>
+              </span>
             </div>
             <div class="price-row">
               <span>Standard Consumables / Parts Buffer</span>
-              <span id="price-materials-val">$25.00</span>
+              <span id="price-materials-val">
+                <span class="price-token-hover-tag" title="Equivalent: 18 Tokens"><span class="price-display-amount">$25.00 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 18 Tokens</span></span>
+              </span>
             </div>
             <div class="price-row">
               <span>GST (10% Australian Tax)</span>
-              <span id="price-gst-val">$20.30</span>
+              <span id="price-gst-val">
+                <span class="price-token-hover-tag" title="Equivalent: 14 Tokens"><span class="price-display-amount">$20.25 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 14 Tokens</span></span>
+              </span>
             </div>
 
             <div class="price-row total-row">
               <span>Total Estimated Price</span>
-              <span class="final-amount" id="price-total-val">$223.30</span>
+              <span class="final-amount" id="price-total-val">
+                <span class="price-token-hover-tag" title="Equivalent: 157 Tokens"><span class="price-display-amount">$222.75 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 157 Tokens</span></span>
+              </span>
             </div>
           </div>
 
@@ -596,16 +606,21 @@
           </div>
 
           <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
-            <label class="input-label" for="cust-address">
-              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange); margin-right:4px;"></i>
-              Job Address (Gold Coast / Australia)
+            <label class="input-label" for="cust-address" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>
+                <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange); margin-right:4px;"></i>
+                Job Address (Gold Coast / Australia)
+              </span>
+              <span class="osm-status-badge" title="Connected to OpenStreetMap Geocoding Engine">
+                <i class="fa-solid fa-circle-check"></i> OpenStreetMap Live
+              </span>
             </label>
             <div class="input-with-action">
               <input
                 type="text"
                 id="cust-address"
                 class="form-control osm-address-input"
-                placeholder="e.g. 42 Surf Parade, Broadbeach QLD 4218"
+                placeholder="Start typing street or suburb (e.g. 42 Surf Parade, Broadbeach)..."
                 value="42 Surf Parade, Broadbeach QLD 4218"
                 autocomplete="off"
                 data-agent-id="input-cust-address"
@@ -613,6 +628,7 @@
                 aria-autocomplete="list"
                 aria-expanded="false"
                 aria-controls="cust-address-suggestions"
+                onfocus="if(!this.dataset.osmInit){setupOsmAddressAutocomplete('cust-address'); this.dataset.osmInit='true';}"
               >
               <button
                 type="button"
@@ -683,14 +699,41 @@
             </select>
           </div>
 
-          <div class="input-group" style="margin-bottom:0;">
-            <label class="input-label" for="contractor-search-location"><i class="fa-solid fa-map-pin" style="color:var(--accent-red);"></i> Your Location / Suburb</label>
+          <div class="input-group osm-autocomplete-wrapper" style="margin-bottom:0; position:relative;">
+            <label class="input-label" for="contractor-search-location" style="display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fa-solid fa-map-pin" style="color:var(--accent-red);"></i> Your Location / Suburb</span>
+              <span class="osm-status-badge" title="Connected to OpenStreetMap Geocoding Engine">
+                <i class="fa-solid fa-circle-check"></i> OpenStreetMap Live
+              </span>
+            </label>
             <div class="input-with-action">
-              <input type="text" id="contractor-search-location" class="form-control" placeholder="e.g. Broadbeach QLD 4218 or Surfers Paradise" value="Broadbeach QLD 4218">
+              <input
+                type="text"
+                id="contractor-search-location"
+                class="form-control osm-address-input"
+                placeholder="Start typing suburb or street (e.g. Broadbeach QLD or Surfers Paradise)..."
+                value="Broadbeach QLD 4218"
+                autocomplete="off"
+                data-agent-id="input-contractor-search-location"
+                data-testid="input-contractor-search-location"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="contractor-search-location-suggestions"
+                onfocus="if(!this.dataset.osmInit){setupOsmAddressAutocomplete('contractor-search-location', (place) => onContractorLocationSelected(place)); this.dataset.osmInit='true';}"
+              >
               <button type="button" class="btn-locate-gps" onclick="locateCustomer('contractor-search-location')" title="Locate with GPS">
                 <i class="fa-solid fa-location-crosshairs"></i>
               </button>
             </div>
+            <ul
+              id="contractor-search-location-suggestions"
+              class="osm-suggestions-dropdown"
+              data-agent-id="osm-contractor-suggestions"
+              data-testid="osm-contractor-suggestions"
+              role="listbox"
+              aria-label="Location suggestions"
+              style="display:none;"
+            ></ul>
           </div>
 
           <div class="input-group" style="margin-bottom:0;">
@@ -717,7 +760,7 @@
               <i class="fa-solid fa-map"></i> <strong id="map-counter-text">Showing 8 Active Contractors</strong>
             </div>
             <span class="badge-pill-pill" style="font-size:0.7rem; background:var(--accent-green);">
-              <i class="fa-solid fa-satellite-dish"></i> GPS Active
+              <i class="fa-solid fa-circle-check"></i> OpenStreetMap Live
             </span>
           </div>
           <div id="contractor-map"></div>
@@ -789,31 +832,89 @@
             </div>
           </div>
 
-          <!-- Origin & Destination Inputs with GPS -->
+          <!-- Origin & Destination Inputs with GPS (OpenStreetMap Connected) -->
           <div class="form-row">
-            <div class="input-group">
-              <label class="input-label" for="courier-origin">
-                <i class="fa-solid fa-location-crosshairs" style="color:var(--accent-green);"></i> Pickup Origin
+            <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
+              <label class="input-label" for="courier-origin" style="display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fa-solid fa-location-crosshairs" style="color:var(--accent-green);"></i> Pickup Origin</span>
+                <span class="osm-status-badge" title="Connected to OpenStreetMap Geocoding Engine">
+                  <i class="fa-solid fa-circle-check"></i> OpenStreetMap Live
+                </span>
               </label>
               <div class="input-with-action">
-                <input type="text" id="courier-origin" class="form-control" value="Southport, Gold Coast QLD 4215" onchange="calculateCourierQuote()">
+                <input
+                  type="text"
+                  id="courier-origin"
+                  class="form-control osm-address-input"
+                  value="Southport, Gold Coast QLD 4215"
+                  placeholder="Enter pickup address or suburb (e.g. Southport QLD)..."
+                  autocomplete="off"
+                  data-agent-id="input-courier-origin"
+                  data-testid="input-courier-origin"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="courier-origin-suggestions"
+                  onchange="calculateCourierQuote()"
+                  onfocus="if(!this.dataset.osmInit){setupOsmAddressAutocomplete('courier-origin', () => calculateCourierQuote()); this.dataset.osmInit='true';}"
+                >
                 <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')" title="Use Current GPS">
                   <i class="fa-solid fa-location-crosshairs"></i>
                 </button>
               </div>
+              <ul
+                id="courier-origin-suggestions"
+                class="osm-suggestions-dropdown"
+                data-agent-id="osm-courier-origin-suggestions"
+                data-testid="osm-courier-origin-suggestions"
+                role="listbox"
+                aria-label="Pickup suggestions"
+                style="display:none;"
+              ></ul>
             </div>
-            <div class="input-group">
-              <label class="input-label" for="courier-dest">
-                <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination
+            <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
+              <label class="input-label" for="courier-dest" style="display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination</span>
+                <span class="osm-status-badge" title="Connected to OpenStreetMap Geocoding Engine">
+                  <i class="fa-solid fa-circle-check"></i> OpenStreetMap Live
+                </span>
               </label>
-              <input type="text" id="courier-dest" class="form-control" value="Brisbane CBD, QLD 4000" onchange="calculateCourierQuote()">
+              <div class="input-with-action">
+                <input
+                  type="text"
+                  id="courier-dest"
+                  class="form-control osm-address-input"
+                  value="Brisbane CBD, QLD 4000"
+                  placeholder="Enter delivery destination address or suburb..."
+                  autocomplete="off"
+                  data-agent-id="input-courier-dest"
+                  data-testid="input-courier-dest"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="courier-dest-suggestions"
+                  onchange="calculateCourierQuote()"
+                  onfocus="if(!this.dataset.osmInit){setupOsmAddressAutocomplete('courier-dest', () => calculateCourierQuote()); this.dataset.osmInit='true';}"
+                >
+                <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-dest')" title="Use Current GPS">
+                  <i class="fa-solid fa-location-crosshairs"></i>
+                </button>
+              </div>
+              <ul
+                id="courier-dest-suggestions"
+                class="osm-suggestions-dropdown"
+                data-agent-id="osm-courier-dest-suggestions"
+                data-testid="osm-courier-dest-suggestions"
+                role="listbox"
+                aria-label="Destination suggestions"
+                style="display:none;"
+              ></ul>
             </div>
           </div>
 
           <div class="form-row">
             <div class="input-group">
-              <label class="input-label" for="courier-weight">Approximate Weight (kg)</label>
-              <input type="number" id="courier-weight" class="form-control" value="12" min="1" max="1000" oninput="calculateCourierQuote()">
+              <label class="input-label" for="courier-weight">Approximate Weight (kg) <span style="font-size:0.75rem; color:var(--text-muted);">(Max 20kg for Couriers)</span></label>
+              <input type="number" id="courier-weight" class="form-control" value="12" min="1" max="20" oninput="calculateCourierQuote()">
+              <div id="courier-weight-warning" style="display:none; color:var(--accent-red); font-size:0.75rem; margin-top:0.35rem; font-weight:600;"></div>
             </div>
             <div class="input-group">
               <label class="input-label" for="courier-urgency">Delivery Speed</label>
@@ -896,27 +997,67 @@
               </div>
             </div>
 
+            <!-- Superadmin Courier Surcharge Controls -->
+            <div id="superadmin-courier-config-card" style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.9rem; margin-bottom:1rem; font-size:0.82rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <strong style="color:#B45309; display:flex; align-items:center; gap:0.35rem;">
+                  <i class="fa-solid fa-crown" style="color:#F59E0B;"></i> Superadmin Rate Controls
+                </strong>
+                <span class="badge-pill-pill" style="background:#F59E0B; color:#fff; font-size:0.68rem; font-weight:700;">Live Rate Override</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div>
+                  <label style="font-size:0.75rem; color:#92400E; display:block; margin-bottom:0.2rem; font-weight:600;">
+                    ASAP Surcharge %
+                  </label>
+                  <select id="sa-asap-pct-select" class="form-control" style="font-size:0.8rem; height:32px; padding:2px 8px;" onchange="onSuperadminCourierSettingsChange()">
+                    <option value="10">+10% ASAP Token Surcharge</option>
+                    <option value="15">+15% ASAP Token Surcharge</option>
+                    <option value="20" selected>+20% ASAP Token Surcharge</option>
+                    <option value="25">+25% ASAP Token Surcharge</option>
+                    <option value="30">+30% ASAP Token Surcharge</option>
+                    <option value="40">+40% ASAP Token Surcharge</option>
+                    <option value="50">+50% ASAP Token Surcharge</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; color:#92400E; display:block; margin-bottom:0.2rem; font-weight:600;">
+                    Over 20km Distance Surcharge %
+                  </label>
+                  <select id="sa-over20-pct-select" class="form-control" style="font-size:0.8rem; height:32px; padding:2px 8px;" onchange="onSuperadminCourierSettingsChange()">
+                    <option value="5">+5% per km over 20km</option>
+                    <option value="10" selected>+10% per km over 20km</option>
+                    <option value="15">+15% per km over 20km</option>
+                    <option value="20">+20% per km over 20km</option>
+                    <option value="25">+25% per km over 20km</option>
+                    <option value="30">+30% per km over 20km</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <!-- Pricing Breakdown -->
             <div class="pricing-breakdown-card" style="margin-bottom:0;">
               <div class="price-row">
                 <span>Base Loading & Dispatch</span>
-                <span id="courier-base-fee">$35.00</span>
+                <span id="courier-base-fee">--</span>
               </div>
               <div class="price-row">
-                <span>Distance Charge (<span id="courier-dist-km">78.5</span> km @ $1.20/km)</span>
-                <span id="courier-dist-fee">$94.20</span>
+                <span>Distance Charge (<span id="courier-dist-km">--</span> km total)</span>
+                <span id="courier-dist-fee">--</span>
               </div>
-              <div class="price-row">
-                <span>Express Urgency Surcharge</span>
-                <span id="courier-urgency-fee">$25.00</span>
+              <div id="courier-extra-km-info" style="display:none; font-size:0.75rem; color:var(--text-muted); padding-left:0.5rem; margin-top:-0.25rem; margin-bottom:0.4rem;"></div>
+              <div class="price-row" id="courier-asap-row" style="display:none;">
+                <span>⚡ ASAP Priority Dispatch (+<span id="courier-asap-pct-label">20</span>%)</span>
+                <span id="courier-asap-fee">--</span>
               </div>
-              <div class="price-row">
+              <div class="price-row" id="courier-gst-row">
                 <span>GST (10%)</span>
-                <span id="courier-gst-fee">$15.42</span>
+                <span id="courier-gst-fee">--</span>
               </div>
               <div class="price-row total-row">
                 <span>Total Delivery Price</span>
-                <span class="final-amount" id="courier-total-fee">$169.62</span>
+                <span class="final-amount" id="courier-total-fee">--</span>
               </div>
             </div>
 

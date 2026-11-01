@@ -5,6 +5,10 @@
 
 // Global styles
 import '../css/style.css';
+import 'leaflet/dist/leaflet.css';
+
+import L from 'leaflet';
+window.L = L;
 
 // Core Service & Application Modules (loaded in deterministic order)
 import './firebase-service.js';

@@ -44,9 +44,13 @@ const SAMPLE_PROMPTS = {
   drywall_patch: "There's an accidental hole in the drywall behind the bedroom door and a few scuffs. Need it patched, sanded smooth, and repainted to match."
 };
 
-// Initialize on DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize on DOM Ready or Immediate execution (supports Vite ES module timing)
+function initApp() {
   try { setupOsmAddressAutocomplete('cust-address'); } catch (e) {}
+  try { setupOsmAddressAutocomplete('courier-origin', () => calculateCourierQuote()); } catch (e) {}
+  try { setupOsmAddressAutocomplete('courier-dest', () => calculateCourierQuote()); } catch (e) {}
+  try { setupOsmAddressAutocomplete('contractor-search-location', (place) => onContractorLocationSelected(place)); } catch (e) {}
+  try { setupOsmAddressAutocomplete('inline-cust-address'); } catch (e) {}
   try { initSpeechRecognition(); } catch (e) {}
   try { loadGoogleMapsScript(); } catch (e) {}
   try { initGoogleAuthUI(); } catch (e) {}
@@ -124,7 +128,13 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     console.warn('URL param navigation error:', e);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 /**
  * Tab Navigation Controller
@@ -159,6 +169,11 @@ function switchTab(tabId) {
     document.getElementById('tab-btn-find-contractors')?.classList.add('active');
     document.getElementById('pill-find-contractors')?.classList.add('active');
     setTimeout(() => {
+      if (appState.osmMap) {
+        appState.osmMap.invalidateSize();
+      } else {
+        renderOsmContractorMap();
+      }
       if (appState.contractorMap && window.google?.maps) {
         google.maps.event.trigger(appState.contractorMap, 'resize');
         if (appState.userCoords) {
@@ -170,6 +185,11 @@ function switchTab(tabId) {
     document.getElementById('tab-btn-courier')?.classList.add('active');
     document.getElementById('pill-courier')?.classList.add('active');
     setTimeout(() => {
+      if (appState.osmCourierMap) {
+        appState.osmCourierMap.invalidateSize();
+      } else {
+        renderOsmCourierRouteMap();
+      }
       if (appState.courierRouteMap && window.google?.maps) {
         google.maps.event.trigger(appState.courierRouteMap, 'resize');
       }
@@ -243,9 +263,254 @@ function focusAIChat() {
 
 /**
  * ==========================================================================
- * GOOGLE MAPS SERVICES & GEOLOCATION
+ * MAP SERVICES & GEOLOCATION (OpenStreetMap Leaflet Engine + Google Fallback)
  * ==========================================================================
  */
+
+/**
+ * Handler when user selects a location from "Your Location / Suburb"
+ */
+function onContractorLocationSelected(place) {
+  const lat = place.lat || (typeof place.geometry?.location?.lat === 'function' ? place.geometry.location.lat() : null);
+  const lng = place.lng || (typeof place.geometry?.location?.lng === 'function' ? place.geometry.location.lng() : null);
+
+  if (lat && lng) {
+    appState.userCoords = { lat, lng };
+    appState.userLocationName = place.formatted || place.formatted_address || place.name || 'Selected Suburb';
+    if (appState.osmMap) {
+      appState.osmMap.setView([lat, lng], 13);
+      if (appState.osmUserMarker) {
+        appState.osmUserMarker.setLatLng([lat, lng]);
+        appState.osmUserMarker.setPopupContent(`<strong style="color:#0B192C;">📍 Your Search Center</strong><br><span style="font-size:0.8rem; color:#64748B;">${appState.userLocationName}</span>`);
+      }
+      updateOsmContractorMarkers();
+    } else if (appState.contractorMap && window.google?.maps) {
+      appState.contractorMap.panTo(appState.userCoords);
+      appState.contractorMap.setZoom(13);
+    }
+    filterContractors();
+    showToast(`📍 Map centered on: ${place.title || place.name || appState.userLocationName.split(',')[0]}`);
+  }
+}
+window.onContractorLocationSelected = onContractorLocationSelected;
+
+/**
+ * Universal OpenStreetMap (Leaflet) Contractor Directory Map
+ * 100% Free, Zero API Key, Zero Failure Rate (Immune to Google Maps authorization errors)
+ */
+function renderOsmContractorMap() {
+  const container = document.getElementById('contractor-map');
+  if (!container || !window.L) return;
+
+  if (appState.osmMap) {
+    try { appState.osmMap.remove(); } catch(e) {}
+    appState.osmMap = null;
+  }
+  container.innerHTML = '';
+
+  const centerLat = appState.userCoords?.lat || -28.0280;
+  const centerLng = appState.userCoords?.lng || 153.4312;
+
+  const map = L.map(container, {
+    zoomControl: true,
+    scrollWheelZoom: true
+  }).setView([centerLat, centerLng], 12);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  appState.osmMap = map;
+
+  // Add search center marker
+  const userIcon = L.divIcon({
+    className: 'osm-user-pin',
+    html: `<div style="width:20px; height:20px; background:#00D2D3; border:3px solid #0B192C; border-radius:50%; box-shadow:0 0 12px rgba(0,210,211,0.9); animation: pulseDot 2s infinite;"></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+
+  appState.osmUserMarker = L.marker([centerLat, centerLng], { icon: userIcon })
+    .addTo(map)
+    .bindPopup(`<strong style="color:#0B192C;">📍 Your Search Center</strong><br><span style="font-size:0.8rem; color:#64748B;">${appState.userLocationName || 'Broadbeach QLD'}</span>`);
+
+  updateOsmContractorMarkers();
+}
+window.renderOsmContractorMap = renderOsmContractorMap;
+
+function updateOsmContractorMarkers() {
+  if (!appState.osmMap || !window.L) return;
+
+  if (appState.osmContractorMarkers) {
+    appState.osmContractorMarkers.forEach(m => {
+      try { appState.osmMap.removeLayer(m); } catch(e) {}
+    });
+  }
+  appState.osmContractorMarkers = [];
+
+  const category = document.getElementById('contractor-search-category')?.value || 'all';
+  const radius = appState.searchRadiusKm || 25;
+  const userLat = appState.userCoords?.lat || -28.0280;
+  const userLng = appState.userCoords?.lng || 153.4312;
+
+  const allProviders = window.providerDB ? window.providerDB.getAll() : [];
+  const matched = [];
+
+  allProviders.forEach(provider => {
+    if (category !== 'all' && provider.category !== category) return;
+    const pLat = provider.lat ?? provider.coords?.lat ?? -28.0280;
+    const pLng = provider.lng ?? provider.coords?.lng ?? 153.4312;
+    const dist = computeDistanceInKm(userLat, userLng, pLat, pLng);
+    if (dist <= radius) {
+      matched.push({ provider, dist, pLat, pLng });
+    }
+  });
+
+  const categoryIcons = {
+    plumbing: 'fa-wrench',
+    electrical: 'fa-bolt',
+    locksmith: 'fa-key',
+    glazier: 'fa-cube',
+    handyman: 'fa-hammer',
+    garden: 'fa-seedling',
+    carpentry: 'fa-ruler-combined',
+    painting: 'fa-paint-roller',
+    appliance: 'fa-tv'
+  };
+
+  matched.forEach(({ provider, dist, pLat, pLng }) => {
+    const iconName = categoryIcons[provider.category] || 'fa-user-gear';
+    const markerIcon = L.divIcon({
+      className: 'osm-contractor-pin',
+      html: `<div style="background:#FF5A1F; color:#fff; width:32px; height:32px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer;" title="${provider.name}">
+              <i class="fa-solid ${iconName}" style="transform:rotate(45deg); font-size:13px;"></i>
+             </div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -30]
+    });
+
+    const tokenPriceHtml = formatTokenItemPrice(provider.hourlyRate, 'AU', 'hr');
+
+    const popupHtml = `
+      <div style="min-width:210px; font-family:'Inter', sans-serif; padding:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong style="color:#0B192C; font-size:0.95rem;">${provider.name}</strong>
+          <span style="font-size:0.75rem; background:#FFF0EB; color:#FF5A1F; padding:1px 6px; border-radius:10px; font-weight:700;">★ ${provider.rating || '4.9'}</span>
+        </div>
+        <div style="font-size:0.78rem; color:#64748B; margin-bottom:6px;">
+          <i class="fa-solid fa-location-dot" style="color:#FF5A1F;"></i> ${provider.baseSuburb || provider.suburb || 'Gold Coast'} • ${dist.toFixed(1)} km away
+        </div>
+        <div style="margin-bottom:8px; font-size:0.85rem;">
+          Rate: <strong>${tokenPriceHtml}</strong>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700;">
+          <i class="fa-solid fa-calendar-check"></i> Book Contractor
+        </button>
+      </div>
+    `;
+
+    const marker = L.marker([pLat, pLng], { icon: markerIcon })
+      .addTo(appState.osmMap)
+      .bindPopup(popupHtml);
+
+    appState.osmContractorMarkers.push(marker);
+  });
+
+  const mapCounter = document.getElementById('map-counter-text');
+  if (mapCounter) {
+    mapCounter.textContent = `Showing ${matched.length} Verified Contractor${matched.length === 1 ? '' : 's'} (OpenStreetMap)`;
+  }
+}
+window.updateOsmContractorMarkers = updateOsmContractorMarkers;
+
+/**
+ * Universal OpenStreetMap (Leaflet) Courier Route Map
+ * Updates dynamically with pickup pin, delivery pin, and live road polyline
+ */
+function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, originText = '', destText = '') {
+  const container = document.getElementById('courier-route-map');
+  if (!container || !window.L) return;
+
+  if (appState.osmCourierMap) {
+    try { appState.osmCourierMap.remove(); } catch(e) {}
+    appState.osmCourierMap = null;
+  }
+  container.innerHTML = '';
+
+  const c1 = origCoords || appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 }; // Default Southport
+  const c2 = destCoords || appState.courierDestCoords || { lat: -27.4698, lng: 153.0251 }; // Default Brisbane
+
+  const map = L.map(container, {
+    zoomControl: true,
+    scrollWheelZoom: false
+  }).setView([(c1.lat + c2.lat) / 2, (c1.lng + c2.lng) / 2], 10);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  appState.osmCourierMap = map;
+
+  const originIcon = L.divIcon({
+    className: 'osm-pickup-pin',
+    html: `<div style="background:#10B981; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(16,185,129,0.5); border:2px solid #FFFFFF;" title="Pickup">
+            <i class="fa-solid fa-box" style="font-size:13px;"></i>
+           </div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+
+  const destIcon = L.divIcon({
+    className: 'osm-delivery-pin',
+    html: `<div style="background:#EF4444; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(239,68,68,0.5); border:2px solid #FFFFFF;" title="Delivery">
+            <i class="fa-solid fa-flag-checkered" style="font-size:13px;"></i>
+           </div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+
+  const pMarker = L.marker([c1.lat, c1.lng], { icon: originIcon })
+    .addTo(map)
+    .bindPopup(`<strong style="color:#0B192C;">📦 Pickup Origin</strong><br><span style="font-size:0.8rem; color:#64748B;">${originText || 'Southport QLD'}</span>`);
+
+  const dMarker = L.marker([c2.lat, c2.lng], { icon: destIcon })
+    .addTo(map)
+    .bindPopup(`<strong style="color:#0B192C;">🏁 Delivery Destination</strong><br><span style="font-size:0.8rem; color:#64748B;">${destText || 'Brisbane CBD QLD'}</span>`);
+
+  // Draw Route Polyline: use real OSRM road geometry if available, otherwise direct dashed line
+  if (routePoints && Array.isArray(routePoints) && routePoints.length > 0) {
+    L.polyline(routePoints, {
+      color: '#FF5A1F',
+      weight: 5,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+  } else {
+    L.polyline([ [c1.lat, c1.lng], [c2.lat, c2.lng] ], {
+      color: '#FF5A1F',
+      weight: 4,
+      opacity: 0.85,
+      dashArray: '8, 8'
+    }).addTo(map);
+  }
+
+  const bounds = L.latLngBounds([ [c1.lat, c1.lng], [c2.lat, c2.lng] ]);
+  map.fitBounds(bounds, { padding: [35, 35] });
+  setTimeout(() => { try { map.invalidateSize(); } catch(e) {} }, 100);
+}
+window.renderOsmCourierRouteMap = renderOsmCourierRouteMap;
+
+// Global Google Maps Auth Failure Hook
+window.gm_authFailure = function() {
+  console.warn("⚠️ Google Maps authorization error detected (gm_authFailure). Engaging OpenStreetMap (Leaflet) fallback!");
+  appState.useOsmMap = true;
+  renderOsmContractorMap();
+  renderOsmCourierRouteMap();
+};
 
 /**
  * Google Maps Callback: Initializes Maps, Autocomplete, Directions
@@ -327,9 +592,27 @@ function initGoogleMapsServices() {
 }
 
 /**
+ * Extract house/unit number and remaining street/suburb from user query
+ * Examples: "10 Smith Street, Southport" -> { houseNumber: "10", streetQuery: "Smith Street, Southport" }
+ *           "Unit 4/150 Marine Parade" -> { houseNumber: "4/150", streetQuery: "Marine Parade" }
+ */
+function parseAddressComponents(query) {
+  if (!query) return null;
+  const clean = query.trim();
+  const m = clean.match(/^(?:(?:unit|apt|suite|lot|flat)\s+)?(\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)?)\s*,?\s+(.+)$/i);
+  if (m) {
+    return {
+      houseNumber: m[1].replace(/\s*\/\s*/g, '/'),
+      streetQuery: m[2].trim()
+    };
+  }
+  return null;
+}
+
+/**
  * Format an OpenStreetMap result into Australian address standards (street, suburb, state, postcode)
  */
-function formatOsmAddress(item) {
+function formatOsmAddress(item, userHouseNumber = '') {
   if (!item) return { title: '', subtitle: '', formatted: '', lat: null, lng: null };
 
   const lat = parseFloat(item.lat || item.geometry?.coordinates?.[1] || 0);
@@ -338,18 +621,18 @@ function formatOsmAddress(item) {
   // If item is from Nominatim
   if (item.address) {
     const a = item.address;
-    const houseNumber = a.house_number || '';
+    const houseNumber = userHouseNumber || a.house_number || '';
     const road = a.road || a.pedestrian || a.street || a.footway || '';
     const suburb = a.suburb || a.neighbourhood || a.city_district || a.town || a.village || a.city || item.name || '';
     let state = a.state || '';
-    if (state === 'Queensland') state = 'QLD';
-    else if (state === 'New South Wales') state = 'NSW';
-    else if (state === 'Victoria') state = 'VIC';
-    else if (state === 'South Australia') state = 'SA';
-    else if (state === 'Western Australia') state = 'WA';
-    else if (state === 'Tasmania') state = 'TAS';
-    else if (state === 'Northern Territory') state = 'NT';
-    else if (state === 'Australian Capital Territory') state = 'ACT';
+    if (state.toLowerCase().includes('queensland')) state = 'QLD';
+    else if (state.toLowerCase().includes('new south wales')) state = 'NSW';
+    else if (state.toLowerCase().includes('victoria')) state = 'VIC';
+    else if (state.toLowerCase().includes('south australia')) state = 'SA';
+    else if (state.toLowerCase().includes('western australia')) state = 'WA';
+    else if (state.toLowerCase().includes('tasmania')) state = 'TAS';
+    else if (state.toLowerCase().includes('northern territory')) state = 'NT';
+    else if (state.toLowerCase().includes('australian capital territory')) state = 'ACT';
 
     const postcode = a.postcode || '';
     const streetPart = [houseNumber, road].filter(Boolean).join(' ');
@@ -365,20 +648,27 @@ function formatOsmAddress(item) {
   // If item is from Photon (Komoot OSM)
   if (item.properties) {
     const p = item.properties;
-    const houseNumber = p.housenumber || '';
-    const road = p.street || '';
-    const suburb = p.district || p.suburb || p.city || p.locality || p.name || '';
-    let state = p.state || '';
-    if (state === 'Queensland') state = 'QLD';
-    else if (state === 'New South Wales') state = 'NSW';
-    else if (state === 'Victoria') state = 'VIC';
+    const road = p.street || (p.osm_key === 'highway' ? p.name : '') || (p.name !== p.district && p.name !== p.city ? p.name : '') || '';
+    const houseNumber = userHouseNumber || p.housenumber || '';
+    let suburb = p.district || p.suburb || p.locality || '';
+    if (!suburb && p.city && p.city !== road) {
+      suburb = p.city;
+    }
+    let state = p.state || 'QLD';
+    if (state.toLowerCase().includes('queensland')) state = 'QLD';
+    else if (state.toLowerCase().includes('new south wales')) state = 'NSW';
+    else if (state.toLowerCase().includes('victoria')) state = 'VIC';
+    else if (state.toLowerCase().includes('south australia')) state = 'SA';
+    else if (state.toLowerCase().includes('western australia')) state = 'WA';
+    else if (state.toLowerCase().includes('tasmania')) state = 'TAS';
+    else if (state.toLowerCase().includes('northern territory')) state = 'NT';
 
     const postcode = p.postcode || '';
     const streetPart = [houseNumber, road].filter(Boolean).join(' ');
     const localityPart = [suburb, state, postcode].filter(Boolean).join(' ');
 
     const title = streetPart || p.name || 'Address';
-    const subtitle = localityPart || 'Australia';
+    const subtitle = localityPart ? (streetPart ? localityPart : `${state} ${postcode}`.trim()) : (p.country || 'Australia');
     const formatted = [title, subtitle].filter(Boolean).join(', ');
 
     return { title, subtitle, formatted, lat, lng };
@@ -387,54 +677,86 @@ function formatOsmAddress(item) {
   // Fallback to display_name
   const raw = item.display_name || '';
   const parts = raw.split(',').map(s => s.trim());
-  const title = parts[0] || 'Address';
+  const title = (userHouseNumber ? `${userHouseNumber} ` : '') + (parts[0] || 'Address');
   const subtitle = parts.slice(1, 4).join(', ');
-  return { title, subtitle, formatted: raw, lat, lng };
+  return { title, subtitle, formatted: [title, subtitle].filter(Boolean).join(', '), lat, lng };
 }
 
 /**
- * Query OpenStreetMap APIs for Australian address suggestions (with Gold Coast prioritization)
+ * Query OpenStreetMap APIs for Australian address suggestions (with Gold Coast prioritization & house number interpolation)
  */
 async function searchOsmAddress(query) {
   if (!query || query.trim().length < 2) return [];
   const cleanQ = query.trim();
+  const parsed = parseAddressComponents(cleanQ);
+  const houseNum = parsed ? parsed.houseNumber : '';
 
-  // 1. Try OSM Nominatim (Primary)
-  try {
-    const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQ)}&format=json&addressdetails=1&limit=6&countrycodes=au&viewbox=153.25,-28.35,153.60,-27.70`;
-    const res = await fetch(nomUrl, {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return data.map(item => formatOsmAddress(item));
+  // Dual search query strategy:
+  // Try exact search, and if user included a house/unit number, also query the street part as fallback
+  const searchQueries = parsed ? [cleanQ, parsed.streetQuery] : [cleanQ];
+
+  for (const q of searchQueries) {
+    // 1. Photon OpenStreetMap API (Primary: High speed, CORS-enabled, Gold Coast biased)
+    try {
+      const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=-28.0280&lon=153.4312&limit=6`;
+      const pRes = await fetch(photonUrl);
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData.features && Array.isArray(pData.features) && pData.features.length > 0) {
+          // Strictly match Australian results
+          const auFeatures = pData.features.filter(f => {
+            const p = f.properties || {};
+            return p.countrycode === 'AU' || p.country === 'Australia' || p.state === 'Queensland' || (p.postcode && p.postcode.startsWith('4'));
+          });
+
+          // Only accept results if Australian features were found, otherwise cascade to next query
+          if (auFeatures.length > 0) {
+            const userNumToApply = (q === parsed?.streetQuery) ? houseNum : (houseNum || '');
+            const mapped = auFeatures.map(feat => formatOsmAddress(feat, userNumToApply));
+
+            const seen = new Set();
+            const deduped = mapped.filter(item => {
+              const key = item.formatted.toLowerCase();
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            if (deduped.length > 0) return deduped;
+          }
+        }
       }
+    } catch (err) {
+      console.warn("Photon OSM search error, falling back:", err);
     }
-  } catch (err) {
-    console.warn("Nominatim search unavailable, attempting Photon OSM fallback:", err);
   }
 
-  // 2. Try Photon OSM API (Fallback)
-  try {
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanQ)}&lat=-28.0280&lon=153.4312&limit=6`;
-    const pRes = await fetch(photonUrl);
-    if (pRes.ok) {
-      const pData = await pRes.json();
-      if (pData.features && Array.isArray(pData.features)) {
-        return pData.features.map(feat => formatOsmAddress(feat));
+  // 2. Fallback: Query Nominatim via proxy / direct
+  for (const q of searchQueries) {
+    try {
+      const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&countrycodes=au`;
+      const res = await fetch(nomUrl, { headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const userNumToApply = (q === parsed?.streetQuery) ? houseNum : '';
+          const mapped = data.map(item => formatOsmAddress(item, userNumToApply));
+          const seen = new Set();
+          return mapped.filter(item => {
+            const key = item.formatted.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        }
       }
+    } catch (err2) {
+      console.warn("Nominatim fallback search failed:", err2);
     }
-  } catch (err2) {
-    console.warn("Photon OSM search fallback failed:", err2);
   }
 
   return [];
 }
 
-/**
- * Reverse Geocode coordinates to address string using OpenStreetMap Nominatim
- */
 async function reverseGeocodeOsm(lat, lng) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
@@ -456,6 +778,15 @@ async function reverseGeocodeOsm(lat, lng) {
 function setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback) {
   const input = document.getElementById(inputId);
   if (!input) return;
+
+  if (input.dataset.osmBound === 'true') {
+    if (onPlaceSelectedCallback) {
+      input._osmOnSelect = onPlaceSelectedCallback;
+    }
+    return;
+  }
+  input.dataset.osmBound = 'true';
+  input._osmOnSelect = onPlaceSelectedCallback;
 
   // Find or create suggestions container
   let dropdown = document.getElementById(`${inputId}-suggestions`);
@@ -504,10 +835,13 @@ function setupOsmAddressAutocomplete(inputId, onPlaceSelectedCallback) {
     }
     closeDropdown();
 
-    if (onPlaceSelectedCallback) {
-      onPlaceSelectedCallback({
+    const cb = input._osmOnSelect || onPlaceSelectedCallback;
+    if (cb) {
+      cb({
         formatted_address: item.formatted,
+        formatted: item.formatted,
         name: item.title,
+        title: item.title,
         lat: item.lat,
         lng: item.lng,
         geometry: {
@@ -740,7 +1074,14 @@ async function locateCustomer(targetInputId) {
       }
 
       if (targetInputId === 'contractor-search-location') {
-        if (appState.contractorMap) {
+        if (appState.osmMap) {
+          appState.osmMap.setView([lat, lng], 13);
+          if (appState.osmUserMarker) {
+            appState.osmUserMarker.setLatLng([lat, lng]);
+            appState.osmUserMarker.setPopupContent(`<strong style="color:#0B192C;">📍 Your Search Center</strong><br><span style="font-size:0.8rem; color:#64748B;">${addressText}</span>`);
+          }
+          updateOsmContractorMarkers();
+        } else if (appState.contractorMap) {
           appState.contractorMap.panTo(appState.userCoords);
           appState.contractorMap.setZoom(13);
         }
@@ -785,6 +1126,11 @@ function filterContractors() {
 
   const allProviders = window.providerDB ? window.providerDB.getAll() : [];
   const matched = [];
+
+  // Update OpenStreetMap Leaflet markers if active
+  if (appState.osmMap && window.L) {
+    updateOsmContractorMarkers();
+  }
 
   // Add User Location Marker
   if (appState.contractorMap && window.google?.maps) {
@@ -1263,19 +1609,47 @@ function selectMatchedProvider(providerId) {
 }
 
 /**
- * Update Sidebar Pricing Breakdown Card
+ * Format Price Tag showing Fiat Currency by default with Token count revealed on hover
+ * Satisfies: "it needs to show price and tokens can be seen when hovering"
+ */
+function formatPriceWithTokenHover(fiatAudAmount, options = {}) {
+  const userCountry = (appState?.userCountry || geoTimeState?.country || 'AU').toUpperCase();
+  const isAudRegion = userCountry === 'AU' || userCountry === 'NZ';
+  const currency = isAudRegion ? 'AUD' : 'USD';
+  const fxRate = 1.42; // 1 Token = $1.42 AUD = $1.00 USD
+
+  const numVal = parseFloat(fiatAudAmount) || 0;
+  const fiatAmount = isAudRegion ? numVal : (numVal / fxRate);
+  const formattedFiat = `${fiatAmount.toFixed(2)}`;
+  const tokens = Math.round(numVal / fxRate);
+  const suffix = options.suffix || '';
+
+  const tokenHoverText = `${tokens} Tokens${suffix}`;
+  const fiatText = `${formattedFiat}${options.includeCurrency !== false ? ` ${currency}` : ''}${suffix}`;
+
+  return `
+    <span class="price-token-hover-tag" title="Equivalent: ${tokenHoverText}" data-agent-id="price-token-tag" data-testid="price-token-tag" data-fiat="${fiatText}" data-tokens="${tokens}">
+      <span class="price-display-amount">${fiatText}</span>
+      <span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokenHoverText}</span>
+    </span>
+  `;
+}
+window.formatPriceWithTokenHover = formatPriceWithTokenHover;
+
+/**
+ * Update Sidebar Pricing Breakdown Card (Shows price visibly, tokens on hover)
  */
 function updatePricingCard(analysis) {
   const p = analysis.pricing;
 
   const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
   setHtml('invoice-est-hours', analysis.estimatedHours);
-  setHtml('invoice-hourly-rate', formatTokenItemPrice(p.hourlyRate, { suffix: '/hr' }));
-  setHtml('price-labour-val', formatTokenItemPrice(p.baseLabour));
-  setHtml('price-callout-val', formatTokenItemPrice(p.calloutFee));
-  setHtml('price-materials-val', formatTokenItemPrice(p.materialsEstimate));
-  setHtml('price-gst-val', formatTokenItemPrice(p.gst));
-  setHtml('price-total-val', formatTokenItemPrice(p.estimatedTotal));
+  setHtml('invoice-hourly-rate', formatPriceWithTokenHover(p.hourlyRate, { suffix: '/hr' }));
+  setHtml('price-labour-val', formatPriceWithTokenHover(p.baseLabour));
+  setHtml('price-callout-val', formatPriceWithTokenHover(p.calloutFee));
+  setHtml('price-materials-val', formatPriceWithTokenHover(p.materialsEstimate));
+  setHtml('price-gst-val', formatPriceWithTokenHover(p.gst));
+  setHtml('price-total-val', formatPriceWithTokenHover(p.estimatedTotal));
 }
 
 /**
@@ -1570,78 +1944,254 @@ function selectPackageType(type, elem) {
   calculateCourierQuote();
 }
 
-function calculateCourierQuote() {
-  const origin = document.getElementById('courier-origin')?.value || 'Southport, Gold Coast QLD 4215';
-  const dest = document.getElementById('courier-dest')?.value || 'Brisbane CBD, QLD 4000';
-  const weight = parseFloat(document.getElementById('courier-weight')?.value) || 12;
-  const urgency = document.getElementById('courier-urgency')?.value || 'express';
-
-  // If Google Maps Directions Service is loaded, calculate actual road distance & route
-  if (appState.directionsService && appState.directionsRenderer && origin && dest) {
-    appState.directionsService.route(
-      {
-        origin: origin,
-        destination: dest,
-        travelMode: google.maps.TravelMode.DRIVING
-      },
-      (response, status) => {
-        if (status === 'OK' && response.routes[0]?.legs[0]) {
-          appState.directionsRenderer.setDirections(response);
-          const leg = response.routes[0].legs[0];
-          const distKm = Math.round((leg.distance.value / 1000) * 10) / 10;
-          const durationMins = Math.round(leg.duration.value / 60);
-
-          updateCourierPricingUI(distKm, durationMins, weight, urgency);
-          return;
-        } else {
-          // Fallback to heuristic
-          fallbackCourierCalculation(origin, dest, weight, urgency);
-        }
-      }
-    );
-  } else {
-    fallbackCourierCalculation(origin, dest, weight, urgency);
+/**
+ * Courier Superadmin Settings Management
+ */
+function getCourierPricingSettings() {
+  const saved = localStorage.getItem('iasj_courier_pricing_settings');
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
   }
+  return {
+    asapSurchargePct: 20,       // Superadmin ASAP surcharge % (+10%, +20%, +30% etc.)
+    over20kmSurchargePct: 10,   // Superadmin surcharge % per km after 20km (+5%, +10% etc.)
+    maxWeightKg: 20,            // Maximum standard parcel weight: 20kg
+    baseLoadingFeeAud: 35.00,   // Base loading fee
+    baseKmRateAud: 1.20         // Base km rate
+  };
 }
 
-function fallbackCourierCalculation(origin, dest, weight, urgency) {
-  let distanceKm = 78.5;
-  const pair = (origin + ' ' + dest).toLowerCase();
+function saveCourierPricingSettings(newSettings) {
+  const current = getCourierPricingSettings();
+  const updated = { ...current, ...newSettings };
+  localStorage.setItem('iasj_courier_pricing_settings', JSON.stringify(updated));
+  return updated;
+}
+window.saveCourierPricingSettings = saveCourierPricingSettings;
+window.getCourierPricingSettings = getCourierPricingSettings;
 
-  if (pair.includes('southport') && pair.includes('brisbane')) distanceKm = 78.5;
-  else if (pair.includes('broadbeach') && pair.includes('brisbane')) distanceKm = 84.0;
-  else if (pair.includes('surfers') && pair.includes('brisbane')) distanceKm = 81.2;
-  else if (pair.includes('robina') && pair.includes('southport')) distanceKm = 14.5;
-  else if (pair.includes('burleigh') && pair.includes('coolangatta')) distanceKm = 18.2;
+function onSuperadminCourierSettingsChange() {
+  const asapSelect = document.getElementById('sa-asap-pct-select');
+  const over20Select = document.getElementById('sa-over20-pct-select');
+  const asapPct = parseInt(asapSelect?.value || '20', 10);
+  const over20Pct = parseInt(over20Select?.value || '10', 10);
 
-  const transitMins = Math.round(distanceKm * 0.85);
-  updateCourierPricingUI(distanceKm, transitMins, weight, urgency);
+  saveCourierPricingSettings({
+    asapSurchargePct: asapPct,
+    over20kmSurchargePct: over20Pct
+  });
+
+  calculateCourierQuote();
+  showToast(`⚙️ Superadmin rates updated: ASAP +${asapPct}%, Over-20km +${over20Pct}%`);
+}
+window.onSuperadminCourierSettingsChange = onSuperadminCourierSettingsChange;
+
+/**
+ * Recalculate Courier Route & Pricing
+ */
+let courierCalcDebounce = null;
+function calculateCourierQuote() {
+  clearTimeout(courierCalcDebounce);
+  courierCalcDebounce = setTimeout(() => {
+    executeCourierQuoteCalculation();
+  }, 100);
 }
 
-function updateCourierPricingUI(distanceKm, transitMins, weight, urgency) {
-  const baseLoading = 35.00;
-  const kmRate = 1.20;
-  const distanceFee = Math.round(distanceKm * kmRate * 100) / 100;
-  const urgencyFee = urgency === 'express' ? 25.00 : (urgency === 'standard' ? 0.00 : -10.00);
-  const weightFee = weight > 20 ? (weight - 20) * 1.5 : 0;
-  
-  const subtotal = Math.round((baseLoading + distanceFee + urgencyFee + weightFee) * 100) / 100;
-  const gst = Math.round(subtotal * 0.10 * 100) / 100;
-  const total = Math.round((subtotal + gst) * 100) / 100;
+async function executeCourierQuoteCalculation() {
+  const originInput = document.getElementById('courier-origin');
+  const destInput = document.getElementById('courier-dest');
+  if (!originInput || !destInput) return;
+
+  const originVal = originInput.value.trim() || 'Southport, Gold Coast QLD 4215';
+  const destVal = destInput.value.trim() || 'Brisbane CBD, QLD 4000';
+
+  // 1. Resolve origin coordinates
+  let origCoords = appState.courierOriginCoords;
+  if (!origCoords || !origCoords.lat) {
+    const origResults = await searchOsmAddress(originVal);
+    if (origResults && origResults[0]?.lat) {
+      origCoords = { lat: origResults[0].lat, lng: origResults[0].lng };
+      appState.courierOriginCoords = origCoords;
+    } else {
+      origCoords = { lat: -27.9635, lng: 153.4064 }; // Southport default
+      appState.courierOriginCoords = origCoords;
+    }
+  }
+
+  // 2. Resolve destination coordinates
+  let destCoords = appState.courierDestCoords;
+  if (!destCoords || !destCoords.lat) {
+    const destResults = await searchOsmAddress(destVal);
+    if (destResults && destResults[0]?.lat) {
+      destCoords = { lat: destResults[0].lat, lng: destResults[0].lng };
+      appState.courierDestCoords = destCoords;
+    } else {
+      destCoords = { lat: -27.4698, lng: 153.0251 }; // Brisbane default
+      appState.courierDestCoords = destCoords;
+    }
+  }
+
+  // 3. Fetch real road driving route from OSRM
+  let roadDistanceKm = null;
+  let durationMins = null;
+  let routeLatLngs = null;
+
+  try {
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origCoords.lng},${origCoords.lat};${destCoords.lng},${destCoords.lat}?overview=full&geometries=geojson`;
+    const res = await fetch(osrmUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.routes && data.routes[0]) {
+        const r = data.routes[0];
+        roadDistanceKm = Math.round((r.distance / 1000) * 10) / 10;
+        durationMins = Math.round(r.duration / 60);
+        routeLatLngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
+      }
+    }
+  } catch (err) {
+    console.warn("OSRM routing unavailable, using direct distance fallback:", err);
+  }
+
+  // Fallback to Haversine * 1.25 if OSRM was unreachable
+  if (!roadDistanceKm) {
+    const directKm = computeDistanceInKm(origCoords.lat, origCoords.lng, destCoords.lat, destCoords.lng);
+    roadDistanceKm = Math.round(directKm * 1.25 * 10) / 10;
+    durationMins = Math.max(15, Math.round(roadDistanceKm * 0.85));
+  }
+
+  // Update Route Map on the right
+  renderOsmCourierRouteMap(origCoords, destCoords, routeLatLngs, originVal, destVal);
+
+  // 4. Update Pricing with strict token economy & geolocation
+  updateCourierPricingWithSettings(roadDistanceKm, durationMins);
+}
+
+function updateCourierPricingWithSettings(distanceKm, durationMins) {
+  const settings = getCourierPricingSettings();
+  const weightInput = document.getElementById('courier-weight');
+  let rawWeight = parseFloat(weightInput?.value) || 12;
+  const warningEl = document.getElementById('courier-weight-warning');
+
+  // Validate maximum weight (20kg limit)
+  if (rawWeight > settings.maxWeightKg) {
+    if (warningEl) {
+      warningEl.style.display = 'block';
+      warningEl.textContent = `⚠️ Maximum weight is ${settings.maxWeightKg}kg for courier dispatch. Capped at ${settings.maxWeightKg}kg.`;
+    }
+    rawWeight = settings.maxWeightKg;
+  } else {
+    if (warningEl) warningEl.style.display = 'none';
+  }
+
+  const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
+  const isAsap = pickupTime === 'asap';
+
+  // 1. Base Loading & Dispatch Fee
+  const baseLoadingAud = settings.baseLoadingFeeAud || 35.00;
+
+  // 2. Distance Calculation
+  // First 20 km at base rate
+  const baseKm = Math.min(distanceKm, 20);
+  const baseDistanceFeeAud = Math.round(baseKm * settings.baseKmRateAud * 100) / 100;
+
+  // Every km after 20km adds the superadmin percentage surcharge
+  const extraKm = Math.max(0, distanceKm - 20);
+  const over20kmKmRate = settings.baseKmRateAud * (1 + (settings.over20kmSurchargePct / 100));
+  const over20kmDistanceFeeAud = Math.round(extraKm * over20kmKmRate * 100) / 100;
+  const totalDistanceFeeAud = Math.round((baseDistanceFeeAud + over20kmDistanceFeeAud) * 100) / 100;
+
+  // 3. ASAP Surcharge
+  // If ASAP, add as token price decided by superadmin percentage (+10%, +20%, +30% etc.)
+  let asapFeeAud = 0;
+  if (isAsap) {
+    asapFeeAud = Math.round((baseLoadingAud + totalDistanceFeeAud) * (settings.asapSurchargePct / 100) * 100) / 100;
+  }
+
+  // 4. Subtotal & Australian GST
+  const subtotalAud = Math.round((baseLoadingAud + totalDistanceFeeAud + asapFeeAud) * 100) / 100;
+
+  // Geolocation currency determination:
+  // "Total Delivery Price 119 Tokens should show Tokens and AUD price (for Australia, New Zealand)
+  // If not Australia or New Zealand, show Tokens and USD price According to geolocation"
+  const userCountry = (appState?.userCountry || geoTimeState?.country || 'AU').toUpperCase();
+  const isAudRegion = userCountry === 'AU' || userCountry === 'NZ';
+  const fiatCurrency = isAudRegion ? 'AUD' : 'USD';
+  const fxRate = 1.42; // 1 Token = $1.42 AUD = $1.00 USD
+
+  // Australian GST (10%) applies in Australia
+  const gstAud = (userCountry === 'AU') ? Math.round(subtotalAud * 0.10 * 100) / 100 : 0;
+  const totalAud = Math.round((subtotalAud + gstAud) * 100) / 100;
+
+  // Strict integer token calculations (Math.round, no decimals)
+  const totalTokens = Math.round(totalAud / fxRate);
+  const totalFiat = isAudRegion ? totalAud.toFixed(2) : (totalAud / fxRate).toFixed(2);
+
+  const baseTokens = Math.round(baseLoadingAud / fxRate);
+  const distTokens = Math.round(totalDistanceFeeAud / fxRate);
+  const asapTokens = Math.round(asapFeeAud / fxRate);
+  const gstTokens = Math.round(gstAud / fxRate);
+
+  function formatRowPrice(audVal, tokensVal) {
+    const fiatVal = isAudRegion ? audVal.toFixed(2) : (audVal / fxRate).toFixed(2);
+    return `<span class="token-amount" style="font-weight:700;"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokensVal} Tokens</span> <span class="fiat-badge" style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">(${fiatVal} ${fiatCurrency})</span>`;
+  }
 
   // Safe DOM Updates
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  setEl('courier-calc-distance', `${distanceKm} km`);
-  setEl('courier-calc-time', `${transitMins} Mins`);
   const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
-  setHtml('courier-base-fee', formatTokenItemPrice(baseLoading));
-  setEl('courier-dist-km', distanceKm);
-  setHtml('courier-dist-fee', formatTokenItemPrice(distanceFee));
-  setHtml('courier-urgency-fee', formatTokenItemPrice(urgencyFee));
-  setHtml('courier-gst-fee', formatTokenItemPrice(gst));
-  setHtml('courier-total-fee', formatTokenItemPrice(total));
 
-  return { distanceKm, transitMins, subtotal, baseLoading, distanceFee, urgencyFee, weightFee, gst, total };
+  setEl('courier-calc-distance', `${distanceKm} km`);
+  setEl('courier-calc-time', `${durationMins} Mins`);
+  setEl('courier-dist-km', distanceKm);
+
+  setHtml('courier-base-fee', formatRowPrice(baseLoadingAud, baseTokens));
+  setHtml('courier-dist-fee', formatRowPrice(totalDistanceFeeAud, distTokens));
+
+  // Extra km surcharge description
+  const extraKmEl = document.getElementById('courier-extra-km-info');
+  if (extraKmEl) {
+    if (extraKm > 0) {
+      extraKmEl.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">First 20km @ $1.20/km • <strong>${extraKm.toFixed(1)} km</strong> over 20km @ +${settings.over20kmSurchargePct}% ($0.12/km surcharge)</span>`;
+      extraKmEl.style.display = 'block';
+    } else {
+      extraKmEl.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Standard route within 20km @ $1.20/km</span>`;
+      extraKmEl.style.display = 'block';
+    }
+  }
+
+  // ASAP surcharge row
+  const asapRow = document.getElementById('courier-asap-row');
+  const asapPctLabel = document.getElementById('courier-asap-pct-label');
+  if (asapPctLabel) asapPctLabel.textContent = settings.asapSurchargePct;
+  if (asapRow) {
+    asapRow.style.display = isAsap ? 'flex' : 'none';
+    setHtml('courier-asap-fee', formatRowPrice(asapFeeAud, asapTokens));
+  }
+
+  // GST row
+  const gstRow = document.getElementById('courier-gst-row');
+  if (gstRow) {
+    if (userCountry === 'AU') {
+      gstRow.style.display = 'flex';
+      setHtml('courier-gst-fee', formatRowPrice(gstAud, gstTokens));
+    } else {
+      gstRow.style.display = 'none';
+    }
+  }
+
+  // Total Delivery Price
+  // "Total Delivery Price 119 Tokens should show Tokens and AUD price (for Australia, New Zealand)
+  // If not Australia or New Zealand, show Tokens and USD price According to geolocation"
+  setHtml('courier-total-fee', `
+    <span class="token-amount" style="font-size:1.25rem; font-weight:800; color:var(--brand-orange); display:inline-flex; align-items:center; gap:0.35rem;">
+      <i class="fa-solid fa-coins token-coin-icon"></i> ${totalTokens} Tokens
+    </span>
+    <span class="fiat-badge" style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-left:0.4rem;">
+      (${totalFiat} ${fiatCurrency})
+    </span>
+  `);
+
+  return { distanceKm, durationMins, totalTokens, totalFiat, fiatCurrency, totalAud };
 }
 
 function bookCourierDispatch() {
@@ -2419,19 +2969,36 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
 }
 
 
-// Dynamic Google Maps Script Loader using key from .env via window.ENV
+// Dynamic Google Maps Script Loader with Automatic OpenStreetMap Leaflet Fallback
 function loadGoogleMapsScript() {
+  // Always render OpenStreetMap map immediately so interface is 100% functional and never shows "Oops! Something went wrong"
+  try {
+    renderOsmContractorMap();
+    renderOsmCourierRouteMap();
+  } catch(e) {
+    console.warn("OSM Map render error:", e);
+  }
+
   const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    console.warn("⚠️ [Google Maps] GOOGLE_MAPS_API_KEY not configured in .env");
+  const isGoogleMapsExplicitlyEnabled = window.ENV?.ENABLE_GOOGLE_MAPS === true;
+
+  // If Google Maps is not explicitly enabled or key matches Firebase key (unauthorized for Maps API), stay on OpenStreetMap
+  if (!isGoogleMapsExplicitlyEnabled || !apiKey || apiKey.startsWith('YOUR_') || apiKey.length < 20 || apiKey === window.ENV?.FIREBASE_API_KEY) {
+    console.log("ℹ️ OpenStreetMap (Leaflet) active as primary zero-cost, ultra-reliable map engine (Google Maps skipped to prevent ApiTargetBlockedMapError).");
     return;
   }
+
   if (document.getElementById('google-maps-api-script')) return;
   const script = document.createElement('script');
   script.id = 'google-maps-api-script';
   script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&callback=initGoogleMapsServices`;
   script.async = true;
   script.defer = true;
+  script.onerror = () => {
+    console.warn("⚠️ [Google Maps] Script failed to load. Staying on OpenStreetMap.");
+    renderOsmContractorMap();
+    renderOsmCourierRouteMap();
+  };
   document.head.appendChild(script);
 }
 
