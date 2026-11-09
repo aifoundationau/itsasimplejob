@@ -1904,5 +1904,29 @@ Defines the architectural separation of the Driver Application from the Supporte
 4. **Form Submission & State Synchronization:**
    - Submitting `#driver-registration-form` (`handleDriverRegistrationSubmit`) saves or updates the driver profile in `providerDB` and Firestore, resets input fields, triggers `updateDriverApplicationGateUI()`, and navigates to `#driver-admin-tab` dispatch view with status toast feedback.
 
+### 11.11 Driver Dispatch Console RBAC Visibility Contract (`DriverDispatchConsoleRbacVisibilityContract`)
+Defines the strict role-based access control (RBAC) ensuring the Driver Dispatch Console is visible ONLY to approved Courier Drivers and SuperAdmin:
+
+1. **Role Gating Predicate:**
+   - Evaluated as `canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin')`.
+   - Any other role (such as `'supporter'`, `'customer'`, or unauthenticated visitor) evaluates `canSeeDispatch` as `false`.
+
+2. **Supporter Subnav Tab Button (`#subtab-btn-dispatch`):**
+   - Given class `.driver-and-superadmin-only` and initialized with `style="display:none;"`.
+   - Dynamically toggled by `renderSupporterPanel()`:
+     * When `canSeeDispatch === true`: `style.display = 'inline-flex'`.
+     * When `canSeeDispatch === false`: `style.display = 'none'` (completely hidden from Community Supporters).
+
+3. **Subtab View & Dispatch Console Container Gating:**
+   - Both `#supporter-dispatch-subtab` and `#driver-dispatch-console` are strictly hidden (`display: none`) when `canSeeDispatch === false`.
+   - If an unauthorized user or standard supporter attempts to navigate to `#supporter-dispatch-subtab` (via `switchSupporterSubTab`), the action is rejected:
+     * Surfaces security toast: `🔒 Driver Dispatch Console is only accessible to approved Courier Drivers and SuperAdmin.`
+     * Automatically redirects to `#supporter-details-subtab`.
+
+4. **SuperAdmin Multi-Role Simulation Compatibility:**
+   - When SuperAdmin simulates the `'supporter'` or `'customer'` perspective, `#subtab-btn-dispatch` and `#driver-dispatch-console` are hidden instantly, allowing the administrator to verify the restricted supporter view.
+   - When SuperAdmin switches back to `'driver'` or `'superadmin'`, `#subtab-btn-dispatch` and the console are immediately restored.
+
+
 
 

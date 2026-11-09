@@ -166,11 +166,22 @@ Created: 2026-11-01
   * Verified end-to-end with verify_bottom_driver_app_gate.mjs and verify_pure_node_gate.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 36: RESTRICT DRIVER DISPATCH CONSOLE VISIBILITY TO DRIVER AND SUPERADMIN ONLY
+- Driver Dispatch Console RBAC Gating:
+  * Hidden #subtab-btn-dispatch by default for standard Community Supporters in the Supporter Portal navigation (display: none).
+  * Conditioned #subtab-btn-dispatch visibility in renderSupporterPanel() to strictly require activeRole === 'driver' || activeRole === 'superadmin'.
+  * Added navigation security check in switchSupporterSubTab('supporter-dispatch-subtab'): any attempt by a supporter or customer to access the dispatch console is blocked with a security toast alert and redirected to supporter-details-subtab.
+  * Fully integrated with SuperAdmin multi-role perspective switcher: switching to supporter or customer hides the dispatch console button and subview; switching to driver or superadmin restores it.
+- Verification & Compliance:
+  * Documented Section 11.11 in data-contracts.MD.
+  * Verified end-to-end with verify_dispatch_console_roles.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST BOTTOM DRIVER APPLICATION & SUPPORTER GATING IN BROWSER
+CURRENT TASK: TEST DRIVER DISPATCH CONSOLE RBAC VISIBILITY IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, scroll down to the bottom of the page (or click "Apply to Drive (Bottom of Page)" in the Supporter Portal) to verify the Driver Application section:
-   - When signed out (or when viewing as "Customer" in the SuperAdmin switcher), confirm that the application is locked behind the "Community Supporter Registration Required" gate.
-   - When signed in as a Community Supporter, confirm that the application unlocks with your verified supporter details pre-filled.
+1. In your browser at http://localhost:3002, open the Supporter Portal (tab 4) and use the SuperAdmin Role Switcher at the bottom of the portal:
+   - Click "Supporter (Community)": confirm that the "Driver Dispatch Console" subtab button disappears completely, leaving only "1. Register Details" and "2. My Bookings History".
+   - Click "Driver (Courier Driver)" or "SuperAdmin (Supreme Ruler)": confirm that the "Driver Dispatch Console" subtab button reappears and opens the live dispatch console.
 
 ================================================================================

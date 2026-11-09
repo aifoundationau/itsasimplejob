@@ -3354,6 +3354,16 @@ function switchSupporterSubTab(subtabId) {
     return;
   }
 
+  // Driver Dispatch Console can ONLY be seen by approved Courier Drivers and SuperAdmin
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');
+  if (subtabId === 'supporter-dispatch-subtab' && !canSeeDispatch) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Driver Dispatch Console is only accessible to approved Courier Drivers and SuperAdmin.');
+    }
+    subtabId = 'supporter-details-subtab';
+  }
+
   const subviews = document.querySelectorAll('.supporter-subview');
   subviews.forEach(v => v.style.display = 'none');
 
@@ -3453,12 +3463,25 @@ function renderSupporterPanel() {
       supTokenEl.textContent = `${supporter.tokenBalance ?? 25} Tokens`;
     }
 
-    // Role-based visibility for Driver Dispatch Console
+    // Role-based visibility for Driver Dispatch Console: strictly driver and superadmin ONLY
+    const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');
+    const dispatchSubtabBtn = document.getElementById('subtab-btn-dispatch');
     const dispatchNotice = document.getElementById('supporter-not-driver-notice');
     const dispatchConsole = document.getElementById('driver-dispatch-console');
-    if (activeRole === 'supporter') {
-      if (dispatchNotice) dispatchNotice.style.display = 'block';
+    const dispatchSubtabView = document.getElementById('supporter-dispatch-subtab');
+
+    if (dispatchSubtabBtn) {
+      dispatchSubtabBtn.style.display = canSeeDispatch ? 'inline-flex' : 'none';
+    }
+
+    if (!canSeeDispatch) {
+      if (dispatchNotice) dispatchNotice.style.display = 'none';
       if (dispatchConsole) dispatchConsole.style.display = 'none';
+      if (dispatchSubtabView) dispatchSubtabView.style.display = 'none';
+      const activeSubBtn = document.querySelector('.supporter-subnav-btn.active');
+      if (activeSubBtn && activeSubBtn.id === 'subtab-btn-dispatch') {
+        switchSupporterSubTab('supporter-details-subtab');
+      }
     } else {
       if (dispatchNotice) dispatchNotice.style.display = 'none';
       if (dispatchConsole) dispatchConsole.style.display = 'block';
@@ -3664,13 +3687,24 @@ function quickAccessDriverConsole() {
   let supporter = getCurrentSupporter();
   if (!supporter) {
     supporter = window.supporterDB.addSupporter({
-      name: 'Registered Community Supporter',
-      email: 'supporter@simplejob.com.au',
+      name: 'Registered Courier Driver',
+      email: 'driver@simplejob.com.au',
       phone: '0400 000 000',
       suburb: 'Southport QLD 4215'
     });
     localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
   }
+  supporter.role = 'driver';
+  supporter.approved = true;
+  window.supporterDB.save();
+
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (gUser) {
+    gUser.role = 'driver';
+    gUser.isDriver = true;
+    try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+  }
+
   renderSupporterPanel();
   switchSupporterSubTab('supporter-dispatch-subtab');
   renderDriverAdminDashboard();

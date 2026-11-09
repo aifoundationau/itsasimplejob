@@ -605,7 +605,7 @@
           Become a Supporter with Google
         </h3>
         <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.6; max-width:540px; margin:0 auto 1.5rem;">
-          To become a supporter, simply use the <strong>Sign In</strong> button at the top-right of the page. Once signed in, you can register your profile details in a separate tab, and access the <strong>Driver Application</strong> under the supporter menu.
+          To become a supporter, simply use the <strong>Sign In</strong> button at the top-right of the page. Once signed in, you can register your profile details in a separate tab, and access the <strong>Driver Application</strong> at the bottom of the page.
         </p>
 
         <div style="margin:0 auto; display:inline-flex; align-items:center; gap:0.6rem; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:999px; padding:0.65rem 1.25rem; font-size:0.88rem; color:#1E40AF; font-weight:700;">
@@ -690,10 +690,11 @@
             data-agent-id="subtab-btn-bookings" data-testid="subtab-btn-bookings" aria-label="2. My Bookings History">
             <i class="fa-solid fa-clock-rotate-left"></i> 2. My Bookings History
           </button>
-          <button type="button" class="supporter-subnav-btn" id="subtab-btn-dispatch"
+          <button type="button" class="supporter-subnav-btn driver-and-superadmin-only" id="subtab-btn-dispatch"
             onclick="switchSupporterSubTab('supporter-dispatch-subtab')"
-            data-agent-id="subtab-btn-dispatch" data-testid="subtab-btn-dispatch" aria-label="3. Driver Dispatch Console">
-            <i class="fa-solid fa-clipboard-list"></i> 3. Driver Dispatch Console
+            style="display:none;"
+            data-agent-id="subtab-btn-dispatch" data-testid="subtab-btn-dispatch" aria-label="Driver Dispatch Console">
+            <i class="fa-solid fa-clipboard-list"></i> Driver Dispatch Console
           </button>
           <button type="button" class="supporter-subnav-btn" id="subtab-btn-driver-app-scroll"
             onclick="scrollToDriverApplication()"
