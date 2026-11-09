@@ -3243,6 +3243,17 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "howItWorksMovedToTermsOfServiceOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "bottomFooterLinks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "const": "Terms of Service"
+      }
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

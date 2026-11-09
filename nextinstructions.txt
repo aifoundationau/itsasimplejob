@@ -597,3 +597,9 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-09] Task 76: Remove "How It Works" from Navbar on Android & iPhone (Unchanged on Desktop):
 - Hid `#pill-how-it-works` and `#tab-btn-how-it-works` (`display: none !important;`) inside the mobile/tablet media queries (`<= 960px` and `<= 640px`) in `css/style.css` and updated `.tab-nav-bar` to a 2-column grid (`grid-template-columns: repeat(2, minmax(0, 1fr)) !important;`) so only `1. Book Courier` and `2. Closest Drivers Map` appear in the mobile navigation bar while Desktop/Laptop (`> 960px`) remains 100% unchanged.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 77: Add Complete "How It Works" to Terms of Service, Remove "How It Works" from Web App Entirely & Keep Only "Terms of Service" at Bottom Footer:
+- Expanded Section 2 (`#how-it-works`, `2. How It Works (Our Courier Network)`) in `terms.html` with the full 5-step explanation of the courier network (Supporter & Verified Driver Registration, Motor Vehicle & Bicycle Courier Service Options, 9:00 AM – 4:00 PM Pickup Window & Live GPS Driver Selection, Direct Driver PayID Settlement in AUD, and Driver Token Wallet & Distance Tiers).
+- Removed `#tab-btn-how-it-works`, `#pill-how-it-works`, and `#footer-how-it-works-link` from `index.html` so "How It Works" is removed from the web app entirely.
+- Simplified the bottom footer (`<footer class="site-footer">` in `index.html` and `<footer class="footer">` in `terms.html`) so only **Terms of Service** (`/terms.html`) appears in the bottom footer links row.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
