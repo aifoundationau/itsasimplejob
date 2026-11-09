@@ -5965,6 +5965,36 @@ body {
   }
 }
 
+/* Responsive Driver Mode Symbol Badges & Toggle Buttons (Vehicle & Bicycle Symbols) */
+.driver-mode-symbol-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.driver-mode-symbol-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.driver-mode-symbol-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ==========================================================================
    ANDROID & IPHONE ULTRA-RESPONSIVE WEB APP LAYER (MOBILE, TABLET & TOUCH ONLY)
    Strictly scoped to mobile/tablet/touch media queries so Desktop & Laptop
@@ -6425,6 +6455,24 @@ body {
   .driver-select-header {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .driver-mode-symbol-badge {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .driver-mode-symbol-toggle-row {
+    width: 100%;
+    gap: 0.35rem !important;
+  }
+
+  .driver-mode-symbol-btn {
+    flex: 1 1 auto;
+    min-height: 36px;
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.74rem !important;
   }
 
   /* Toast notification sits cleanly above the mobile bottom bar + safe area */
