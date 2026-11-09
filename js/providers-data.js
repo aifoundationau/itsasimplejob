@@ -368,9 +368,24 @@ class ProviderDatabase {
   }
 
   normalizeDriver(p) {
+    const hasVehicleCourier = p.hasVehicleCourier !== false;
+    const hasBicycleCourier = p.hasBicycleCourier === true;
     return {
       ...p,
       category: "courier",
+      hasVehicleCourier,
+      hasBicycleCourier,
+      vehicle: p.vehicle || (hasBicycleCourier && !hasVehicleCourier ? "Bicycle / E-Bike" : "Courier Van"),
+      vehiclePerKmRateAud: Number(p.vehiclePerKmRateAud ?? p.perKmRateAud ?? 2.20),
+      vehicleSameDayFeeAud: Number(p.vehicleSameDayFeeAud ?? p.sameDayFeeAud ?? 0),
+      vehicleUrgentFeeAud: Number(p.vehicleUrgentFeeAud ?? p.urgentFeeAud ?? 0),
+      bicyclePerKmRateAud: Number(p.bicyclePerKmRateAud ?? 1.80),
+      bicycleSameDayFeeAud: Number(p.bicycleSameDayFeeAud ?? 0),
+      bicycleUrgentFeeAud: Number(p.bicycleUrgentFeeAud ?? 0),
+      bicycleMaxWeightKg: Number(p.bicycleMaxWeightKg ?? 8),
+      bicycleMaxHeightCm: Number(p.bicycleMaxHeightCm ?? 35),
+      bicycleMaxWidthCm: Number(p.bicycleMaxWidthCm ?? 30),
+      bicycleMaxLengthCm: Number(p.bicycleMaxLengthCm ?? 40),
       licenceNumber: p.licenceNumber || "482910384",
       licenceState: p.licenceState || "QLD",
       licenceClass: p.licenceClass || "C (Car / Van)",
@@ -417,6 +432,26 @@ class ProviderDatabase {
   }
 
   addProvider(newProv) {
+    const cleanEmail = (newProv.email || '').toLowerCase().trim();
+    if (cleanEmail) {
+      const existing = this.providers.find(p => (p.email || '').toLowerCase().trim() === cleanEmail);
+      if (existing) {
+        const merged = this.normalizeDriver({
+          ...existing,
+          ...newProv,
+          id: existing.id,
+          serviceProviderNumber: existing.serviceProviderNumber,
+          updatedAt: new Date().toISOString()
+        });
+        Object.assign(existing, merged);
+        this.save();
+        if (window.firebaseService?.saveProviderToFirestore) {
+          try { window.firebaseService.saveProviderToFirestore(existing); } catch (e) {}
+        }
+        return existing;
+      }
+    }
+
     const id = "drv-" + Date.now().toString().slice(-5);
     const spn = newProv.serviceProviderNumber || `DRV-${Math.floor(100000 + Math.random() * 900000)}`;
 

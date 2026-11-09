@@ -348,6 +348,19 @@
                   data-agent-id="courier-desc" data-testid="courier-desc" aria-label="Package Content Details">
               </div>
 
+              <div class="input-group" style="margin-bottom:0.85rem;">
+                <label class="input-label" for="courier-delivery-mode">
+                  <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> Courier Mode Preference
+                </label>
+                <select id="courier-delivery-mode" class="form-control" onchange="calculateCourierQuote()"
+                  data-agent-id="courier-delivery-mode" data-testid="courier-delivery-mode"
+                  aria-label="Courier Mode Preference">
+                  <option value="auto" selected>Auto-Match (Vehicle or Bicycle based on item)</option>
+                  <option value="bicycle">🚲 Bicycle Courier (Letters, Documents &amp; Food Deliveries Only — Max 8kg)</option>
+                  <option value="vehicle">🚗 Motor Vehicle Courier (General Parcels &amp; Freight — up to 50kg)</option>
+                </select>
+              </div>
+
               <div class="form-row package-dimensions-grid">
                 <div class="input-group">
                   <label class="input-label" for="courier-weight">Weight (kg)</label>
@@ -733,6 +746,11 @@
               </div>
             </div>
 
+                <!-- Existing Driver Application Status Notice -->
+        <div id="drv-reg-existing-notice" class="alert-banner" style="display:none; margin-bottom:1.25rem; padding:0.85rem 1.15rem; border-radius:8px; font-size:0.875rem; background:#EFF6FF; border:1px solid #3B82F6; color:var(--primary-navy);" data-testid="drv-reg-existing-notice">
+          <i class="fa-solid fa-circle-info" style="color:#2563EB;"></i> <span id="drv-reg-existing-notice-text">Driver application on file. You can update your delivery modes and rates below anytime.</span>
+        </div>
+
         <form id="driver-registration-form" onsubmit="handleDriverRegistrationSubmit(event)">
 
           <!-- 1. Personal, Vehicle & Contact Details -->
@@ -851,30 +869,106 @@
             </div>
           </div>
 
-          <!-- 4. Custom Driver Rates ($ AUD) -->
+          <!-- 4. Courier Service Modes: Vehicle & Bicycle Option -->
           <h3
-            style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 1rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-            <i class="fa-solid fa-dollar-sign" style="color:var(--brand-orange);"></i> Your Custom Courier Rates ($ AUD Only)
+            style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 0.5rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
+            <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> Delivery Modes &amp; Custom Rates ($ AUD)
           </h3>
+          <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:1rem;">
+            Select one or both delivery options. You choose your rates for each mode independently!
+          </p>
 
-          <div class="form-row driver-rates-grid">
-            <div class="input-group">
-              <label class="input-label" for="drv-reg-per-km">Rate Per KM</label>
-              <input type="number" id="drv-reg-per-km" class="form-control" required min="0.5" max="50" step="0.1"
-                value="2.20" data-agent-id="drv-reg-per-km" data-testid="drv-reg-per-km"
-                aria-label="Rate Per KM in AUD">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+            <!-- Mode 1: Motor Vehicle Courier -->
+            <label style="background:#F8FAFC; border:2px solid #CBD5E1; border-radius:var(--radius-md); padding:0.9rem 1rem; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start;">
+              <input type="checkbox" id="drv-reg-has-vehicle" checked onchange="toggleDriverRegModesUI()"
+                style="margin-top:0.25rem; width:18px; height:18px; accent-color:var(--brand-orange);"
+                data-agent-id="drv-reg-has-vehicle" data-testid="drv-reg-has-vehicle" aria-label="Enable Motor Vehicle Courier">
+              <div>
+                <strong style="color:var(--primary-navy); font-size:0.95rem; display:block;">
+                  <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Motor Vehicle Courier
+                </strong>
+                <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-top:0.2rem;">
+                  General parcels &amp; freight up to 50kg (Van, Ute, Car).
+                </span>
+              </div>
+            </label>
+
+            <!-- Mode 2: Bicycle Courier -->
+            <label style="background:#F0FDF4; border:2px solid #86EFAC; border-radius:var(--radius-md); padding:0.9rem 1rem; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start;">
+              <input type="checkbox" id="drv-reg-has-bicycle" onchange="toggleDriverRegModesUI()"
+                style="margin-top:0.25rem; width:18px; height:18px; accent-color:#059669;"
+                data-agent-id="drv-reg-has-bicycle" data-testid="drv-reg-has-bicycle" aria-label="Enable Bicycle Courier Option">
+              <div>
+                <strong style="color:#065F46; font-size:0.95rem; display:block;">
+                  <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Option
+                </strong>
+                <span style="font-size:0.78rem; color:#047857; display:block; margin-top:0.2rem;">
+                  Small items only: letters, documents &amp; food deliveries (Max 8kg).
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Section 4A: Motor Vehicle Custom Rates ($ AUD) -->
+          <div id="drv-reg-vehicle-rates-box">
+            <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.5rem;">
+              <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Motor Vehicle Courier Rates ($ AUD Only)
+            </h4>
+            <div class="form-row driver-rates-grid" style="margin-bottom:1rem;">
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-per-km">Vehicle Rate Per KM</label>
+                <input type="number" id="drv-reg-per-km" class="form-control" min="0.5" max="50" step="0.1"
+                  value="2.20" data-agent-id="drv-reg-per-km" data-testid="drv-reg-per-km"
+                  aria-label="Vehicle Rate Per KM in AUD">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-sameday-fee">Vehicle Same-Day Fee (default 0)</label>
+                <input type="number" id="drv-reg-sameday-fee" class="form-control" min="0" max="500" step="1"
+                  value="0" data-agent-id="drv-reg-sameday-fee" data-testid="drv-reg-sameday-fee"
+                  aria-label="Vehicle Same Day Fee">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-urgent-fee">Vehicle Urgent Fee (default 0)</label>
+                <input type="number" id="drv-reg-urgent-fee" class="form-control" min="0" max="500" step="1"
+                  value="0" data-agent-id="drv-reg-urgent-fee" data-testid="drv-reg-urgent-fee"
+                  aria-label="Vehicle Urgent Fee">
+              </div>
             </div>
-            <div class="input-group">
-              <label class="input-label" for="drv-reg-sameday-fee">Your Same-Day Fee (default 0)</label>
-              <input type="number" id="drv-reg-sameday-fee" class="form-control" required min="0" max="500" step="1"
-                value="0" data-agent-id="drv-reg-sameday-fee" data-testid="drv-reg-sameday-fee"
-                aria-label="Your Same Day Fee">
+          </div>
+
+          <!-- Section 4B: Bicycle Courier Custom Rates ($ AUD) -->
+          <div id="drv-reg-bicycle-rates-box" style="display:none; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-md); padding:1rem; margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.5rem;">
+              <h4 style="font-size:0.95rem; font-weight:800; color:#065F46; margin:0;">
+                <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Rates ($ AUD Only — Letters, Documents &amp; Food Deliveries)
+              </h4>
+              <span style="font-size:0.72rem; font-weight:800; background:#DCFCE7; color:#15803D; padding:0.15rem 0.5rem; border-radius:4px;">
+                Max 8kg • Compact Item Limit
+              </span>
             </div>
-            <div class="input-group">
-              <label class="input-label" for="drv-reg-urgent-fee">Your Urgent Fee (default 0)</label>
-              <input type="number" id="drv-reg-urgent-fee" class="form-control" required min="0" max="500" step="1"
-                value="0" data-agent-id="drv-reg-urgent-fee" data-testid="drv-reg-urgent-fee"
-                aria-label="Your Urgent Fee">
+            <p style="font-size:0.78rem; color:#166534; margin-bottom:0.85rem;">
+              Set your custom bicycle delivery rates for lightweight small items:
+            </p>
+            <div class="form-row driver-rates-grid">
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-bike-per-km" style="color:#065F46;">Bicycle Rate Per KM ($ AUD)</label>
+                <input type="number" id="drv-reg-bike-per-km" class="form-control" min="0.5" max="50" step="0.1"
+                  value="1.80" data-agent-id="drv-reg-bike-per-km" data-testid="drv-reg-bike-per-km"
+                  aria-label="Bicycle Rate Per KM in AUD">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-bike-sameday-fee" style="color:#065F46;">Bicycle Same-Day Fee (default 0)</label>
+                <input type="number" id="drv-reg-bike-sameday-fee" class="form-control" min="0" max="500" step="1"
+                  value="0" data-agent-id="drv-reg-bike-sameday-fee" data-testid="drv-reg-bike-sameday-fee"
+                  aria-label="Bicycle Same Day Fee">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-bike-urgent-fee" style="color:#065F46;">Bicycle Urgent Fee (default 0)</label>
+                <input type="number" id="drv-reg-bike-urgent-fee" class="form-control" min="0" max="500" step="1"
+                  value="0" data-agent-id="drv-reg-bike-urgent-fee" data-testid="drv-reg-bike-urgent-fee"
+                  aria-label="Bicycle Urgent Fee">
+              </div>
             </div>
           </div>
 
@@ -1060,8 +1154,27 @@
           </div>
 
           <form id="driver-admin-settings-form" onsubmit="saveDriverAdminProfile(event)">
-            <div class="input-group">
-              <label class="input-label" for="adm-drv-per-km">Rate Per KM ($ AUD / km)</label>
+            <!-- Courier Service Modes Selection in Driver Admin -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem; margin-bottom:1rem;">
+              <label style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.65rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
+                <input type="checkbox" id="adm-drv-has-vehicle" checked onchange="toggleAdminModesUI()"
+                  style="width:16px; height:16px; accent-color:var(--brand-orange);"
+                  data-agent-id="adm-drv-has-vehicle" data-testid="adm-drv-has-vehicle" aria-label="Admin Has Vehicle Courier">
+                <span style="font-size:0.82rem; font-weight:700; color:var(--primary-navy);"><i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Vehicle</span>
+              </label>
+
+              <label style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:6px; padding:0.65rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
+                <input type="checkbox" id="adm-drv-has-bicycle" onchange="toggleAdminModesUI()"
+                  style="width:16px; height:16px; accent-color:#059669;"
+                  data-agent-id="adm-drv-has-bicycle" data-testid="adm-drv-has-bicycle" aria-label="Admin Has Bicycle Courier">
+                <span style="font-size:0.82rem; font-weight:700; color:#065F46;"><i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle (Letters &amp; Food)</span>
+              </label>
+            </div>
+
+            <!-- Motor Vehicle Courier Rates -->
+            <div id="adm-vehicle-rates-box">
+              <div class="input-group">
+                <label class="input-label" for="adm-drv-per-km">Vehicle Rate Per KM ($ AUD / km)</label>
               <input type="number" id="adm-drv-per-km" class="form-control" step="0.1" min="0.5" max="50" required
                 placeholder="2.20" data-agent-id="adm-drv-per-km" data-testid="adm-drv-per-km" aria-label="Rate Per KM in AUD">
             </div>
@@ -1078,6 +1191,31 @@
                 <input type="number" id="adm-drv-urgent-fee" class="form-control" step="1" min="0" max="500" required
                   placeholder="0" data-agent-id="adm-drv-urgent-fee" data-testid="adm-drv-urgent-fee"
                   aria-label="Your Urgent Fee AUD">
+              </div>
+            </div>
+            </div> <!-- /#adm-vehicle-rates-box -->
+
+            <!-- Bicycle Courier Rates (Letters & Food Deliveries Only) -->
+            <div id="adm-bicycle-rates-box" style="display:none; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.85rem; margin-bottom:1rem;">
+              <div style="font-size:0.82rem; font-weight:800; color:#065F46; margin-bottom:0.4rem;">
+                <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Rates ($ AUD — Letters &amp; Food Deliveries Only, Max 8kg)
+              </div>
+              <div class="input-group" style="margin-bottom:0.5rem;">
+                <label class="input-label" for="adm-drv-bike-per-km" style="color:#065F46;">Bicycle Rate Per KM ($ AUD / km)</label>
+                <input type="number" id="adm-drv-bike-per-km" class="form-control" step="0.1" min="0.5" max="50"
+                  placeholder="1.80" data-agent-id="adm-drv-bike-per-km" data-testid="adm-drv-bike-per-km" aria-label="Bicycle Rate Per KM AUD">
+              </div>
+              <div class="form-row">
+                <div class="input-group">
+                  <label class="input-label" for="adm-drv-bike-sameday-fee" style="color:#065F46;">Bicycle Same-Day Fee ($ AUD)</label>
+                  <input type="number" id="adm-drv-bike-sameday-fee" class="form-control" step="1" min="0" max="500"
+                    placeholder="0" data-agent-id="adm-drv-bike-sameday-fee" data-testid="adm-drv-bike-sameday-fee" aria-label="Bicycle Same Day Fee AUD">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="adm-drv-bike-urgent-fee" style="color:#065F46;">Bicycle Urgent Fee ($ AUD)</label>
+                  <input type="number" id="adm-drv-bike-urgent-fee" class="form-control" step="1" min="0" max="500"
+                    placeholder="0" data-agent-id="adm-drv-bike-urgent-fee" data-testid="adm-drv-bike-urgent-fee" aria-label="Bicycle Urgent Fee AUD">
+                </div>
               </div>
             </div>
 

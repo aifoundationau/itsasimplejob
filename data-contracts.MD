@@ -1719,3 +1719,33 @@ Defines the state transition and side-effects when SuperAdmin revokes an approve
    - In the SuperAdmin Driver Approval Console, the badge switches to yellow `"Pending SuperAdmin Approval"`, and the action button reverts to `"Approve Driver"`.
    - If the revoked driver navigates to the Driver Dispatch Console, the `#supporter-not-driver-notice` banner is rendered, preventing unauthorized dispatch.
 
+
+### 11.4 Bicycle Courier & Unique Driver Application Contract (`BicycleCourierAndUniqueApplicationContract`)
+Defines the strict database schema, business rules, and UI behavior for courier service modes (Motor Vehicle vs. Bicycle) and unique email application enforcement:
+
+1. **Unique Application per Email Address:**
+   - **Constraint:** Strictly only one driver application is permitted per email address across `driver_applications`, `providers`, and `localStorage`.
+   - **Behavior on Resubmission:** If an application exists with the given email address, resubmission updates the existing record (`updatedAt: ISO8601`) rather than creating a duplicate entry.
+   - **Form Pre-fill & Status Banner:** Opening the Driver Application tab checks `window.providerDB.getAll()` for the logged-in supporter's email. If found, an alert banner (`#drv-reg-existing-notice`) displays the current status and pre-populates all vehicle/bicycle rates and limits, switching the submit button to `"Update Driver Profile, Modes & Rates ($ AUD)"`.
+
+2. **Dual Service Modes & Independent Custom Rates ($ AUD):**
+   - **Motor Vehicle Courier (`hasVehicleCourier: boolean`, default `true`):**
+     - Covers cars, vans, utes, and light trucks.
+     - Custom rates: `vehiclePerKmRateAud` (minimum $0.50/km, default $2.20), `vehicleSameDayFeeAud` (minimum $0.00), `vehicleUrgentFeeAud` (minimum $0.00).
+     - Package capacity: Configurable weight (default 50kg) and package dimensions (default 70H × 50W × 50L cm).
+   - **Bicycle Courier Option (`hasBicycleCourier: boolean`, default `false`):**
+     - Covers push bicycles, e-bikes, and cargo delivery bikes.
+     - **Item Restriction:** Strictly limited to small items: letters, documents, and food deliveries only.
+     - **Bicycle Limits:** Maximum 8 kg, dimensions maximum 35 cm (H) × 30 cm (W) × 40 cm (L) (standard courier backpack or pannier).
+     - Custom rates: `bicyclePerKmRateAud` (minimum $0.50/km, default $1.80), `bicycleSameDayFeeAud` (minimum $0.00), `bicycleUrgentFeeAud` (minimum $0.00).
+   - **Mode Selection Freedom:**
+     - A driver can offer **Vehicle Only**, **Bicycle Only**, or **BOTH**.
+     - When offering both, the driver chooses independent custom rates for each mode.
+     - Direct payment via PayID remains 100% in AUD directly to the driver's PayID account.
+
+3. **Customer Booking & Dispatch Integration:**
+   - **Delivery Mode Selector (`#courier-delivery-mode`):**
+     - `'auto'`: Auto-detects based on package description and size. If item is <= 8kg, fits 35×30×40cm, and is a letter/food/document/small parcel, bicycle courier rates are preferred when supported by the driver.
+     - `'bicycle'`: Strictly filters to drivers with `hasBicycleCourier === true`. Enforces <= 8kg and <= 35×30×40cm.
+     - `'vehicle'`: Strictly filters to drivers with `hasVehicleCourier !== false`.
+   - **Order Record (`courierOrderDB.addOrder`):** Records `deliveryMode` (`'vehicle' | 'bicycle'`) and `deliveryModeLabel` alongside the item dimensions and specific custom rates charged.

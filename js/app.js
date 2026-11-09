@@ -67,6 +67,15 @@ function initApp() {
   } catch (e) {}
   try { setupOsmAddressAutocomplete('courier-cust-address'); } catch (e) {}
   try { setupOsmAddressAutocomplete('supporter-reg-suburb'); } catch (e) {}
+  const drvEmailInput = document.getElementById('drv-reg-email');
+  if (drvEmailInput) {
+    drvEmailInput.addEventListener('change', () => {
+      try { prefillDriverRegistrationForm(); } catch (e) {}
+    });
+    drvEmailInput.addEventListener('blur', () => {
+      try { prefillDriverRegistrationForm(); } catch (e) {}
+    });
+  }
   try { setupOsmAddressAutocomplete('contractor-search-location', (place) => onContractorLocationSelected(place)); } catch (e) {}
   try {
     setupOsmAddressAutocomplete('drv-reg-address', (place) => {
@@ -2454,25 +2463,85 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
   const origCoords = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
   const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => d.approved !== false && d.status !== 'pending_approval') : [];
 
-  // Rank drivers by distance to Pickup Origin and check package weight + HxWxL capacity
+    // Rank drivers by distance to Pickup Origin and check package weight + HxWxL capacity
+  const deliveryModePref = document.getElementById('courier-delivery-mode')?.value || 'auto';
+  const pkgDesc = (document.getElementById('courier-desc')?.value || '').toLowerCase();
+
+  const isBicycleSizeEligible = weightKg <= 8 && heightCm <= 35 && widthCm <= 30 && lengthCm <= 40;
+  const isBicycleContentEligible = isBicycleSizeEligible && (
+    pkgDesc.includes('letter') || pkgDesc.includes('food') || pkgDesc.includes('doc') ||
+    pkgDesc.includes('envelope') || pkgDesc.includes('paper') || pkgDesc.includes('meal') ||
+    pkgDesc.includes('small') || deliveryModePref === 'bicycle'
+  );
+
   const rankedDrivers = allDrivers.map(drv => {
     const dLat = drv.lat ?? -27.9635;
     const dLng = drv.lng ?? 153.4064;
     const distToPickupKm = computeDistanceInKm(origCoords.lat, origCoords.lng, dLat, dLng);
 
-    const maxW = drv.maxWeightKg || 500;
-    const maxH = drv.maxHeightCm || 150;
-    const maxWi = drv.maxWidthCm || 130;
-    const maxL = drv.maxLengthCm || 250;
+    const hasVeh = drv.hasVehicleCourier !== false;
+    const hasBic = !!drv.hasBicycleCourier;
 
-    const fitsWeight = weightKg <= maxW;
-    const fitsDims = heightCm <= maxH && widthCm <= maxWi && lengthCm <= maxL;
-    const fitsPackage = fitsWeight && fitsDims;
+    let effectiveMode = 'vehicle';
+    if (deliveryModePref === 'bicycle') {
+      effectiveMode = 'bicycle';
+    } else if (deliveryModePref === 'vehicle') {
+      effectiveMode = 'vehicle';
+    } else {
+      // 'auto' mode preference: bicycle courier if small letter/food item and driver has bicycle mode
+      effectiveMode = (isBicycleContentEligible && hasBic) ? 'bicycle' : 'vehicle';
+    }
+
+    let fitsPackage = false;
+    let fitsWeight = false;
+    let fitsDims = false;
+    let fitBadge = '';
+
+    if (effectiveMode === 'bicycle') {
+      const bMaxW = drv.bicycleMaxWeightKg || 8;
+      const bMaxH = drv.bicycleMaxHeightCm || 35;
+      const bMaxWi = drv.bicycleMaxWidthCm || 30;
+      const bMaxL = drv.bicycleMaxLengthCm || 40;
+
+      fitsWeight = weightKg <= bMaxW;
+      fitsDims = heightCm <= bMaxH && widthCm <= bMaxWi && lengthCm <= bMaxL;
+      fitsPackage = hasBic && fitsWeight && fitsDims;
+
+      if (!hasBic) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-ban"></i> No Bicycle Service</span>';
+      } else if (!fitsWeight) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Bicycle Weight (' + bMaxW + 'kg max)</span>';
+      } else if (!fitsDims) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Bicycle Dimensions (' + bMaxH + '×' + bMaxWi + '×' + bMaxL + 'cm)</span>';
+      } else {
+        fitBadge = '<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-bicycle"></i> Fits Bicycle (Letters/Food/Small, Max ' + bMaxW + 'kg • ' + bMaxH + '×' + bMaxWi + '×' + bMaxL + 'cm)</span>';
+      }
+    } else {
+      const maxW = drv.maxWeightKg || 500;
+      const maxH = drv.maxHeightCm || 150;
+      const maxWi = drv.maxWidthCm || 130;
+      const maxL = drv.maxLengthCm || 250;
+
+      fitsWeight = weightKg <= maxW;
+      fitsDims = heightCm <= maxH && widthCm <= maxWi && lengthCm <= maxL;
+      fitsPackage = hasVeh && fitsWeight && fitsDims;
+
+      if (!hasVeh) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-ban"></i> Vehicle Mode Inactive</span>';
+      } else if (!fitsWeight) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Max Weight (' + maxW + 'kg)</span>';
+      } else if (!fitsDims) {
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Max Size (' + maxH + '×' + maxWi + '×' + maxL + 'cm)</span>';
+      } else {
+        fitBadge = '<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-truck"></i> Fits Vehicle (Max ' + maxW + 'kg • ' + maxH + '×' + maxWi + '×' + maxL + 'cm)</span>';
+      }
+    }
 
     const quote = cur.calculateDriverCourierPrice({
       distanceKm,
       speedTier,
-      driver: drv
+      driver: drv,
+      deliveryMode: effectiveMode
     });
 
     return {
@@ -2481,6 +2550,8 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       fitsWeight,
       fitsDims,
       fitsPackage,
+      effectiveMode,
+      fitBadge,
       quote
     };
   });
@@ -2527,14 +2598,11 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       const isSelected = d.id === appState.selectedCourierDriverId;
       const isClosest = idx === 0 && item.fitsPackage;
       const isMapOpen = appState.expandedDriverMapId === d.id;
+      const mode = item.effectiveMode;
 
-      let fitBadge = `<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-check"></i> Fits Package (Max ${d.maxWeightKg}kg • ${d.maxHeightCm}×${d.maxWidthCm}×${d.maxLengthCm}cm)</span>`;
-      if (!item.fitsPackage) {
-        const reason = !item.fitsWeight
-          ? `Over Max Weight (${d.maxWeightKg}kg)`
-          : `Over Max Size (${d.maxHeightCm}×${d.maxWidthCm}×${d.maxLengthCm}cm)`;
-        fitBadge = `<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> ${reason}</span>`;
-      }
+      const modeBadge = mode === 'bicycle'
+        ? '<span style="background:#0284C7; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-bicycle"></i> BICYCLE COURIER</span>'
+        : '<span style="background:#475569; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-truck"></i> MOTOR VEHICLE</span>';
 
       return `
         <div
@@ -2550,19 +2618,20 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <strong style="font-size:0.98rem; color:var(--primary-navy);">${d.name}</strong>
+                  ${modeBadge}
                   ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
                   ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
                 </div>
-                <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${d.vehicle || d.tradeTitle}</div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${mode === 'bicycle' ? 'Bicycle / E-Bike / Cargo Bike' : (d.vehicle || d.tradeTitle || 'Courier Vehicle')}</div>
                 <div style="font-size:0.74rem; color:var(--text-muted);">
-                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • Lic: ${d.licenceState || 'QLD'} #${d.licenceNumber} (${d.licenceClass || 'C'})
+                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • Lic: ${d.licenceState || 'QLD'} #${d.licenceNumber || 'DL-9901'} (${d.licenceClass || 'C'})
                 </div>
               </div>
             </div>
             <div style="text-align:right;">
               <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);">$${q.totalAud.toFixed(2)} AUD</div>
               <div style="font-size:0.72rem; color:var(--text-muted);">
-                $${Number(d.perKmRateAud).toFixed(2)}/km (${q.distanceKm.toFixed(1)}km) • Same-Day +$${d.sameDayFeeAud} • Urgent +$${d.urgentFeeAud}
+                $${Number(q.perKmRateAud).toFixed(2)}/km (${q.distanceKm.toFixed(1)}km) • Same-Day +$${q.sameDayFeeAud} • Urgent +$${q.urgentFeeAud}
               </div>
             </div>
           </div>
@@ -2570,12 +2639,11 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
           <!-- Driver Card Footer + Map Dropdown Toggle Button -->
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px dashed var(--border-light); font-size:0.74rem;">
             <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-              ${fitBadge}
+              ${item.fitBadge}
               <span style="color:#047857; font-weight:700;">
                 <i class="fa-solid fa-money-bill-transfer"></i> PayID (${(d.payIdType || 'phone').toUpperCase()}): <strong>${d.payIdValue}</strong>
               </span>
             </div>
-
             <button
               type="button"
               class="btn btn-outline btn-sm"
@@ -2596,7 +2664,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
             onclick="event.stopPropagation();"
             style="display:${isMapOpen ? 'block' : 'none'}; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border-light);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.76rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.45rem;">
-              <span><i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> ${d.name} (${d.baseSuburb || 'Gold Coast'}) → Pickup (${item.distToPickupKm.toFixed(1)} km) &amp; Delivery (${distanceKm.toFixed(1)} km)</span>
+              <span><i class="fa-solid ${mode === 'bicycle' ? 'fa-bicycle' : 'fa-truck-fast'}" style="color:var(--brand-orange);"></i> ${d.name} (${d.baseSuburb || 'Gold Coast'}) → Pickup (${item.distToPickupKm.toFixed(1)} km) &amp; Delivery (${distanceKm.toFixed(1)} km)</span>
               <span style="color:#059669; font-weight:800;">~${durationMins} mins road route</span>
             </div>
             <div id="driver-leaflet-map-${d.id}" style="height:245px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"></div>
@@ -2622,6 +2690,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     distToPickupKm: selectedEntry.distToPickupKm,
     fitsPackage: selectedEntry.fitsPackage,
     quote: q,
+    deliveryMode: selectedEntry.effectiveMode,
     tokenCharge,
     distanceKm,
     durationMins,
@@ -2762,6 +2831,8 @@ function submitCourierBooking() {
     totalAud: calc.quote.totalAud,
     tokensChargedToDriver: tokenCharge.tokens,
     tokenTierLabel: tokenCharge.tierLabel,
+    deliveryMode: calc.deliveryMode || calc.quote?.deliveryMode || 'vehicle',
+    deliveryModeLabel: calc.quote?.deliveryModeLabel || (calc.deliveryMode === 'bicycle' ? 'Bicycle Courier (Letters, Food & Small Items)' : 'Motor Vehicle Courier'),
     paymentMethod: 'Direct to Driver PayID (AUD)',
     status: 'Scheduled (9am–4pm Pickup)'
   });
@@ -2988,20 +3059,11 @@ function switchSupporterSubTab(subtabId) {
     document.getElementById('subtab-btn-details')?.classList.add('active');
   } else if (subtabId === 'supporter-bookings-subtab') {
     document.getElementById('subtab-btn-bookings')?.classList.add('active');
+    try { prefillDriverRegistrationForm(supporter); } catch (e) {}
     try { renderSupporterBookings(); } catch (e) {}
   } else if (subtabId === 'supporter-driver-app-subtab') {
     document.getElementById('subtab-btn-driver-app')?.classList.add('active');
-    const supporter = getCurrentSupporter();
-    if (supporter) {
-      const drvName = document.getElementById('drv-reg-name');
-      if (drvName && !drvName.value) drvName.value = supporter.name || '';
-      const drvEmail = document.getElementById('drv-reg-email');
-      if (drvEmail && !drvEmail.value) drvEmail.value = supporter.email || '';
-      const drvPhone = document.getElementById('drv-reg-phone');
-      if (drvPhone && !drvPhone.value && supporter.phone) drvPhone.value = supporter.phone;
-      const drvAddr = document.getElementById('drv-reg-address');
-      if (drvAddr && !drvAddr.value && supporter.suburb) drvAddr.value = supporter.suburb;
-    }
+    try { prefillDriverRegistrationForm(); } catch (e) { console.warn(e); }
   } else if (subtabId === 'supporter-dispatch-subtab') {
     document.getElementById('subtab-btn-dispatch')?.classList.add('active');
     try { renderDriverAdminDashboard(); } catch (e) {}
@@ -3322,6 +3384,121 @@ window.resetSupporterProfile = resetSupporterProfile;
 /**
  * Register a New Courier Driver (Mandatory Licence, Address, Phone, Email, PayID, Rates & Max HxWxL/Weight)
  */
+
+function toggleDriverRegModesUI() {
+  const vBox = document.getElementById('drv-reg-vehicle-rates-box');
+  const bBox = document.getElementById('drv-reg-bicycle-rates-box');
+  const hasVehicle = document.getElementById('drv-reg-has-vehicle')?.checked ?? true;
+  const hasBicycle = document.getElementById('drv-reg-has-bicycle')?.checked ?? false;
+
+  // At least one mode must remain selected
+  if (!hasVehicle && !hasBicycle) {
+    const bikeBox = document.getElementById('drv-reg-has-bicycle');
+    if (bikeBox) bikeBox.checked = true;
+  }
+
+  if (vBox) vBox.style.display = (document.getElementById('drv-reg-has-vehicle')?.checked) ? 'block' : 'none';
+  if (bBox) bBox.style.display = (document.getElementById('drv-reg-has-bicycle')?.checked) ? 'block' : 'none';
+}
+window.toggleDriverRegModesUI = toggleDriverRegModesUI;
+
+function toggleAdminModesUI() {
+  const vBox = document.getElementById('adm-vehicle-rates-box');
+  const bBox = document.getElementById('adm-bicycle-rates-box');
+  const hasVehicle = document.getElementById('adm-drv-has-vehicle')?.checked ?? true;
+  const hasBicycle = document.getElementById('adm-drv-has-bicycle')?.checked ?? false;
+
+  if (!hasVehicle && !hasBicycle) {
+    const bikeBox = document.getElementById('adm-drv-has-bicycle');
+    if (bikeBox) bikeBox.checked = true;
+  }
+
+  if (vBox) vBox.style.display = (document.getElementById('adm-drv-has-vehicle')?.checked) ? 'block' : 'none';
+  if (bBox) bBox.style.display = (document.getElementById('adm-drv-has-bicycle')?.checked) ? 'block' : 'none';
+}
+window.toggleAdminModesUI = toggleAdminModesUI;
+
+function prefillDriverRegistrationForm(supporter) {
+  if (!supporter) supporter = getCurrentSupporter();
+  const form = document.getElementById('driver-registration-form');
+  if (!form) return;
+
+  const emailToMatch = (supporter?.email || document.getElementById('drv-reg-email')?.value || '').toLowerCase().trim();
+  const existingDriver = (window.providerDB?.getAll?.() || []).find(d => 
+    (d.email || '').toLowerCase().trim() === emailToMatch
+  );
+
+  const notice = document.getElementById('drv-reg-existing-notice');
+  const noticeText = document.getElementById('drv-reg-existing-notice-text');
+  const submitBtn = document.getElementById('btn-submit-driver-registration');
+
+  if (existingDriver) {
+    if (notice) {
+      notice.style.display = 'block';
+      const statusLabel = existingDriver.isApproved ? 'Approved & Active' : (existingDriver.status || 'Pending Approval');
+      if (noticeText) {
+        noticeText.innerHTML = '<strong>Driver Application on File:</strong> Registered for <strong>' + existingDriver.email + '</strong> (Status: <span class="badge" style="background:#10B981; color:#fff; padding:2px 8px; border-radius:4px;">' + statusLabel + '</span>). You can update your courier services, custom rates, and limits below anytime.';
+      }
+    }
+    if (submitBtn) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update Driver Profile, Modes & Rates ($ AUD)';
+    }
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null) el.value = val;
+    };
+
+    setVal('drv-reg-name', existingDriver.name || supporter?.name);
+    setVal('drv-reg-phone', existingDriver.phone || supporter?.phone);
+    setVal('drv-reg-email', existingDriver.email || supporter?.email);
+    setVal('drv-reg-address', existingDriver.suburb || existingDriver.address || supporter?.suburb);
+    setVal('drv-reg-vehicle', existingDriver.vehicleMake || existingDriver.vehicle || '');
+    setVal('drv-reg-licence', existingDriver.licenceNumber || existingDriver.driverLicence || '');
+    setVal('drv-reg-payid', existingDriver.payId || existingDriver.driverPayId || '');
+
+    const chkVehicle = document.getElementById('drv-reg-has-vehicle');
+    if (chkVehicle) chkVehicle.checked = existingDriver.hasVehicleCourier !== false;
+    const chkBicycle = document.getElementById('drv-reg-has-bicycle');
+    if (chkBicycle) chkBicycle.checked = !!existingDriver.hasBicycleCourier;
+
+    setVal('drv-reg-rate-per-km', existingDriver.vehiclePerKmRateAud ?? existingDriver.perKmRateAud ?? existingDriver.perKmRate ?? 2.50);
+    setVal('drv-reg-sameday-fee', existingDriver.vehicleSameDayFeeAud ?? existingDriver.sameDayFeeAud ?? 0);
+    setVal('drv-reg-urgent-fee', existingDriver.vehicleUrgentFeeAud ?? existingDriver.urgentFeeAud ?? 0);
+    setVal('drv-reg-max-weight', existingDriver.maxWeightKg ?? 50);
+    setVal('drv-reg-max-height', existingDriver.maxHeightCm ?? 70);
+    setVal('drv-reg-max-width', existingDriver.maxWidthCm ?? 50);
+    setVal('drv-reg-max-length', existingDriver.maxLengthCm ?? 50);
+
+    setVal('drv-reg-bike-per-km', existingDriver.bicyclePerKmRateAud ?? 1.80);
+    setVal('drv-reg-bike-sameday-fee', existingDriver.bicycleSameDayFeeAud ?? 0);
+    setVal('drv-reg-bike-urgent-fee', existingDriver.bicycleUrgentFeeAud ?? 0);
+
+    if (existingDriver.coords?.lat) setVal('drv-reg-lat', existingDriver.coords.lat);
+    if (existingDriver.coords?.lng) setVal('drv-reg-lng', existingDriver.coords.lng);
+
+    toggleDriverRegModesUI();
+  } else {
+    if (notice) notice.style.display = 'none';
+    if (submitBtn) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Register as Driver &amp; Activate Live GPS Profile';
+    }
+    if (supporter) {
+      const setValIfEmpty = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && !el.value && val) el.value = val;
+      };
+      setValIfEmpty('drv-reg-name', supporter.name);
+      setValIfEmpty('drv-reg-phone', supporter.phone);
+      setValIfEmpty('drv-reg-email', supporter.email);
+      setValIfEmpty('drv-reg-address', supporter.suburb || supporter.address);
+    }
+    toggleDriverRegModesUI();
+  }
+}
+window.prefillDriverRegistrationForm = prefillDriverRegistrationForm;
+
+
 function handleDriverRegistrationSubmit(event) {
   if (event && event.preventDefault) event.preventDefault();
 
@@ -3341,9 +3518,19 @@ function handleDriverRegistrationSubmit(event) {
   const payIdType = (payIdValue && payIdValue.includes('@')) ? 'email' : ((payIdValue && /^\d{11}$/.test(payIdValue.replace(/\s+/g, ''))) ? 'abn' : 'phone');
   const payIdAccountName = businessName || name;
 
+  const hasVehicle = document.getElementById('drv-reg-has-vehicle')?.checked ?? true;
+  const hasBicycle = document.getElementById('drv-reg-has-bicycle')?.checked ?? false;
+
   const perKmRateAud = Math.max(0.5, parseFloat(document.getElementById('drv-reg-per-km')?.value) || 2.20);
   const sameDayFeeAud = Math.max(0, parseFloat(document.getElementById('drv-reg-sameday-fee')?.value) || 0);
   const urgentFeeAud = Math.max(0, parseFloat(document.getElementById('drv-reg-urgent-fee')?.value) || 0);
+
+  const bikePerKmRaw = document.getElementById('drv-reg-bike-per-km')?.value;
+  const bikeSameDayRaw = document.getElementById('drv-reg-bike-sameday-fee')?.value;
+  const bikeUrgentRaw = document.getElementById('drv-reg-bike-urgent-fee')?.value;
+  const bicyclePerKmRateAud = bikePerKmRaw !== '' && !isNaN(parseFloat(bikePerKmRaw)) ? Math.max(0.5, parseFloat(bikePerKmRaw)) : 1.80;
+  const bicycleSameDayFeeAud = bikeSameDayRaw !== '' && !isNaN(parseFloat(bikeSameDayRaw)) ? Math.max(0, parseFloat(bikeSameDayRaw)) : 0;
+  const bicycleUrgentFeeAud = bikeUrgentRaw !== '' && !isNaN(parseFloat(bikeUrgentRaw)) ? Math.max(0, parseFloat(bikeUrgentRaw)) : 0;
 
   const maxWeightKg = Math.max(1, parseFloat(document.getElementById('drv-reg-max-weight')?.value) || 50);
   const maxHeightCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-height')?.value) || 70);
@@ -3358,42 +3545,106 @@ function handleDriverRegistrationSubmit(event) {
     return;
   }
 
+  const cleanEmail = email.toLowerCase().trim();
   const currentSupporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   const currentGoogleUser = window.firebaseService?.getCurrentGoogleUser();
   const userUid = currentGoogleUser?.uid || currentSupporter?.googleUid || currentSupporter?.id;
 
-  const savedDriver = window.providerDB.addProvider({
-    uid: userUid,
-    name,
-    businessName,
-    tradeTitle: `Courier Driver (${vehicle})`,
-    phone,
-    email,
-    address,
-    baseSuburb: address.split(',').slice(-1)[0]?.trim() || address,
-    vehicle,
-    licenceNumber,
-    licenceState,
-    licenceClass,
-    licenceExpiry,
-    payIdType,
-    payIdValue,
-    payIdAccountName,
-    perKmRateAud,
-    sameDayFeeAud,
-    urgentFeeAud,
-    maxWeightKg,
-    maxHeightCm,
-    maxWidthCm,
-    maxLengthCm,
-    tokenBalance: 25, // Starter token balance
-    approved: false, // Requires SuperAdmin approval
-    status: 'pending_approval',
-    lat,
-    lng
-  });
+  const tradeTitle = (hasVehicle && hasBicycle) 
+    ? `Courier Driver (${vehicle}) & Bicycle Runner` 
+    : (hasBicycle ? 'Bicycle Courier (Letters & Food Only)' : `Courier Driver (${vehicle})`);
 
-  // Hardwire RBAC: Save application to Firestore database under driver_applications
+  // Enforce ONLY ONE driver application per email address
+  const existingDriver = window.providerDB?.getAll()?.find(d => (d.email || '').toLowerCase().trim() === cleanEmail);
+
+  let savedDriver;
+  if (existingDriver) {
+    savedDriver = window.providerDB.updateProvider(existingDriver.id, {
+      name,
+      businessName,
+      tradeTitle,
+      phone,
+      email: cleanEmail,
+      address,
+      baseSuburb: address.split(',').slice(-1)[0]?.trim() || address,
+      vehicle: hasVehicle ? vehicle : 'Bicycle / E-Bike',
+      licenceNumber,
+      licenceState,
+      licenceClass,
+      licenceExpiry,
+      payIdType,
+      payIdValue,
+      payIdAccountName,
+      hasVehicleCourier: hasVehicle,
+      hasBicycleCourier: hasBicycle,
+      perKmRateAud,
+      vehiclePerKmRateAud: perKmRateAud,
+      sameDayFeeAud,
+      vehicleSameDayFeeAud: sameDayFeeAud,
+      urgentFeeAud,
+      vehicleUrgentFeeAud: urgentFeeAud,
+      bicyclePerKmRateAud,
+      bicycleSameDayFeeAud,
+      bicycleUrgentFeeAud,
+      bicycleMaxWeightKg: 8,
+      bicycleMaxHeightCm: 35,
+      bicycleMaxWidthCm: 30,
+      bicycleMaxLengthCm: 40,
+      maxWeightKg,
+      maxHeightCm,
+      maxWidthCm,
+      maxLengthCm,
+      lat,
+      lng
+    });
+    showToast(`ℹ️ Updated existing application on file for ${cleanEmail}! Rates and modes saved.`);
+  } else {
+    savedDriver = window.providerDB.addProvider({
+      uid: userUid,
+      name,
+      businessName,
+      tradeTitle,
+      phone,
+      email: cleanEmail,
+      address,
+      baseSuburb: address.split(',').slice(-1)[0]?.trim() || address,
+      vehicle: hasVehicle ? vehicle : 'Bicycle / E-Bike',
+      licenceNumber,
+      licenceState,
+      licenceClass,
+      licenceExpiry,
+      payIdType,
+      payIdValue,
+      payIdAccountName,
+      hasVehicleCourier: hasVehicle,
+      hasBicycleCourier: hasBicycle,
+      perKmRateAud,
+      vehiclePerKmRateAud: perKmRateAud,
+      sameDayFeeAud,
+      vehicleSameDayFeeAud: sameDayFeeAud,
+      urgentFeeAud,
+      vehicleUrgentFeeAud: urgentFeeAud,
+      bicyclePerKmRateAud,
+      bicycleSameDayFeeAud,
+      bicycleUrgentFeeAud,
+      bicycleMaxWeightKg: 8,
+      bicycleMaxHeightCm: 35,
+      bicycleMaxWidthCm: 30,
+      bicycleMaxLengthCm: 40,
+      maxWeightKg,
+      maxHeightCm,
+      maxWidthCm,
+      maxLengthCm,
+      tokenBalance: 25,
+      approved: false,
+      status: 'pending_approval',
+      lat,
+      lng
+    });
+    showToast(`🎉 Driver application submitted! SuperAdmin will review and approve your profile.`);
+  }
+
+  // Hardwire RBAC: Save/Update application in Firestore under driver_applications
   if (window.firebaseService?.saveDriverApplicationToFirestore) {
     window.firebaseService.saveDriverApplicationToFirestore({
       ...savedDriver,
@@ -3467,9 +3718,18 @@ function renderDriverAdminDashboard() {
 
   // Populate Right-Hand Driver Rate & Capacity Settings Form
   const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = String(val ?? ''); };
-  setVal('adm-drv-per-km', activeDriver.perKmRateAud ?? 2.20);
-  setVal('adm-drv-sameday-fee', activeDriver.sameDayFeeAud ?? 0);
-  setVal('adm-drv-urgent-fee', activeDriver.urgentFeeAud ?? 0);
+  const vChk = document.getElementById('adm-drv-has-vehicle');
+  if (vChk) vChk.checked = activeDriver.hasVehicleCourier !== false;
+  const bChk = document.getElementById('adm-drv-has-bicycle');
+  if (bChk) bChk.checked = activeDriver.hasBicycleCourier === true;
+  toggleAdminModesUI();
+
+  setVal('adm-drv-per-km', activeDriver.perKmRateAud ?? activeDriver.vehiclePerKmRateAud ?? 2.20);
+  setVal('adm-drv-sameday-fee', activeDriver.sameDayFeeAud ?? activeDriver.vehicleSameDayFeeAud ?? 0);
+  setVal('adm-drv-urgent-fee', activeDriver.urgentFeeAud ?? activeDriver.vehicleUrgentFeeAud ?? 0);
+  setVal('adm-drv-bike-per-km', activeDriver.bicyclePerKmRateAud ?? 1.80);
+  setVal('adm-drv-bike-sameday-fee', activeDriver.bicycleSameDayFeeAud ?? 0);
+  setVal('adm-drv-bike-urgent-fee', activeDriver.bicycleUrgentFeeAud ?? 0);
   setVal('adm-drv-max-weight', activeDriver.maxWeightKg ?? 50);
   setVal('adm-drv-max-height', activeDriver.maxHeightCm ?? 70);
   setVal('adm-drv-max-width', activeDriver.maxWidthCm ?? 50);
@@ -3662,9 +3922,17 @@ function saveDriverAdminProfile(event) {
   const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
   if (!activeDriver) return;
 
+  const hasVehicle = document.getElementById('adm-drv-has-vehicle')?.checked ?? true;
+  const hasBicycle = document.getElementById('adm-drv-has-bicycle')?.checked ?? false;
+
   const perKmRaw = document.getElementById('adm-drv-per-km')?.value;
   const sameDayRaw = document.getElementById('adm-drv-sameday-fee')?.value;
   const urgentRaw = document.getElementById('adm-drv-urgent-fee')?.value;
+
+  const bikePerKmRaw = document.getElementById('adm-drv-bike-per-km')?.value;
+  const bikeSameDayRaw = document.getElementById('adm-drv-bike-sameday-fee')?.value;
+  const bikeUrgentRaw = document.getElementById('adm-drv-bike-urgent-fee')?.value;
+
   const maxWeightRaw = document.getElementById('adm-drv-max-weight')?.value;
   const maxHeightRaw = document.getElementById('adm-drv-max-height')?.value;
   const maxWidthRaw = document.getElementById('adm-drv-max-width')?.value;
@@ -3675,6 +3943,11 @@ function saveDriverAdminProfile(event) {
   const perKmRateAud = perKmRaw !== '' && !isNaN(parseFloat(perKmRaw)) ? Math.max(0.5, parseFloat(perKmRaw)) : 2.20;
   const sameDayFeeAud = sameDayRaw !== '' && !isNaN(parseFloat(sameDayRaw)) ? Math.max(0, parseFloat(sameDayRaw)) : 0;
   const urgentFeeAud = urgentRaw !== '' && !isNaN(parseFloat(urgentRaw)) ? Math.max(0, parseFloat(urgentRaw)) : 0;
+
+  const bicyclePerKmRateAud = bikePerKmRaw !== '' && !isNaN(parseFloat(bikePerKmRaw)) ? Math.max(0.5, parseFloat(bikePerKmRaw)) : 1.80;
+  const bicycleSameDayFeeAud = bikeSameDayRaw !== '' && !isNaN(parseFloat(bikeSameDayRaw)) ? Math.max(0, parseFloat(bikeSameDayRaw)) : 0;
+  const bicycleUrgentFeeAud = bikeUrgentRaw !== '' && !isNaN(parseFloat(bikeUrgentRaw)) ? Math.max(0, parseFloat(bikeUrgentRaw)) : 0;
+
   const maxWeightKg = maxWeightRaw !== '' && !isNaN(parseFloat(maxWeightRaw)) ? Math.max(1, parseFloat(maxWeightRaw)) : 50;
   const maxHeightCm = maxHeightRaw !== '' && !isNaN(parseFloat(maxHeightRaw)) ? Math.max(10, parseFloat(maxHeightRaw)) : 70;
   const maxWidthCm = maxWidthRaw !== '' && !isNaN(parseFloat(maxWidthRaw)) ? Math.max(10, parseFloat(maxWidthRaw)) : 50;
@@ -3682,9 +3955,21 @@ function saveDriverAdminProfile(event) {
 
   const updatedDriver = {
     ...activeDriver,
+    hasVehicleCourier: hasVehicle,
+    hasBicycleCourier: hasBicycle,
     perKmRateAud,
+    vehiclePerKmRateAud: perKmRateAud,
     sameDayFeeAud,
+    vehicleSameDayFeeAud: sameDayFeeAud,
     urgentFeeAud,
+    vehicleUrgentFeeAud: urgentFeeAud,
+    bicyclePerKmRateAud,
+    bicycleSameDayFeeAud,
+    bicycleUrgentFeeAud,
+    bicycleMaxWeightKg: 8,
+    bicycleMaxHeightCm: 35,
+    bicycleMaxWidthCm: 30,
+    bicycleMaxLengthCm: 40,
     maxWeightKg,
     maxHeightCm,
     maxWidthCm,

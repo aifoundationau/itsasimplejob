@@ -36,175 +36,65 @@ Created: 2026-11-01
 
 [COMPLETED 2026-11-08] TASK 7: COURIER-ONLY DIRECT DRIVER PLATFORM (AUD ONLY)
 - Removed all non-courier trade/handyman/recruitment/franchise sections and converted the platform to Courier-Only in AUD ($ AUD).
-- Driver Registration (#provider-application-tab): Drivers register with Licence Details (Licence Number, State, Class, Expiry), Address, Phone, Email, PayID, custom Per-Km Rate ($ AUD), Urgent Fee ($ AUD), Same-Day Fee ($ AUD), Max Pickup Weight (kg), and Max Package Size (Height, Width, Length cm).
-- Auto-Geolocation Anytime: Drivers can auto-geolocate their live GPS position anytime during registration, on the Closest Drivers Map, and on the Driver Admin Page so customers find the closest driver to the job pickup.
-- Customer Courier Booking (#courier-tab): Customers choose a pickup time strictly between 9:00 AM and 4:00 PM, provide full contact details (name, address, phone, email), package content details, weight (kg), and dimensions (H×W×L cm).
-- Driver Admin Page (#driver-admin-tab): Records all customer bookings including the 9:00 AM – 4:00 PM pickup time, customer contact details, package content/size/weight, and PayID settlement details.
+- Driver Registration (#provider-application-tab): Drivers register with Licence Details, Address, Phone, Email, PayID, custom Per-Km Rate ($ AUD), Urgent Fee ($ AUD), Same-Day Fee ($ AUD), Max Pickup Weight (kg), and Max Package Size (Height, Width, Length cm).
+- Auto-Geolocation Anytime: Drivers can auto-geolocate their live GPS position anytime during registration, on the Closest Drivers Map, and on the Driver Admin Page.
+- Customer Courier Booking (#courier-tab): Customers choose pickup time strictly between 9:00 AM and 4:00 PM, contact details, package contents, weight, and dimensions.
 - Direct Driver PayID Payment: Customers pay the driver directly via the driver's PayID in AUD (never paying the web app).
-- Driver Token Economy & SuperAdmin Distance Tiers: Drivers buy tokens in AUD. Every customer order deducts tokens from the driver according to the SuperAdmin distance brackets: 0–20 km, 21–50 km, 51–100 km, and 101+ km.
+- Driver Token Economy & SuperAdmin Distance Tiers: Drivers buy tokens in AUD. Every customer order deducts tokens according to SuperAdmin distance brackets: 0–20 km, 21–50 km, 51–100 km, and 101+ km.
 
 [COMPLETED 2026-11-08] TASK 8: REMOVE LAWN MOWING & HORTICULTURE (PURE COURIER ONLY)
 - Completely removed all lawn mowing ($0.25 AUD/sqm) and horticulture ($55 AUD/hr) options, form inputs, pricing calculations, and UI elements.
 - Reverted strictly to a 100% pure Short-Haul Courier platform connecting South Brisbane to Coolangatta.
-- Preserved the Left-Side Driver List with expandable per-driver map dropdowns (`Driver Map ▼`).
-- Verified with node scratch/verify_courier.mjs: 0 missing DOM attributes and all courier pricing and distance token brackets passing.
-- Verified production build with `npm run build` (vite v6.4.3).
 
 [COMPLETED 2026-11-08] TASK 9: SUPPORTER REGISTRATION GATEWAY & ULTRA-RESPONSIVE COMPACT NAVBAR
-- Supporter-First Gateway: Visitors register as a Community Supporter first (#supporter-registration-form: Full Name, Email, Phone, Suburb/Postcode).
-- Behind-Panel Driver Registration: Completely removed the driver application from the front web app page. Placed #driver-registration-form behind the private Supporter Panel (#supporter-driver-application-card), unlocked via "Register as Driver Behind Panel ▼".
-- Customer Token Shielding: Hidden distance token tiers and driver token deductions from public customer booking views. Distance Token Tiers (0-20km: 2, 21-50km: 5, 51-100km: 10, 101+km: 15 tokens) are restricted exclusively to the SuperAdmin console.
-- Ultra-Responsive Desktop/Laptop Navbar: Streamlined navbar height (54px-58px), scaled worker brand icon (34px), logo text (1.25rem), compact buttons (0.82rem font, 0.78rem icons) with auto-scaling down to 1280px to prevent wrapping on all desktop and laptop displays.
-- Documented SupporterRegistrationContract in data-contracts.MD (Section 9.0).
-- Verified with node scratch/verify_courier.mjs: 0 missing DOM attributes and end-to-end tests passing.
-- Verified build with npm run build (0 errors).
+- Supporter-First Gateway: Visitors register as a Community Supporter first.
+- Behind-Panel Driver Registration: Driver application placed behind private Supporter Panel.
+- Customer Token Shielding: Hidden distance token tiers and driver token deductions from public customer booking views.
 
 [COMPLETED 2026-11-08] TASK 10: REMOVE DRIVER ADMIN FROM FRONT WEB APP PAGE
-- Removed the "4. Supporter & Driver Admin" tab pill from the front web app page tab bar. Public tabs are now strictly: 1. Book Courier, 2. Closest Drivers Map, 3. How It Works & PayID.
-- Removed public driver token wallet balance button from the customer navbar.
-- Updated footer and tab titles to "Supporter Portal". Driver Admin and driver registration remain accessible exclusively behind the verified Supporter Panel.
-- Verified 0 missing DOM attributes with verify_courier.mjs and clean Vite build.
+- Removed the "4. Supporter & Driver Admin" tab pill from the front web app page tab bar.
+- Supporter Portal accessible securely behind Google login.
 
 [COMPLETED 2026-11-08] TASK 11: INTEGRATE 'HOW IT WORKS' INTO TERMS OF SERVICE
-- Moved "How our courier network works" directly into terms.html as Section 2 (Supporters & verified drivers, 9am-4pm pickup window, direct PayID settlement in AUD).
-- Updated terms.html table of contents and section numbering.
-- Linked "How It Works" in the top navbar, front tab bar, and footer directly to /terms.html#how-it-works.
-- Removed the redundant #how-it-works-tab workspace section from index.html.
-- Verified 0 missing DOM attributes with verify_courier.mjs and clean Vite build.
+- Moved "How our courier network works" directly into terms.html as Section 2.
 
 [COMPLETED 2026-11-08] TASK 12: GOOGLE SUPPORTER LOGIN, SEPARATE DETAILS TAB & DRIVER APPLICATION UNDER SUPPORTER MENU
-- Instant Supporter Login with Google: People become a Community Supporter simply by logging in with Google.
-- Supporter Menu Sub-Navigation: Once logged in, supporters have access to:
-  1. "1. Register Details" tab: Register phone, suburb & postcode (with Google name and email pre-filled).
-  2. "2. Driver Application" tab: Under the supporter menu to register licence, vehicle, PayID, rates, package capacities, and live GPS.
-  3. "3. Driver Dispatch Console" tab: Accessible once registered as a driver or via quick access.
-- Styled .supporter-subnav-bar and .supporter-subnav-btn in css/style.css.
-- Verified 0 missing DOM attributes with verify_courier.mjs and clean Vite build.
+- Instant Supporter Login with Google.
+- Structured Supporter Menu sub-tabs: 1. Register Details, 2. Bookings, 3. Driver Application, 4. Driver Dispatch Console.
 
 [COMPLETED 2026-11-08] TASK 13: TOP-RIGHT GOOGLE ICON & LOGGED-IN STATUS INDICATOR
-- Google Logged-In Indicator: When logged in, the top-right navbar element reflects the authenticated Google account (#google-user-chip).
-- User Chip Details: Displays user Google avatar with a green online status badge, Google logo icon, and user name with "(Logged In)" text.
-- Google User Menu Dropdown: Clicking the chip reveals #google-user-menu with user profile details, "Active Supporter • Logged In" badge, 1-click access to the Supporter Portal, and a Sign Out button.
-- Logged-Out Fallback: When signed out, the chip and dropdown smoothly hide, displaying the standard Google "Sign In" button (#nav-google-signin-btn).
-- Verified with node scratch/verify_courier.mjs: 0 missing DOM attributes and clean Vite production build.
+- Google Logged-In Indicator and user menu dropdown with avatar, name, and online badge.
 
 [COMPLETED 2026-11-08] TASK 14: UNIFIED SINGLE GOOGLE LOGIN BUTTON & MUTUAL EXCLUSION
-- Single Login Button Rule Enforced: Eliminated duplicate login buttons across the web app.
-- Supporter Card Streamlined: Removed the redundant secondary blue Google login button from the Community Supporter Gateway card. Replaced with clear instruction directing users to the single Google Sign In button in the top-right navbar.
-- Strict Mutual Exclusion: Enforced via CSS and JS that in the navbar, there is only EVER one Google button:
-  * Logged out: Only the top-right "Sign In" button is visible.
-  * Logged in: "Sign In" is strictly hidden (display: none !important), and only the Google User Chip with avatar & "Logged In" status is visible.
-- Verified with node scratch/verify_courier.mjs: 0 missing DOM attributes and clean Vite production build.
+- Single login button rule strictly enforced across entire application.
 
 [COMPLETED 2026-11-08] TASK 15: RESPONSIVE 2-LINE DRIVER ADMIN GEOLOCATION (NO COORDINATES)
-- Responsive 2-Line Layout: Streamlined Live Driver Geolocation card in Driver Admin (#driver-admin-gps-text) with fluid width (min-width:0, flex:1, overflow:hidden) strictly limited to at most 2 lines.
-
-[COMPLETED 2026-11-08] TASK 20: COURIER DRIVER APPLICATION SCHEMA & AUTO-DETECT PAYID
-- Refined Driver Registration schema with required fields:
-  * Name
-  * Mobile Phone Number (Required)
-  * Email Address (Required)
-  * Driver Base Street Address & Suburb (Required)
-  * Vehicle Make, Model & Body Type (Required)
-  * Driver Licence Details (Required): Licence Number, State, Class, Expiry
-  * Driver PayID Details: Simplified to a single field called "PayID:"
-  * Your Custom Courier Rates ($ AUD Only): Rate Per KM, Same-Day Fee (default $0), Urgent Fee (default $0)
-  * Maximum Pickup Weight & Package Dimensions (H × W × L): Max Weight (kg, default 50), Max Height (cm, default 70), Max Width (cm, default 50), Max Length (cm, default 50)
-- Auto-Detection & Handlers: Configured `handleDriverRegistrationSubmit` in `js/app.js` to automatically detect PayID type (email, ABN, phone) from the single PayID input, apply the new $0 fee and 50kg/70×50×50cm defaults, and auto-sync supporter profile contact details.
-- Updated Section 9.1 in data-contracts.MD. Verified 0 missing DOM attributes and clean Vite production build.
-
-[COMPLETED 2026-11-08] TASK 21: SUPPORTER BOOKINGS HISTORY & MAKE A NEW BOOKING FLOW
-- Supporter Bookings Subtab: Added "2. My Bookings History" (`#supporter-bookings-subtab`) to the Supporter Portal navigation bar, with live bookings count badge and detailed cards for all past/active orders.
-- Booking History Card Details: Displays Order ID, creation timestamp, scheduled pickup window (strictly 9:00 AM – 4:00 PM), status badge, origin-to-destination route with km, assigned driver with PayID and phone, package dimensions/weight, and total price in $ AUD.
-- Make New Booking Flow: Added "+ Make a New Booking" button in both the Supporter Status Bar (`#btn-supporter-make-booking-top`) and the bookings subtab (`#btn-supporter-new-booking-subtab`). Clicking switches smoothly to the Book Courier tab and pre-fills customer name, email, phone, and address from the Supporter Profile.
-- Re-booking Capability: Added "Book Similar Pickup" (`rebookSimilarCourier(orderId)`) on every past order card to auto-populate origin, destination, dimensions, and driver with 1 click.
-- Documented Section 9.4 in data-contracts.MD. Verified 0 missing DOM attributes and clean Vite production build.
-
-[COMPLETED 2026-11-08] TASK 22: DRIVER TOKEN PURCHASES (10, 50, 100 PACKS @ $1 AUD/TOKEN VIA STRIPE)
-- Token Pricing Rule: Strictly enforced 1 Token = $1 AUD with no decimals or fractions.
-- 3 Exact Token Packs: Configured `tokenPacks: [10, 50, 100]` in `shared/pricing.js` and rendered in the Driver Token Top-Up Modal (`#driver-token-topup-modal`):
-  * Pack 1: 10 Tokens for $10 AUD
-  * Pack 2: 50 Tokens for $50 AUD
-  * Pack 3: 100 Tokens for $100 AUD
-- Stripe Checkout & Direct Crediting: Wired `purchaseDriverTokensAud(packTokens)` in `js/app.js` and `js/stripe-service.js` with Stripe account `acct_1UKnKUI8bClhBF4P` and publishable key `pk_test_51UKnKUI8bClhBF4Pl59doST5JkSHIg47DaHs5bicuWUEM0iuyT6BtcVV2zlvZUAAL5HjnRNt5PAzJQETRIckLarb00o6jAlzpi`.
-- Live Balance Updates: Instantly credits the driver's wallet, records the AUD transaction, and updates the token balance display in the Driver Dispatch Console.
-- Documented in `data-contracts.MD`. Verified 0 missing DOM attributes and clean Vite production build.
-
-[COMPLETED 2026-11-08] TASK 23: HARDWIRE FIRESTORE RBAC, DRIVER ROLE ON APPROVAL & SUPERADMIN SUPREME RULER
-- SuperAdmin Supreme Ruler (`firestore.rules`):
-  * Granted unrestricted read, write, and delete permissions to SuperAdmin across EVERY collection in Firestore (`allow read, write, delete: if isSuperAdmin();`).
-  * Root fallback wildcard matches guarantee SuperAdmin supreme rule over all collections, bypassing state restrictions and domain validators.
-- Hardwired RBAC Roles & Lifecycle (`firestore.rules`, `js/firebase-service.js`, `js/app.js`):
-  * Registered users default to role `'supporter'` or `'customer'`.
-  * Users cannot self-escalate to `'driver'` or `'superadmin'`.
-  * New driver applications create records in `driver_applications/{appId}` and `providers/{providerId}` with `status: 'pending_approval'`, `approved: false`.
-  * When SuperAdmin clicks "Approve Driver", `approveDriverBySuperadmin(driverId)` commits to Firestore via `approveDriverInFirestore(driverId, superadminEmail)`:
-    - Sets `status: 'active'`, `approved: true`, `approvedBy: superadminEmail` in `providers/{driverId}` and `driver_applications/{appId}`.
-    - Sets `role: 'driver'`, `isDriver: true`, `approved: true` in `users/{uid}`.
-    - Updates local supporter database and user session immediately.
-  * SuperAdmin can revoke drivers with `revokeDriverBySuperadmin(driverId)`, safely reverting role back to `'supporter'`.
-- Documented in Section 11 of `data-contracts.MD`. Verified 0 missing DOM attributes and clean Vite production build.
-
-[COMPLETED 2026-11-08] TASK 24: SUPERADMIN EDITABLE DISTANCE TIERS & TOKEN PRICING (SUPERADMIN ONLY)
-- Token Price Controlled ONLY by SuperAdmin (`js/app.js`, `js/currency.js`, `js/firebase-service.js`):
-  * SuperAdmin sets the AUD price per 1 Driver Token (`tokenPriceAud`, default $1 AUD).
-  * Non-superadmin users cannot edit token price or distance tier charges (inputs disabled, save rejected).
-- Real-Time SuperAdmin Editing of Distance Tier Costs:
-  * SuperAdmin can edit all 4 distance tier token deductions at any time (0–20km, 21–50km, 51–100km, 101+km).
-  * Clicking "Save Token Costs per Order" immediately writes to Firestore `platform_settings/pricing` with `updatedBy: superadminEmail` and `updatedAt`.
-  * Updates `iasjCurrency` state, hero badges, courier quote breakdown, and driver token purchase amounts.
-- Dynamic Driver Token Purchase Modal:
-  * Top-up packs (10, 50, 100 Tokens) dynamically compute cost in AUD as `tokens * tokenPriceAud`.
-  * Stripe payment transaction records the exact dynamic AUD charge configured by SuperAdmin.
-- Documented in Section 10.2 of `data-contracts.MD`. Verified 0 missing DOM attributes and clean Vite production build.
-
-[COMPLETED 2026-11-08] TASK 25: DRIVER RATES & CAPACITIES DEFAULTS ($0 SAME-DAY/URGENT, 50KG, 70×50×50CM), AUD PAYID SETTLEMENT & UNCONDITIONAL SUPERADMIN FIRESTORE RULES
-- Distance Tier Token Costs & Token Price Persistence:
-  * Fixed save handler in `js/app.js` and `js/currency.js` to persist distance tier token amounts directly into dedicated keys (`iasj_driver_order_tokens`, `iasj_token_price_aud`), local storage cache, and Firestore `platform_settings/pricing`.
-- Custom Courier Rates & Package Limits ($ AUD Only & Direct PayID):
-  * Enforced strictly in AUD across `index.html`, `js/app.js`, and `js/providers-data.js`:
-    - Rate Per KM ($ AUD / km)
-    - Your Same-Day Fee: default $0 AUD
-    - Your Urgent Fee: default $0 AUD
-    - Max Weight: default 50 kg
-    - Max Height: default 70 cm
-    - Max Width: default 50 cm
-    - Max Length: default 50 cm
-    - Driver PayID: single input field, customer pays driver directly in AUD (platform never holds customer delivery funds).
-  * Updated `#driver-admin-settings-form` and `saveDriverAdminProfile()`:
-    - Fixed zero-value falsy bug (`parseFloat("0") || 18` -> preserved explicit 0).
-    - Added direct sync with Firestore `providers` collection.
-- Unconditional SuperAdmin Supreme Authority in `firestore.rules`:
-  * Enforced `allow read, write, delete: if isSuperAdmin();` across all collections and subcollections without ANY validator restrictions.
-  * Verified with Firebase tools emulator (0 syntax or compilation errors).
-- Documented in `data-contracts.MD`. All verification tests and Vite production build passed clean.
+- Responsive 2-line layout without raw coordinates.
 
 [COMPLETED 2026-11-08] TASK 26: RBAC ROLES BUILT IN FOR DRIVERS, SUPPORTERS & SUPERADMIN
-- Role-Based Access Control Architecture:
-  * SuperAdmin: Supreme ruler over the entire platform. Sets token price (`tokenPriceAud`), sets Token Cost per Order Driver Receives across all 4 distance tiers, operates the SuperAdmin Driver Approval Console, wipes tokens, and bypasses all validator restrictions.
-  * Driver: Can buy tokens (10, 50, 100 packs in AUD), receive customer bookings in the Driver Dispatch Console, accept bookings (`acceptDriverBooking` action transitioning order status to "Driver Accepted"), and update custom delivery rates ($ AUD Only), vehicle, package limits, PayID, and licence details.
-  * Supporter: Can buy tokens directly from the Supporter Status Bar, make courier bookings (with 9am–4pm pickup windows, package content, weight, dimensions), and update personal profile details (Full Name, Mobile Phone, Street Address, Suburb & Postcode) synced to Firestore `users/{uid}`.
-- Role-Gated UI & Views:
-  * In `#supporter-dispatch-subtab`, supporters see an informative guidance banner (`#supporter-not-driver-notice`) directing them to complete the Driver Application in Tab 3 to become approved.
-  * Approved drivers and SuperAdmins access full dispatch, orders, and acceptance controls.
-  * SuperAdmin Console (`#superadmin-courier-config-card`) is strictly displayed only when signed in as SuperAdmin.
-- Documented in Section 11 of `data-contracts.MD`. Automated tests and Vite production build verified.
+- SuperAdmin supreme ruler, Driver dispatch and token purchase, Supporter profile and booking history.
 
 [COMPLETED 2026-11-08] TASK 27: SUPERADMIN DRIVER REVOCATION WITH TWO-STEP CONFIRMATION
-- SuperAdmin Driver Revocation:
-  * In the SuperAdmin Driver Approval Console, SuperAdmin can revoke approved drivers at any time.
-  * Two-Step Verification: Clicking "Revoke Driver" arms a 5-second countdown with solid red styling and prompt "Confirm Revoke?" via `iasjConfirmDelete` before executing.
-  * Multi-Tenant State Transition:
-    - Sets `approved: false`, `status: 'pending_approval'`, `isActive: false` in local `providerDB`, Firestore `providers/{id}`, and `driver_applications/{id}`.
-    - Demotes user role in Firestore `users/{uid}` and local supporterDB back to `'supporter'` (`isDriver: false`, `approved: false`).
-    - If the currently logged-in user is that driver, session state immediately drops back to Supporter with `#supporter-not-driver-notice` active.
-    - Excludes revoked driver from the public customer map and booking directory immediately.
-    - Updates SuperAdmin console row badge to yellow "Pending SuperAdmin Approval" with button flipping to "Approve Driver".
-- Documented in Section 11.3 of `data-contracts.MD`. Automated tests and Vite production build verified.
+- SuperAdmin can revoke approved drivers with 5-second countdown two-step verification.
+
+[COMPLETED 2026-11-08] TASK 28: ONE DRIVER APPLICATION PER EMAIL & BICYCLE COURIER SERVICE OPTION
+- Single Driver Application per Email Address:
+  * Resubmitting an application with an existing email address updates the existing driver profile, modes, and rates in place rather than creating duplicate records.
+  * Opening the Driver Application sub-tab auto-detects existing applications for the active supporter, displays an informative notice banner (#drv-reg-existing-notice), pre-fills current settings, and updates button to "Update Driver Profile, Modes & Rates ($ AUD)".
+- Bicycle Courier Option (Letters, Documents & Food Deliveries Only):
+  * Drivers can choose Motor Vehicle only, Bicycle Courier only, or BOTH.
+  * Independent custom rates for each service mode: Rate Per KM ($ AUD), Same-Day Fee ($ AUD, default 0), Urgent Fee ($ AUD, default 0).
+  * Bicycle Courier capacity limits strictly enforced: Max 8 kg, 35cm Height × 30cm Width × 40cm Length (standard courier backpack/pannier).
+  * Customer Booking Tab (#courier-tab): Added Delivery Mode Selector (Auto-Match / Bicycle Courier / Motor Vehicle Courier). Auto-selects Bicycle Courier when eligible small items are entered and driver supports bicycle mode, displaying distinct BICYCLE COURIER badges and specific bicycle rates.
+- Verification & Compliance:
+  * Documented Section 11.4 in data-contracts.MD.
+  * Added MIT licence in mitlicence.txt.
+  * Ran end-to-end verification script verify_bicycle_courier.mjs (all assertions passing).
+  * Ran npm run build (0 errors).
 
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST SUPERADMIN REVOKING DRIVER STATUS IN BROWSER
+CURRENT TASK: TEST BICYCLE COURIER & UNIQUE DRIVER APPLICATION IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the Supporter Portal > "4. Driver Dispatch Console" as SuperAdmin, scroll to the "SuperAdmin Driver Approval Console", click "Revoke Driver" on any approved driver, verify the button arms to "Confirm Revoke?", click to confirm, and observe the status switch to "Pending SuperAdmin Approval" and the driver get safely reverted to Supporter.
+1. In your browser at http://localhost:3002, navigate to the Supporter Portal > "3. Driver Application", check the "Bicycle Courier Option" checkbox to reveal the Bicycle Rates box, adjust the bicycle rate per km, submit the form with your email address to verify it updates your existing application without duplicating, and check the customer booking form to see your driver profile with its Bicycle Courier option.
 
 ================================================================================

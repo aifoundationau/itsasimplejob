@@ -191,14 +191,28 @@ export function calculateDriverCourierPrice(
   {
     distanceKm,
     speedTier = 'standard',
-    driver = {}
+    driver = {},
+    deliveryMode = 'auto'
   },
   pricing = DEFAULT_PRICING
 ) {
   const km = Math.max(1, Math.round((Number(distanceKm) || 1) * 10) / 10);
-  const perKmRateAud = Number(driver.perKmRateAud ?? driver.perKmRate ?? 2.5);
-  const sameDayFeeAud = Number(driver.sameDayFeeAud ?? driver.sameDayFee ?? 20);
-  const urgentFeeAud = Number(driver.urgentFeeAud ?? driver.urgentFee ?? 35);
+
+  // Determine if bicycle mode rates apply
+  const useBicycle = (deliveryMode === 'bicycle' && driver.hasBicycleCourier) ||
+                     (!driver.hasVehicleCourier && driver.hasBicycleCourier);
+
+  const perKmRateAud = useBicycle
+    ? Number(driver.bicyclePerKmRateAud ?? 1.80)
+    : Number(driver.perKmRateAud ?? driver.vehiclePerKmRateAud ?? 2.20);
+
+  const sameDayFeeAud = useBicycle
+    ? Number(driver.bicycleSameDayFeeAud ?? 0)
+    : Number(driver.sameDayFeeAud ?? driver.vehicleSameDayFeeAud ?? 0);
+
+  const urgentFeeAud = useBicycle
+    ? Number(driver.bicycleUrgentFeeAud ?? 0)
+    : Number(driver.urgentFeeAud ?? driver.vehicleUrgentFeeAud ?? 0);
 
   const distanceChargeAud = roundUpToCents(km * perKmRateAud);
   const appliedSameDayFeeAud = speedTier === 'same_day' ? roundUpToCents(sameDayFeeAud) : 0;
@@ -211,6 +225,8 @@ export function calculateDriverCourierPrice(
 
   return {
     currency: 'AUD',
+    deliveryMode: useBicycle ? 'bicycle' : 'vehicle',
+    deliveryModeLabel: useBicycle ? 'Bicycle Courier (Letters, Food & Small Items)' : 'Motor Vehicle Courier',
     distanceKm: km,
     perKmRateAud,
     distanceChargeAud,
