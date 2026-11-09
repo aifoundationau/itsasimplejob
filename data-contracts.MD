@@ -2135,6 +2135,32 @@ Defines the layout and elements of the absolute bottom fixed footer bar (`#geo-t
    - Any country pill, flag emoji (`#geo-bar-flag`), or country text (`#geo-bar-country-name`) rendering redundant "AU AU" is strictly removed from the bar.
    - The platform exclusively serves Australia (South Brisbane to Coolangatta in AUD), so the bar begins directly with the local geolocation suburb.
 
+### 11.21 Courier Driver Application Popup Modal & Draft Persistence Contract (`DriverAppModalAndDraftContract`)
+Defines the modal architecture and draft lifecycle for the Courier Driver Application:
+1. **Supporter Page Flow Protection:**
+   - The Courier Driver Application is strictly excluded from the in-page document flow of the Supporter Portal and cannot appear in the middle of the supporter page.
+   - Encapsulated entirely in `#driver-application-modal` (`.modal-overlay`, `role="dialog"`, `aria-modal="true"`).
+   - Triggered exclusively by clicking the "Courier Driver Application" link in the bottom footer (`#footer-driver-app-link`) or calling `openDriverApplicationModal()`.
+
+2. **Draft Persistence & "Save Application & Return Later" Lifecycle:**
+   - **Save Draft (`saveDriverApplicationDraft(notify)`):**
+     * Captures all entered application data (personal details, gender pin color, vehicle, street address, GPS coordinates, licence details, PayID, delivery modes, custom per-km rates, same-day/urgent fees, and max parcel limits).
+     * Saves to `localStorage['iasj_driver_application_draft']` and user-keyed `localStorage['iasj_driver_draft_<email>']`.
+     * Displays a live draft status pill (`#driver-app-draft-status`) and in-progress draft banner (`#drv-app-draft-banner`).
+     * Dedicated button `#btn-save-driver-app-draft` ("Save Application & Come Back Later") allows applicants to save progress and close the modal anytime.
+   - **Auto-Save on Input (`initDriverAppDraftAutoSave()`):**
+     * Automatically saves draft with 400ms debounce on all form inputs and changes, ensuring no user effort is lost if the window is closed unexpectedly.
+   - **Draft Loading (`loadDriverApplicationDraft(email)`):**
+     * Restores draft values into `#driver-registration-form` when opened by an applicant who does not yet have a finalized profile in `providerDB`.
+   - **Draft Clearing (`clearDriverApplicationDraft(email)`):**
+     * Clears draft from localStorage immediately upon successful registration submission via `handleDriverRegistrationSubmit`.
+
+3. **Modal UI & Keyboard Controls:**
+   - Fixed header with title, subtitle, draft status pill, and close button (`#btn-close-driver-app-modal`).
+   - Scrollable modal body (`max-height: 90vh; overflow-y: auto;`) hosting both Gate 1 (Supporter registration required) and Gate 2 (Unlocked application form).
+   - Backdrop click and Escape key automatically save in-progress draft before closing the modal.
+
+
 
 
 

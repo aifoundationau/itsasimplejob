@@ -3645,53 +3645,27 @@ function getCurrentSupporter() {
 }
 window.getCurrentSupporter = getCurrentSupporter;
 
-function scrollToDriverApplication(event) {
+/**
+ * Courier Driver Application Modal Controller & Draft Persistence
+ * Opened from the bottom footer link; allows applicants to save draft and return later.
+ */
+function openDriverApplicationModal(event) {
   if (event) {
     if (event.preventDefault) event.preventDefault();
     if (event.stopPropagation) event.stopPropagation();
   }
-  if (!isSupporterRegistered()) {
-    switchTab('driver-admin-tab');
-    if (typeof showToast === 'function') {
-      showToast('🔒 Please sign in and register as a Community Supporter first to access the Courier Driver Application.');
-    }
-    return;
-  }
-  const section = document.getElementById('driver-application-bottom-section');
-  if (section) {
-    section.style.display = 'block';
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    try {
-      history.pushState(null, '', '#driver-application-bottom-section');
-    } catch (e) {}
-  }
-}
-window.scrollToDriverApplication = scrollToDriverApplication;
-
-function isSupporterRegistered() {
-  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
-  return !!(supporter && (supporter.email || supporter.name));
-}
-window.isSupporterRegistered = isSupporterRegistered;
-
-function updateDriverApplicationGateUI() {
-  const sectionEl = document.getElementById('driver-application-bottom-section');
-  const lockedEl = document.getElementById('driver-app-gate-locked');
-  const unlockedEl = document.getElementById('driver-app-gate-unlocked');
-  const footerDriverAppLink = document.getElementById('footer-driver-app-link');
-  const footerBottomDriverAppLink = document.getElementById('footer-bottom-driver-app-link');
-  const footerBottomBullet = document.getElementById('footer-bottom-driver-app-bullet');
+  const modal = document.getElementById('driver-application-modal');
+  if (!modal) return;
 
   const isRegistered = isSupporterRegistered();
   const supporter = isRegistered ? getCurrentSupporter() : null;
 
+  const lockedEl = document.getElementById('driver-app-gate-locked');
+  const unlockedEl = document.getElementById('driver-app-gate-unlocked');
+
   if (isRegistered && supporter) {
-    if (sectionEl) sectionEl.style.display = 'block';
     if (lockedEl) lockedEl.style.display = 'none';
     if (unlockedEl) unlockedEl.style.display = 'block';
-    if (footerDriverAppLink) footerDriverAppLink.style.display = 'inline-flex';
-    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'inline-flex';
-    if (footerBottomBullet) footerBottomBullet.style.display = 'inline';
 
     const supNameBadge = document.getElementById('driver-app-unlocked-supporter-name');
     if (supNameBadge) {
@@ -3704,16 +3678,217 @@ function updateDriverApplicationGateUI() {
       console.warn('Error prefilling driver registration form:', e);
     }
   } else {
-    // Visitor is not a supporter: completely hide the bottom application section and footer links
-    if (sectionEl) sectionEl.style.display = 'none';
-    if (lockedEl) lockedEl.style.display = 'none';
+    if (lockedEl) lockedEl.style.display = 'block';
     if (unlockedEl) unlockedEl.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+  initDriverAppDraftAutoSave();
+
+  if (!modal._backdropBound) {
+    modal._backdropBound = true;
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        handleDriverAppModalCloseClick();
+      }
+    });
+  }
+  if (!window._driverAppEscBound) {
+    window._driverAppEscBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const m = document.getElementById('driver-application-modal');
+        if (m && m.style.display !== 'none' && m.classList.contains('active')) {
+          handleDriverAppModalCloseClick();
+        }
+      }
+    });
+  }
+
+  try {
+    history.pushState(null, '', '#driver-application');
+  } catch (e) {}
+}
+window.openDriverApplicationModal = openDriverApplicationModal;
+
+function closeDriverApplicationModal() {
+  const modal = document.getElementById('driver-application-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+window.closeDriverApplicationModal = closeDriverApplicationModal;
+
+function handleDriverAppModalCloseClick() {
+  saveDriverApplicationDraft(false);
+  closeDriverApplicationModal();
+  if (typeof showToast === 'function') {
+    showToast('💾 Application draft saved. You can return anytime from the bottom footer.');
+  }
+}
+window.handleDriverAppModalCloseClick = handleDriverAppModalCloseClick;
+
+function scrollToDriverApplication(event) {
+  if (event) {
+    if (event.preventDefault) event.preventDefault();
+    if (event.stopPropagation) event.stopPropagation();
+  }
+  openDriverApplicationModal(event);
+}
+window.scrollToDriverApplication = scrollToDriverApplication;
+
+function isSupporterRegistered() {
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  return !!(supporter && (supporter.email || supporter.name));
+}
+window.isSupporterRegistered = isSupporterRegistered;
+
+function updateDriverApplicationGateUI() {
+  const sectionEl = document.getElementById('driver-application-bottom-section');
+  const footerDriverAppLink = document.getElementById('footer-driver-app-link');
+  const footerBottomDriverAppLink = document.getElementById('footer-bottom-driver-app-link');
+  const footerBottomBullet = document.getElementById('footer-bottom-driver-app-bullet');
+
+  // The application must NEVER show in the middle of the supporter page
+  if (sectionEl) sectionEl.style.display = 'none';
+
+  const isRegistered = isSupporterRegistered();
+  const supporter = isRegistered ? getCurrentSupporter() : null;
+
+  if (isRegistered && supporter) {
+    if (footerDriverAppLink) footerDriverAppLink.style.display = 'inline-flex';
+    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'inline-flex';
+    if (footerBottomBullet) footerBottomBullet.style.display = 'inline';
+  } else {
+    // Visitor is not a supporter: completely hide footer links
     if (footerDriverAppLink) footerDriverAppLink.style.display = 'none';
     if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'none';
     if (footerBottomBullet) footerBottomBullet.style.display = 'none';
   }
 }
 window.updateDriverApplicationGateUI = updateDriverApplicationGateUI;
+
+/**
+ * Driver Application Draft Storage (Save Draft & Come Back Later)
+ */
+function saveDriverApplicationDraft(notify = true) {
+  const form = document.getElementById('driver-registration-form');
+  if (!form) return;
+
+  const draft = {
+    name: document.getElementById('drv-reg-name')?.value || '',
+    gender: document.getElementById('drv-reg-gender')?.value || 'male',
+    businessName: document.getElementById('drv-reg-business')?.value || '',
+    phone: document.getElementById('drv-reg-phone')?.value || '',
+    email: document.getElementById('drv-reg-email')?.value || '',
+    vehicle: document.getElementById('drv-reg-vehicle')?.value || '',
+    address: document.getElementById('drv-reg-address')?.value || '',
+    licenceNumber: document.getElementById('drv-reg-licence-num')?.value || '',
+    licenceState: document.getElementById('drv-reg-licence-state')?.value || 'QLD',
+    licenceClass: document.getElementById('drv-reg-licence-class')?.value || 'C (Car / Van)',
+    licenceExpiry: document.getElementById('drv-reg-licence-expiry')?.value || '2029-12-31',
+    payIdValue: document.getElementById('drv-reg-payid-value')?.value || '',
+    hasVehicle: document.getElementById('drv-reg-has-vehicle')?.checked ?? true,
+    hasBicycle: document.getElementById('drv-reg-has-bicycle')?.checked ?? false,
+    perKm: document.getElementById('drv-reg-per-km')?.value || '2.20',
+    sameDayFee: document.getElementById('drv-reg-sameday-fee')?.value || '0',
+    urgentFee: document.getElementById('drv-reg-urgent-fee')?.value || '0',
+    maxWeight: document.getElementById('drv-reg-max-weight')?.value || '50',
+    maxHeight: document.getElementById('drv-reg-max-height')?.value || '70',
+    maxWidth: document.getElementById('drv-reg-max-width')?.value || '50',
+    maxLength: document.getElementById('drv-reg-max-length')?.value || '50',
+    bikePerKm: document.getElementById('drv-reg-bike-per-km')?.value || '1.80',
+    bikeSameDayFee: document.getElementById('drv-reg-bike-sameday-fee')?.value || '0',
+    bikeUrgentFee: document.getElementById('drv-reg-bike-urgent-fee')?.value || '0',
+    bikeMaxWeight: document.getElementById('drv-reg-bike-max-weight')?.value || '8',
+    bikeMaxHeight: document.getElementById('drv-reg-bike-max-height')?.value || '35',
+    bikeMaxWidth: document.getElementById('drv-reg-bike-max-width')?.value || '30',
+    bikeMaxLength: document.getElementById('drv-reg-bike-max-length')?.value || '40',
+    lat: document.getElementById('drv-reg-lat')?.value || '-27.9678',
+    lng: document.getElementById('drv-reg-lng')?.value || '153.4011',
+    savedAt: new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem('iasj_driver_application_draft', JSON.stringify(draft));
+    if (draft.email) {
+      localStorage.setItem(`iasj_driver_draft_${draft.email.toLowerCase().trim()}`, JSON.stringify(draft));
+    }
+  } catch (e) {
+    console.warn('Could not save draft to localStorage:', e);
+  }
+
+  const statusPill = document.getElementById('driver-app-draft-status');
+  if (statusPill) {
+    statusPill.style.display = 'inline-flex';
+    statusPill.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Draft Saved';
+  }
+  const draftBanner = document.getElementById('drv-app-draft-banner');
+  if (draftBanner) {
+    draftBanner.style.display = 'flex';
+  }
+
+  if (notify) {
+    closeDriverApplicationModal();
+    if (typeof showToast === 'function') {
+      showToast('💾 Application saved! You can return anytime from the bottom footer to finish and submit.');
+    }
+  }
+}
+window.saveDriverApplicationDraft = saveDriverApplicationDraft;
+
+function loadDriverApplicationDraft(email) {
+  try {
+    let raw = null;
+    if (email) {
+      raw = localStorage.getItem(`iasj_driver_draft_${email.toLowerCase().trim()}`);
+    }
+    if (!raw) {
+      raw = localStorage.getItem('iasj_driver_application_draft');
+    }
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+window.loadDriverApplicationDraft = loadDriverApplicationDraft;
+
+function clearDriverApplicationDraft(email) {
+  try {
+    localStorage.removeItem('iasj_driver_application_draft');
+    if (email) {
+      localStorage.removeItem(`iasj_driver_draft_${email.toLowerCase().trim()}`);
+    }
+  } catch (e) {}
+  const statusPill = document.getElementById('driver-app-draft-status');
+  if (statusPill) statusPill.style.display = 'none';
+  const draftBanner = document.getElementById('drv-app-draft-banner');
+  if (draftBanner) draftBanner.style.display = 'none';
+}
+window.clearDriverApplicationDraft = clearDriverApplicationDraft;
+
+let draftAutoSaveBound = false;
+let draftAutoSaveDebounce = null;
+function initDriverAppDraftAutoSave() {
+  if (draftAutoSaveBound) return;
+  const form = document.getElementById('driver-registration-form');
+  if (!form) return;
+  draftAutoSaveBound = true;
+
+  const triggerAutoSave = () => {
+    clearTimeout(draftAutoSaveDebounce);
+    draftAutoSaveDebounce = setTimeout(() => {
+      saveDriverApplicationDraft(false);
+    }, 400);
+  };
+
+  form.addEventListener('input', triggerAutoSave);
+  form.addEventListener('change', triggerAutoSave);
+}
+window.initDriverAppDraftAutoSave = initDriverAppDraftAutoSave;
 
 function switchSupporterSubTab(subtabId) {
   if (subtabId === 'supporter-driver-app-subtab') {
@@ -4356,7 +4531,60 @@ function prefillDriverRegistrationForm(supporter) {
     if (submitBtn) {
       submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Register as Driver &amp; Activate Live GPS Profile';
     }
-    if (supporter) {
+
+    // Check if there is an in-progress draft saved for this email or visitor!
+    const draft = loadDriverApplicationDraft(emailToMatch);
+    if (draft) {
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+      };
+      setVal('drv-reg-name', draft.name || supporter?.name);
+      setVal('drv-reg-gender', draft.gender || 'male');
+      setVal('drv-reg-phone', draft.phone || supporter?.phone);
+      setVal('drv-reg-email', draft.email || supporter?.email);
+      setVal('drv-reg-vehicle', draft.vehicle);
+      setVal('drv-reg-address', draft.address || supporter?.suburb);
+      setVal('drv-reg-licence-num', draft.licenceNumber);
+      setVal('drv-reg-licence-state', draft.licenceState || 'QLD');
+      setVal('drv-reg-licence-class', draft.licenceClass || 'C (Car / Van)');
+      setVal('drv-reg-licence-expiry', draft.licenceExpiry || '2029-12-31');
+      setVal('drv-reg-payid-value', draft.payIdValue);
+
+      const chkVehicle = document.getElementById('drv-reg-has-vehicle');
+      if (chkVehicle) chkVehicle.checked = draft.hasVehicle !== false;
+      const chkBicycle = document.getElementById('drv-reg-has-bicycle');
+      if (chkBicycle) chkBicycle.checked = !!draft.hasBicycle;
+
+      setVal('drv-reg-per-km', draft.perKm ?? 2.20);
+      setVal('drv-reg-sameday-fee', draft.sameDayFee ?? 0);
+      setVal('drv-reg-urgent-fee', draft.urgentFee ?? 0);
+      setVal('drv-reg-max-weight', draft.maxWeight ?? 50);
+      setVal('drv-reg-max-height', draft.maxHeight ?? 70);
+      setVal('drv-reg-max-width', draft.maxWidth ?? 50);
+      setVal('drv-reg-max-length', draft.maxLength ?? 50);
+
+      setVal('drv-reg-bike-per-km', draft.bikePerKm ?? 1.80);
+      setVal('drv-reg-bike-sameday-fee', draft.bikeSameDayFee ?? 0);
+      setVal('drv-reg-bike-urgent-fee', draft.bikeUrgentFee ?? 0);
+      setVal('drv-reg-bike-max-weight', draft.bikeMaxWeight ?? 8);
+      setVal('drv-reg-bike-max-height', draft.bikeMaxHeight ?? 35);
+      setVal('drv-reg-bike-max-width', draft.bikeMaxWidth ?? 30);
+      setVal('drv-reg-bike-max-length', draft.bikeMaxLength ?? 40);
+
+      if (draft.lat) setVal('drv-reg-lat', draft.lat);
+      if (draft.lng) setVal('drv-reg-lng', draft.lng);
+
+      const statusPill = document.getElementById('driver-app-draft-status');
+      if (statusPill) {
+        statusPill.style.display = 'inline-flex';
+        statusPill.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Draft Loaded';
+      }
+      const draftBanner = document.getElementById('drv-app-draft-banner');
+      if (draftBanner) {
+        draftBanner.style.display = 'flex';
+      }
+    } else if (supporter) {
       const setValIfEmpty = (id, val) => {
         const el = document.getElementById(id);
         if (el && !el.value && val) el.value = val;
@@ -4563,6 +4791,10 @@ function handleDriverRegistrationSubmit(event) {
   if (toggleBtn) {
     toggleBtn.innerHTML = '<i class="fa-solid fa-truck-medical"></i> Register as Driver Behind Panel ▼';
   }
+
+  // Clear draft and close popup modal
+  try { clearDriverApplicationDraft(cleanEmail); } catch (e) {}
+  try { closeDriverApplicationModal(); } catch (e) {}
 
   document.getElementById('driver-registration-form')?.reset();
   try { updateDriverApplicationGateUI(); } catch (e) {}

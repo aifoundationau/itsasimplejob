@@ -322,9 +322,24 @@ Created: 2026-11-01
   * Verified end-to-end with scratch/verify_footer_no_au_au.mjs and full regression test suite (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 47: CONVERT COURIER DRIVER APPLICATION TO POPUP MODAL WITH DRAFT SAVE & RETURN LATER
+- Removed from Supporter Page Flow:
+  * Removed `#driver-application-bottom-section` from the middle of the supporter page document flow.
+  * Encapsulated the entire Courier Driver Application inside `#driver-application-modal` (`.modal-overlay`, `role="dialog"`).
+  * Triggered exclusively by clicking the "Courier Driver Application" link in the bottom footer (`#footer-driver-app-link`) or via `openDriverApplicationModal()`.
+- Save Application & Come Back Later:
+  * Added "Save Application & Come Back Later" button (`#btn-save-driver-app-draft`) allowing applicants to save their progress and exit anytime.
+  * Auto-save persists form inputs seamlessly to `localStorage['iasj_driver_application_draft']` and user-keyed drafts.
+  * Reopening the popup automatically restores saved draft values with a clear visual banner and status pill (`#driver-app-draft-status`).
+  * Submitting the application officially clears the draft and closes the modal.
+- Verification & Compliance:
+  * Documented Section 11.21 in data-contracts.MD.
+  * Verified end-to-end with scratch/verify_driver_app_popup_modal_and_draft.mjs and all 8 regression test suites (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY CLEAN BOTTOM GEOLOCATION FOOTER BAR IN BROWSER
+CURRENT TASK: VERIFY COURIER DRIVER APPLICATION POPUP MODAL & DRAFT SAVE IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, look at the fixed bar at the absolute bottom of the screen and verify that the "AU AU" text has been removed, so the bar now cleanly displays the location pin and suburb (e.g., "📍 Southport, QLD") followed by weather, time, and Regional Settings.
+1. In your browser at http://localhost:3002, navigate to the Supporter Portal and confirm that the Courier Driver Application form no longer appears in the middle of the page when scrolling; then click "Courier Driver Application" at the bottom of the footer to open the popup screen, enter some details, click "Save Application & Come Back Later", and reopen it to verify your saved draft restored.
 
 ================================================================================
