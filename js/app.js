@@ -177,6 +177,9 @@ function initApp() {
   try {
     handleStripeCheckoutReturnUrl();
   } catch (e) {}
+  try {
+    initWelcomeIntroPopup();
+  } catch (e) {}
 }
 
 if (document.readyState === 'loading') {
@@ -14439,6 +14442,67 @@ function initMobileDriverCardsCollapsed() {
   }
 }
 
+function openWelcomeIntroPopup() {
+  const dialog = document.getElementById('welcome-intro-popup');
+  if (!dialog) return;
+  try {
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      dialog.setAttribute('open', '');
+    }
+  } catch (e) {
+    dialog.setAttribute('open', '');
+  }
+}
+
+function closeWelcomeIntroPopup() {
+  const dialog = document.getElementById('welcome-intro-popup');
+  if (!dialog) return;
+  try {
+    if (typeof dialog.close === 'function' && dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+    }
+  } catch (e) {
+    dialog.removeAttribute('open');
+  }
+}
+
+function initWelcomeIntroPopup() {
+  const dialog = document.getElementById('welcome-intro-popup');
+  if (!dialog) return;
+
+  // Light-dismiss fallback for browsers without native <dialog closedby="any"> support
+  if (typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype) && !dialog.dataset.lightDismissBound) {
+    dialog.dataset.lightDismissBound = 'true';
+    dialog.addEventListener('click', (event) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      const isDialogContent = (
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width
+      );
+      if (isDialogContent) return;
+      dialog.close();
+    });
+  }
+
+  // Open when first entering the web app (skip only if returning from Stripe Checkout)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('stripe_status') || urlParams.get('session_id')) return;
+
+  openWelcomeIntroPopup();
+}
+
+window.openWelcomeIntroPopup = openWelcomeIntroPopup;
+window.closeWelcomeIntroPopup = closeWelcomeIntroPopup;
+window.initWelcomeIntroPopup = initWelcomeIntroPopup;
 window.toggleCourierBookingStep = toggleCourierBookingStep;
 window.initMobileCourierStepsCollapsed = initMobileCourierStepsCollapsed;
 window.toggleMobileDriverCard = toggleMobileDriverCard;

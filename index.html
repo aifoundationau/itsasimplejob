@@ -3160,6 +3160,73 @@
     </div>
   </div>
 
+  <!-- First-Visit Welcome Responsive Popup (Driver Couriers, Bicycle Couriers, Clients) -->
+  <dialog id="welcome-intro-popup" class="welcome-intro-dialog" closedby="any"
+    aria-labelledby="welcome-intro-popup-title" data-agent-id="welcome-intro-popup"
+    data-testid="welcome-intro-popup">
+    <div class="welcome-intro-box">
+      <div class="welcome-intro-header">
+        <div class="welcome-intro-title-group">
+          <span class="welcome-intro-badge">South Brisbane to Coolangatta • Direct PayID ($ AUD)</span>
+          <h2 id="welcome-intro-popup-title" class="welcome-intro-title">Welcome to It's A Simple Job</h2>
+        </div>
+        <form method="dialog" style="margin:0;">
+          <button type="submit" id="btn-close-welcome-popup" class="welcome-intro-close-btn"
+            onclick="closeWelcomeIntroPopup()" data-agent-id="btn-close-welcome-popup"
+            data-testid="btn-close-welcome-popup" aria-label="Close welcome popup">&times;</button>
+        </form>
+      </div>
+
+      <div class="welcome-intro-grid">
+        <!-- 1. Driver Couriers -->
+        <div class="welcome-intro-card welcome-card-driver" data-agent-id="welcome-card-driver-couriers"
+          data-testid="welcome-card-driver-couriers">
+          <h3 class="welcome-card-heading">🚗 Driver Couriers</h3>
+          <ul class="welcome-card-list">
+            <li>Deliver parcels up to 50 kg using your own car, ute, or van.</li>
+            <li>Set your own custom delivery rates with zero commission taken.</li>
+            <li>Toggle your GPS pin online anytime to receive instant local bookings.</li>
+            <li>Get paid 100% directly by clients straight to your PayID.</li>
+          </ul>
+        </div>
+
+        <!-- 2. Bicycle Couriers -->
+        <div class="welcome-intro-card welcome-card-bicycle" data-agent-id="welcome-card-bicycle-couriers"
+          data-testid="welcome-card-bicycle-couriers">
+          <h3 class="welcome-card-heading">🚲 Bicycle Couriers</h3>
+          <ul class="welcome-card-list">
+            <li>Deliver letters, documents, and food up to 8 kg by bike or e-bike.</li>
+            <li>Set your own rates with automatic protection against oversized cargo.</li>
+            <li>Take fast, short-haul express deliveries on your own schedule.</li>
+            <li>Get paid 100% directly by clients straight to your PayID.</li>
+          </ul>
+        </div>
+
+        <!-- 3. Clients -->
+        <div class="welcome-intro-card welcome-card-clients" data-agent-id="welcome-card-clients"
+          data-testid="welcome-card-clients">
+          <h3 class="welcome-card-heading">📦 Clients</h3>
+          <ul class="welcome-card-list">
+            <li>Book reliable point-to-point deliveries between 9:00 AM and 4:00 PM.</li>
+            <li>View available couriers on the live map and pick who delivers.</li>
+            <li>Search directly for your preferred driver or rider by their @username.</li>
+            <li>Pay couriers 100% directly via PayID with zero platform markups.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="welcome-intro-footer">
+        <form method="dialog" style="margin:0; width:100%; display:flex; justify-content:flex-end;">
+          <button type="submit" id="btn-enter-welcome-popup" class="btn btn-primary welcome-intro-enter-btn" autofocus
+            onclick="closeWelcomeIntroPopup()" data-agent-id="btn-enter-welcome-popup"
+            data-testid="btn-enter-welcome-popup" aria-label="Continue to App">
+            Continue to App <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Scripts -->
   <script src="https://js.stripe.com/v3/"></script>
   <script type="module" src="/js/main.js"></script>

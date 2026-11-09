@@ -3344,6 +3344,17 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
         ]
       }
     },
+    "firstVisitWelcomePopupSections": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "🚗 Driver Couriers",
+          "🚲 Bicycle Couriers",
+          "📦 Clients"
+        ]
+      }
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

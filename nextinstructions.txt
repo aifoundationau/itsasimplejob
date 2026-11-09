@@ -673,3 +673,12 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Reordered `.nav-menu` in `index.html` so `#tab-btn-find-contractors` (`Closest Drivers`) is first and `#tab-btn-courier` (`Book Courier`) is second.
 - Reordered `.app-section-tabs .tab-nav-bar` in `index.html` so `#pill-find-contractors` (`1. Closest Drivers Map`) is first and `#pill-courier` (`2. Book Courier`) is second across mobile and tablet viewports as well.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-10] Task 90: Add Responsive Welcome Popup (`#welcome-intro-popup`) When People First Enter the Web App:
+- Added `<dialog id="welcome-intro-popup" class="welcome-intro-dialog" closedby="any">` in `index.html` featuring the three cards:
+  1. `🚗 Driver Couriers` (Deliver parcels up to 50 kg using your own car, ute, or van; set your own custom delivery rates with zero commission taken; toggle your GPS pin online anytime to receive instant local bookings; get paid 100% directly by clients straight to your PayID).
+  2. `🚲 Bicycle Couriers` (Deliver letters, documents, and food up to 8 kg by bike or e-bike; set your own rates with automatic protection against oversized cargo; take fast, short-haul express deliveries on your own schedule; get paid 100% directly by clients straight to your PayID).
+  3. `📦 Clients` (Book reliable point-to-point deliveries between 9:00 AM and 4:00 PM; view available couriers on the live map and pick who delivers; search directly for your preferred driver or rider by their `@username`; pay couriers 100% directly via PayID with zero platform markups).
+- Styled `dialog.welcome-intro-dialog` in `css/style.css` as a 3-column grid on desktop (`> 960px`) and a single-column responsive stack on tablets, Android, and iPhone (`<= 960px`), with `overscroll-behavior: contain` and light-dismiss support.
+- Wired `initWelcomeIntroPopup()`, `openWelcomeIntroPopup()`, and `closeWelcomeIntroPopup()` in `js/app.js`.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
