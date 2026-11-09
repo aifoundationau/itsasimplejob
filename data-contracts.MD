@@ -2083,6 +2083,48 @@ Defines the strict visibility and operational contracts for the driver applicati
    - In `#driver-dispatch-console`, a dedicated header banner (`#driver-dispatch-quick-info-bar`) displays the active driver's name, approval badge, and direct button (`#btn-quick-goto-driver-info`) to view/edit full driver information.
    - Dedicated subtab view `#supporter-driver-info-subtab` displays the complete driver profile, verified approval badge, PayID address, live GPS location with auto-geolocate trigger, driver token balance with top-up trigger, and complete editable rates and package limits form (`#driver-info-settings-form`) with real-time quote and map synchronization.
 
+### 11.19 SuperAdmin Universal Token Management Contract (`SuperadminUniversalTokenManagementContract`)
+Defines the strict contracts and interfaces for universal token balance management across all platform roles by SuperAdmin:
+
+1. **Target Account Aggregation (`getSuperadminManageableAccounts()`):**
+   - Aggregates accounts across three distinct ledger sources:
+     1. Platform Vault (`id: 'superadmin_vault'`): SuperAdmin revenue and balance from `window.superadminDB`.
+     2. Courier Drivers (`id: 'driver:<id>'`): Active and registered drivers from `window.providerDB`.
+     3. Supporters (`id: 'supporter:<id>'`): Registered community supporters from `window.supporterDB`.
+   - Returns structured records with `id`, `rawId`, `type` (`'superadmin' | 'driver' | 'supporter'`), `name`, `email`, `roleLabel`, and strict integer `balance`.
+
+2. **The Three Core SuperAdmin Token Operations:**
+   - **Refresh to 0 Tokens (`handleSuperadminRefreshTokenZero(btn)`):**
+     * Immediately resets the selected account's token balance to strict `0`.
+     * Zero-out action is protected by the `iasjConfirmDelete` two-step confirmation protocol to prevent accidental balance wipe.
+   - **Add Tokens (`handleSuperadminAddTokens()`):**
+     * Credits a positive integer number of tokens (`Math.max(1, Math.round(Number(amount)))`) to the selected account's balance.
+     * Quick preset chips provided: `+5`, `+10`, `+25`, `+50`, `+100`.
+   - **Minus Tokens (`handleSuperadminMinusTokens()`):**
+     * Deducts a positive integer number of tokens from the selected account's balance.
+     * Enforces strict lower bound of `0` (`Math.max(0, balance - amount)`). Never produces negative token balances.
+     * Quick preset chips provided: `-5`, `-10`, `-15`, `-25`, `-50`.
+
+3. **Inline Driver Approval Console Quick Controls:**
+   - In each driver row rendered inside `#superadmin-driver-approvals-list`, SuperAdmin is provided:
+     * Current token balance badge (`<i class="fa-solid fa-coins"></i> <balance>`).
+     * Instant inline quick action buttons:
+       - `+10` (`quickModifyDriverTokens(driverId, 10)`): Instant credit of 10 tokens.
+       - `-5` (`quickModifyDriverTokens(driverId, -5)`): Instant debit of 5 tokens (floored at 0).
+       - `0` (`quickRefreshDriverTokensZero(driverId)`): Instant reset to 0 tokens.
+
+4. **Multi-View Balance Synchronization (`syncAllTokenDisplays()`):**
+   - Automatically synchronizes token counts across all active platform views and headers:
+     * `#superadmin-token-vault-balance`
+     * `#sa-token-target-balance`
+     * `#driver-admin-token-balance`
+     * `#nav-driver-token-count`
+     * `#driver-info-tokens`
+     * `#supporter-token-balance`
+     * `#topup-driver-balance`
+     * `#superadmin-driver-approvals-list` (re-renders row balances)
+
+
 
 
 

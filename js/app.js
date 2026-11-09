@@ -105,6 +105,7 @@ function initApp() {
 
   try { syncSuperadminDistanceTierInputs(); } catch (e) {}
   try { initSuperadminViewMode(); } catch (e) {}
+  try { renderSuperadminUniversalTokenConsole(); } catch (e) {}
 
   // Calculate initial courier route & rank closest drivers
   if (document.getElementById('courier-origin')) {
@@ -2260,6 +2261,7 @@ function renderSuperadminTokenBalance() {
     balEl.textContent = `${bal} Tokens`;
     balEl.title = `$${bal} AUD Platform Revenue`;
   }
+  try { renderSuperadminUniversalTokenConsole(); } catch (e) {}
 }
 window.renderSuperadminTokenBalance = renderSuperadminTokenBalance;
 
@@ -2268,7 +2270,7 @@ function handleWipeSuperadminTokens(btn) {
     if (window.superadminDB) {
       window.superadminDB.wipeTokens();
     }
-    renderSuperadminTokenBalance();
+    syncAllTokenDisplays();
     showToast('🗑️ All tokens have been wiped from the Superadmin account. Balance is now 0 Tokens.');
   }, {
     confirmText: 'Confirm Wipe All Tokens',
@@ -2276,6 +2278,286 @@ function handleWipeSuperadminTokens(btn) {
   });
 }
 window.handleWipeSuperadminTokens = handleWipeSuperadminTokens;
+
+/**
+ * SuperAdmin Universal Token Management: Refresh to 0, Add (+), or Minus (-) for ANY account
+ */
+function getSuperadminManageableAccounts() {
+  const accounts = [];
+  
+  // 1. SuperAdmin Vault
+  const vaultBal = window.superadminDB ? window.superadminDB.getBalance() : 0;
+  accounts.push({
+    id: 'superadmin_vault',
+    rawId: 'superadmin_vault',
+    type: 'superadmin',
+    name: 'SuperAdmin Platform Vault',
+    email: 'support@aifoundation.net.au',
+    roleLabel: 'SuperAdmin Vault',
+    balance: vaultBal
+  });
+
+  // 2. All Drivers from providerDB
+  if (window.providerDB) {
+    const drivers = window.providerDB.getAll();
+    drivers.forEach(d => {
+      accounts.push({
+        id: `driver:${d.id}`,
+        rawId: d.id,
+        type: 'driver',
+        name: d.name || 'Courier Driver',
+        email: d.email || 'driver@simplejob.com.au',
+        roleLabel: `Driver (${d.businessName || 'Courier'})`,
+        balance: d.tokenBalance ?? 0
+      });
+    });
+  }
+
+  // 3. All Supporters from supporterDB
+  if (window.supporterDB) {
+    const supporters = window.supporterDB.getAll();
+    supporters.forEach(s => {
+      const existingDriver = accounts.find(a => a.type === 'driver' && a.email.toLowerCase() === (s.email || '').toLowerCase());
+      if (!existingDriver) {
+        accounts.push({
+          id: `supporter:${s.id}`,
+          rawId: s.id,
+          type: 'supporter',
+          name: s.name || 'Community Supporter',
+          email: s.email || '',
+          roleLabel: 'Community Supporter',
+          balance: s.tokenBalance ?? 25
+        });
+      }
+    });
+  }
+
+  return accounts;
+}
+window.getSuperadminManageableAccounts = getSuperadminManageableAccounts;
+
+let selectedSaTokenTargetId = 'superadmin_vault';
+
+function renderSuperadminUniversalTokenConsole() {
+  const selectEl = document.getElementById('sa-token-target-account');
+  const accounts = getSuperadminManageableAccounts();
+  if (!accounts.length) return;
+
+  if (!selectedSaTokenTargetId || !accounts.find(a => a.id === selectedSaTokenTargetId)) {
+    selectedSaTokenTargetId = accounts[0].id;
+  }
+
+  if (selectEl) {
+    selectEl.innerHTML = accounts.map(a => `
+      <option value="${a.id}" ${a.id === selectedSaTokenTargetId ? 'selected' : ''}>
+        ${escapeAttr(a.name)} [${a.roleLabel}] — ${a.balance} Tokens (${escapeAttr(a.email)})
+      </option>
+    `).join('');
+  }
+
+  const activeAcc = accounts.find(a => a.id === selectedSaTokenTargetId) || accounts[0];
+  if (!activeAcc) return;
+
+  const nameEl = document.getElementById('sa-token-target-name');
+  if (nameEl) nameEl.textContent = activeAcc.name;
+
+  const roleEl = document.getElementById('sa-token-target-role-badge');
+  if (roleEl) {
+    roleEl.textContent = activeAcc.roleLabel;
+    roleEl.style.background = activeAcc.type === 'superadmin' ? '#F59E0B' : (activeAcc.type === 'driver' ? '#2563EB' : '#10B981');
+  }
+
+  const detailsEl = document.getElementById('sa-token-target-details');
+  if (detailsEl) {
+    detailsEl.textContent = `${activeAcc.email} • ID: ${activeAcc.id}`;
+  }
+
+  const balEl = document.getElementById('sa-token-target-balance');
+  if (balEl) {
+    balEl.innerHTML = `<i class="fa-solid fa-coins"></i> <span>${activeAcc.balance} Tokens</span>`;
+  }
+}
+window.renderSuperadminUniversalTokenConsole = renderSuperadminUniversalTokenConsole;
+
+function onSuperadminTokenTargetChange(newTargetId) {
+  selectedSaTokenTargetId = newTargetId;
+  renderSuperadminUniversalTokenConsole();
+}
+window.onSuperadminTokenTargetChange = onSuperadminTokenTargetChange;
+
+function syncAllTokenDisplays() {
+  try { renderSuperadminTokenBalance(); } catch (e) {}
+  try { renderSuperadminDriverApprovals(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { renderDriverInformationView(); } catch (e) {}
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderSuperadminUniversalTokenConsole(); } catch (e) {}
+}
+window.syncAllTokenDisplays = syncAllTokenDisplays;
+
+function handleSuperadminRefreshTokenZero(btn) {
+  const accounts = getSuperadminManageableAccounts();
+  const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
+  if (!acc) return;
+
+  const executeWipe = () => {
+    if (acc.id === 'superadmin_vault') {
+      if (window.superadminDB) window.superadminDB.wipeTokens();
+    } else if (acc.id.startsWith('driver:')) {
+      const driver = window.providerDB?.findById(acc.rawId);
+      if (driver) {
+        driver.tokenBalance = 0;
+        window.providerDB.save();
+      }
+      if (window.supporterDB && acc.email) {
+        const sup = window.supporterDB.findByEmail(acc.email);
+        if (sup) { sup.tokenBalance = 0; window.supporterDB.save(); }
+      }
+    } else if (acc.id.startsWith('supporter:')) {
+      const sup = window.supporterDB?.findById(acc.rawId);
+      if (sup) {
+        sup.tokenBalance = 0;
+        window.supporterDB.save();
+      }
+    }
+    syncAllTokenDisplays();
+    showToast(`🗑️ Token balance for ${acc.name} refreshed to 0 Tokens!`);
+  };
+
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, executeWipe, {
+      confirmText: 'Confirm Reset to 0 Tokens',
+      confirmClass: 'btn btn-danger btn-sm'
+    });
+  } else {
+    executeWipe();
+  }
+}
+window.handleSuperadminRefreshTokenZero = handleSuperadminRefreshTokenZero;
+
+function handleSuperadminAddTokens() {
+  const accounts = getSuperadminManageableAccounts();
+  const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
+  if (!acc) return;
+
+  const inputEl = document.getElementById('sa-token-add-amount');
+  const amount = Math.max(1, Math.round(Number(inputEl?.value) || 25));
+
+  let newBal = 0;
+  if (acc.id === 'superadmin_vault') {
+    if (window.superadminDB) newBal = window.superadminDB.addTokens(amount);
+  } else if (acc.id.startsWith('driver:')) {
+    const driver = window.providerDB?.findById(acc.rawId);
+    if (driver) {
+      driver.tokenBalance = (Number(driver.tokenBalance) || 0) + amount;
+      newBal = driver.tokenBalance;
+      window.providerDB.save();
+    }
+    if (window.supporterDB && acc.email) {
+      const sup = window.supporterDB.findByEmail(acc.email);
+      if (sup) { sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount; window.supporterDB.save(); }
+    }
+  } else if (acc.id.startsWith('supporter:')) {
+    const sup = window.supporterDB?.findById(acc.rawId);
+    if (sup) {
+      sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount;
+      newBal = sup.tokenBalance;
+      window.supporterDB.save();
+    }
+  }
+
+  syncAllTokenDisplays();
+  showToast(`🎉 Added ${amount} tokens to ${acc.name}! New balance: ${newBal} Tokens.`);
+}
+window.handleSuperadminAddTokens = handleSuperadminAddTokens;
+
+function handleSuperadminMinusTokens() {
+  const accounts = getSuperadminManageableAccounts();
+  const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
+  if (!acc) return;
+
+  const inputEl = document.getElementById('sa-token-minus-amount');
+  const amount = Math.max(1, Math.round(Number(inputEl?.value) || 10));
+
+  let newBal = 0;
+  if (acc.id === 'superadmin_vault') {
+    if (window.superadminDB) newBal = window.superadminDB.minusTokens(amount);
+  } else if (acc.id.startsWith('driver:')) {
+    const driver = window.providerDB?.findById(acc.rawId);
+    if (driver) {
+      driver.tokenBalance = Math.max(0, (Number(driver.tokenBalance) || 0) - amount);
+      newBal = driver.tokenBalance;
+      window.providerDB.save();
+    }
+    if (window.supporterDB && acc.email) {
+      const sup = window.supporterDB.findByEmail(acc.email);
+      if (sup) { sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount); window.supporterDB.save(); }
+    }
+  } else if (acc.id.startsWith('supporter:')) {
+    const sup = window.supporterDB?.findById(acc.rawId);
+    if (sup) {
+      sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount);
+      newBal = sup.tokenBalance;
+      window.supporterDB.save();
+    }
+  }
+
+  syncAllTokenDisplays();
+  showToast(`📉 Deducted ${amount} tokens from ${acc.name}! New balance: ${newBal} Tokens.`);
+}
+window.handleSuperadminMinusTokens = handleSuperadminMinusTokens;
+
+function quickModifyDriverTokens(driverId, deltaAmount) {
+  const driver = window.providerDB?.findById(driverId);
+  if (!driver) return;
+  const delta = Math.round(Number(deltaAmount) || 0);
+  if (delta > 0) {
+    driver.tokenBalance = (Number(driver.tokenBalance) || 0) + delta;
+    showToast(`🎉 Added ${delta} tokens to ${driver.name}! New balance: ${driver.tokenBalance} Tokens.`);
+  } else {
+    driver.tokenBalance = Math.max(0, (Number(driver.tokenBalance) || 0) + delta);
+    showToast(`📉 Deducted ${Math.abs(delta)} tokens from ${driver.name}! New balance: ${driver.tokenBalance} Tokens.`);
+  }
+  if (window.supporterDB && driver.email) {
+    const sup = window.supporterDB.findByEmail(driver.email);
+    if (sup) {
+      sup.tokenBalance = driver.tokenBalance;
+      window.supporterDB.save();
+    }
+  }
+  window.providerDB.save();
+  syncAllTokenDisplays();
+}
+window.quickModifyDriverTokens = quickModifyDriverTokens;
+
+function quickRefreshDriverTokensZero(driverId) {
+  const driver = window.providerDB?.findById(driverId);
+  if (!driver) return;
+  driver.tokenBalance = 0;
+  if (window.supporterDB && driver.email) {
+    const sup = window.supporterDB.findByEmail(driver.email);
+    if (sup) {
+      sup.tokenBalance = 0;
+      window.supporterDB.save();
+    }
+  }
+  window.providerDB.save();
+  syncAllTokenDisplays();
+  showToast(`🗑️ ${driver.name} tokens refreshed to 0 Tokens!`);
+}
+window.quickRefreshDriverTokensZero = quickRefreshDriverTokensZero;
+
+function setSaTokenAddInput(val) {
+  const input = document.getElementById('sa-token-add-amount');
+  if (input) input.value = String(val);
+}
+window.setSaTokenAddInput = setSaTokenAddInput;
+
+function setSaTokenMinusInput(val) {
+  const input = document.getElementById('sa-token-minus-amount');
+  if (input) input.value = String(val);
+}
+window.setSaTokenMinusInput = setSaTokenMinusInput;
 
 async function approveDriverBySuperadmin(driverId) {
   const driver = window.providerDB?.approveDriver(driverId);
@@ -2457,7 +2739,31 @@ function renderSuperadminDriverApprovals() {
           </div>
         </div>
 
-        <div style="display:flex; gap:0.45rem;">
+        <div style="display:flex; gap:0.45rem; align-items:center; flex-wrap:wrap;">
+          <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:0.25rem 0.4rem;">
+            <span style="font-size:0.75rem; font-weight:800; color:#D97706; margin-right:0.15rem;"><i class="fa-solid fa-coins"></i> ${d.tokenBalance ?? 0}</span>
+            <button type="button" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', 10)"
+              style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#059669; border-color:#A7F3D0; background:#ECFDF5;"
+              title="Add 10 tokens to ${escapeAttr(d.name)}"
+              data-agent-id="btn-sa-quick-add-${d.id}" data-testid="btn-sa-quick-add-${d.id}"
+              aria-label="Add 10 tokens to ${escapeAttr(d.name)}">
+              +10
+            </button>
+            <button type="button" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', -5)"
+              style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#DC2626; border-color:#FECACA; background:#FEF2F2;"
+              title="Minus 5 tokens from ${escapeAttr(d.name)}"
+              data-agent-id="btn-sa-quick-minus-${d.id}" data-testid="btn-sa-quick-minus-${d.id}"
+              aria-label="Minus 5 tokens from ${escapeAttr(d.name)}">
+              -5
+            </button>
+            <button type="button" class="btn btn-outline btn-xs" onclick="quickRefreshDriverTokensZero('${d.id}')"
+              style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#475569; border-color:#CBD5E1; background:#F1F5F9;"
+              title="Refresh tokens to 0 for ${escapeAttr(d.name)}"
+              data-agent-id="btn-sa-quick-zero-${d.id}" data-testid="btn-sa-quick-zero-${d.id}"
+              aria-label="Refresh tokens to 0 for ${escapeAttr(d.name)}">
+              0
+            </button>
+          </div>
           ${!isApproved ? `
             <button type="button" class="btn btn-primary btn-sm" onclick="approveDriverBySuperadmin('${d.id}')"
               style="background:#059669; border-color:#059669; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
@@ -10639,6 +10945,7 @@ function syncSuperadminControls() {
     syncSuperadminCourierControls();
     if (typeof renderSuperadminTokenBalance === 'function') renderSuperadminTokenBalance();
     if (typeof renderSuperadminDriverApprovals === 'function') renderSuperadminDriverApprovals();
+    if (typeof renderSuperadminUniversalTokenConsole === 'function') renderSuperadminUniversalTokenConsole();
   }
 }
 

@@ -293,9 +293,29 @@ Created: 2026-11-01
   * Verified end-to-end across all 5 verification suites (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 45: SUPERADMIN UNIVERSAL TOKEN MANAGEMENT (REFRESH TO 0, ADD, MINUS FOR ANYONE)
+- Universal Account Selector & Live Overview:
+  * SuperAdmin can select ANY account in the system from `#sa-token-target-account`:
+    1. SuperAdmin Platform Vault
+    2. Any Registered Courier Driver
+    3. Any Registered Community Supporter
+  * Live Account Summary card displays targeted user's name, role badge, email, unique ID, and live real-time token balance.
+- Three Universal Token Operations:
+  1. Refresh to 0 Tokens (`handleSuperadminRefreshTokenZero`): Zeroes out the selected account's balance with `iasjConfirmDelete` two-step verification.
+  2. Add Tokens (+) (`handleSuperadminAddTokens`): Credits any integer amount with quick chips `+5`, `+10`, `+25`, `+50`, `+100`.
+  3. Minus Tokens (-) (`handleSuperadminMinusTokens`): Deducts any integer amount floored at 0 with quick chips `-5`, `-10`, `-15`, `-25`, `-50`.
+- Quick Inline Controls in Driver Approval Console:
+  * Each driver card in the SuperAdmin Driver Approval Console table features instant inline token balance display and quick adjustment buttons (`+10`, `-5`, `0`).
+- Multi-Ledger Synchronization:
+  * `syncAllTokenDisplays()` synchronizes token counters across all headers, supporter profiles, driver dashboards, and superadmin consoles simultaneously.
+- Verification & Compliance:
+  * Documented Section 11.19 in `data-contracts.MD`.
+  * Verified end-to-end with `scratch/verify_superadmin_token_management.mjs` and full regression test suite (all assertions passing).
+  * Compiled clean bundle with `npm run build` (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY CLEAN BOTTOM FOOTER COPYRIGHT & LINKS IN BROWSER
+CURRENT TASK: VERIFY SUPERADMIN UNIVERSAL TOKEN MANAGEMENT IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, scroll down to the bottom footer and verify that the duplicate "Terms of Service • Courier Driver Application" links have been completely removed from beneath the copyright notice, leaving a clean, unified footer with all links organized in the main row above the copyright.
+1. In your browser at http://localhost:3002, switch to SuperAdmin view (or log in as superadmin), open the SuperAdmin Driver Approval & Courier Rates card, locate the "SuperAdmin Universal Token Management" console, select any driver or vault account from the dropdown, and test adding tokens, minusing tokens, or refreshing tokens to 0 with two-step confirmation.
 
 ================================================================================

@@ -1169,7 +1169,130 @@
           </div>
         </div>
 
-        <!-- Section C: SuperAdmin Role Perspective Switcher (View from All Roles) -->
+        <!-- Section C: SuperAdmin Universal Token Management (Refresh to 0, Add, Minus for Anyone) -->
+        <div id="superadmin-universal-token-management-card" style="background:#FFFFFF; border:1.5px solid #F59E0B; border-radius:var(--radius-sm); padding:1.25rem; margin-top:1.15rem;"
+          data-agent-id="superadmin-universal-token-management-card" data-testid="superadmin-universal-token-management-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem; padding-bottom:0.65rem; border-bottom:1px solid #FDE68A;">
+            <div>
+              <strong style="font-size:1.02rem; color:#92400E; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fa-solid fa-coins" style="color:#D97706;"></i> SuperAdmin Universal Token Management
+              </strong>
+              <div style="font-size:0.78rem; color:#78350F; margin-top:0.2rem;">
+                Select ANY driver, supporter, or vault account to refresh tokens to 0, add tokens (+), or minus tokens (-).
+              </div>
+            </div>
+            <span style="font-size:0.72rem; font-weight:800; background:#ECFDF5; color:#065F46; padding:0.25rem 0.6rem; border-radius:999px;">
+              <i class="fa-solid fa-bolt"></i> Live Ledger &amp; Instant Updates
+            </span>
+          </div>
+
+          <!-- Selector: Anyone's Account -->
+          <div style="margin-bottom:1rem;">
+            <label class="input-label" for="sa-token-target-account" style="font-size:0.82rem; font-weight:800; color:#92400E; margin-bottom:0.35rem;">
+              <i class="fa-solid fa-user-gear" style="color:#D97706;"></i> Select Account / User to Manage Tokens:
+            </label>
+            <select id="sa-token-target-account" class="form-control" onchange="onSuperadminTokenTargetChange(this.value)"
+              style="border-color:#F59E0B; background:#FFFBEB; font-weight:700;"
+              data-agent-id="sa-token-target-account" data-testid="sa-token-target-account" aria-label="Select Target Account for Token Management">
+              <!-- Populated dynamically via renderSuperadminUniversalTokenConsole() -->
+            </select>
+          </div>
+
+          <!-- Selected Account Overview & Live Balance -->
+          <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.15rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <strong id="sa-token-target-name" style="font-size:1.05rem; color:#92400E;">Active Account</strong>
+                <span id="sa-token-target-role-badge" style="font-size:0.72rem; font-weight:800; background:#F59E0B; color:#ffffff; padding:0.15rem 0.5rem; border-radius:999px;">Driver</span>
+              </div>
+              <div id="sa-token-target-details" style="font-size:0.8rem; color:#78350F; margin-top:0.2rem;">
+                Select an account above to manage tokens
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.7rem; font-weight:800; color:#92400E; text-transform:uppercase;">Current Balance</div>
+              <div id="sa-token-target-balance" style="font-size:1.45rem; font-weight:900; color:#D97706; display:flex; align-items:center; gap:0.35rem; justify-content:flex-end;">
+                <i class="fa-solid fa-coins"></i> <span>0 Tokens</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- The Three SuperAdmin Operations: Refresh to 0, Add Tokens, Minus Tokens -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+            
+            <!-- Operation 1: Refresh Tokens to 0 -->
+            <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:var(--radius-sm); padding:1rem;">
+              <div style="font-size:0.82rem; font-weight:800; color:#991B1B; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                <i class="fa-solid fa-rotate-left"></i> 1. Refresh to 0 Tokens
+              </div>
+              <p style="font-size:0.76rem; color:#7F1D1D; margin:0 0 0.75rem 0; line-height:1.45;">
+                Immediately resets this account's token balance to <strong>0 Tokens</strong>. Protected by two-step confirmation.
+              </p>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-sa-refresh-tokens-zero" onclick="handleSuperadminRefreshTokenZero(this)"
+                style="color:#DC2626; border-color:#FCA5A5; background:#FFFFFF; font-weight:800; width:100%;"
+                data-agent-id="btn-sa-refresh-tokens-zero" data-testid="btn-sa-refresh-tokens-zero" aria-label="Refresh Tokens to Zero">
+                <i class="fa-solid fa-rotate-left"></i> Refresh to 0 Tokens
+              </button>
+            </div>
+
+            <!-- Operation 2: Add Tokens (+) -->
+            <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-sm); padding:1rem;">
+              <div style="font-size:0.82rem; font-weight:800; color:#166534; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                <i class="fa-solid fa-plus-circle"></i> 2. Add Tokens (+)
+              </div>
+              <p style="font-size:0.76rem; color:#14532D; margin:0 0 0.6rem 0;">
+                Credit tokens to this user's balance:
+              </p>
+              <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+                <input type="number" id="sa-token-add-amount" class="form-control" min="1" max="100000" step="1" value="25"
+                  style="padding:0.4rem; font-weight:700;" placeholder="Amount"
+                  data-agent-id="sa-token-add-amount" data-testid="sa-token-add-amount" aria-label="Tokens to Add">
+                <button type="button" class="btn btn-primary btn-sm" onclick="handleSuperadminAddTokens()"
+                  style="background:#059669; border-color:#059669; font-weight:800; white-space:nowrap;"
+                  data-agent-id="btn-sa-add-tokens" data-testid="btn-sa-add-tokens" aria-label="Add Tokens to Account">
+                  <i class="fa-solid fa-plus"></i> Add
+                </button>
+              </div>
+              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(5)">+5</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(10)">+10</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(25)">+25</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(50)">+50</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(100)">+100</button>
+              </div>
+            </div>
+
+            <!-- Operation 3: Minus Tokens (-) -->
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1rem;">
+              <div style="font-size:0.82rem; font-weight:800; color:#92400E; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                <i class="fa-solid fa-minus-circle"></i> 3. Minus Tokens (-)
+              </div>
+              <p style="font-size:0.76rem; color:#78350F; margin:0 0 0.6rem 0;">
+                Deduct tokens from this balance (floored at 0):
+              </p>
+              <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+                <input type="number" id="sa-token-minus-amount" class="form-control" min="1" max="100000" step="1" value="10"
+                  style="padding:0.4rem; font-weight:700;" placeholder="Amount"
+                  data-agent-id="sa-token-minus-amount" data-testid="sa-token-minus-amount" aria-label="Tokens to Minus">
+                <button type="button" class="btn btn-outline btn-sm" onclick="handleSuperadminMinusTokens()"
+                  style="color:#D97706; border-color:#F59E0B; background:#FFFFFF; font-weight:800; white-space:nowrap;"
+                  data-agent-id="btn-sa-minus-tokens" data-testid="btn-sa-minus-tokens" aria-label="Minus Tokens from Account">
+                  <i class="fa-solid fa-minus"></i> Minus
+                </button>
+              </div>
+              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(5)">-5</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(10)">-10</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(15)">-15</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(25)">-25</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(50)">-50</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Section D: SuperAdmin Role Perspective Switcher (View from All Roles) -->
         <div id="superadmin-role-switcher-section" style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem; margin-top:1.15rem;" data-agent-id="superadmin-role-switcher-section" data-testid="superadmin-role-switcher-section">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
             <div>

@@ -747,6 +747,16 @@ class SuperadminDatabase {
     return 0;
   }
 
+  minusTokens(amount) {
+    const tokens = Math.max(0, Math.round(Number(amount) || 0));
+    const current = this.getBalance();
+    const updated = Math.max(0, current - tokens);
+    try {
+      localStorage.setItem(this.storageKey, String(updated));
+    } catch (e) {}
+    return updated;
+  }
+
   getHistory() {
     try {
       return JSON.parse(localStorage.getItem(this.historyKey) || "[]");
