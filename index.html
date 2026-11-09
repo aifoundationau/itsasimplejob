@@ -1109,6 +1109,12 @@
               </div>
 
               <!-- Recorded Customer Orders & Scheduled 9am–4pm Pickups (Inside Driver Information Panel) -->
+              <div id="driver-free-hour-active-banner" style="display:none; background:#ECFDF5; border:2px solid #10B981; border-radius:var(--radius-sm); padding:0.85rem 1.1rem; margin-top:1rem; color:#065F46; font-weight:800; font-size:0.86rem;"
+                data-agent-id="driver-free-hour-active-banner" data-testid="driver-free-hour-active-banner">
+                <i class="fa-solid fa-gift" style="color:#059669;"></i>
+                <span id="driver-free-hour-banner-text">SuperAdmin 1-Hour Free Mode Active! All drivers pay 0 Tokens to SuperAdmin during this hour.</span>
+              </div>
+
               <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
                   <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
@@ -1339,11 +1345,49 @@
                 data-testid="sa-token-aud-price" aria-label="AUD Price per 1 Token">
             </div>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="onSuperadminDistanceTierChange(true)"
-            style="background:#D97706; border-color:#D97706;" data-agent-id="btn-save-sa-tiers"
-            data-testid="btn-save-sa-tiers" aria-label="Save SuperAdmin Token Tiers">
-            <i class="fa-solid fa-floppy-disk"></i> Save Token Costs per Order
-          </button>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="onSuperadminDistanceTierChange(true)"
+              style="background:#D97706; border-color:#D97706;" data-agent-id="btn-save-sa-tiers"
+              data-testid="btn-save-sa-tiers" aria-label="Save SuperAdmin Token Tiers">
+              <i class="fa-solid fa-floppy-disk"></i> Save Token Costs per Order
+            </button>
+          </div>
+
+          <!-- SuperAdmin 1-Hour Free For All Drivers Control -->
+          <div id="superadmin-free-hour-card" style="margin-top:1rem; background:#ECFDF5; border:1.5px solid #10B981; border-radius:var(--radius-sm); padding:0.95rem 1.1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.85rem;"
+            data-agent-id="superadmin-free-hour-card" data-testid="superadmin-free-hour-card">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <strong style="font-size:0.94rem; color:#065F46;">
+                  <i class="fa-solid fa-clock" style="color:#059669;"></i> 1-Hour Free For All Drivers (0 Tokens to SuperAdmin)
+                </strong>
+                <span id="sa-free-hour-status-badge" style="font-size:0.72rem; font-weight:800; background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:0.18rem 0.55rem; border-radius:999px;"
+                  data-agent-id="sa-free-hour-status-badge" data-testid="sa-free-hour-status-badge">
+                  Standard Token Billing
+                </span>
+              </div>
+              <div id="sa-free-hour-countdown-text" style="font-size:0.78rem; color:#047857; font-weight:700; margin-top:0.2rem;"
+                data-agent-id="sa-free-hour-countdown-text" data-testid="sa-free-hour-countdown-text">
+                Click below to grant all drivers 1 hour of free bookings where drivers do not pay SuperAdmin any tokens.
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-sa-activate-free-hour" class="btn btn-primary btn-sm"
+                onclick="activateSuperadminFreeDriverHour(this)"
+                style="background:#059669; border-color:#059669; font-weight:800;"
+                data-agent-id="btn-sa-activate-free-hour" data-testid="btn-sa-activate-free-hour"
+                aria-label="Offer Free For All Drivers For One Hour">
+                <i class="fa-solid fa-gift"></i> Offer Free For All Drivers (1 Hour)
+              </button>
+              <button type="button" id="btn-sa-end-free-hour" class="btn btn-outline btn-sm"
+                onclick="endSuperadminFreeDriverHour(this)"
+                style="display:none; color:#DC2626; border-color:#FECACA; background:#FFFFFF; font-weight:800;"
+                data-agent-id="btn-sa-end-free-hour" data-testid="btn-sa-end-free-hour"
+                aria-label="End Free Driver Hour Early">
+                <i class="fa-solid fa-stop"></i> End Free Hour
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Section B: SuperAdmin Approves Drivers Console -->

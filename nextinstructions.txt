@@ -510,3 +510,13 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Preserved map pin colors: **Pink (`#EC4899`)** for female drivers and **Blue (`#2563EB`)** for male drivers.
 - Verified with `node scratch/verify_no_gender_on_driver_cards.mjs` and `npm run build` (0 errors).
 - Documented Section 11.36 (`CustomerFacingDriverCardGenderPrivacyContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 65: SUPERADMIN 1-HOUR FREE FOR ALL DRIVERS BUTTON (0 TOKENS PAID TO SUPERADMIN)
+- Added `#superadmin-free-hour-card` inside the Firebase SuperAdmin Controls panel (`index.html`) with:
+  1. **Offer Free For All Drivers (1 Hour)** button (`#btn-sa-activate-free-hour`, calling `activateSuperadminFreeDriverHour(this)`)
+  2. **End Free Hour** button (`#btn-sa-end-free-hour`, calling `endSuperadminFreeDriverHour(this)`)
+  3. Live status badge (`#sa-free-hour-status-badge`), 60-minute countdown timer (`#sa-free-hour-countdown-text`), and Driver Information Panel active promotion banner (`#driver-free-hour-active-banner`).
+- Implemented `activateFreeDriverHour(durationMs = 3600000)`, `endFreeDriverHour()`, `isFreeDriverHourActive()`, and `getFreeDriverHourRemainingMs()` in `SuperadminDatabase` (`js/providers-data.js`).
+- Updated `iasjCurrency.getDriverOrderTokenCharge(km)` (`js/currency.js`) and `submitCourierBooking()` (`js/app.js`) so that during the 1-hour free window, `tokensChargedToDriver` is `0`, drivers do not pay SuperAdmin any tokens, and even drivers with `0` tokens can receive bookings without needing a top-up.
+- Verified end-to-end with `node scratch/verify_superadmin_free_driver_hour.mjs` and `npm run build` (0 errors).
+- Documented Section 11.37 (`SuperadminFreeDriverHourContract`) in `data-contracts.MD`.

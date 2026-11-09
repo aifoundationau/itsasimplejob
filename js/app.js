@@ -140,6 +140,12 @@ function initApp() {
     initDriverBookingCrossTabAlertListener();
   } catch (e) {}
   try {
+    renderSuperadminFreeDriverHourUI();
+    if (isSuperadminFreeDriverHourActive()) {
+      startSuperadminFreeDriverHourTicker();
+    }
+  } catch (e) {}
+  try {
     handleStripeCheckoutReturnUrl();
   } catch (e) {}
 }
@@ -2276,6 +2282,132 @@ function handleWipeSuperadminTokens(btn) {
 window.handleWipeSuperadminTokens = handleWipeSuperadminTokens;
 
 /**
+ * SuperAdmin 1-Hour Free Mode For All Drivers (0 Tokens Paid to SuperAdmin)
+ */
+let superadminFreeHourIntervalId = null;
+
+function isSuperadminFreeDriverHourActive() {
+  return Boolean(window.superadminDB?.isFreeDriverHourActive?.());
+}
+window.isSuperadminFreeDriverHourActive = isSuperadminFreeDriverHourActive;
+
+function formatFreeDriverHourRemaining(ms) {
+  const totalSeconds = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+window.formatFreeDriverHourRemaining = formatFreeDriverHourRemaining;
+
+function renderSuperadminFreeDriverHourUI() {
+  const isActive = isSuperadminFreeDriverHourActive();
+  const remainingMs = window.superadminDB?.getFreeDriverHourRemainingMs?.() || 0;
+  const remainingLabel = formatFreeDriverHourRemaining(remainingMs);
+
+  const badgeEl = document.getElementById('sa-free-hour-status-badge');
+  const countdownEl = document.getElementById('sa-free-hour-countdown-text');
+  const activateBtn = document.getElementById('btn-sa-activate-free-hour');
+  const endBtn = document.getElementById('btn-sa-end-free-hour');
+  const driverBannerEl = document.getElementById('driver-free-hour-active-banner');
+  const driverBannerTextEl = document.getElementById('driver-free-hour-banner-text');
+
+  if (badgeEl) {
+    if (isActive) {
+      badgeEl.textContent = `🎉 FREE HOUR ACTIVE (${remainingLabel} left)`;
+      badgeEl.style.background = '#059669';
+      badgeEl.style.color = '#FFFFFF';
+      badgeEl.style.borderColor = '#047857';
+    } else {
+      badgeEl.textContent = 'Standard Token Billing';
+      badgeEl.style.background = '#F1F5F9';
+      badgeEl.style.color = '#475569';
+      badgeEl.style.borderColor = '#CBD5E1';
+    }
+  }
+
+  if (countdownEl) {
+    if (isActive) {
+      countdownEl.textContent = `Active now (${remainingLabel} remaining) — All drivers pay 0 Tokens to SuperAdmin during this hour.`;
+    } else {
+      countdownEl.textContent = 'Click below to grant all drivers 1 hour of free bookings where drivers do not pay SuperAdmin any tokens.';
+    }
+  }
+
+  if (activateBtn) {
+    activateBtn.innerHTML = isActive
+      ? `<i class="fa-solid fa-rotate-right"></i> Restart 1-Hour Free For All Drivers`
+      : `<i class="fa-solid fa-gift"></i> Offer Free For All Drivers (1 Hour)`;
+  }
+
+  if (endBtn) {
+    endBtn.style.display = isActive ? 'inline-flex' : 'none';
+  }
+
+  if (driverBannerEl) {
+    driverBannerEl.style.display = isActive ? 'block' : 'none';
+  }
+  if (driverBannerTextEl && isActive) {
+    driverBannerTextEl.textContent = `SuperAdmin 1-Hour Free Mode Active (${remainingLabel} remaining)! All drivers pay 0 Tokens to SuperAdmin during this hour.`;
+  }
+
+  return { isActive, remainingMs, remainingLabel };
+}
+window.renderSuperadminFreeDriverHourUI = renderSuperadminFreeDriverHourUI;
+
+function startSuperadminFreeDriverHourTicker() {
+  if (superadminFreeHourIntervalId) {
+    clearInterval(superadminFreeHourIntervalId);
+    superadminFreeHourIntervalId = null;
+  }
+  superadminFreeHourIntervalId = setInterval(() => {
+    const active = isSuperadminFreeDriverHourActive();
+    renderSuperadminFreeDriverHourUI();
+    if (!active) {
+      clearInterval(superadminFreeHourIntervalId);
+      superadminFreeHourIntervalId = null;
+      try { calculateCourierQuote(); } catch (e) {}
+    }
+  }, 1000);
+}
+
+function activateSuperadminFreeDriverHour(btnOrDurationMs) {
+  const durationMs = typeof btnOrDurationMs === 'number' && btnOrDurationMs > 0
+    ? btnOrDurationMs
+    : 3600000; // 1 Hour (60 minutes = 3,600,000 ms)
+  const until = window.superadminDB?.activateFreeDriverHour?.(durationMs) || (Date.now() + durationMs);
+  startSuperadminFreeDriverHourTicker();
+  const status = renderSuperadminFreeDriverHourUI();
+  try { calculateCourierQuote(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  showToast('🎉 1-Hour Free Mode Activated for All Drivers! For the next 60 minutes, drivers do not pay SuperAdmin any tokens.');
+  return {
+    active: true,
+    durationMs,
+    until,
+    remainingMs: status.remainingMs
+  };
+}
+window.activateSuperadminFreeDriverHour = activateSuperadminFreeDriverHour;
+
+function endSuperadminFreeDriverHour() {
+  window.superadminDB?.endFreeDriverHour?.();
+  if (superadminFreeHourIntervalId) {
+    clearInterval(superadminFreeHourIntervalId);
+    superadminFreeHourIntervalId = null;
+  }
+  renderSuperadminFreeDriverHourUI();
+  try { calculateCourierQuote(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  showToast('ℹ️ SuperAdmin 1-Hour Free Mode ended. Standard driver token tiers are now active.');
+  return {
+    active: false,
+    until: 0,
+    remainingMs: 0
+  };
+}
+window.endSuperadminFreeDriverHour = endSuperadminFreeDriverHour;
+
+/**
  * SuperAdmin Universal Token Management: Refresh to 0, Add (+), or Minus (-) for ANY account
  */
 function getSuperadminManageableAccounts() {
@@ -3555,23 +3687,38 @@ function submitCourierBooking() {
     return;
   }
 
-  const tokenCharge = calc.tokenCharge;
-  if ((drv.tokenBalance ?? 0) < tokenCharge.tokens) {
+  const isFreeHour = typeof isSuperadminFreeDriverHourActive === 'function'
+    ? isSuperadminFreeDriverHourActive()
+    : Boolean(window.superadminDB?.isFreeDriverHourActive?.());
+  const tokenCharge = isFreeHour
+    ? {
+        ...calc.tokenCharge,
+        baseTierTokens: calc.tokenCharge?.baseTierTokens ?? calc.tokenCharge?.tokens ?? 0,
+        tokens: 0,
+        audEquivalent: 0,
+        freeHourActive: true,
+        tierLabel: `${String(calc.tokenCharge?.tierLabel || 'Standard Distance').replace(/\s*\(FREE HOUR.*\)$/i, '')} (FREE HOUR — 0 Tokens)`
+      }
+    : calc.tokenCharge;
+
+  if (!isFreeHour && tokenCharge.tokens > 0 && (drv.tokenBalance ?? 0) < tokenCharge.tokens) {
     showToast(`⚠️ Driver ${drv.name} needs ${tokenCharge.tokens} Tokens for this ${tokenCharge.tierLabel} order. Please top up Driver Tokens first.`);
     openDriverTokenTopupModal(drv.id);
     return;
   }
 
-  // 1. Deduct distance-tier tokens from driver wallet and automatically credit to SuperAdmin account
-  window.providerDB.deductDriverTokens(drv.id, tokenCharge.tokens);
-  if (window.superadminDB) {
-    window.superadminDB.addTokens(tokenCharge.tokens, {
-      driverName: drv.name,
-      driverId: drv.id,
-      tier: tokenCharge.tierLabel
-    });
-    if (typeof renderSuperadminTokenBalance === 'function') {
-      renderSuperadminTokenBalance();
+  // 1. Deduct distance-tier tokens from driver wallet and automatically credit to SuperAdmin account (0 tokens during SuperAdmin 1-Hour Free Mode)
+  if (!isFreeHour && tokenCharge.tokens > 0) {
+    window.providerDB.deductDriverTokens(drv.id, tokenCharge.tokens);
+    if (window.superadminDB) {
+      window.superadminDB.addTokens(tokenCharge.tokens, {
+        driverName: drv.name,
+        driverId: drv.id,
+        tier: tokenCharge.tierLabel
+      });
+      if (typeof renderSuperadminTokenBalance === 'function') {
+        renderSuperadminTokenBalance();
+      }
     }
   }
 

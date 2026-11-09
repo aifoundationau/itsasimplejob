@@ -792,6 +792,50 @@ class SuperadminDatabase {
   constructor() {
     this.storageKey = "iasj_superadmin_tokens_v1";
     this.historyKey = "iasj_superadmin_token_history_v1";
+    this.freeHourKey = "iasj_superadmin_free_driver_hour_until";
+    this.freeDriverHourUntil = 0;
+  }
+
+  activateFreeDriverHour(durationMs = 3600000) {
+    const cleanDuration = Math.max(1000, Math.round(Number(durationMs) || 3600000));
+    const until = Date.now() + cleanDuration;
+    this.freeDriverHourUntil = until;
+    try {
+      localStorage.setItem(this.freeHourKey, String(until));
+    } catch (e) {}
+    return until;
+  }
+
+  endFreeDriverHour() {
+    this.freeDriverHourUntil = 0;
+    try {
+      localStorage.removeItem(this.freeHourKey);
+    } catch (e) {}
+    return 0;
+  }
+
+  getFreeDriverHourUntil() {
+    try {
+      const raw = localStorage.getItem(this.freeHourKey);
+      const parsed = raw ? parseInt(raw, 10) : this.freeDriverHourUntil;
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    } catch (e) {
+      return this.freeDriverHourUntil || 0;
+    }
+  }
+
+  isFreeDriverHourActive() {
+    const until = this.getFreeDriverHourUntil();
+    if (until > Date.now()) return true;
+    if (until > 0) {
+      this.endFreeDriverHour();
+    }
+    return false;
+  }
+
+  getFreeDriverHourRemainingMs() {
+    const until = this.getFreeDriverHourUntil();
+    return Math.max(0, until - Date.now());
   }
 
   getBalance() {

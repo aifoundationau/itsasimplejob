@@ -2867,3 +2867,43 @@ Enforces that customer-facing driver cards (`#contractor-cards-container` on Clo
   }
 }
 ```
+
+### 11.37 SuperAdmin 1-Hour Free For All Drivers Contract (`SuperadminFreeDriverHourContract`)
+Defines the state and token-waiver contract when SuperAdmin clicks **Offer Free For All Drivers (1 Hour)** (`#btn-sa-activate-free-hour`, calling `activateSuperadminFreeDriverHour()`). Sets `iasj_superadmin_free_driver_hour_until` to `Date.now() + 3600000` (1 hour / 60 minutes). While active (`isSuperadminFreeDriverHourActive() === true`), `iasjCurrency.getDriverOrderTokenCharge(km)` and `submitCourierBooking()` charge `0` tokens to all drivers (`tokensChargedToDriver: 0`), drivers do not pay SuperAdmin any tokens, and even drivers with `0` tokens can accept/receive bookings.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperadminFreeDriverHourContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "active",
+    "durationMs",
+    "until",
+    "tokensChargedToDrivers"
+  ],
+  "properties": {
+    "active": {
+      "type": "boolean"
+    },
+    "durationMs": {
+      "type": "integer",
+      "const": 3600000
+    },
+    "until": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "remainingMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600000
+    },
+    "tokensChargedToDrivers": {
+      "type": "integer",
+      "const": 0
+    }
+  }
+}
+```

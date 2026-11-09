@@ -252,7 +252,20 @@ export const iasjCurrency = {
   getPricing,
   updateLocalPricing,
   savePricing,
-  getDriverOrderTokenCharge: km => getDriverOrderTokenCharge(km, state.pricing),
+  getDriverOrderTokenCharge: km => {
+    const base = getDriverOrderTokenCharge(km, state.pricing);
+    if (typeof window !== 'undefined' && window.superadminDB?.isFreeDriverHourActive?.()) {
+      return {
+        ...base,
+        baseTierTokens: base.tokens,
+        tokens: 0,
+        audEquivalent: 0,
+        freeHourActive: true,
+        tierLabel: `${base.tierLabel} (FREE HOUR — 0 Tokens)`
+      };
+    }
+    return base;
+  },
   calculateDriverCourierPrice: args => calculateDriverCourierPrice(args, state.pricing),
   priceJob: args => priceJob(args, state.pricing),
   priceCategoryJob: args => priceCategoryJob(args, state.pricing),
