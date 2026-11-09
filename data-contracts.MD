@@ -1869,4 +1869,40 @@ Defines the visual pin color taxonomy on OpenStreetMap (Leaflet) canvases and ge
      * Pink Pin: Female Driver
      * Blue Pin: Male Driver
 
+### 11.10 Bottom Driver Application & Supporter Registration Gating Contract (`BottomDriverApplicationSupporterGatingContract`)
+Defines the architectural separation of the Driver Application from the Supporter Portal / Admin console and its relocation to the bottom of the web application, gated strictly behind Community Supporter registration:
+
+1. **Supporter Portal Sub-Navigation Refactor:**
+   - The Supporter Portal sub-navigation bar (`.supporter-subnav-bar`) consists of 3 primary view subtabs plus one dedicated scroll trigger:
+     * `1. Register Details` (`#subtab-btn-details`) -> `#supporter-details-subtab`
+     * `2. My Bookings History` (`#subtab-btn-bookings`) -> `#supporter-bookings-subtab`
+     * `3. Driver Dispatch Console` (`#subtab-btn-dispatch`) -> `#supporter-dispatch-subtab`
+     * `Apply to Drive (Bottom of Page)` (`#subtab-btn-driver-app-scroll`) -> executes `scrollToDriverApplication()`.
+   - Legacy calls to `switchSupporterSubTab('supporter-driver-app-subtab')` automatically delegate to `scrollToDriverApplication()`.
+
+2. **Web App Bottom Placement:**
+   - Container `#driver-application-bottom-section` (`class="driver-app-bottom-section container"`) sits prominently at the bottom of the web application right above the global `<footer class="site-footer">`.
+   - Supports smooth scroll alignment via CSS `scroll-margin-top: 100px`.
+
+3. **Two-Tier Gating Lifecycle (`updateDriverApplicationGateUI`):**
+   - **Gating Predicate (`isSupporterRegistered()`):**
+     * Checks if current visitor has an authenticated and stored supporter profile (`getCurrentSupporter()` returns object with valid email or name).
+     * **SuperAdmin Role Simulation Override:** If SuperAdmin switches perspective to `customer` (`sessionStorage['iasj_superadmin_view_role'] === 'customer'`), `isSupporterRegistered()` strictly returns `false`, enabling immediate testing of the locked gate experience.
+   - **Tier 1 — Locked State (`#driver-app-gate-locked`):**
+     * Displayed when visitor is NOT registered as a Community Supporter.
+     * Contains explanatory messaging: "Community Supporter Registration Required".
+     * Interactive unlock buttons:
+       - `[Sign In with Google to Unlock Application]` (`data-agent-id="btn-gate-google-signup"`, `data-testid="btn-gate-google-signup"`) invoking `signUpWithGoogle('supporter')`.
+       - `[Open Supporter Portal]` (`data-agent-id="btn-gate-goto-supporter-portal"`, `data-testid="btn-gate-goto-supporter-portal"`) invoking `switchTab('driver-admin-tab')`.
+     * The driver form is strictly hidden (`display: none`).
+   - **Tier 2 — Unlocked State (`#driver-app-gate-unlocked`):**
+     * Displayed when visitor IS registered as a Community Supporter.
+     * Displays verified supporter badge: `#driver-app-unlocked-supporter-name` (`${supporter.name} (${supporter.email})`).
+     * Displays existing driver application notice `#drv-reg-existing-notice` if application already on file.
+     * Reveals the complete `#driver-registration-form` with pre-filled supporter details (Name, Email, Phone, Address/Suburb) via `prefillDriverRegistrationForm(supporter)`.
+
+4. **Form Submission & State Synchronization:**
+   - Submitting `#driver-registration-form` (`handleDriverRegistrationSubmit`) saves or updates the driver profile in `providerDB` and Firestore, resets input fields, triggers `updateDriverApplicationGateUI()`, and navigates to `#driver-admin-tab` dispatch view with status toast feedback.
+
+
 

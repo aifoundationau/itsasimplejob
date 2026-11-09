@@ -117,6 +117,7 @@ function initApp() {
   // Populate Supporter & Driver Admin Page
   try { renderSupporterPanel(); } catch (e) {}
   try { renderDriverAdminDashboard(); } catch (e) {}
+  try { updateDriverApplicationGateUI(); } catch (e) {}
 
   // If Firebase is available, seed courier drivers if database is empty
   if (window.firebaseService?.seedProvidersIfEmpty && window.INITIAL_PROVIDERS) {
@@ -3299,7 +3300,60 @@ function getCurrentSupporter() {
 }
 window.getCurrentSupporter = getCurrentSupporter;
 
+function scrollToDriverApplication() {
+  const section = document.getElementById('driver-application-bottom-section');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+window.scrollToDriverApplication = scrollToDriverApplication;
+
+function isSupporterRegistered() {
+  // If SuperAdmin is explicitly simulating 'customer' view, treat as unregistered so admin can test the locked gate
+  const viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
+  if (viewRole === 'customer') {
+    return false;
+  }
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  return !!(supporter && (supporter.email || supporter.name));
+}
+window.isSupporterRegistered = isSupporterRegistered;
+
+function updateDriverApplicationGateUI() {
+  const lockedEl = document.getElementById('driver-app-gate-locked');
+  const unlockedEl = document.getElementById('driver-app-gate-unlocked');
+  if (!lockedEl && !unlockedEl) return;
+
+  const isRegistered = isSupporterRegistered();
+  const supporter = isRegistered ? getCurrentSupporter() : null;
+
+  if (isRegistered && supporter) {
+    if (lockedEl) lockedEl.style.display = 'none';
+    if (unlockedEl) unlockedEl.style.display = 'block';
+
+    const supNameBadge = document.getElementById('driver-app-unlocked-supporter-name');
+    if (supNameBadge) {
+      supNameBadge.textContent = `${supporter.name || 'Community Supporter'} (${supporter.email})`;
+    }
+
+    try {
+      prefillDriverRegistrationForm(supporter);
+    } catch (e) {
+      console.warn('Error prefilling driver registration form:', e);
+    }
+  } else {
+    if (lockedEl) lockedEl.style.display = 'block';
+    if (unlockedEl) unlockedEl.style.display = 'none';
+  }
+}
+window.updateDriverApplicationGateUI = updateDriverApplicationGateUI;
+
 function switchSupporterSubTab(subtabId) {
+  if (subtabId === 'supporter-driver-app-subtab') {
+    scrollToDriverApplication();
+    return;
+  }
+
   const subviews = document.querySelectorAll('.supporter-subview');
   subviews.forEach(v => v.style.display = 'none');
 
@@ -3313,11 +3367,7 @@ function switchSupporterSubTab(subtabId) {
     document.getElementById('subtab-btn-details')?.classList.add('active');
   } else if (subtabId === 'supporter-bookings-subtab') {
     document.getElementById('subtab-btn-bookings')?.classList.add('active');
-    try { prefillDriverRegistrationForm(supporter); } catch (e) {}
     try { renderSupporterBookings(); } catch (e) {}
-  } else if (subtabId === 'supporter-driver-app-subtab') {
-    document.getElementById('subtab-btn-driver-app')?.classList.add('active');
-    try { prefillDriverRegistrationForm(); } catch (e) { console.warn(e); }
   } else if (subtabId === 'supporter-dispatch-subtab') {
     document.getElementById('subtab-btn-dispatch')?.classList.add('active');
     try { renderDriverAdminDashboard(); } catch (e) {}
@@ -3438,6 +3488,7 @@ function renderSupporterPanel() {
     if (onboardingCard) onboardingCard.style.display = 'block';
     if (panelWrapper) panelWrapper.style.display = 'none';
   }
+  try { updateDriverApplicationGateUI(); } catch (e) {}
 }
 window.renderSupporterPanel = renderSupporterPanel;
 
@@ -3605,7 +3656,7 @@ function rebookSimilarCourier(orderId) {
 window.rebookSimilarCourier = rebookSimilarCourier;
 
 function toggleDriverApplicationUnderSupporter(forceOpen) {
-  switchSupporterSubTab('supporter-driver-app-subtab');
+  scrollToDriverApplication();
 }
 window.toggleDriverApplicationUnderSupporter = toggleDriverApplicationUnderSupporter;
 
@@ -3927,6 +3978,7 @@ function handleDriverRegistrationSubmit(event) {
   }
 
   document.getElementById('driver-registration-form')?.reset();
+  try { updateDriverApplicationGateUI(); } catch (e) {}
   switchTab('driver-admin-tab');
   switchSupporterSubTab('supporter-dispatch-subtab');
   showToast(`🎉 Driver application submitted for ${savedDriver.name}! Awaiting SuperAdmin approval.`);
@@ -7725,6 +7777,7 @@ function updateGoogleAuthUI(user) {
   if (typeof updateGoogleAuthBanners === 'function') {
     updateGoogleAuthBanners(user);
   }
+  try { updateDriverApplicationGateUI(); } catch (e) {}
 }
 
 function toggleGoogleCalendarAutoBlock(checked) {
@@ -10240,6 +10293,7 @@ function switchSuperadminViewRole(role) {
   syncSuperadminControls();
   try { renderSupporterPanel(); } catch (e) {}
   try { renderDriverAdminDashboard(); } catch (e) {}
+  try { updateDriverApplicationGateUI(); } catch (e) {}
   try { updateGoogleAuthUI(user); } catch (e) {}
 
   if (typeof showToast === 'function') {

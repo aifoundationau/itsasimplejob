@@ -152,9 +152,25 @@ Created: 2026-11-01
   * Verified end-to-end with verify_map_pins_and_driver_gender.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 35: RELOCATE DRIVER APPLICATION TO BOTTOM OF WEB APP GATED BY SUPPORTER REGISTRATION
+- Driver Application Relocation & Gating:
+  * Removed #supporter-driver-app-subtab and #supporter-driver-application-card from the Supporter Portal / Admin panel (#driver-admin-tab).
+  * Updated Supporter Subnav bar (.supporter-subnav-bar) with 3 primary subtabs (1. Register Details, 2. My Bookings History, 3. Driver Dispatch Console) and a dedicated smooth scroll button (Apply to Drive (Bottom of Page) invoking scrollToDriverApplication()).
+  * Placed #driver-application-bottom-section at the bottom of the web application right above the global <footer class="site-footer">.
+  * Implemented Two-Tier Supporter Registration Gate (updateDriverApplicationGateUI()):
+    - Locked State (#driver-app-gate-locked): Displayed when user is NOT registered as a Community Supporter (or when SuperAdmin views as "customer"). Shows lock notice with Google Sign-In button (signUpWithGoogle('supporter')) and Supporter Portal link. The driver form is strictly hidden.
+    - Unlocked State (#driver-app-gate-unlocked): Displayed when user IS registered as a Community Supporter. Reveals verified supporter badge, existing application notice, and the complete #driver-registration-form pre-filled with supporter details.
+  * Form Submission & State Synchronization: Submitting the form saves the driver profile, refreshes gate state, and routes to the Dispatch Console with status notifications.
+- Verification & Compliance:
+  * Documented Section 11.10 in data-contracts.MD.
+  * Verified end-to-end with verify_bottom_driver_app_gate.mjs and verify_pure_node_gate.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST MAP PIN COLORS & DRIVER GENDER IN BROWSER
+CURRENT TASK: TEST BOTTOM DRIVER APPLICATION & SUPPORTER GATING IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, open the "2. Closest Drivers Map" tab to confirm that the customer's search location pin is Green, female drivers (Sarah Jenkins, Tanya Nguyen) display Pink pins, and male drivers (Callum Evans, Marcus Taylor, Liam O'Connor) display Blue pins, as indicated by the new Pin Legend bar above the map.
+1. In your browser at http://localhost:3002, scroll down to the bottom of the page (or click "Apply to Drive (Bottom of Page)" in the Supporter Portal) to verify the Driver Application section:
+   - When signed out (or when viewing as "Customer" in the SuperAdmin switcher), confirm that the application is locked behind the "Community Supporter Registration Required" gate.
+   - When signed in as a Community Supporter, confirm that the application unlocks with your verified supporter details pre-filled.
 
 ================================================================================
