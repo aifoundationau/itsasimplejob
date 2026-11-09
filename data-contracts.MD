@@ -3062,3 +3062,49 @@ Defines the 3 default token packs (`10 Tokens`, `50 Tokens`, `100 Tokens`) displ
   }
 }
 ```
+
+### 11.40 Sample Profiles & Sample Data Non-Bookable Registry Contract (`sampleprofiles.txt`)
+All sample driver profiles (`drv-101` Callum Evans, `drv-102` Sarah Jenkins, `drv-103` Marcus 'Macca' Taylor, `drv-104` Liam O'Connor, `drv-105` Tanya Nguyen) and sample order/customer records (`ORD-901204`, `Jack Thompson` / `jack.thompson@example.com.au`) are tagged in `sampleprofiles.txt` (`public/sampleprofiles.txt`) and in runtime data with `isSample: true`, `sampleTag: "SAMPLE ONLY"`, and `canBeBooked: false`. All booking entry points strictly block booking any sample profile or sample data record.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SampleProfilesNonBookableContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "isSample",
+    "sampleTag",
+    "samplePurpose",
+    "canBeBooked",
+    "sampleRegistryFile"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "enum": ["drv-101", "drv-102", "drv-103", "drv-104", "drv-105", "ORD-901204"]
+    },
+    "isSample": {
+      "type": "boolean",
+      "const": true
+    },
+    "sampleTag": {
+      "type": "string",
+      "const": "SAMPLE ONLY"
+    },
+    "samplePurpose": {
+      "type": "string",
+      "const": "For sample purposes only — cannot be booked"
+    },
+    "canBeBooked": {
+      "type": "boolean",
+      "const": false
+    },
+    "sampleRegistryFile": {
+      "type": "string",
+      "const": "sampleprofiles.txt"
+    }
+  }
+}
+```

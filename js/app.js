@@ -44,10 +44,23 @@ const appState = {
   directionsRenderer: null
 };
 
-// Preset Sample Prompts
+// Preset Sample Prompts (Sample Only — Cannot Be Booked)
 const SAMPLE_PROMPTS = {
   urgent_courier: "Urgent courier needed: 2 boxes of diagnostic equipment (14kg total) from 10 Smith Street, Southport to 42 Surf Parade, Broadbeach."
 };
+
+function checkSampleProfileOrData(item) {
+  if (!item) return false;
+  if (typeof window.isSampleProfile === 'function') {
+    return Boolean(window.isSampleProfile(item));
+  }
+  const sampleIds = ['drv-101', 'drv-102', 'drv-103', 'drv-104', 'drv-105', 'DRV-101001', 'DRV-101002', 'DRV-101003', 'DRV-101004', 'DRV-101005', 'ORD-901204'];
+  if (typeof item === 'string') return sampleIds.includes(item.trim());
+  if (item.isSample === false && item.canBeBooked === true) return false;
+  if (item.isSample === true || item.canBeBooked === false) return true;
+  return sampleIds.includes(item.id) || sampleIds.includes(item.serviceProviderNumber) || sampleIds.includes(item.orderId);
+}
+window.checkSampleProfileOrData = checkSampleProfileOrData;
 
 // Initialize on DOM Ready or Immediate execution (supports Vite ES module timing)
 function initApp() {
@@ -460,6 +473,7 @@ function updateOsmContractorMarkers() {
       ? `${provider.bicycleMaxHeightCm || 35}×${provider.bicycleMaxWidthCm || 30}×${provider.bicycleMaxLengthCm || 40}cm`
       : `${provider.vehicleMaxHeightCm || provider.maxHeightCm || 150}×${provider.vehicleMaxWidthCm || provider.maxWidthCm || 130}×${provider.vehicleMaxLengthCm || provider.maxLengthCm || 250}cm`;
 
+    const isSample = checkSampleProfileOrData(provider);
     const popupHtml = `
       <div style="min-width:240px; font-family:'Plus Jakarta Sans', sans-serif; padding:4px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:0.4rem;">
@@ -470,6 +484,7 @@ function updateOsmContractorMarkers() {
             ${isClosest ? '★ Closest Driver' : `${dist.toFixed(1)} km`}
           </span>
         </div>
+        ${isSample ? `<div style="margin-bottom:4px;"><span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:1px 6px; border-radius:999px;" data-testid="popup-sample-badge-${provider.id}">SAMPLE ONLY • CANNOT BE BOOKED</span></div>` : ''}
         <div style="font-size:0.76rem; color:#64748B; margin-bottom:5px;">
           <i class="fa-solid fa-location-dot" style="color:#FF5A1F;"></i> ${provider.baseSuburb || provider.suburb || 'Gold Coast'} • <strong>${dist.toFixed(1)} km from pickup</strong>
         </div>
@@ -488,8 +503,8 @@ function updateOsmContractorMarkers() {
           <strong>Max Capacity:</strong> ${weightVal} (${dimsVal})<br>
           <strong>PayID:</strong> ${provider.payIdValue || provider.phone}
         </div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700;">
-          <i class="fa-solid ${isBicyclePopup ? 'fa-bicycle' : 'fa-truck-fast'}"></i> Select Driver (9am–4pm Pickup)
+        <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700; ${isSample ? 'background:#64748B; border-color:#475569;' : ''}" data-sample-blocked="${isSample ? 'true' : 'false'}">
+          <i class="fa-solid ${isSample ? 'fa-ban' : (isBicyclePopup ? 'fa-bicycle' : 'fa-truck-fast')}"></i> ${isSample ? 'Sample Only (Cannot Be Booked)' : 'Select Driver (9am–4pm Pickup)'}
         </button>
       </div>
     `;
@@ -1405,6 +1420,7 @@ function renderContractorCards(contractors) {
       ? 'Bicycle Courier (Letters & Food Only)'
       : (c.vehicle || c.tradeTitle || 'Courier Driver');
 
+    const isSample = checkSampleProfileOrData(c);
     return `
     <div class="contractor-search-card" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})" data-agent-id="map-driver-card-${c.id}" data-testid="map-driver-card-${c.id}">
       <div class="card-top-row">
@@ -1414,6 +1430,7 @@ function renderContractorCards(contractors) {
               <h5 style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.1rem;">
                 ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Driver Licence"></i>
               </h5>
+              ${isSample ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:0.1rem 0.45rem; border-radius:999px;" data-agent-id="map-sample-badge-${c.id}" data-testid="map-sample-badge-${c.id}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY</span>` : ''}
               ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
               ${isDual ? `<span style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; font-size:0.66rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Dual Mode</span>` : ''}
             </div>
@@ -1468,8 +1485,8 @@ function renderContractorCards(contractors) {
         <div style="font-size:0.74rem; color:var(--text-muted);">
           <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <strong style="color:#059669;">Verified Driver (${c.licenceState || 'QLD'})</strong> • <strong>PayID:</strong> ${c.payIdValue || c.phone}
         </div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="Select ${c.name} for Courier Booking">
-          <i class="fa-solid ${isBicycleView ? 'fa-bicycle' : 'fa-truck-fast'}"></i> Book Driver (9am–4pm)
+        <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" style="${isSample ? 'background:#64748B; border-color:#475569;' : ''}" data-sample-blocked="${isSample ? 'true' : 'false'}" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="${isSample ? `Sample Profile Only - ${c.name} Cannot Be Booked` : `Select ${c.name} for Courier Booking`}">
+          <i class="fa-solid ${isSample ? 'fa-ban' : (isBicycleView ? 'fa-bicycle' : 'fa-truck-fast')}"></i> ${isSample ? 'Sample Only (Cannot Be Booked)' : 'Book Driver (9am–4pm)'}
         </button>
       </div>
     </div>
@@ -1509,7 +1526,19 @@ function panToContractor(providerId, lat, lng) {
 
 function bookProviderDirectly(providerId) {
   const provider = window.providerDB?.findById(providerId);
-  if (!provider) return;
+  if (!provider) return null;
+
+  if (checkSampleProfileOrData(provider)) {
+    showToast(`🔒 Sample Profile Only: ${provider.name} (${provider.serviceProviderNumber || provider.id}) is for sample purposes only and cannot be booked.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_PROFILE_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      providerId: provider.id,
+      providerName: provider.name
+    };
+  }
 
   appState.selectedCourierDriverId = provider.id;
   const cardMode = appState.contractorCardModeOverrides?.[providerId];
@@ -2036,6 +2065,17 @@ async function confirmBooking() {
 
   const analysis = appState.currentAnalysis;
   const provider = window.providerDB.findById(appState.selectedProviderId) || analysis.matchedProviders[0];
+
+  if (checkSampleProfileOrData(provider)) {
+    showToast(`🔒 Sample Profile Only: ${provider?.name || 'Selected provider'} is for sample purposes only and cannot be booked.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_PROFILE_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      providerId: provider?.id || null
+    };
+  }
 
   let shiftLabel = 'Morning Shift (7:00 AM – 12:00 PM)';
   if (appState.selectedShift === 'emergency_24_7') shiftLabel = '⚡ 24/7 • 365 Days a Year Immediate Urgent (Within 60–90 Mins)';
@@ -3429,9 +3469,12 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     };
   });
 
-  // Sort: drivers that fit the package first, then closest to pickup origin
+  // Sort: live bookable drivers that fit the package first, then sample drivers, then closest to pickup origin
   rankedDrivers.sort((a, b) => {
     if (a.fitsPackage !== b.fitsPackage) return a.fitsPackage ? -1 : 1;
+    const aSample = checkSampleProfileOrData(a.driver);
+    const bSample = checkSampleProfileOrData(b.driver);
+    if (aSample !== bSample) return aSample ? 1 : -1;
     return a.distToPickupKm - b.distToPickupKm;
   });
 
@@ -3454,10 +3497,11 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     }
   }
 
-  // Ensure selected driver exists; if not, pick closest eligible driver
+  // Ensure selected driver exists; if not, pick closest eligible live driver (or closest sample driver for preview)
   let selectedEntry = rankedDrivers.find(r => r.driver.id === appState.selectedCourierDriverId);
   if ((!selectedEntry || !selectedEntry.fitsPackage) && rankedDrivers.length > 0) {
-    const firstEligible = rankedDrivers.find(r => r.fitsPackage) || rankedDrivers[0];
+    const firstEligibleLive = rankedDrivers.find(r => r.fitsPackage && !checkSampleProfileOrData(r.driver));
+    const firstEligible = firstEligibleLive || rankedDrivers.find(r => r.fitsPackage) || rankedDrivers[0];
     selectedEntry = firstEligible;
     appState.selectedCourierDriverId = selectedEntry.driver.id;
   }
@@ -3477,6 +3521,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       const isDual = hasVeh && hasBic;
       const isFemale = (d.gender === 'female') || (!d.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (d.name || '').toLowerCase().includes(n)));
 
+      const isSampleDriver = checkSampleProfileOrData(d);
       const modeBadge = mode === 'bicycle'
         ? '<span style="background:#0284C7; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-bicycle"></i> BICYCLE COURIER</span>'
         : '<span style="background:#475569; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-truck"></i> MOTOR VEHICLE</span>';
@@ -3487,6 +3532,8 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
           style="cursor:pointer; border:2px solid ${isSelected ? 'var(--brand-orange)' : 'var(--border-light)'}; background:${isSelected ? '#FFFDF9' : '#FFFFFF'}; border-radius:var(--radius-md); padding:0.95rem 1rem; transition:all 0.15s ease; opacity:${item.fitsPackage ? '1' : '0.68'};"
           data-agent-id="select-driver-card-${d.id}"
           data-testid="select-driver-card-${d.id}"
+          data-is-sample="${isSampleDriver ? 'true' : 'false'}"
+          data-can-be-booked="${isSampleDriver ? 'false' : 'true'}"
           role="button"
           tabindex="0"
           aria-label="Select Driver ${escapeAttr(d.name)}">
@@ -3495,6 +3542,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <strong style="font-size:0.98rem; color:var(--primary-navy);">${d.name}</strong>
+                  ${isSampleDriver ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:0.12rem 0.45rem; border-radius:999px;" data-agent-id="sample-profile-badge-${d.id}" data-testid="sample-profile-badge-${d.id}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
                   ${modeBadge}
                   ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
                   ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
@@ -3605,10 +3653,21 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     speedTier
   };
 
-  // Update Submit Button label with Selected Driver & Live AUD Total
+  // Update Submit Button label with Selected Driver & Live AUD Total (or Sample Profile non-bookable notice)
   const submitBtn = document.getElementById('btn-submit-courier-booking');
+  const isSelectedDriverSample = checkSampleProfileOrData(drv);
   if (submitBtn) {
-    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Confirm Booking with ${drv.name} ($${q.totalAud.toFixed(2)} AUD via PayID)`;
+    if (isSelectedDriverSample) {
+      submitBtn.innerHTML = `<i class="fa-solid fa-ban"></i> Sample Profile Only — ${drv.name} Cannot Be Booked (Sample Purpose Only)`;
+      submitBtn.setAttribute('data-sample-blocked', 'true');
+      submitBtn.style.background = '#64748B';
+      submitBtn.style.borderColor = '#475569';
+    } else {
+      submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Confirm Booking with ${drv.name} ($${q.totalAud.toFixed(2)} AUD via PayID)`;
+      submitBtn.setAttribute('data-sample-blocked', 'false');
+      submitBtn.style.background = '';
+      submitBtn.style.borderColor = '';
+    }
   }
 
   // Also sync top navbar token counter with active admin driver
@@ -3682,6 +3741,17 @@ function submitCourierBooking() {
   }
 
   const drv = calc.driver;
+  if (checkSampleProfileOrData(drv)) {
+    showToast(`🔒 Sample Profile Only: ${drv.name} (${drv.serviceProviderNumber || drv.id}) is for sample purposes only and cannot be booked. Please select a registered live driver.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_PROFILE_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      driverId: drv.id,
+      driverName: drv.name
+    };
+  }
   if (!calc.fitsPackage) {
     showToast(`⚠️ This package exceeds ${drv.name}'s maximum capacity (${drv.maxWeightKg}kg, ${drv.maxHeightCm}×${drv.maxWidthCm}×${drv.maxLengthCm}cm). Please select an eligible driver.`);
     return;
@@ -5386,6 +5456,7 @@ function renderSupporterBookings() {
   }
 
   container.innerHTML = ordersToDisplay.map(ord => {
+    const isSampleOrd = checkSampleProfileOrData(ord);
     const isCompleted = (ord.status || '').includes('Delivered');
     const isScheduled = (ord.status || '').includes('Scheduled') || (ord.status || '').includes('9am');
     const badgeBg = isCompleted ? '#ECFDF5' : (isScheduled ? '#EFF6FF' : '#FEF3C7');
@@ -5393,11 +5464,12 @@ function renderSupporterBookings() {
     const badgeBorder = isCompleted ? '#A7F3D0' : (isScheduled ? '#BFDBFE' : '#FDE68A');
 
     return `
-      <div class="booking-history-card" style="background:#ffffff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.2s ease;">
+      <div class="booking-history-card" style="background:#ffffff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.2s ease;" data-is-sample="${isSampleOrd ? 'true' : 'false'}">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
           <div>
             <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
               <span style="font-size:0.74rem; font-weight:800; background:#0F172A; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; letter-spacing:0.5px;">${ord.orderId}</span>
+              ${isSampleOrd ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.68rem; font-weight:900; padding:0.15rem 0.5rem; border-radius:999px;" data-testid="sample-order-badge-${ord.orderId}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
               <span style="font-size:0.78rem; color:var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Recent'}</span>
             </div>
             <div style="font-size:0.86rem; font-weight:800; color:var(--primary-navy); margin-top:0.35rem;">
@@ -5439,9 +5511,10 @@ function renderSupporterBookings() {
 
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.5rem; margin-top:0.85rem; padding-top:0.65rem; border-top:1px solid var(--bg-card-alt);">
           <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
-            style="font-size:0.78rem; font-weight:800;"
-            data-agent-id="btn-rebook-${ord.orderId}" data-testid="btn-rebook-${ord.orderId}" aria-label="Re-book Similar Courier Job">
-            <i class="fa-solid fa-rotate-right"></i> Book Similar Pickup
+            style="font-size:0.78rem; font-weight:800; ${isSampleOrd ? 'color:#64748B; border-color:#CBD5E1;' : ''}"
+            data-sample-blocked="${isSampleOrd ? 'true' : 'false'}"
+            data-agent-id="btn-rebook-${ord.orderId}" data-testid="btn-rebook-${ord.orderId}" aria-label="${isSampleOrd ? 'Sample Order Cannot Be Booked' : 'Re-book Similar Courier Job'}">
+            <i class="fa-solid ${isSampleOrd ? 'fa-ban' : 'fa-rotate-right'}"></i> ${isSampleOrd ? 'Sample Only (Cannot Be Booked)' : 'Book Similar Pickup'}
           </button>
         </div>
       </div>
@@ -5476,9 +5549,20 @@ function makeNewBookingAsSupporter() {
 window.makeNewBookingAsSupporter = makeNewBookingAsSupporter;
 
 function rebookSimilarCourier(orderId) {
-  if (!window.courierOrderDB) return;
+  if (!window.courierOrderDB) return null;
   const ord = window.courierOrderDB.getAll().find(o => o.orderId === orderId);
-  if (!ord) return;
+  if (!ord) return null;
+
+  if (checkSampleProfileOrData(ord) || checkSampleProfileOrData(ord.driverId)) {
+    showToast(`🔒 Sample Data Only: Order #${ord.orderId} is a sample record for sample purposes only and cannot be booked.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_DATA_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      orderId: ord.orderId
+    };
+  }
 
   switchTab('courier-tab');
   const origEl = document.getElementById('courier-origin');
@@ -6138,11 +6222,13 @@ function renderDriverAdminDashboard() {
 
   ordersContainer.innerHTML = ordersToDisplay.map(ord => {
     const isCompleted = ord.status.includes('Delivered');
+    const isSampleOrd = checkSampleProfileOrData(ord);
     return `
-      <div style="background:#fff; border:1px solid ${isCompleted ? '#A7F3D0' : 'var(--border-light)'}; border-left:4px solid ${isCompleted ? '#059669' : 'var(--brand-orange)'}; border-radius:var(--radius-md); padding:1.1rem;" data-agent-id="driver-order-card-${ord.orderId}" data-testid="driver-order-card-${ord.orderId}">
+      <div style="background:#fff; border:1px solid ${isCompleted ? '#A7F3D0' : 'var(--border-light)'}; border-left:4px solid ${isCompleted ? '#059669' : 'var(--brand-orange)'}; border-radius:var(--radius-md); padding:1.1rem;" data-agent-id="driver-order-card-${ord.orderId}" data-testid="driver-order-card-${ord.orderId}" data-is-sample="${isSampleOrd ? 'true' : 'false'}">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem; padding-bottom:0.55rem; border-bottom:1px solid var(--border-light);">
           <div>
             <strong style="font-size:1rem; color:var(--primary-navy);">${ord.orderId}</strong>
+            ${isSampleOrd ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.68rem; font-weight:900; padding:0.15rem 0.5rem; border-radius:999px; margin-left:0.35rem;" data-testid="driver-sample-order-badge-${ord.orderId}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
             <span style="font-size:0.76rem; color:var(--text-muted); margin-left:0.4rem;">Driver: <strong>${ord.driverName}</strong></span>
           </div>
           <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
@@ -6442,6 +6528,16 @@ function acceptDriverBooking(orderId) {
   if (!order) {
     showToast('⚠️ Order not found.');
     return;
+  }
+  if (checkSampleProfileOrData(order)) {
+    showToast(`🔒 Sample Data Only: Order #${order.orderId} is for sample purposes only and cannot be booked or accepted.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_DATA_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      orderId: order.orderId
+    };
   }
 
   // Update order status to 'Driver Accepted'

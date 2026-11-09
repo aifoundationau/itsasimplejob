@@ -544,7 +544,15 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-09] Task 69: Default Token Packs (10, 50, 100 Tokens) Quote Subtotal, Exclusive 10% GST, Total & Token Account Credit:
 - Updated `#supporter-buy-tokens-subtab` and `#driver-token-topup-modal` (`#stripe-token-quote-breakdown`) in `index.html`, `js/stripe-service.js`, and `js/app.js` so the 3 default token packs display:
   1. **10 Tokens**: `Quote Subtotal: $10.00 AUD` • `Tax (Exclusive 10% GST): +$1.00 AUD` • `Total: $11.00 AUD` • `They receive 10 tokens in their token account`
-  2. **50 Tokens**: `Quote Subtotal: $50.00 AUD` • `Tax (Exclusive 10% GST): +$5.00 AUD` • `Total: $55.00 AUD` • `They receive 50 tokens in their token account`
+  2. **50 Tokens**: `Quote Subtotal: $50.00 AUD` • `Tax (Exclusive 10% GST): +$5.00 AUD` • `Total: $55.00 AUD` • `They receive 10 tokens in their token account`
   3. **100 Tokens**: `Quote Subtotal: $100.00 AUD` • `Tax (Exclusive 10% GST): +$10.00 AUD` • `Total: $110.00 AUD` • `They receive 100 tokens in their token account`
 - Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
 - Documented Section 11.39 (`DefaultTokenPacksTaxAndAccountCreditContract`) in `data-contracts.MD`.
+
+[2026-11-09] Task 70: All Sample Data & Sample Profiles Tagged in sampleprofiles.txt & Strictly Non-Bookable:
+- Created `sampleprofiles.txt` at the project root (`e:\Antigravity Projects\its-a-simple-job\sampleprofiles.txt`) and `public/sampleprofiles.txt`, tagging all 5 sample courier driver profiles (`drv-101` Callum Evans, `drv-102` Sarah Jenkins, `drv-103` Marcus 'Macca' Taylor, `drv-104` Liam O'Connor, `drv-105` Tanya Nguyen), sample order `ORD-901204`, sample customer `Jack Thompson` (`jack.thompson@example.com.au`), and sample prompt `urgent_courier` with `[SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]`.
+- Tagged all initial sample drivers (`INITIAL_PROVIDERS`) and sample orders (`INITIAL_ORDERS`) in `js/providers-data.js` with `isSample: true`, `sampleTag: "SAMPLE ONLY"`, `samplePurpose: "For sample purposes only — cannot be booked"`, and `canBeBooked: false`, and exposed `window.isSampleProfile()`.
+- Displayed `SAMPLE ONLY • CANNOT BE BOOKED` badges across `#courier-driver-selection-list`, `#contractor-cards-container`, Leaflet map popups, and order cards in `js/app.js`.
+- Enforced non-bookable checks across `submitCourierBooking()`, `bookProviderDirectly()`, `confirmBooking()`, `rebookSimilarCourier()`, and `acceptDriverBooking()` so sample profiles and sample data cannot be booked, while newly registered live drivers (`isSample: false`, `canBeBooked: true`) remain bookable.
+- Verified with `node scratch/verify_sample_profiles_non_bookable.mjs` and `npm run build` (0 errors).
+- Documented Section 11.40 (`SampleProfilesNonBookableContract`) in `data-contracts.MD`.

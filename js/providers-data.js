@@ -27,11 +27,41 @@ function getDefaultCalendarSchedule(is24_7 = true) {
   return schedule;
 }
 
+const SAMPLE_DRIVER_IDS = ["drv-101", "drv-102", "drv-103", "drv-104", "drv-105"];
+const SAMPLE_PROVIDER_SPNS = ["DRV-101001", "DRV-101002", "DRV-101003", "DRV-101004", "DRV-101005"];
+const SAMPLE_ORDER_IDS = ["ORD-901204"];
+const SAMPLE_CUSTOMER_EMAILS = ["jack.thompson@example.com.au"];
+const SAMPLE_REGISTRY_FILE = "sampleprofiles.txt";
+
+function isSampleProfile(item) {
+  if (!item) return false;
+  if (typeof item === "string") {
+    const clean = item.trim();
+    return (
+      SAMPLE_DRIVER_IDS.includes(clean) ||
+      SAMPLE_PROVIDER_SPNS.includes(clean) ||
+      SAMPLE_ORDER_IDS.includes(clean) ||
+      SAMPLE_CUSTOMER_EMAILS.includes(clean.toLowerCase())
+    );
+  }
+  if (item.isSample === false && item.canBeBooked === true) return false;
+  if (item.isSample === true || item.canBeBooked === false) return true;
+  if (item.id && SAMPLE_DRIVER_IDS.includes(item.id)) return true;
+  if (item.serviceProviderNumber && SAMPLE_PROVIDER_SPNS.includes(item.serviceProviderNumber)) return true;
+  if (item.orderId && SAMPLE_ORDER_IDS.includes(item.orderId)) return true;
+  return false;
+}
+
 const INITIAL_PROVIDERS = [
   {
     id: "drv-101",
     serviceProviderNumber: "DRV-101001",
     businessId: "its-a-simple-job",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     name: "Callum Evans",
     gender: "male",
     businessName: "Gold Coast Rapid Van Couriers",
@@ -102,6 +132,11 @@ const INITIAL_PROVIDERS = [
     id: "drv-102",
     serviceProviderNumber: "DRV-101002",
     businessId: "its-a-simple-job",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     name: "Sarah Jenkins",
     gender: "female",
     businessName: "Broadbeach City Parcel & Document Runner",
@@ -172,6 +207,11 @@ const INITIAL_PROVIDERS = [
     id: "drv-103",
     serviceProviderNumber: "DRV-101003",
     businessId: "its-a-simple-job",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     name: "Marcus 'Macca' Taylor",
     gender: "male",
     businessName: "Robina Heavy Ute & Trade Freight",
@@ -226,6 +266,11 @@ const INITIAL_PROVIDERS = [
     id: "drv-104",
     serviceProviderNumber: "DRV-101004",
     businessId: "its-a-simple-job",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     name: "Liam O'Connor",
     gender: "male",
     businessName: "M1 Corridor Sprinter Freight (GC to Brisbane)",
@@ -280,6 +325,11 @@ const INITIAL_PROVIDERS = [
     id: "drv-105",
     serviceProviderNumber: "DRV-101005",
     businessId: "its-a-simple-job",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     name: "Tanya Nguyen",
     gender: "female",
     businessName: "Surfers & Central Coast Direct Courier",
@@ -335,6 +385,11 @@ const INITIAL_PROVIDERS = [
 const INITIAL_ORDERS = [
   {
     orderId: "ORD-901204",
+    isSample: true,
+    sampleTag: "SAMPLE ONLY",
+    samplePurpose: "For sample purposes only — cannot be booked",
+    canBeBooked: false,
+    sampleRegistryFile: "sampleprofiles.txt",
     createdAt: "2026-11-08T08:45:00Z",
     driverId: "drv-101",
     driverSpn: "DRV-101001",
@@ -426,8 +481,17 @@ class ProviderDatabase {
     const bicycleMaxWidthCm = Number(p.bicycleMaxWidthCm ?? 30);
     const bicycleMaxLengthCm = Number(p.bicycleMaxLengthCm ?? 40);
 
+    const isSample = p.isSample === false
+      ? false
+      : (Boolean(p.isSample) || SAMPLE_DRIVER_IDS.includes(p.id) || SAMPLE_PROVIDER_SPNS.includes(p.serviceProviderNumber));
+
     return {
       ...p,
+      isSample,
+      sampleTag: isSample ? (p.sampleTag || "SAMPLE ONLY") : "",
+      samplePurpose: isSample ? (p.samplePurpose || "For sample purposes only — cannot be booked") : "",
+      canBeBooked: isSample ? false : (p.canBeBooked !== false),
+      sampleRegistryFile: isSample ? SAMPLE_REGISTRY_FILE : "",
       gender,
       category: "courier",
       hasVehicleCourier,
@@ -530,6 +594,8 @@ class ProviderDatabase {
       id,
       serviceProviderNumber: spn,
       businessId: "its-a-simple-job",
+      isSample: Boolean(newProv.isSample === true),
+      canBeBooked: newProv.isSample === true ? false : true,
       rating: 5.0,
       reviewCount: 1,
       policeChecked: true,
@@ -671,14 +737,29 @@ class CourierOrderDatabase {
   }
 
   loadOrders() {
+    const normalizeOrder = (o) => {
+      const isSample = o.isSample === false
+        ? false
+        : (Boolean(o.isSample) || SAMPLE_ORDER_IDS.includes(o.orderId));
+      return {
+        ...o,
+        isSample,
+        sampleTag: isSample ? (o.sampleTag || "SAMPLE ONLY") : "",
+        samplePurpose: isSample ? (o.samplePurpose || "For sample purposes only — cannot be booked") : "",
+        canBeBooked: isSample ? false : (o.canBeBooked !== false),
+        sampleRegistryFile: isSample ? SAMPLE_REGISTRY_FILE : ""
+      };
+    };
     try {
       const stored = localStorage.getItem(this.storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeOrder);
+        }
       }
     } catch (e) {}
-    return [...INITIAL_ORDERS];
+    return INITIAL_ORDERS.map(o => normalizeOrder({ ...o }));
   }
 
   save() {
@@ -918,6 +999,12 @@ function isDriverVisibleOnMap(driver) {
   return Boolean(isDriverApproved(driver) && isDriverProfileTurnedOn(driver));
 }
 
+window.SAMPLE_DRIVER_IDS = SAMPLE_DRIVER_IDS;
+window.SAMPLE_PROVIDER_SPNS = SAMPLE_PROVIDER_SPNS;
+window.SAMPLE_ORDER_IDS = SAMPLE_ORDER_IDS;
+window.SAMPLE_CUSTOMER_EMAILS = SAMPLE_CUSTOMER_EMAILS;
+window.SAMPLE_REGISTRY_FILE = SAMPLE_REGISTRY_FILE;
+window.isSampleProfile = isSampleProfile;
 window.isDriverApproved = isDriverApproved;
 window.isDriverProfileTurnedOn = isDriverProfileTurnedOn;
 window.isDriverVisibleOnMap = isDriverVisibleOnMap;

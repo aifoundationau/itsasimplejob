@@ -1,0 +1,119 @@
+================================================================================
+IT'S A SIMPLE JOB — OFFICIAL SAMPLE PROFILES & SAMPLE DATA REGISTRY
+FILE: sampleprofiles.txt
+STATUS: SAMPLE ONLY — FOR SAMPLE PURPOSES ONLY — CANNOT BE BOOKED
+================================================================================
+
+DIRECTIVE & ENFORCEMENT RULE:
+All sample data and sample profiles listed in this registry are included in the
+web application strictly for demonstration and sample purposes only.
+None of the sample profiles or sample data records below can be booked.
+All booking entry points (submitCourierBooking, bookProviderDirectly,
+confirmBooking, rebookSimilarCourier, and acceptDriverBooking) strictly block
+bookings on any profile or data record tagged [SAMPLE ONLY].
+
+--------------------------------------------------------------------------------
+1. SAMPLE COURIER DRIVER PROFILES (INITIAL_PROVIDERS — NON-BOOKABLE)
+--------------------------------------------------------------------------------
+
+[SAMPLE PROFILE #1]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Driver ID:             drv-101
+- Service Provider No:   DRV-101001
+- Full Name:             Callum Evans
+- Business Name:         Gold Coast Rapid Van Couriers
+- Trade Title:           Express Van Courier Driver
+- Vehicle:               Toyota HiAce LWB High Roof Van
+- Licence Details:       QLD Driver Lic #482910384 (Class C — Car / LWB Van)
+- Email:                 callum.evans@gccouriers.com.au
+- Phone / PayID:         0412 889 341 (PayID Account: Callum Evans Courier Services)
+- Address / Suburb:      14 Nerang Street, Southport QLD 4215
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE PROFILE #2]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Driver ID:             drv-102
+- Service Provider No:   DRV-101002
+- Full Name:             Sarah Jenkins
+- Business Name:         Broadbeach City Parcel & Document Runner
+- Trade Title:           Fast City Sedan & Parcel Courier
+- Vehicle:               Toyota Corolla Hybrid Station Wagon + Bicycle Courier
+- Licence Details:       QLD Driver Lic #591028471 (Class C — Standard Vehicle)
+- Email / PayID:         sarah@broadbeachrunner.com.au (PayID Account: Sarah Jenkins Express)
+- Phone:                 0423 551 902
+- Address / Suburb:      42 Surf Parade, Broadbeach QLD 4218
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE PROFILE #3]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Driver ID:             drv-103
+- Service Provider No:   DRV-101003
+- Full Name:             Marcus 'Macca' Taylor
+- Business Name:         Robina Heavy Ute & Trade Freight
+- Trade Title:           Heavy Ute & Bulky Item Courier
+- Vehicle:               Ford Ranger Aluminium Tray Ute + Tie-Downs (1 Tonne)
+- Licence Details:       QLD Driver Lic #310492817 (Class LR — Light Rigid & Ute)
+- Email:                 macca@robinaheavyfreight.com.au
+- Phone / PayID:         0438 772 619 (PayID Account: Marcus Taylor Freight)
+- Address / Suburb:      19 Cheltenham Drive, Robina QLD 4226
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE PROFILE #4]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Driver ID:             drv-104
+- Service Provider No:   DRV-101004
+- Full Name:             Liam O'Connor
+- Business Name:         M1 Corridor Sprinter Freight (GC to Brisbane)
+- Trade Title:           Long-Wheelbase Sprinter Courier
+- Vehicle:               Mercedes-Benz Sprinter LWB High Roof (1.5 Tonne)
+- Licence Details:       QLD Driver Lic #774829104 (Class MR — Medium Rigid)
+- Email:                 liam@m1sprinter.com.au
+- Phone:                 0409 334 812
+- PayID (ABN):           51824753556 (PayID Account: M1 Corridor Sprinter Pty Ltd)
+- Address / Suburb:      55 Siganto Drive, Helensvale QLD 4212
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE PROFILE #5]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Driver ID:             drv-105
+- Service Provider No:   DRV-101005
+- Full Name:             Tanya Nguyen
+- Business Name:         Surfers & Central Coast Direct Courier
+- Trade Title:           Compact Van & Retail Delivery Driver
+- Vehicle:               Volkswagen Caddy Maxi Cargo Van
+- Licence Details:       QLD Driver Lic #663920185 (Class C — Car / Compact Van)
+- Email:                 tanya@surfersdirect.com.au
+- Phone / PayID:         0415 902 447 (PayID Account: Tanya Nguyen Couriers)
+- Address / Suburb:      8 Cavill Avenue, Surfers Paradise QLD 4217
+- Sample Status:         isSample = true | canBeBooked = false
+
+--------------------------------------------------------------------------------
+2. SAMPLE ORDER & SAMPLE CUSTOMER DATA (INITIAL_ORDERS — NON-BOOKABLE)
+--------------------------------------------------------------------------------
+
+[SAMPLE ORDER #1]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Order ID:              ORD-901204
+- Assigned Sample Drv:   drv-101 (DRV-101001 — Callum Evans)
+- Sample Customer Name:  Jack Thompson
+- Sample Customer Email: jack.thompson@example.com.au
+- Sample Customer Phone: 0412 889 123
+- Sample Origin:         10 Smith Street, Southport QLD 4215
+- Sample Destination:    42 Surf Parade, Broadbeach QLD 4218
+- Sample Contents:       2 sealed boxes of medical diagnostic parts (fragile)
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE CUSTOMER FORM PLACEHOLDER]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Customer Name:         Jack Thompson
+- Customer Email:        jack.thompson@example.com.au
+- Customer Phone:        0412 889 123
+- Customer Address:      10 Smith Street, Southport QLD 4215
+- Sample Status:         isSample = true | canBeBooked = false
+
+[SAMPLE PROMPT DATA]
+- Tag:                   [SAMPLE ONLY | BOOKABLE: FALSE | SAMPLE PURPOSES ONLY]
+- Prompt Key:            urgent_courier
+- Description:           "Urgent courier needed: 2 boxes of diagnostic equipment (14kg total) from 10 Smith Street, Southport to 42 Surf Parade, Broadbeach."
+- Sample Status:         isSample = true | canBeBooked = false
+================================================================================
