@@ -686,3 +686,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-10] Task 91: Remove MIT Licence (`mitlicence.txt`):
 - Removed `mitlicence.txt` from the repository per user request.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-10] Task 92: Center "About It's a Simple Job" in One Bubble in the Welcome Popup Header:
+- Updated `#welcome-intro-popup` in `index.html` and `.welcome-intro-header` / `.welcome-intro-bubble` in `css/style.css` so the header displays just `About It's a Simple Job` in one centered pill/bubble instead of the two-line `South Brisbane to Coolangatta • Direct PayID ($ AUD)` / `Welcome to It's A Simple Job` text.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

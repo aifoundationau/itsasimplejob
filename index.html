@@ -3166,11 +3166,9 @@
     data-testid="welcome-intro-popup">
     <div class="welcome-intro-box">
       <div class="welcome-intro-header">
-        <div class="welcome-intro-title-group">
-          <span class="welcome-intro-badge">South Brisbane to Coolangatta • Direct PayID ($ AUD)</span>
-          <h2 id="welcome-intro-popup-title" class="welcome-intro-title">Welcome to It's A Simple Job</h2>
-        </div>
-        <form method="dialog" style="margin:0;">
+        <h2 id="welcome-intro-popup-title" class="welcome-intro-title welcome-intro-bubble"
+          data-agent-id="welcome-intro-popup-title" data-testid="welcome-intro-popup-title">About It's a Simple Job</h2>
+        <form method="dialog" class="welcome-intro-close-form">
           <button type="submit" id="btn-close-welcome-popup" class="welcome-intro-close-btn"
             onclick="closeWelcomeIntroPopup()" data-agent-id="btn-close-welcome-popup"
             data-testid="btn-close-welcome-popup" aria-label="Close welcome popup">&times;</button>
