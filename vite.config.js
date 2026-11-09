@@ -1,7 +1,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { dirname, resolve } from 'path';
-import { existsSync } from 'fs';
+import { dirname, resolve, relative } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { execFileSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,6 +67,37 @@ export default defineConfig(({ mode }) => {
       }
     },
     plugins: [
+      {
+        name: 'diff-preview-truncation-guard',
+        enforce: 'pre',
+        handleHotUpdate({ file }) {
+          try {
+            if (file && existsSync(file)) {
+              const content = readFileSync(file, 'utf8');
+              if (content.includes('[truncated for diff preview]')) {
+                const relPath = relative(__dirname, file).replace(/\\/g, '/');
+                execFileSync('git', ['checkout', 'HEAD', '--', relPath], { cwd: __dirname });
+                console.warn(`[diff-preview-truncation-guard] Restored ${relPath} from HEAD after IDE diff-preview truncation.`);
+              }
+            }
+          } catch (e) {}
+        },
+        transform(code, id) {
+          if (code && code.includes('[truncated for diff preview]')) {
+            try {
+              const cleanId = id.split('?')[0];
+              if (existsSync(cleanId)) {
+                const relPath = relative(__dirname, cleanId).replace(/\\/g, '/');
+                execFileSync('git', ['checkout', 'HEAD', '--', relPath], { cwd: __dirname });
+                const restored = readFileSync(cleanId, 'utf8');
+                console.warn(`[diff-preview-truncation-guard] Auto-healed ${relPath} from HEAD before Vite import-analysis.`);
+                return { code: restored, map: null };
+              }
+            } catch (e) {}
+          }
+          return null;
+        }
+      },
       {
         name: 'html-env-injection',
         transformIndexHtml(html) {
