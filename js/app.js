@@ -2379,7 +2379,102 @@ function renderSuperadminUniversalTokenConsole() {
 }
 window.renderSuperadminUniversalTokenConsole = renderSuperadminUniversalTokenConsole;
 
+const pendingSaTokenConfirmations = {};
+
+function clearPendingSaTokenConfirmation(actionKey) {
+  if (!actionKey) {
+    Object.keys(pendingSaTokenConfirmations).forEach(k => {
+      const entry = pendingSaTokenConfirmations[k];
+      if (entry?.timerId) clearTimeout(entry.timerId);
+      if (entry?.btnEl && typeof entry.btnEl._iasjRevert === 'function') {
+        try { entry.btnEl._iasjRevert(); } catch (e) {}
+      }
+      delete pendingSaTokenConfirmations[k];
+    });
+    return;
+  }
+  const entry = pendingSaTokenConfirmations[actionKey];
+  if (entry) {
+    if (entry.timerId) clearTimeout(entry.timerId);
+    delete pendingSaTokenConfirmations[actionKey];
+  }
+}
+window.clearPendingSaTokenConfirmation = clearPendingSaTokenConfirmation;
+
+function getPendingSaTokenConfirmations() {
+  return { ...pendingSaTokenConfirmations };
+}
+window.getPendingSaTokenConfirmations = getPendingSaTokenConfirmations;
+
+/**
+ * Universal Two-Step Confirmation for ALL SuperAdmin Token Actions (Add, Minus, Reset to 0)
+ * Applies to both SuperAdmin Driver Approval Console (#superadmin-drivers-approval-list)
+ * and SuperAdmin Universal Token Management (#superadmin-universal-token-management-card).
+ */
+function confirmSuperadminTokenAction(actionKey, btnEl, label, onConfirmed, armToastMessage) {
+  const existing = pendingSaTokenConfirmations[actionKey];
+  if (existing && (Date.now() - existing.armedAt) <= 6500) {
+    if (existing.timerId) clearTimeout(existing.timerId);
+    delete pendingSaTokenConfirmations[actionKey];
+    if (btnEl && typeof btnEl._iasjRevert === 'function') {
+      try { btnEl._iasjRevert(); } catch (e) {}
+    } else if (existing.btnEl && typeof existing.btnEl._iasjRevert === 'function') {
+      try { existing.btnEl._iasjRevert(); } catch (e) {}
+    }
+    if (typeof onConfirmed === 'function') {
+      onConfirmed();
+    }
+    return { status: 'confirmed', confirmed: true, actionKey };
+  }
+
+  // Clear any other armed token actions so only one token action is armed at a time
+  clearPendingSaTokenConfirmation();
+
+  const timerId = setTimeout(() => {
+    delete pendingSaTokenConfirmations[actionKey];
+  }, 6000);
+
+  pendingSaTokenConfirmations[actionKey] = {
+    actionKey,
+    label,
+    armedAt: Date.now(),
+    timerId,
+    btnEl: btnEl || null
+  };
+
+  if (btnEl && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btnEl, () => {
+      if (pendingSaTokenConfirmations[actionKey]?.timerId) {
+        clearTimeout(pendingSaTokenConfirmations[actionKey].timerId);
+      }
+      delete pendingSaTokenConfirmations[actionKey];
+      if (typeof onConfirmed === 'function') {
+        onConfirmed();
+      }
+    }, {
+      label,
+      confirmText: label,
+      timeoutMs: 6000,
+      targetType: 'token_balance',
+      targetId: actionKey,
+      onCancel: () => {
+        if (pendingSaTokenConfirmations[actionKey]?.timerId) {
+          clearTimeout(pendingSaTokenConfirmations[actionKey].timerId);
+        }
+        delete pendingSaTokenConfirmations[actionKey];
+      }
+    });
+  }
+
+  if (armToastMessage) {
+    showToast(armToastMessage);
+  }
+  return { status: 'armed', confirmed: false, actionKey, label };
+}
+window.confirmSuperadminTokenAction = confirmSuperadminTokenAction;
+
 function onSuperadminTokenTargetChange(newTargetId) {
+  clearPendingSaTokenConfirmation();
   selectedSaTokenTargetId = newTargetId;
   renderSuperadminUniversalTokenConsole();
 }
@@ -2399,6 +2494,9 @@ function handleSuperadminRefreshTokenZero(btn) {
   const accounts = getSuperadminManageableAccounts();
   const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
   if (!acc) return;
+
+  const targetBtn = btn || document.getElementById('btn-sa-refresh-tokens-zero');
+  const actionKey = `sa-universal-zero:${acc.id}`;
 
   const executeWipe = () => {
     if (acc.id === 'superadmin_vault') {
@@ -2421,21 +2519,20 @@ function handleSuperadminRefreshTokenZero(btn) {
       }
     }
     syncAllTokenDisplays();
-    showToast(`🗑️ Token balance for ${acc.name} refreshed to 0 Tokens!`);
+    showToast(`🗑️ Confirmed: Token balance for ${acc.name} refreshed to 0 Tokens!`);
   };
 
-  if (btn && typeof iasjConfirmDelete === 'function') {
-    iasjConfirmDelete(btn, executeWipe, {
-      confirmText: 'Confirm Reset to 0 Tokens',
-      confirmClass: 'btn btn-danger btn-sm'
-    });
-  } else {
-    executeWipe();
-  }
+  return confirmSuperadminTokenAction(
+    actionKey,
+    targetBtn,
+    'Confirm Reset to 0 Tokens?',
+    executeWipe,
+    `⚠️ Confirm Reset: Click "Confirm Reset to 0 Tokens?" again to reset ${acc.name}'s balance to 0.`
+  );
 }
 window.handleSuperadminRefreshTokenZero = handleSuperadminRefreshTokenZero;
 
-function handleSuperadminAddTokens(explicitAmount) {
+function handleSuperadminAddTokens(explicitAmount, btn) {
   const accounts = getSuperadminManageableAccounts();
   const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
   if (!acc) return;
@@ -2444,35 +2541,50 @@ function handleSuperadminAddTokens(explicitAmount) {
   const rawVal = explicitAmount !== undefined ? explicitAmount : inputEl?.value;
   const amount = Math.max(1, Math.round(Number(rawVal) || 10));
 
-  let newBal = 0;
-  if (acc.id === 'superadmin_vault') {
-    if (window.superadminDB) newBal = window.superadminDB.addTokens(amount);
-  } else if (acc.id.startsWith('driver:')) {
-    const driver = window.providerDB?.findById(acc.rawId);
-    if (driver) {
-      driver.tokenBalance = (Number(driver.tokenBalance) || 0) + amount;
-      newBal = driver.tokenBalance;
-      window.providerDB.save();
-    }
-    if (window.supporterDB && acc.email) {
-      const sup = window.supporterDB.findByEmail(acc.email);
-      if (sup) { sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount; window.supporterDB.save(); }
-    }
-  } else if (acc.id.startsWith('supporter:')) {
-    const sup = window.supporterDB?.findById(acc.rawId);
-    if (sup) {
-      sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount;
-      newBal = sup.tokenBalance;
-      window.supporterDB.save();
-    }
-  }
+  const targetBtn = btn || (explicitAmount !== undefined
+    ? document.getElementById(`btn-sa-add-preset-${amount}`)
+    : document.getElementById('btn-sa-add-tokens'));
+  const actionKey = `sa-universal-add:${acc.id}:${amount}`;
 
-  syncAllTokenDisplays();
-  showToast(`🎉 Added ${amount} tokens to ${acc.name}! New balance: ${newBal} Tokens.`);
+  const executeAdd = () => {
+    let newBal = 0;
+    if (acc.id === 'superadmin_vault') {
+      if (window.superadminDB) newBal = window.superadminDB.addTokens(amount);
+    } else if (acc.id.startsWith('driver:')) {
+      const driver = window.providerDB?.findById(acc.rawId);
+      if (driver) {
+        driver.tokenBalance = (Number(driver.tokenBalance) || 0) + amount;
+        newBal = driver.tokenBalance;
+        window.providerDB.save();
+      }
+      if (window.supporterDB && acc.email) {
+        const sup = window.supporterDB.findByEmail(acc.email);
+        if (sup) { sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount; window.supporterDB.save(); }
+      }
+    } else if (acc.id.startsWith('supporter:')) {
+      const sup = window.supporterDB?.findById(acc.rawId);
+      if (sup) {
+        sup.tokenBalance = (Number(sup.tokenBalance) || 0) + amount;
+        newBal = sup.tokenBalance;
+        window.supporterDB.save();
+      }
+    }
+
+    syncAllTokenDisplays();
+    showToast(`🎉 Confirmed: Added ${amount} tokens to ${acc.name}! New balance: ${newBal} Tokens.`);
+  };
+
+  return confirmSuperadminTokenAction(
+    actionKey,
+    targetBtn,
+    `Confirm +${amount}?`,
+    executeAdd,
+    `⚠️ Confirm Add: Click "Confirm +${amount}?" again to add ${amount} tokens to ${acc.name}.`
+  );
 }
 window.handleSuperadminAddTokens = handleSuperadminAddTokens;
 
-function handleSuperadminMinusTokens(explicitAmount) {
+function handleSuperadminMinusTokens(explicitAmount, btn) {
   const accounts = getSuperadminManageableAccounts();
   const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
   if (!acc) return;
@@ -2481,85 +2593,141 @@ function handleSuperadminMinusTokens(explicitAmount) {
   const rawVal = explicitAmount !== undefined ? explicitAmount : inputEl?.value;
   const amount = Math.max(1, Math.round(Number(rawVal) || 5));
 
-  let newBal = 0;
-  if (acc.id === 'superadmin_vault') {
-    if (window.superadminDB) newBal = window.superadminDB.minusTokens(amount);
-  } else if (acc.id.startsWith('driver:')) {
-    const driver = window.providerDB?.findById(acc.rawId);
-    if (driver) {
-      driver.tokenBalance = Math.max(0, (Number(driver.tokenBalance) || 0) - amount);
-      newBal = driver.tokenBalance;
-      window.providerDB.save();
-    }
-    if (window.supporterDB && acc.email) {
-      const sup = window.supporterDB.findByEmail(acc.email);
-      if (sup) { sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount); window.supporterDB.save(); }
-    }
-  } else if (acc.id.startsWith('supporter:')) {
-    const sup = window.supporterDB?.findById(acc.rawId);
-    if (sup) {
-      sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount);
-      newBal = sup.tokenBalance;
-      window.supporterDB.save();
-    }
-  }
+  const targetBtn = btn || (explicitAmount !== undefined
+    ? document.getElementById(`btn-sa-minus-preset-${amount}`)
+    : document.getElementById('btn-sa-minus-tokens'));
+  const actionKey = `sa-universal-minus:${acc.id}:${amount}`;
 
-  syncAllTokenDisplays();
-  showToast(`📉 Deducted ${amount} tokens from ${acc.name}! New balance: ${newBal} Tokens.`);
+  const executeMinus = () => {
+    let newBal = 0;
+    if (acc.id === 'superadmin_vault') {
+      if (window.superadminDB) newBal = window.superadminDB.minusTokens(amount);
+    } else if (acc.id.startsWith('driver:')) {
+      const driver = window.providerDB?.findById(acc.rawId);
+      if (driver) {
+        driver.tokenBalance = Math.max(0, (Number(driver.tokenBalance) || 0) - amount);
+        newBal = driver.tokenBalance;
+        window.providerDB.save();
+      }
+      if (window.supporterDB && acc.email) {
+        const sup = window.supporterDB.findByEmail(acc.email);
+        if (sup) { sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount); window.supporterDB.save(); }
+      }
+    } else if (acc.id.startsWith('supporter:')) {
+      const sup = window.supporterDB?.findById(acc.rawId);
+      if (sup) {
+        sup.tokenBalance = Math.max(0, (Number(sup.tokenBalance) || 0) - amount);
+        newBal = sup.tokenBalance;
+        window.supporterDB.save();
+      }
+    }
+
+    syncAllTokenDisplays();
+    showToast(`📉 Confirmed: Deducted ${amount} tokens from ${acc.name}! New balance: ${newBal} Tokens.`);
+  };
+
+  return confirmSuperadminTokenAction(
+    actionKey,
+    targetBtn,
+    `Confirm -${amount}?`,
+    executeMinus,
+    `⚠️ Confirm Minus: Click "Confirm -${amount}?" again to deduct ${amount} tokens from ${acc.name}.`
+  );
 }
 window.handleSuperadminMinusTokens = handleSuperadminMinusTokens;
 
-function quickModifyDriverTokens(driverId, deltaAmount) {
+function quickModifyDriverTokens(driverId, deltaAmount, btn) {
   const driver = window.providerDB?.findById(driverId);
   if (!driver) return;
   const delta = Math.round(Number(deltaAmount) || 0);
-  if (delta > 0) {
-    driver.tokenBalance = (Number(driver.tokenBalance) || 0) + delta;
-    showToast(`🎉 Added ${delta} tokens to ${driver.name}! New balance: ${driver.tokenBalance} Tokens.`);
-  } else {
-    driver.tokenBalance = Math.max(0, (Number(driver.tokenBalance) || 0) + delta);
-    showToast(`📉 Deducted ${Math.abs(delta)} tokens from ${driver.name}! New balance: ${driver.tokenBalance} Tokens.`);
-  }
-  if (window.supporterDB && driver.email) {
-    const sup = window.supporterDB.findByEmail(driver.email);
-    if (sup) {
-      sup.tokenBalance = driver.tokenBalance;
-      window.supporterDB.save();
+  if (delta === 0) return;
+
+  const isAdd = delta > 0;
+  const absDelta = Math.abs(delta);
+  const targetBtn = btn || document.getElementById(isAdd ? `btn-sa-quick-add-${driverId}` : `btn-sa-quick-minus-${driverId}`);
+  const actionKey = `sa-driver-quick:${driverId}:${delta}`;
+  const confirmLabel = isAdd ? `Confirm +${absDelta}?` : `Confirm -${absDelta}?`;
+
+  const executeModify = () => {
+    const freshDriver = window.providerDB?.findById(driverId);
+    if (!freshDriver) return;
+    if (isAdd) {
+      freshDriver.tokenBalance = (Number(freshDriver.tokenBalance) || 0) + absDelta;
+      showToast(`🎉 Confirmed: Added ${absDelta} tokens to ${freshDriver.name}! New balance: ${freshDriver.tokenBalance} Tokens.`);
+    } else {
+      freshDriver.tokenBalance = Math.max(0, (Number(freshDriver.tokenBalance) || 0) - absDelta);
+      showToast(`📉 Confirmed: Deducted ${absDelta} tokens from ${freshDriver.name}! New balance: ${freshDriver.tokenBalance} Tokens.`);
     }
-  }
-  window.providerDB.save();
-  syncAllTokenDisplays();
+    if (window.supporterDB && freshDriver.email) {
+      const sup = window.supporterDB.findByEmail(freshDriver.email);
+      if (sup) {
+        sup.tokenBalance = freshDriver.tokenBalance;
+        window.supporterDB.save();
+      }
+    }
+    window.providerDB.save();
+    syncAllTokenDisplays();
+  };
+
+  return confirmSuperadminTokenAction(
+    actionKey,
+    targetBtn,
+    confirmLabel,
+    executeModify,
+    isAdd
+      ? `⚠️ Confirm Add: Click "${confirmLabel}" again to add ${absDelta} tokens to ${driver.name}.`
+      : `⚠️ Confirm Minus: Click "${confirmLabel}" again to minus ${absDelta} tokens from ${driver.name}.`
+  );
 }
 window.quickModifyDriverTokens = quickModifyDriverTokens;
 
-function quickRefreshDriverTokensZero(driverId) {
+function quickRefreshDriverTokensZero(driverId, btn) {
   const driver = window.providerDB?.findById(driverId);
   if (!driver) return;
-  driver.tokenBalance = 0;
-  if (window.supporterDB && driver.email) {
-    const sup = window.supporterDB.findByEmail(driver.email);
-    if (sup) {
-      sup.tokenBalance = 0;
-      window.supporterDB.save();
+
+  const targetBtn = btn || document.getElementById(`btn-sa-quick-zero-${driverId}`);
+  const actionKey = `sa-driver-zero:${driverId}`;
+  const confirmLabel = 'Confirm Reset 0?';
+
+  const executeZero = () => {
+    const freshDriver = window.providerDB?.findById(driverId);
+    if (!freshDriver) return;
+    freshDriver.tokenBalance = 0;
+    if (window.supporterDB && freshDriver.email) {
+      const sup = window.supporterDB.findByEmail(freshDriver.email);
+      if (sup) {
+        sup.tokenBalance = 0;
+        window.supporterDB.save();
+      }
     }
-  }
-  window.providerDB.save();
-  syncAllTokenDisplays();
-  showToast(`🗑️ ${driver.name} tokens refreshed to 0 Tokens!`);
+    window.providerDB.save();
+    syncAllTokenDisplays();
+    showToast(`🗑️ Confirmed: ${freshDriver.name} tokens refreshed to 0 Tokens!`);
+  };
+
+  return confirmSuperadminTokenAction(
+    actionKey,
+    targetBtn,
+    confirmLabel,
+    executeZero,
+    `⚠️ Confirm Reset: Click "${confirmLabel}" again to reset ${driver.name}'s tokens to 0.`
+  );
 }
 window.quickRefreshDriverTokensZero = quickRefreshDriverTokensZero;
 
-function setSaTokenAddInput(val) {
+function setSaTokenAddInput(val, btn) {
   const input = document.getElementById('sa-token-add-amount');
   if (input) input.value = String(val);
-  handleSuperadminAddTokens(val);
+  const presetBtn = btn || document.getElementById(`btn-sa-add-preset-${val}`);
+  return handleSuperadminAddTokens(val, presetBtn);
 }
 window.setSaTokenAddInput = setSaTokenAddInput;
 
-function setSaTokenMinusInput(val) {
+function setSaTokenMinusInput(val, btn) {
   const input = document.getElementById('sa-token-minus-amount');
   if (input) input.value = String(val);
-  handleSuperadminMinusTokens(val);
+  const presetBtn = btn || document.getElementById(`btn-sa-minus-preset-${val}`);
+  return handleSuperadminMinusTokens(val, presetBtn);
 }
 window.setSaTokenMinusInput = setSaTokenMinusInput;
 
@@ -2751,28 +2919,28 @@ function renderSuperadminDriverApprovals() {
         </div>
 
         <div style="display:flex; gap:0.45rem; align-items:center; flex-wrap:wrap;">
-          <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:0.25rem 0.4rem;">
+          <div style="display:inline-flex; align-items:center; gap:0.3rem; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:0.25rem 0.4rem;" data-agent-id="sa-driver-token-controls-${d.id}" data-testid="sa-driver-token-controls-${d.id}">
             <span style="font-size:0.75rem; font-weight:800; color:#D97706; margin-right:0.15rem;"><i class="fa-solid fa-coins"></i> ${d.tokenBalance ?? 0}</span>
-            <button type="button" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', 10)"
+            <button type="button" id="btn-sa-quick-add-${d.id}" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', 10, this)"
               style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#059669; border-color:#A7F3D0; background:#ECFDF5;"
-              title="Add 10 tokens to ${escapeAttr(d.name)}"
+              title="Add 10 tokens to ${escapeAttr(d.name)} (2-step confirm)"
               data-agent-id="btn-sa-quick-add-${d.id}" data-testid="btn-sa-quick-add-${d.id}"
               aria-label="Add 10 tokens to ${escapeAttr(d.name)}">
               +10
             </button>
-            <button type="button" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', -5)"
+            <button type="button" id="btn-sa-quick-minus-${d.id}" class="btn btn-outline btn-xs" onclick="quickModifyDriverTokens('${d.id}', -5, this)"
               style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#DC2626; border-color:#FECACA; background:#FEF2F2;"
-              title="Minus 5 tokens from ${escapeAttr(d.name)}"
+              title="Minus 5 tokens from ${escapeAttr(d.name)} (2-step confirm)"
               data-agent-id="btn-sa-quick-minus-${d.id}" data-testid="btn-sa-quick-minus-${d.id}"
               aria-label="Minus 5 tokens from ${escapeAttr(d.name)}">
               -5
             </button>
-            <button type="button" class="btn btn-outline btn-xs" onclick="quickRefreshDriverTokensZero('${d.id}')"
+            <button type="button" id="btn-sa-quick-zero-${d.id}" class="btn btn-outline btn-xs" onclick="quickRefreshDriverTokensZero('${d.id}', this)"
               style="padding:0.2rem 0.45rem; font-size:0.72rem; font-weight:800; color:#475569; border-color:#CBD5E1; background:#F1F5F9;"
-              title="Refresh tokens to 0 for ${escapeAttr(d.name)}"
+              title="Reset tokens to 0 for ${escapeAttr(d.name)} (2-step confirm)"
               data-agent-id="btn-sa-quick-zero-${d.id}" data-testid="btn-sa-quick-zero-${d.id}"
-              aria-label="Refresh tokens to 0 for ${escapeAttr(d.name)}">
-              0
+              aria-label="Reset tokens to 0 for ${escapeAttr(d.name)}">
+              Reset 0
             </button>
           </div>
           ${!isApproved ? `
@@ -6953,8 +7121,11 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
   btn.dataset.originalStyle = originalStyle;
   btn.dataset.originalClass = originalClass;
   btn.dataset.isDeleteArmed = 'true';
+  if (options.targetType === 'token_balance') {
+    btn.dataset.isTokenConfirmArmed = 'true';
+  }
 
-  const label = options.label || 'Confirm Delete?';
+  const label = options.label || options.confirmText || 'Confirm Delete?';
   const timeoutMs = options.timeoutMs || 6000;
   const compact = options.compact || false;
   const armedAt = new Date().toISOString();
@@ -6969,10 +7140,16 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
     btn.setAttribute('style', originalStyle);
     btn.className = originalClass;
     delete btn.dataset.isDeleteArmed;
+    delete btn.dataset.isTokenConfirmArmed;
+    delete btn._iasjRevert;
   }
+  btn._iasjRevert = revert;
 
   function outsideClickListener(e) {
     if (!btn.contains(e.target)) {
+      if (typeof options.onCancel === 'function') {
+        try { options.onCancel(); } catch (err) {}
+      }
       revert();
     }
   }
@@ -7013,6 +7190,9 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
 
     const cancelClicked = e.target.closest('.confirm-delete-cancel-btn, .confirm-delete-chip-no');
     if (cancelClicked) {
+      if (typeof options.onCancel === 'function') {
+        try { options.onCancel(); } catch (err) {}
+      }
       revert();
       return;
     }
@@ -7044,6 +7224,9 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
   }, 20);
 
   timerId = setTimeout(() => {
+    if (typeof options.onCancel === 'function') {
+      try { options.onCancel(); } catch (err) {}
+    }
     revert();
   }, timeoutMs);
 }

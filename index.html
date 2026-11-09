@@ -1333,19 +1333,24 @@
         </div>
 
         <!-- Section B: SuperAdmin Approves Drivers Console -->
-        <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;">
+        <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;" data-agent-id="superadmin-driver-approval-console" data-testid="superadmin-driver-approval-console">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; flex-wrap:wrap; gap:0.5rem;">
             <div>
               <strong style="font-size:0.98rem; color:#92400E;">
                 <i class="fa-solid fa-id-card-clip"></i> SuperAdmin Driver Approval Console
               </strong>
               <div style="font-size:0.78rem; color:#78350F;">
-                SuperAdmin approves drivers before they appear on the customer booking map and receive orders.
+                SuperAdmin approves drivers before they appear on the customer booking map and receive orders. All Add (+), Minus (-), and Reset (0) token actions require two-step confirmation.
               </div>
             </div>
-            <span id="superadmin-driver-pending-badge" style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.25rem 0.6rem; border-radius:999px;">
-              0 Drivers Awaiting Approval
-            </span>
+            <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+              <span style="font-size:0.72rem; font-weight:800; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:0.22rem 0.55rem; border-radius:999px;" data-agent-id="sa-driver-token-confirm-badge" data-testid="sa-driver-token-confirm-badge">
+                <i class="fa-solid fa-shield-halved"></i> Confirm Add / Minus / Reset Tokens
+              </span>
+              <span id="superadmin-driver-pending-badge" style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.25rem 0.6rem; border-radius:999px;">
+                0 Drivers Awaiting Approval
+              </span>
+            </div>
           </div>
 
           <div id="superadmin-drivers-approval-list" style="display:flex; flex-direction:column; gap:0.85rem; margin-top:0.85rem;">
@@ -1362,11 +1367,11 @@
                 <i class="fa-solid fa-coins" style="color:#D97706;"></i> SuperAdmin Universal Token Management
               </strong>
               <div style="font-size:0.78rem; color:#78350F; margin-top:0.2rem;">
-                Select ANY driver, supporter, or vault account to refresh tokens to 0, add tokens (+), or minus tokens (-).
+                Select ANY driver, supporter, or vault account to refresh tokens to 0, add tokens (+), or minus tokens (-). Every token action requires two-step confirmation.
               </div>
             </div>
             <span style="font-size:0.72rem; font-weight:800; background:#ECFDF5; color:#065F46; padding:0.25rem 0.6rem; border-radius:999px;">
-              <i class="fa-solid fa-bolt"></i> Live Ledger &amp; Instant Updates
+              <i class="fa-solid fa-shield-check"></i> 2-Step Confirm &amp; Live Ledger
             </span>
           </div>
 
@@ -1425,22 +1430,22 @@
                 <i class="fa-solid fa-plus-circle"></i> 2. Add Tokens (+)
               </div>
               <p style="font-size:0.76rem; color:#14532D; margin:0 0 0.6rem 0;">
-                Credit tokens to this user's balance:
+                Credit tokens to this user's balance (protected by two-step confirmation):
               </p>
               <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
                 <input type="number" id="sa-token-add-amount" class="form-control" min="1" max="100000" step="1" value="10"
                   style="padding:0.4rem; font-weight:700;" placeholder="Amount"
                   data-agent-id="sa-token-add-amount" data-testid="sa-token-add-amount" aria-label="Tokens to Add">
-                <button type="button" class="btn btn-primary btn-sm" onclick="handleSuperadminAddTokens()"
+                <button type="button" id="btn-sa-add-tokens" class="btn btn-primary btn-sm" onclick="handleSuperadminAddTokens(undefined, this)"
                   style="background:#059669; border-color:#059669; font-weight:800; white-space:nowrap;"
                   data-agent-id="btn-sa-add-tokens" data-testid="btn-sa-add-tokens" aria-label="Add Tokens to Account">
                   <i class="fa-solid fa-plus"></i> Add
                 </button>
               </div>
               <div id="sa-token-add-presets-row" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(10)" data-agent-id="btn-sa-add-preset-10" data-testid="btn-sa-add-preset-10" aria-label="Add 10 Tokens">+10</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(50)" data-agent-id="btn-sa-add-preset-50" data-testid="btn-sa-add-preset-50" aria-label="Add 50 Tokens">+50</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(100)" data-agent-id="btn-sa-add-preset-100" data-testid="btn-sa-add-preset-100" aria-label="Add 100 Tokens">+100</button>
+                <button type="button" id="btn-sa-add-preset-10" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(10)" data-agent-id="btn-sa-add-preset-10" data-testid="btn-sa-add-preset-10" aria-label="Add 10 Tokens">+10</button>
+                <button type="button" id="btn-sa-add-preset-50" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(50)" data-agent-id="btn-sa-add-preset-50" data-testid="btn-sa-add-preset-50" aria-label="Add 50 Tokens">+50</button>
+                <button type="button" id="btn-sa-add-preset-100" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(100)" data-agent-id="btn-sa-add-preset-100" data-testid="btn-sa-add-preset-100" aria-label="Add 100 Tokens">+100</button>
               </div>
             </div>
 
@@ -1450,21 +1455,21 @@
                 <i class="fa-solid fa-minus-circle"></i> 3. Minus Tokens (-)
               </div>
               <p style="font-size:0.76rem; color:#78350F; margin:0 0 0.6rem 0;">
-                Deduct tokens from this balance (floored at 0):
+                Deduct tokens from this balance, floored at 0 (protected by two-step confirmation):
               </p>
               <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
                 <input type="number" id="sa-token-minus-amount" class="form-control" min="1" max="100000" step="1" value="5"
                   style="padding:0.4rem; font-weight:700;" placeholder="Amount"
                   data-agent-id="sa-token-minus-amount" data-testid="sa-token-minus-amount" aria-label="Tokens to Minus">
-                <button type="button" class="btn btn-outline btn-sm" onclick="handleSuperadminMinusTokens()"
+                <button type="button" id="btn-sa-minus-tokens" class="btn btn-outline btn-sm" onclick="handleSuperadminMinusTokens(undefined, this)"
                   style="color:#D97706; border-color:#F59E0B; background:#FFFFFF; font-weight:800; white-space:nowrap;"
                   data-agent-id="btn-sa-minus-tokens" data-testid="btn-sa-minus-tokens" aria-label="Minus Tokens from Account">
                   <i class="fa-solid fa-minus"></i> Minus
                 </button>
               </div>
               <div id="sa-token-minus-presets-row" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(5)" data-agent-id="btn-sa-minus-preset-5" data-testid="btn-sa-minus-preset-5" aria-label="Minus 5 Tokens">-5</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(10)" data-agent-id="btn-sa-minus-preset-10" data-testid="btn-sa-minus-preset-10" aria-label="Minus 10 Tokens">-10</button>
+                <button type="button" id="btn-sa-minus-preset-5" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(5)" data-agent-id="btn-sa-minus-preset-5" data-testid="btn-sa-minus-preset-5" aria-label="Minus 5 Tokens">-5</button>
+                <button type="button" id="btn-sa-minus-preset-10" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(10)" data-agent-id="btn-sa-minus-preset-10" data-testid="btn-sa-minus-preset-10" aria-label="Minus 10 Tokens">-10</button>
               </div>
             </div>
 

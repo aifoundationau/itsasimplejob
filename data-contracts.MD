@@ -2659,3 +2659,55 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.33 SuperAdmin Driver Approval Console & Universal Token Two-Step Confirmation Contract (`SuperadminTokenConfirmationContract`)
+Enforces mandatory two-step confirmation (`confirmSuperadminTokenAction` + `iasjConfirmDelete`) for **all** Add (`+`), Minus (`-`), and Reset (`0`) token operations inside the **SuperAdmin Driver Approval Console** (`#superadmin-drivers-approval-list`) and **SuperAdmin Universal Token Management** (`#superadmin-universal-token-management-card`). Clicking any token adjustment button once arms the button (`status: 'armed', confirmed: false`, e.g. `Confirm +10?`, `Confirm -5?`, `Confirm Reset 0?`) without mutating `tokenBalance`; clicking a second time within 6 seconds executes the confirmed token mutation (`status: 'confirmed', confirmed: true`).
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperadminTokenConfirmationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "actionKey",
+    "targetAccountId",
+    "operation",
+    "deltaTokens",
+    "status",
+    "confirmed",
+    "confirmLabel"
+  ],
+  "properties": {
+    "actionKey": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
+    "targetAccountId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "operation": {
+      "type": "string",
+      "enum": ["add", "minus", "reset_zero"]
+    },
+    "deltaTokens": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["armed", "confirmed", "cancelled"]
+    },
+    "confirmed": {
+      "type": "boolean"
+    },
+    "confirmLabel": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60
+    }
+  }
+}
+```

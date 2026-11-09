@@ -448,3 +448,16 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Redesigned `#driver-token-topup-modal` (`#stripe-small-popup-box`) in `index.html` into a compact, small centered Stripe popup (`max-width: 380px`) and updated the **Buy Tokens** panel (`#supporter-buy-tokens-subtab`) cards to open the small Stripe popup pre-selected to the chosen pack.
 - Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
 - Documented Section 11.32 (`StripeTokenPopupExclusiveTaxContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 60: SUPERADMIN DRIVER APPROVAL CONSOLE — ALWAYS CONFIRM ADD, MINUS, AND RESET TOKENS
+- Implemented `confirmSuperadminTokenAction(actionKey, btnEl, label, onConfirmed, armToastMessage)` in `js/app.js` paired with `iasjConfirmDelete` so every Add, Minus, and Reset token action requires an explicit two-step confirmation:
+  1. **SuperAdmin Driver Approval Console (`#superadmin-drivers-approval-list`)**:
+     - `+10` button (`#btn-sa-quick-add-<driverId>`): 1st click arms `Confirm +10? ✕`; 2nd click confirms and adds 10 tokens.
+     - `-5` button (`#btn-sa-quick-minus-<driverId>`): 1st click arms `Confirm -5? ✕`; 2nd click confirms and deducts 5 tokens (floored at 0).
+     - `Reset 0` button (`#btn-sa-quick-zero-<driverId>`): 1st click arms `Confirm Reset 0? ✕`; 2nd click confirms and resets the driver's tokens to 0.
+  2. **SuperAdmin Universal Token Management (`#superadmin-universal-token-management-card`)**:
+     - `Add` (`#btn-sa-add-tokens`, `#btn-sa-add-preset-10`, `#btn-sa-add-preset-50`, `#btn-sa-add-preset-100`): 1st click arms `Confirm +<amount>? ✕`; 2nd click confirms and adds tokens.
+     - `Minus` (`#btn-sa-minus-tokens`, `#btn-sa-minus-preset-5`, `#btn-sa-minus-preset-10`): 1st click arms `Confirm -<amount>? ✕`; 2nd click confirms and deducts tokens.
+     - `Refresh to 0 Tokens` (`#btn-sa-refresh-tokens-zero`): 1st click arms `Confirm Reset to 0 Tokens? ✕`; 2nd click confirms and resets tokens to 0.
+- Verified with `node scratch/verify_superadmin_token_confirmations.mjs`, `node scratch/verify_superadmin_token_management.mjs`, and `npm run build` (0 errors).
+- Documented Section 11.33 (`SuperadminTokenConfirmationContract`) in `data-contracts.MD`.
