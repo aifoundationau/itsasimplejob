@@ -344,7 +344,7 @@
 
           <div class="courier-calc-card" id="courier-booking-form-card" data-agent-id="courier-booking-form-card" data-testid="courier-booking-form-card">
             <div id="courier-booking-form-header"
-              style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);"
+              style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);"
               data-agent-id="courier-booking-form-header" data-testid="courier-booking-form-header">
               <div>
                 <h3 id="courier-booking-form-title" style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0;"
@@ -352,9 +352,26 @@
                   <i class="fa-solid fa-clipboard-list" style="color:var(--brand-orange);"></i> Booking Form
                 </h3>
                 <p style="font-size:0.78rem; color:var(--text-muted); margin:0.2rem 0 0 0;">
-                  Click any section below to open and enter your pickup route, package details, and contact details.
+                  1. Register as a Supporter first • 2. Check or change your details in this Booking Form • 3. Select your driver below to book.
                 </p>
               </div>
+            </div>
+
+            <!-- Supporter-First & Check Details Workflow Banner -->
+            <div id="booking-form-supporter-workflow-banner"
+              style="background:#EFF6FF; border:1.5px solid #93C5FD; border-radius:var(--radius-sm); padding:0.7rem 0.9rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;"
+              data-agent-id="booking-form-supporter-workflow-banner" data-testid="booking-form-supporter-workflow-banner">
+              <div id="booking-form-supporter-workflow-text" style="font-size:0.8rem; color:#1E3A8A; line-height:1.45;">
+                <i class="fa-solid fa-user-check" style="color:#2563EB;"></i>
+                <strong>Step 1:</strong> Register as a Supporter first, then check or change your details in this <strong>Booking Form</strong>, and select your driver below.
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-booking-form-register-supporter"
+                onclick="promptRegisterAsSupporterBeforeBooking()"
+                style="font-size:0.76rem; font-weight:800; padding:0.35rem 0.75rem; background:#2563EB; border-color:#1D4ED8; white-space:nowrap;"
+                data-agent-id="btn-booking-form-register-supporter" data-testid="btn-booking-form-register-supporter"
+                aria-label="Register as a Supporter First">
+                <i class="fa-solid fa-user-plus"></i> Register as Supporter First
+              </button>
             </div>
 
             <form id="courier-booking-form" onsubmit="event.preventDefault(); submitCourierBooking();">
@@ -612,8 +629,8 @@
 
               <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-courier-booking"
                 style="width:100%; margin-top:0.5rem;" data-agent-id="btn-submit-courier-booking"
-                data-testid="btn-submit-courier-booking" aria-label="Confirm Driver & Record 9am-4pm Pickup Order">
-                <i class="fa-solid fa-paper-plane"></i> Confirm Booking &amp; Show Driver PayID ($ AUD)
+                data-testid="btn-submit-courier-booking" aria-label="Check Booking Form Details and Select Driver">
+                <i class="fa-solid fa-clipboard-check"></i> Check Details &amp; Select an Available Driver Below to Book
               </button>
             </form>
           </div>

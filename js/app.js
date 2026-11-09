@@ -11,7 +11,7 @@ import { MAX_COURIER_WEIGHT_KG } from '../shared/pricing.js';
 // Application State
 const appState = {
   activeTab: 'courier-tab',
-  selectedCourierDriverId: 'drv-101',
+  selectedCourierDriverId: null,
   activeAdminDriverId: 'drv-101',
   currentAnalysis: null,
   selectedProviderId: 'drv-101',
@@ -137,6 +137,7 @@ function initApp() {
 
   // Populate Supporter & Driver Admin Page
   try { renderSupporterPanel(); } catch (e) {}
+  try { syncSupporterDetailsToBookingForm(); } catch (e) {}
   try { renderDriverAdminDashboard(); } catch (e) {}
   try { updateDriverApplicationGateUI(); } catch (e) {}
 
@@ -3294,17 +3295,119 @@ async function executeCourierQuoteCalculation() {
   updateCourierPricingWithSettings(roadDistanceKm, durationMins);
 }
 
+function syncSupporterDetailsToBookingForm(supporterObj = null, forceOverwrite = false) {
+  const supporter = supporterObj || (typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null);
+  const isReg = typeof isSupporterRegistrationComplete === 'function' ? isSupporterRegistrationComplete(supporter) : false;
+
+  const bannerEl = document.getElementById('booking-form-supporter-workflow-banner');
+  const textEl = document.getElementById('booking-form-supporter-workflow-text');
+  const btnEl = document.getElementById('btn-booking-form-register-supporter');
+
+  if (bannerEl && textEl && btnEl) {
+    if (isReg && supporter) {
+      bannerEl.style.background = '#ECFDF5';
+      bannerEl.style.borderColor = '#6EE7B7';
+      textEl.style.color = '#065F46';
+      textEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> <strong>Registered Supporter (${escapeAttr(supporter.name || supporter.email)}):</strong> Check your details in the <strong>Booking Form</strong> below (change details if required), then select your driver to book.`;
+      btnEl.style.background = '#059669';
+      btnEl.style.borderColor = '#047857';
+      btnEl.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Check My Details (Step 3)';
+      btnEl.setAttribute('onclick', 'toggleCourierBookingStep(3, true)');
+    } else {
+      bannerEl.style.background = '#EFF6FF';
+      bannerEl.style.borderColor = '#93C5FD';
+      textEl.style.color = '#1E3A8A';
+      textEl.innerHTML = `<i class="fa-solid fa-user-check" style="color:#2563EB;"></i> <strong>Step 1:</strong> Register as a Supporter first, then check or change your details in this <strong>Booking Form</strong>, and select your driver below.`;
+      btnEl.style.background = '#2563EB';
+      btnEl.style.borderColor = '#1D4ED8';
+      btnEl.innerHTML = '<i class="fa-solid fa-user-plus"></i> Register as Supporter First';
+      btnEl.setAttribute('onclick', 'promptRegisterAsSupporterBeforeBooking()');
+    }
+  }
+
+  if (isReg && supporter) {
+    const nameEl = document.getElementById('courier-cust-name');
+    if (nameEl && supporter.name && (forceOverwrite || !nameEl.value || nameEl.value === 'Jack Thompson')) {
+      nameEl.value = supporter.name;
+    }
+    const phoneEl = document.getElementById('courier-cust-phone');
+    if (phoneEl && supporter.phone && (forceOverwrite || !phoneEl.value || phoneEl.value === '0412 889 123')) {
+      phoneEl.value = supporter.phone;
+    }
+    const emailEl = document.getElementById('courier-cust-email');
+    if (emailEl && supporter.email && (forceOverwrite || !emailEl.value || emailEl.value === 'jack.thompson@example.com.au')) {
+      emailEl.value = supporter.email;
+    }
+    const addrVal = supporter.suburb || supporter.address || '';
+    const addrEl = document.getElementById('courier-cust-address');
+    if (addrEl && addrVal && (forceOverwrite || !addrEl.value || addrEl.value === '10 Smith Street, Southport QLD 4215')) {
+      addrEl.value = addrVal;
+    }
+  }
+}
+window.syncSupporterDetailsToBookingForm = syncSupporterDetailsToBookingForm;
+
+function promptRegisterAsSupporterBeforeBooking() {
+  const isGoogleLoggedIn = !!window.firebaseService?.getCurrentGoogleUser?.() || !!localStorage.getItem('iasj_google_user');
+  if (!isGoogleLoggedIn) {
+    showToast('⚠️ Please register as a Supporter first, then check your details in the Booking Form and select your driver.');
+    signUpWithGoogle('supporter', true);
+    return;
+  }
+  appState.activePortalPanelMode = 'supporter';
+  switchTab('driver-admin-tab', true);
+  collapseAllSupporterPanels();
+  toggleSupporterCollapsePanel('registration-details', true);
+  try { renderSupporterPanel(); } catch (e) {}
+  showToast('⚠️ Please complete your Supporter Registration Details first, then check your details in the Booking Form and select your driver.');
+}
+window.promptRegisterAsSupporterBeforeBooking = promptRegisterAsSupporterBeforeBooking;
+
 function selectCourierDriverForBooking(driverId) {
-  appState.selectedCourierDriverId = driverId;
   if (typeof window !== 'undefined' && Number(window.innerWidth || 1280) <= 960) {
     if (!appState.expandedMobileDriverCards) appState.expandedMobileDriverCards = {};
     appState.expandedMobileDriverCards[driverId] = !appState.expandedMobileDriverCards[driverId];
   }
+
+  const drv = window.providerDB?.findById(driverId);
+  if (drv && checkSampleProfileOrData(drv)) {
+    if (appState.selectedCourierDriverId === driverId) {
+      appState.selectedCourierDriverId = null;
+    }
+    const dist = appState.lastCourierRoute?.distanceKm || 8.5;
+    const mins = appState.lastCourierRoute?.durationMins || 15;
+    updateCourierPricingWithSettings(dist, mins);
+    showToast(`🔒 ${drv.name} is a sample profile and cannot be booked. Please select a registered live driver.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_PROFILE_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      driverId: drv.id,
+      driverName: drv.name
+    };
+  }
+
+  if (typeof isSupporterRegistrationComplete === 'function' && !isSupporterRegistrationComplete()) {
+    promptRegisterAsSupporterBeforeBooking();
+    return {
+      blocked: true,
+      reason: 'SUPPORTER_REGISTRATION_REQUIRED',
+      driverId
+    };
+  }
+
+  appState.selectedCourierDriverId = driverId;
   const dist = appState.lastCourierRoute?.distanceKm || 8.5;
   const mins = appState.lastCourierRoute?.durationMins || 15;
   updateCourierPricingWithSettings(dist, mins);
+  if (drv) {
+    showToast(`✅ Selected ${drv.name}! Check or update your details in the Booking Form and click Confirm Booking.`);
+  }
+  return { selected: true, driverId };
 }
 window.selectCourierDriverForBooking = selectCourierDriverForBooking;
+window.selectCourierDriverForOrder = selectCourierDriverForBooking;
 
 function selectCourierDriverMode(driverId, mode, event) {
   if (event) {
@@ -3602,14 +3705,14 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     }
   }
 
-  // Ensure selected driver exists; if not, pick closest eligible live driver (or closest sample driver for preview)
+  // Never auto-select a sample profile driver; only select a live bookable driver when chosen
   let selectedEntry = rankedDrivers.find(r => r.driver.id === appState.selectedCourierDriverId);
-  if ((!selectedEntry || !selectedEntry.fitsPackage) && rankedDrivers.length > 0) {
-    const firstEligibleLive = rankedDrivers.find(r => r.fitsPackage && !checkSampleProfileOrData(r.driver));
-    const firstEligible = firstEligibleLive || rankedDrivers.find(r => r.fitsPackage) || rankedDrivers[0];
-    selectedEntry = firstEligible;
-    appState.selectedCourierDriverId = selectedEntry.driver.id;
+  if (selectedEntry && (checkSampleProfileOrData(selectedEntry.driver) || !selectedEntry.fitsPackage)) {
+    selectedEntry = null;
+    appState.selectedCourierDriverId = null;
   }
+
+  try { syncSupporterDetailsToBookingForm(); } catch (e) {}
 
   // Render driver selection cards on the Left Side (#courier-driver-selection-list) with per-driver Map Dropdown
   const listEl = document.getElementById('courier-driver-selection-list');
@@ -3718,18 +3821,32 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                   <i class="fa-solid fa-money-bill-transfer"></i> PayID (${(d.payIdType || 'phone').toUpperCase()}): <strong>${d.payIdValue}</strong>
                 </span>
               </div>
-              <button
-                type="button"
-                class="btn btn-outline btn-sm"
-                onclick="event.stopPropagation(); toggleDriverBoxMap('${d.id}')"
-                style="padding:0.25rem 0.65rem; font-size:0.74rem; font-weight:800; border-color:var(--primary-navy); color:var(--primary-navy); background:${isMapOpen ? '#F1F5F9' : '#FFFFFF'};"
-                data-agent-id="btn-toggle-driver-map-${d.id}"
-                data-testid="btn-toggle-driver-map-${d.id}"
-                aria-expanded="${isMapOpen ? 'true' : 'false'}"
-                aria-label="Toggle Driver Map Dropdown for ${escapeAttr(d.name)}">
-                <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i>
-                <span>${isMapOpen ? 'Hide Driver Map ▲' : 'Driver Map ▼'}</span>
-              </button>
+              <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  onclick="event.stopPropagation(); toggleDriverBoxMap('${d.id}')"
+                  style="padding:0.25rem 0.65rem; font-size:0.74rem; font-weight:800; border-color:var(--primary-navy); color:var(--primary-navy); background:${isMapOpen ? '#F1F5F9' : '#FFFFFF'};"
+                  data-agent-id="btn-toggle-driver-map-${d.id}"
+                  data-testid="btn-toggle-driver-map-${d.id}"
+                  aria-expanded="${isMapOpen ? 'true' : 'false'}"
+                  aria-label="Toggle Driver Map Dropdown for ${escapeAttr(d.name)}">
+                  <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i>
+                  <span>${isMapOpen ? 'Hide Driver Map ▲' : 'Driver Map ▼'}</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn ${isSampleDriver ? 'btn-outline' : 'btn-primary'} btn-sm"
+                  onclick="event.stopPropagation(); selectCourierDriverForBooking('${d.id}')"
+                  style="padding:0.25rem 0.7rem; font-size:0.74rem; font-weight:800; ${isSampleDriver ? 'background:#F1F5F9; color:#64748B; border-color:#CBD5E1;' : (isSelected ? 'background:#059669; border-color:#047857; color:#FFFFFF;' : '')}"
+                  data-sample-blocked="${isSampleDriver ? 'true' : 'false'}"
+                  data-agent-id="btn-select-book-driver-${d.id}"
+                  data-testid="btn-select-book-driver-${d.id}"
+                  aria-label="${isSampleDriver ? `Sample Profile ${escapeAttr(d.name)} Cannot Be Booked` : `Select Driver ${escapeAttr(d.name)}`}">
+                  <i class="fa-solid ${isSampleDriver ? 'fa-ban' : (isSelected ? 'fa-circle-check' : 'fa-truck-fast')}"></i>
+                  <span>${isSampleDriver ? 'Sample Profile (Cannot Book)' : (isSelected ? 'Driver Selected ✓' : 'Select Driver')}</span>
+                </button>
+              </div>
             </div>
 
             <!-- Collapsible Map Dropdown Inside Driver Box -->
@@ -3754,40 +3871,38 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     renderInlineDriverBoxMap(appState.expandedDriverMapId);
   }
 
-  if (!selectedEntry) return;
-
-  const drv = selectedEntry.driver;
-  const q = selectedEntry.quote;
+  const fallbackEntry = selectedEntry || rankedDrivers.find(r => r.fitsPackage) || rankedDrivers[0];
+  const drv = selectedEntry ? selectedEntry.driver : (fallbackEntry ? fallbackEntry.driver : null);
+  const q = selectedEntry ? selectedEntry.quote : (fallbackEntry ? fallbackEntry.quote : null);
   const tokenCharge = cur.getDriverOrderTokenCharge(distanceKm);
 
-  appState.lastCalculatedQuote = {
+  appState.lastCalculatedQuote = drv && q ? {
     driver: drv,
-    distToPickupKm: selectedEntry.distToPickupKm,
-    fitsPackage: selectedEntry.fitsPackage,
+    distToPickupKm: (selectedEntry || fallbackEntry).distToPickupKm,
+    fitsPackage: (selectedEntry || fallbackEntry).fitsPackage,
     quote: q,
-    deliveryMode: selectedEntry.effectiveMode,
+    deliveryMode: (selectedEntry || fallbackEntry).effectiveMode,
     tokenCharge,
     distanceKm,
     durationMins,
     pickupDate,
     pickupTime,
     speedTier
-  };
+  } : null;
 
-  // Update Submit Button label with Selected Driver & Live AUD Total (or Sample Profile non-bookable notice)
+  // Update Submit Button label with Supporter-First -> Check Details -> Select Driver workflow
   const submitBtn = document.getElementById('btn-submit-courier-booking');
-  const isSelectedDriverSample = checkSampleProfileOrData(drv);
+  const isSupporterReady = typeof isSupporterRegistrationComplete === 'function' ? isSupporterRegistrationComplete() : false;
   if (submitBtn) {
-    if (isSelectedDriverSample) {
-      submitBtn.innerHTML = `<i class="fa-solid fa-ban"></i> Sample Profile Only — ${drv.name} Cannot Be Booked (Sample Purpose Only)`;
-      submitBtn.setAttribute('data-sample-blocked', 'true');
-      submitBtn.style.background = '#64748B';
-      submitBtn.style.borderColor = '#475569';
-    } else {
+    submitBtn.setAttribute('data-sample-blocked', 'false');
+    submitBtn.style.background = '';
+    submitBtn.style.borderColor = '';
+    if (!isSupporterReady) {
+      submitBtn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Register as a Supporter First, Then Check Details &amp; Select Driver`;
+    } else if (selectedEntry && drv && !checkSampleProfileOrData(drv) && q) {
       submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Confirm Booking with ${drv.name} ($${q.totalAud.toFixed(2)} AUD via PayID)`;
-      submitBtn.setAttribute('data-sample-blocked', 'false');
-      submitBtn.style.background = '';
-      submitBtn.style.borderColor = '';
+    } else {
+      submitBtn.innerHTML = `<i class="fa-solid fa-clipboard-check"></i> Check Details &amp; Select an Available Driver Below to Book`;
     }
   }
 
@@ -3817,6 +3932,14 @@ window.copySelectedDriverPayId = copySelectedDriverPayId;
  * Deducts SuperAdmin Distance-Bracket Tokens from Driver & Records Order on Driver Admin Page
  */
 function submitCourierBooking() {
+  if (typeof isSupporterRegistrationComplete === 'function' && !isSupporterRegistrationComplete()) {
+    promptRegisterAsSupporterBeforeBooking();
+    return {
+      blocked: true,
+      reason: 'SUPPORTER_REGISTRATION_REQUIRED'
+    };
+  }
+
   const cur = window.iasjCurrency;
   const originAddress = document.getElementById('courier-origin')?.value.trim();
   const destAddress = document.getElementById('courier-dest')?.value.trim();
@@ -3838,18 +3961,56 @@ function submitCourierBooking() {
   // Validate 9:00 AM - 4:00 PM pickup slot
   const validSlots = cur.PICKUP_TIME_SLOTS_9AM_TO_4PM || [];
   if (validSlots.length > 0 && !validSlots.includes(pickupTime)) {
+    if (typeof toggleCourierBookingStep === 'function') toggleCourierBookingStep(1, true);
     showToast('⚠️ Please choose a pickup time strictly between 9:00 AM and 4:00 PM.');
     return;
   }
 
-  if (!originAddress || !destAddress || !packageContents || !customerName || !customerPhone || !customerEmail || !customerAddress) {
-    showToast('⚠️ Please complete all customer contact details, addresses, and package content details.');
+  if (!originAddress || !destAddress) {
+    if (typeof toggleCourierBookingStep === 'function') toggleCourierBookingStep(1, true);
+    showToast('⚠️ Please check and complete your Pickup Origin and Delivery Destination addresses in Step 1.');
     return;
   }
 
-  if (weightKg <= 0 || heightCm <= 0 || widthCm <= 0 || lengthCm <= 0) {
-    showToast('⚠️ Please enter valid package weight (kg) and dimensions (Height, Width, Length cm).');
+  if (!packageContents || weightKg <= 0 || heightCm <= 0 || widthCm <= 0 || lengthCm <= 0) {
+    if (typeof toggleCourierBookingStep === 'function') toggleCourierBookingStep(2, true);
+    showToast('⚠️ Please check and complete your Package Content Details, Size (H × W × L), and Weight in Step 2.');
     return;
+  }
+
+  if (!customerName || !customerPhone || !customerEmail || !customerAddress) {
+    if (typeof toggleCourierBookingStep === 'function') toggleCourierBookingStep(3, true);
+    showToast('⚠️ Please check and complete your Customer Contact Details in Step 3.');
+    return;
+  }
+
+  if (!appState.selectedCourierDriverId) {
+    const availCard = document.getElementById('courier-available-drivers-card');
+    if (availCard && typeof availCard.scrollIntoView === 'function') {
+      try { availCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+    }
+    showToast('✅ Booking Form details checked! Now select your driver from Available Drivers to complete your booking.');
+    return {
+      status: 'AWAITING_DRIVER_SELECTION'
+    };
+  }
+
+  const chosenDriver = window.providerDB?.findById(appState.selectedCourierDriverId);
+  if (chosenDriver && checkSampleProfileOrData(chosenDriver)) {
+    appState.selectedCourierDriverId = null;
+    updateCourierPricingWithSettings(
+      appState.lastCourierRoute?.distanceKm || 8.5,
+      appState.lastCourierRoute?.durationMins || 15
+    );
+    showToast(`🔒 ${chosenDriver.name} is a sample profile and cannot be booked. Please select a registered live driver.`);
+    return {
+      blocked: true,
+      reason: 'SAMPLE_PROFILE_ONLY',
+      isSample: true,
+      canBeBooked: false,
+      driverId: chosenDriver.id,
+      driverName: chosenDriver.name
+    };
   }
 
   const calc = updateCourierPricingWithSettings(
@@ -3857,13 +4018,14 @@ function submitCourierBooking() {
     appState.lastCourierRoute?.durationMins || 15
   );
   if (!calc || !calc.driver) {
-    showToast('⚠️ Please select a courier driver.');
+    showToast('⚠️ Please select an available courier driver.');
     return;
   }
 
   const drv = calc.driver;
   if (checkSampleProfileOrData(drv)) {
-    showToast(`🔒 Sample Profile Only: ${drv.name} (${drv.serviceProviderNumber || drv.id}) is for sample purposes only and cannot be booked. Please select a registered live driver.`);
+    appState.selectedCourierDriverId = null;
+    showToast(`🔒 ${drv.name} is a sample profile and cannot be booked. Please select a registered live driver.`);
     return {
       blocked: true,
       reason: 'SAMPLE_PROFILE_ONLY',
@@ -5369,11 +5531,13 @@ function handleSupporterRegistrationSubmit(event) {
   }
 
   renderSupporterPanel();
+  try { syncSupporterDetailsToBookingForm(supporter, true); } catch (e) {}
+  try { calculateCourierQuote(); } catch (e) {}
   try {
     const activeUser = window.firebaseService?.getCurrentGoogleUser?.() || JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
     if (activeUser) updateGoogleAuthUI(activeUser);
   } catch (e) {}
-  showToast(`🎉 Registered as a Community Supporter! Your Registration Details are saved.`);
+  showToast(`🎉 Registered as a Community Supporter! Your details are now synced to the Booking Form.`);
 }
 window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
 
@@ -5505,6 +5669,7 @@ function renderSupporterPanel() {
     
     try { renderSupporterBookings(); } catch (e) {}
     try { prefillSupporterDriverRegistrationForm(supporter); } catch (e) {}
+    try { syncSupporterDetailsToBookingForm(supporter, false); } catch (e) {}
     if (isDriverAdminMode) {
       try { renderDriverInformationView(); } catch (e) {}
       try { renderDriverAdminDashboard(); } catch (e) {}
@@ -6679,14 +6844,18 @@ function selectPreferredDriverFromNavbarSearch(driverId) {
     resultsEl.style.display = 'none';
   }
 
-  selectCourierDriverForOrder(driver.id);
+  const selResult = selectCourierDriverForOrder(driver.id);
   filterContractors();
+  if (selResult && selResult.blocked) {
+    return selResult;
+  }
 
-  const availSection = document.getElementById('courier-available-drivers-box') || document.getElementById('courier-calculator-section');
+  const availSection = document.getElementById('courier-available-drivers-card') || document.getElementById('courier-available-drivers-box') || document.getElementById('courier-calculator-section');
   if (availSection && typeof availSection.scrollIntoView === 'function') {
     availSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
   showToast(`✅ Preferred driver selected: ${driver.name} (${handle})`);
+  return selResult;
 }
 window.selectPreferredDriverFromNavbarSearch = selectPreferredDriverFromNavbarSearch;
 

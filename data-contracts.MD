@@ -3311,6 +3311,17 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "bookingFormWorkflowOrder": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "register_as_supporter_first",
+          "check_or_change_details_in_booking_form",
+          "select_driver_blocking_sample_profiles"
+        ]
+      }
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {
