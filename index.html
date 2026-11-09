@@ -578,13 +578,13 @@
     </section>
 
     <!-- =====================================================================
-         VIEW 4: SUPPORTER PANEL (ACCESSED VIA GOOGLE LOG ON DROPDOWN MENU)
+         VIEW 4: SUPPORTER PANEL & DRIVER ADMIN PANEL (ACCESSED VIA GOOGLE LOG ON DROPDOWN MENU)
          ===================================================================== -->
     <section class="workspace-view" id="driver-admin-tab">
       <div class="section-header">
-        <span class="section-tag">Community Supporter Network • AUD Only</span>
-        <h2 class="section-title">Supporter Panel</h2>
-        <p class="section-desc">
+        <span class="section-tag" id="portal-panel-main-tag">Community Supporter Network • AUD Only</span>
+        <h2 class="section-title" id="portal-panel-main-title">Supporter Panel</h2>
+        <p class="section-desc" id="portal-panel-main-desc">
           Select any panel below to view your registration details, register or update your details, check your bookings history, or buy tokens in Australian Dollars ($ AUD).
         </p>
       </div>
@@ -873,6 +873,7 @@
                     </div>
                     <button type="button" class="btn btn-primary btn-sm" onclick="triggerDriverAdminGeolocate()"
                       style="background:#059669; border-color:#059669; font-size:0.75rem; padding:0.35rem 0.65rem;"
+                      data-agent-id="btn-driver-admin-geolocate" data-testid="btn-driver-admin-geolocate"
                       aria-label="Auto Geolocate Now">
                       <i class="fa-solid fa-location-crosshairs"></i> GPS
                     </button>
@@ -889,6 +890,7 @@
                     </div>
                     <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal()"
                       style="background:#D97706; border-color:#D97706; font-size:0.75rem; padding:0.35rem 0.65rem;"
+                      data-agent-id="btn-driver-buy-tokens" data-testid="btn-driver-buy-tokens"
                       aria-label="Buy Tokens in AUD">
                       <i class="fa-solid fa-plus"></i> Buy
                     </button>
@@ -1040,6 +1042,22 @@
                   </div>
                 </form>
               </div>
+
+              <!-- Recorded Customer Orders & Scheduled 9am–4pm Pickups (Inside Driver Information Panel) -->
+              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    <i class="fa-solid fa-clipboard-check" style="color:var(--brand-orange);"></i> Recorded Customer Orders &amp; Scheduled 9am–4pm Pickups
+                  </h3>
+                  <span id="driver-orders-count-badge" class="badge-pill-pill" style="background:var(--primary-navy);">
+                    1 Recorded Order
+                  </span>
+                </div>
+
+                <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
+                  <!-- Populated dynamically by renderDriverAdminDashboard() -->
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1163,240 +1181,6 @@
           </div>
 
         </div> <!-- /#supporter-collapsed-panels-stack -->
-
-      <!-- Legacy container kept hidden (Driver Dispatch Console is not needed) -->
-      <div id="supporter-dispatch-subtab" class="supporter-subview" style="display:none !important;" aria-hidden="true">
-      <div id="driver-dispatch-console" style="display:none !important;">
-      <div class="courier-calc-card" style="padding:1.35rem 1.5rem; margin-bottom:1.5rem;">
-        <div
-          style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1.25rem; align-items:center;">
-
-          <!-- Auto-Geolocate Anytime Card (Responsive 2-Line Layout, No Coordinates) -->
-          <div class="driver-admin-geo-card"
-            style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:var(--radius-md); padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; min-width:0;">
-            <div style="min-width:0; flex:1; overflow:hidden;">
-              <div style="font-size:0.72rem; font-weight:800; color:#065F46; text-transform:uppercase; letter-spacing:0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                <i class="fa-solid fa-satellite-dish"></i> Live Driver Geolocation
-              </div>
-              <div id="driver-admin-gps-text" style="font-size:0.88rem; font-weight:700; color:#047857; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:0.15rem;" title="Southport QLD">
-                Southport QLD
-              </div>
-            </div>
-            <button type="button" class="btn btn-primary btn-sm" onclick="triggerDriverAdminGeolocate()"
-              style="background:#059669; border-color:#059669; white-space:nowrap; flex-shrink:0; font-size:0.78rem; padding:0.4rem 0.75rem;"
-              data-agent-id="btn-driver-admin-geolocate" data-testid="btn-driver-admin-geolocate"
-              aria-label="Auto Geolocate Driver Location Now">
-              <i class="fa-solid fa-location-crosshairs"></i> Auto-Geolocate Now
-            </button>
-          </div>
-
-          <!-- Driver Token Wallet Card -->
-          <div
-            style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.8rem 1rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
-            <div>
-              <div style="font-size:0.74rem; font-weight:800; color:#92400E; text-transform:uppercase;">
-                <i class="fa-solid fa-coins" style="color:#F59E0B;"></i> Driver Token Balance
-              </div>
-              <div id="driver-admin-token-balance" style="font-size:1.15rem; font-weight:900; color:#B45309;">
-                45 Tokens
-              </div>
-            </div>
-            <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal()"
-              style="background:#D97706; border-color:#D97706; white-space:nowrap;"
-              data-agent-id="btn-driver-buy-tokens" data-testid="btn-driver-buy-tokens"
-              aria-label="Buy Driver Tokens in AUD">
-              <i class="fa-solid fa-plus"></i> Buy Tokens (AUD)
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="courier-grid">
-
-        <!-- LEFT: Recorded Customer Orders List -->
-        <div class="courier-calc-card">
-          <div
-            style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
-            <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
-              <i class="fa-solid fa-clipboard-check" style="color:var(--brand-orange);"></i> Recorded Customer Orders
-              &amp; Scheduled 9am–4pm Pickups
-            </h3>
-            <span id="driver-orders-count-badge" class="badge-pill-pill" style="background:var(--primary-navy);">
-              1 Recorded Order
-            </span>
-          </div>
-
-          <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
-            <!-- Populated dynamically by renderDriverAdminDashboard() -->
-          </div>
-        </div>
-
-        <!-- RIGHT: Edit Driver Rates, Package Limits & PayID -->
-        <div class="courier-calc-card">
-          <h3
-            style="font-size:1.1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-            <i class="fa-solid fa-sliders" style="color:var(--brand-orange);"></i> Update Driver Rates, Package Limits &amp; PayID
-          </h3>
-
-          <div style="background:rgba(255, 107, 0, 0.08); border-left:4px solid var(--brand-orange); padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.84rem; color:var(--text-dark); line-height:1.45;">
-            <strong><i class="fa-solid fa-circle-check" style="color:var(--brand-orange);"></i> 100% AUD Only &amp; Direct PayID:</strong> Driver delivery rates, same-day, and urgent fees are set in Australian Dollars ($ AUD) — never tokens. Customers pay drivers directly via PayID.
-          </div>
-
-          <form id="driver-admin-settings-form" onsubmit="saveDriverAdminProfile(event)">
-            <!-- Courier Service Modes Selection in Driver Admin -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem; margin-bottom:1rem;">
-              <label style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.65rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
-                <input type="checkbox" id="adm-drv-has-vehicle" checked onchange="toggleAdminModesUI()"
-                  style="width:16px; height:16px; accent-color:var(--brand-orange);"
-                  data-agent-id="adm-drv-has-vehicle" data-testid="adm-drv-has-vehicle" aria-label="Admin Has Vehicle Courier">
-                <span style="font-size:0.82rem; font-weight:700; color:var(--primary-navy);"><i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Vehicle</span>
-              </label>
-
-              <label style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:6px; padding:0.65rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
-                <input type="checkbox" id="adm-drv-has-bicycle" onchange="toggleAdminModesUI()"
-                  style="width:16px; height:16px; accent-color:#059669;"
-                  data-agent-id="adm-drv-has-bicycle" data-testid="adm-drv-has-bicycle" aria-label="Admin Has Bicycle Courier">
-                <span style="font-size:0.82rem; font-weight:700; color:#065F46;"><i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle (Letters &amp; Food)</span>
-              </label>
-            </div>
-
-            <!-- Motor Vehicle Courier Rates & Capacity -->
-            <div id="adm-vehicle-rates-box" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1rem;">
-              <div style="font-size:0.84rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.4rem;">
-                <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Motor Vehicle Courier Rates &amp; Capacity (Van, Ute, Car)
-              </div>
-              <div class="input-group" style="margin-bottom:0.5rem;">
-                <label class="input-label" for="adm-drv-per-km">Vehicle Rate Per KM ($ AUD / km)</label>
-                <input type="number" id="adm-drv-per-km" class="form-control" step="0.1" min="0.5" max="50" required
-                  placeholder="2.20" data-agent-id="adm-drv-per-km" data-testid="adm-drv-per-km" aria-label="Rate Per KM in AUD">
-              </div>
-
-              <div class="form-row" style="margin-bottom:0.6rem;">
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-sameday-fee">Vehicle Same-Day Fee ($ AUD - default 0)</label>
-                  <input type="number" id="adm-drv-sameday-fee" class="form-control" step="1" min="0" max="500" required
-                    placeholder="0" data-agent-id="adm-drv-sameday-fee" data-testid="adm-drv-sameday-fee"
-                    aria-label="Vehicle Same Day Fee AUD">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-urgent-fee">Vehicle Urgent Fee ($ AUD - default 0)</label>
-                  <input type="number" id="adm-drv-urgent-fee" class="form-control" step="1" min="0" max="500" required
-                    placeholder="0" data-agent-id="adm-drv-urgent-fee" data-testid="adm-drv-urgent-fee"
-                    aria-label="Vehicle Urgent Fee AUD">
-                </div>
-              </div>
-
-              <div style="font-size:0.75rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">
-                <i class="fa-solid fa-ruler-combined" style="color:var(--brand-orange);"></i> Vehicle Max Weight &amp; Dimensions:
-              </div>
-              <div class="form-row driver-capacities-grid">
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-max-weight">Vehicle Max Weight (kg)</label>
-                  <input type="number" id="adm-drv-max-weight" class="form-control" step="1" min="1" max="10000" required
-                    placeholder="50" data-agent-id="adm-drv-max-weight" data-testid="adm-drv-max-weight"
-                    aria-label="Admin Driver Vehicle Max Weight kg">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-max-height">Vehicle Max Height (cm)</label>
-                  <input type="number" id="adm-drv-max-height" class="form-control" step="1" min="10" max="500" required
-                    placeholder="70" data-agent-id="adm-drv-max-height" data-testid="adm-drv-max-height"
-                    aria-label="Admin Driver Vehicle Max Height cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-max-width">Vehicle Max Width (cm)</label>
-                  <input type="number" id="adm-drv-max-width" class="form-control" step="1" min="10" max="500" required
-                    placeholder="50" data-agent-id="adm-drv-max-width" data-testid="adm-drv-max-width"
-                    aria-label="Admin Driver Vehicle Max Width cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-max-length">Vehicle Max Length (cm)</label>
-                  <input type="number" id="adm-drv-max-length" class="form-control" step="1" min="10" max="1000" required
-                    placeholder="50" data-agent-id="adm-drv-max-length" data-testid="adm-drv-max-length"
-                    aria-label="Admin Driver Vehicle Max Length cm">
-                </div>
-              </div>
-            </div> <!-- /#adm-vehicle-rates-box -->
-
-            <!-- Bicycle Courier Rates & Capacity (Letters, Documents & Food Deliveries Only) -->
-            <div id="adm-bicycle-rates-box" style="display:none; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.85rem; margin-bottom:1rem;">
-              <div style="font-size:0.82rem; font-weight:800; color:#065F46; margin-bottom:0.4rem;">
-                <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Rates &amp; Capacity (Letters, Documents &amp; Food Deliveries)
-              </div>
-              <div class="input-group" style="margin-bottom:0.5rem;">
-                <label class="input-label" for="adm-drv-bike-per-km" style="color:#065F46;">Bicycle Rate Per KM ($ AUD / km)</label>
-                <input type="number" id="adm-drv-bike-per-km" class="form-control" step="0.1" min="0.5" max="50"
-                  placeholder="1.80" data-agent-id="adm-drv-bike-per-km" data-testid="adm-drv-bike-per-km" aria-label="Bicycle Rate Per KM AUD">
-              </div>
-              <div class="form-row" style="margin-bottom:0.6rem;">
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-sameday-fee" style="color:#065F46;">Bicycle Same-Day Fee ($ AUD)</label>
-                  <input type="number" id="adm-drv-bike-sameday-fee" class="form-control" step="1" min="0" max="500"
-                    placeholder="0" data-agent-id="adm-drv-bike-sameday-fee" data-testid="adm-drv-bike-sameday-fee" aria-label="Bicycle Same Day Fee AUD">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-urgent-fee" style="color:#065F46;">Bicycle Urgent Fee ($ AUD)</label>
-                  <input type="number" id="adm-drv-bike-urgent-fee" class="form-control" step="1" min="0" max="500"
-                    placeholder="0" data-agent-id="adm-drv-bike-urgent-fee" data-testid="adm-drv-bike-urgent-fee" aria-label="Bicycle Urgent Fee AUD">
-                </div>
-              </div>
-
-              <div style="font-size:0.75rem; font-weight:800; color:#065F46; margin-bottom:0.35rem;">
-                <i class="fa-solid fa-ruler-combined" style="color:#059669;"></i> Bicycle Max Weight &amp; Dimensions:
-              </div>
-              <div class="form-row driver-capacities-grid">
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-max-weight" style="color:#065F46;">Bicycle Max Weight (kg)</label>
-                  <input type="number" id="adm-drv-bike-max-weight" class="form-control" step="1" min="1" max="25"
-                    placeholder="8" data-agent-id="adm-drv-bike-max-weight" data-testid="adm-drv-bike-max-weight"
-                    aria-label="Admin Bicycle Max Weight kg">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-max-height" style="color:#065F46;">Bicycle Max Height (cm)</label>
-                  <input type="number" id="adm-drv-bike-max-height" class="form-control" step="1" min="5" max="100"
-                    placeholder="35" data-agent-id="adm-drv-bike-max-height" data-testid="adm-drv-bike-max-height"
-                    aria-label="Admin Bicycle Max Height cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-max-width" style="color:#065F46;">Bicycle Max Width (cm)</label>
-                  <input type="number" id="adm-drv-bike-max-width" class="form-control" step="1" min="5" max="100"
-                    placeholder="30" data-agent-id="adm-drv-bike-max-width" data-testid="adm-drv-bike-max-width"
-                    aria-label="Admin Bicycle Max Width cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="adm-drv-bike-max-length" style="color:#065F46;">Bicycle Max Length (cm)</label>
-                  <input type="number" id="adm-drv-bike-max-length" class="form-control" step="1" min="5" max="100"
-                    placeholder="40" data-agent-id="adm-drv-bike-max-length" data-testid="adm-drv-bike-max-length"
-                    aria-label="Admin Bicycle Max Length cm">
-                </div>
-              </div>
-            </div> <!-- /#adm-bicycle-rates-box -->
-
-            <div class="input-group">
-              <label class="input-label" for="adm-drv-payid-value">Driver PayID: (Customer Pays Here in $ AUD)</label>
-              <input type="text" id="adm-drv-payid-value" class="form-control" required placeholder="e.g. 0412 345 678 or payments@courier.com.au"
-                data-agent-id="adm-drv-payid-value" data-testid="adm-drv-payid-value"
-                aria-label="Admin Driver PayID Value">
-            </div>
-
-            <div id="adm-drv-licence-group" class="input-group superadmin-only" style="display:none;"
-              data-agent-id="adm-drv-licence-group" data-testid="adm-drv-licence-group">
-              <label class="input-label" for="adm-drv-licence">Driver Licence Details (SuperAdmin Only)</label>
-              <input type="text" id="adm-drv-licence" class="form-control" placeholder="e.g. QLD #482910384 (Class C)"
-                data-agent-id="adm-drv-licence" data-testid="adm-drv-licence" aria-label="Admin Driver Licence Details">
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width:100%;"
-              data-agent-id="btn-save-driver-admin-settings" data-testid="btn-save-driver-admin-settings"
-              aria-label="Save Driver Rates and Limits">
-              <i class="fa-solid fa-floppy-disk"></i> Save Driver Rates &amp; Package Limits
-            </button>
-          </form>
-        </div>
-
-      </div>
-      </div> <!-- /#driver-dispatch-console -->
-      </div> <!-- /#supporter-dispatch-subtab -->
 
       <!-- SuperAdmin Panel: Distance Token Costs, Live Driver Approvals & Token Account Vault -->
       <div id="superadmin-courier-config-card" class="superadmin-only courier-calc-card"

@@ -4237,11 +4237,17 @@ window.toggleActiveDriverProfileOn = toggleActiveDriverProfileOn;
 
 function renderDriverInformationView() {
   if (!window.providerDB) return;
-  const accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
+  let accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
   if (accessibleDrivers.length === 0) {
-    const infoSubtab = document.getElementById('supporter-driver-info-subtab');
-    if (infoSubtab) infoSubtab.style.display = 'none';
-    return;
+    if (appState.activePortalPanelMode === 'driver-admin') {
+      const fallbackDriver = getOwnedDriverProfile() || window.providerDB.findById(appState.activeAdminDriverId) || window.providerDB.getAll()[0];
+      if (fallbackDriver) {
+        accessibleDrivers = [fallbackDriver];
+      }
+    }
+    if (accessibleDrivers.length === 0) {
+      return;
+    }
   }
 
   const activeDriver = accessibleDrivers.find(d => d.id === appState.activeAdminDriverId) || accessibleDrivers[0];
@@ -4551,6 +4557,22 @@ function renderSupporterPanel() {
     const isDriverAdminMode = appState.activePortalPanelMode === 'driver-admin' ||
       (appState.activePortalPanelMode !== 'supporter' && (activeRole === 'driver' || activeRole === 'superadmin'));
 
+    // Update main section header to reflect Driver Admin Panel vs Supporter Panel
+    const mainTagEl = document.getElementById('portal-panel-main-tag');
+    if (mainTagEl) {
+      mainTagEl.textContent = isDriverAdminMode ? 'Courier Driver Network • AUD Only' : 'Community Supporter Network • AUD Only';
+    }
+    const mainTitleEl = document.getElementById('portal-panel-main-title');
+    if (mainTitleEl) {
+      mainTitleEl.textContent = isDriverAdminMode ? 'Driver Admin Panel' : 'Supporter Panel';
+    }
+    const mainDescEl = document.getElementById('portal-panel-main-desc');
+    if (mainDescEl) {
+      mainDescEl.textContent = isDriverAdminMode
+        ? 'Select any panel below to manage your register details, driver information, bookings history, or buy tokens in Australian Dollars ($ AUD).'
+        : 'Select any panel below to view your registration details, register or update your details, check your bookings history, or buy tokens in Australian Dollars ($ AUD).';
+    }
+
     // Update Panel 1 Header Title: 'Register Details' in Driver Admin Panel, 'Registration Details' in Supporter Panel
     const regTitleEl = document.getElementById('title-panel-registration-details');
     if (regTitleEl) {
@@ -4789,10 +4811,12 @@ function quickAccessDriverConsole() {
     try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
   }
 
+  appState.activePortalPanelMode = 'driver-admin';
   renderSupporterPanel();
-  switchSupporterSubTab('supporter-dispatch-subtab');
+  toggleSupporterCollapsePanel('driver-information', true);
+  renderDriverInformationView();
   renderDriverAdminDashboard();
-  showToast('🔑 Driver Dispatch Console unlocked.');
+  showToast('🔑 Driver Admin Panel (Driver Information) unlocked.');
 }
 window.quickAccessDriverConsole = quickAccessDriverConsole;
 
@@ -5193,7 +5217,13 @@ function renderDriverAdminDashboard() {
   if (!window.providerDB || !window.courierOrderDB) return;
 
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
+  let accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
+  if (accessibleDrivers.length === 0 && appState.activePortalPanelMode === 'driver-admin') {
+    const fallbackDriver = getOwnedDriverProfile() || window.providerDB.findById(appState.activeAdminDriverId) || window.providerDB.getAll()[0];
+    if (fallbackDriver) {
+      accessibleDrivers = [fallbackDriver];
+    }
+  }
   const selectEl = document.getElementById('driver-admin-select');
   const selectorWrap = document.getElementById('active-driver-profile-selector-wrap');
   const ownershipBadge = document.getElementById('active-driver-ownership-badge');

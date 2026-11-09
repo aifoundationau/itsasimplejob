@@ -2437,3 +2437,42 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.29 Driver Information Panel Only (Complete Removal of Driver Dispatch Panel) (`DriverInformationPanelOnlyContract`)
+- **Single Unified Driver Information Panel:**
+  1. The legacy `<div id="supporter-dispatch-subtab">` and `<div id="driver-dispatch-console">` DOM blocks are completely removed from `index.html`.
+  2. All driver functionality — Active Driver Profile selection (`#driver-admin-select`), Map Visibility ON/OFF toggle (`#btn-toggle-driver-profile-on` / `#btn-info-toggle-driver-profile-on`), Live Geolocation (`#btn-driver-admin-geolocate`), Token Balance (`#driver-info-tokens`), Motor Vehicle & Bicycle Courier AUD rates and capacities (`#driver-info-settings-form`), PayID (`#info-drv-payid-input`), and Recorded Customer Orders & Scheduled 9am–4pm Pickups (`#driver-admin-orders-container`, `#driver-orders-count-badge`) — resides inside the **Driver Information** panel (`#supporter-panel-driver-information` -> `#supporter-driver-info-subtab`).
+  3. Clicking **Driver Admin Panel** (`openDriverAdminPanelFromGoogleMenu()`) updates the main heading (`#portal-panel-main-title`) to **Driver Admin Panel**, and clicking **Driver Information** (`toggleSupporterCollapsePanel('driver-information')`) reliably opens `#supporter-driver-info-subtab`.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverInformationPanelOnlyContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "driverInformationCardId",
+    "driverInformationBodyId",
+    "ordersContainerId",
+    "driverDispatchPanelRemoved"
+  ],
+  "properties": {
+    "driverInformationCardId": {
+      "type": "string",
+      "const": "supporter-panel-driver-information"
+    },
+    "driverInformationBodyId": {
+      "type": "string",
+      "const": "supporter-driver-info-subtab"
+    },
+    "ordersContainerId": {
+      "type": "string",
+      "const": "driver-admin-orders-container"
+    },
+    "driverDispatchPanelRemoved": {
+      "type": "boolean",
+      "const": true
+    }
+  }
+}
+```
