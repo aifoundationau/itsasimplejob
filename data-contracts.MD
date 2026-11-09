@@ -3108,3 +3108,87 @@ All sample driver profiles (`drv-101` Callum Evans, `drv-102` Sarah Jenkins, `dr
   }
 }
 ```
+
+### 11.41 Stripe Per-Token Unit Price (`$1.00 AUD per token`) & Quantity Contract (`StripeTokenUnitPriceAndQuantityContract`)
+Because Stripe Product `prod_VaqooBzIgPduQC` (**Simple Job Platform Tokens**) uses `unit_label: "token"`, all token purchases and Payment Links strictly use the per-token unit price `price_1UZgMSI8bClhBF4PKywysjAj` (`unit_amount: 100` cents = `$1.00 AUD per token`, `currency: "aud"`, `tax_behavior: "exclusive"`) with `quantity` equal to the number of tokens purchased (`10`, `50`, or `100`), ensuring Stripe Checkout and invoices display `A$1.00 per token` × `Qty 10/50/100` (never `A$50.00 per token`).
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StripeTokenUnitPriceAndQuantityContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "productId",
+    "unitLabel",
+    "unitPriceId",
+    "unitPriceAud",
+    "unitAmountCents",
+    "pricePerTokenLabel",
+    "tokens",
+    "quantity",
+    "subtotalExGstAud",
+    "taxBehavior",
+    "paymentLinkId",
+    "paymentLinkUrl"
+  ],
+  "properties": {
+    "productId": {
+      "type": "string",
+      "const": "prod_VaqooBzIgPduQC"
+    },
+    "unitLabel": {
+      "type": "string",
+      "const": "token"
+    },
+    "unitPriceId": {
+      "type": "string",
+      "const": "price_1UZgMSI8bClhBF4PKywysjAj"
+    },
+    "unitPriceAud": {
+      "type": "number",
+      "const": 1
+    },
+    "unitAmountCents": {
+      "type": "integer",
+      "const": 100
+    },
+    "pricePerTokenLabel": {
+      "type": "string",
+      "const": "$1.00 AUD per token"
+    },
+    "tokens": {
+      "type": "integer",
+      "enum": [10, 50, 100]
+    },
+    "quantity": {
+      "type": "integer",
+      "enum": [10, 50, 100]
+    },
+    "subtotalExGstAud": {
+      "type": "number",
+      "enum": [10, 50, 100]
+    },
+    "taxBehavior": {
+      "type": "string",
+      "const": "exclusive"
+    },
+    "paymentLinkId": {
+      "type": "string",
+      "enum": [
+        "plink_1UZgMsI8bClhBF4PS4h9mV35",
+        "plink_1UZgMwI8bClhBF4PYU5fjcK3",
+        "plink_1UZgMzI8bClhBF4PcgVPyBwQ"
+      ]
+    },
+    "paymentLinkUrl": {
+      "type": "string",
+      "enum": [
+        "https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07",
+        "https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08",
+        "https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09"
+      ]
+    }
+  }
+}
+```

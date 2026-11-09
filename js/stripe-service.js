@@ -22,24 +22,30 @@ const STRIPE_CONFIG = {
   gstRate: 0.10,
   popupSize: "small",
   productId: "prod_VaqooBzIgPduQC",
+  defaultPricePerTokenAud: 1.00,
+  defaultUnitAmountCents: 100,
+  unitPriceId: "price_1UZgMSI8bClhBF4PKywysjAj",
   tokenPriceIds: {
-    10: "price_1UZf7RI8bClhBF4PEhIGJoc3",
-    50: "price_1UZf7VI8bClhBF4PE52HKTjw",
-    100: "price_1UZf7ZI8bClhBF4PcJWNqJv0"
+    10: "price_1UZgMSI8bClhBF4PKywysjAj",
+    50: "price_1UZgMSI8bClhBF4PKywysjAj",
+    100: "price_1UZgMSI8bClhBF4PKywysjAj"
   },
   tokenPaymentLinkIds: {
-    10: "plink_1UZf7xI8bClhBF4PtDTFX69n",
-    50: "plink_1UZf80I8bClhBF4P6FY69grP",
-    100: "plink_1UZf84I8bClhBF4PBAFYJRrc"
+    10: "plink_1UZgMsI8bClhBF4PS4h9mV35",
+    50: "plink_1UZgMwI8bClhBF4PYU5fjcK3",
+    100: "plink_1UZgMzI8bClhBF4PcgVPyBwQ"
   },
   tokenPaymentLinks: {
-    10: "https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04",
-    50: "https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05",
-    100: "https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06"
+    10: "https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07",
+    50: "https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08",
+    100: "https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09"
   },
   defaultTokenPackQuotes: {
     10: {
       tokens: 10,
+      quantity: 10,
+      unitPriceAud: 1.00,
+      pricePerTokenLabel: "$1.00 AUD per token",
       tokensReceived: 10,
       subtotalExGstAud: 10.00,
       taxAmountAud: 1.00,
@@ -51,6 +57,9 @@ const STRIPE_CONFIG = {
     },
     50: {
       tokens: 50,
+      quantity: 50,
+      unitPriceAud: 1.00,
+      pricePerTokenLabel: "$1.00 AUD per token",
       tokensReceived: 50,
       subtotalExGstAud: 50.00,
       taxAmountAud: 5.00,
@@ -62,6 +71,9 @@ const STRIPE_CONFIG = {
     },
     100: {
       tokens: 100,
+      quantity: 100,
+      unitPriceAud: 1.00,
+      pricePerTokenLabel: "$1.00 AUD per token",
       tokensReceived: 100,
       subtotalExGstAud: 100.00,
       taxAmountAud: 10.00,
@@ -127,8 +139,12 @@ class StripePaymentService {
 
     return {
       tokens: cleanTokens,
+      quantity: cleanTokens,
       tokensReceived: cleanTokens,
       tokenPriceAud: unitPriceAud,
+      unitPriceAud,
+      unitAmountCents: Math.round(unitPriceAud * 100),
+      pricePerTokenLabel: `$${unitPriceAud.toFixed(2)} AUD per token`,
       currency: 'aud',
       currencyUpper: 'AUD',
       collectTax: 'automatic',
@@ -140,7 +156,7 @@ class StripePaymentService {
       taxabilityReason,
       taxLabel: isAustralianCustomer ? 'Tax (Exclusive 10% GST):' : 'Tax (0% Non-AU — GST Charged to Australians Only):',
       productId: this.config.productId || 'prod_VaqooBzIgPduQC',
-      priceId: this.config.tokenPriceIds?.[cleanTokens] || null,
+      priceId: this.config.unitPriceId || this.config.tokenPriceIds?.[cleanTokens] || 'price_1UZgMSI8bClhBF4PKywysjAj',
       paymentLinkId: this.config.tokenPaymentLinkIds?.[cleanTokens] || null,
       paymentLinkUrl: this.config.tokenPaymentLinks?.[cleanTokens] || null,
       taxRate,

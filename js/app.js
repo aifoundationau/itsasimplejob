@@ -6622,8 +6622,12 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = n
   const amountCents = Math.round(totalIncGstAud * 100);
   return {
     tokens: cleanTokens,
+    quantity: cleanTokens,
     tokensReceived: cleanTokens,
     tokenPriceAud,
+    unitPriceAud: tokenPriceAud,
+    unitAmountCents: Math.round(tokenPriceAud * 100),
+    pricePerTokenLabel: `$${tokenPriceAud.toFixed(2)} AUD per token`,
     currency: 'aud',
     currencyUpper: 'AUD',
     collectTax: 'automatic',
@@ -6638,6 +6642,7 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = n
     taxAmountAud,
     totalIncGstAud,
     amountCents,
+    formattedUnitPriceAud: `$${tokenPriceAud.toFixed(2)} AUD per token`,
     formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
     formattedTaxAud: isAustralianCustomer ? `+$${taxAmountAud.toFixed(2)} AUD` : `$0.00 AUD (Non-AU)`,
     formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`,
@@ -6770,12 +6775,14 @@ function prefetchStripeTokenCheckoutSession(packTokens = 10) {
   const promise = window.stripePaymentService.createPaymentIntent({
     docketNumber,
     tokens: quote.tokens,
+    quantity: quote.tokens,
+    tokenPriceAud: quote.tokenPriceAud || 1,
     subtotalExGstAud: quote.subtotalExGstAud,
     taxAmountAud: quote.taxAmountAud,
     totalIncGstAud: quote.totalIncGstAud,
     amount: quote.totalIncGstAud,
     customerName: payerName,
-    description: `${quote.tokens} Courier Tokens ($${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
+    description: `${quote.tokens} Courier Tokens (${quote.tokens} tokens @ $${(quote.tokenPriceAud || 1).toFixed(2)} AUD per token = $${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
     returnUrl: window.location?.origin || 'http://localhost:3002'
   }).then(intent => ({ intent, docketNumber })).catch(() => null);
 
@@ -6871,24 +6878,28 @@ function confirmStripeTokenPopupPurchase() {
         return window.stripePaymentService.createPaymentIntent({
           docketNumber,
           tokens: quote.tokens,
+          quantity: quote.tokens,
+          tokenPriceAud: quote.tokenPriceAud || 1,
           subtotalExGstAud: quote.subtotalExGstAud,
           taxAmountAud: quote.taxAmountAud,
           totalIncGstAud: quote.totalIncGstAud,
           amount: quote.totalIncGstAud,
           customerName: payerName,
-          description: `${quote.tokens} Courier Tokens ($${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
+          description: `${quote.tokens} Courier Tokens (${quote.tokens} tokens @ $${(quote.tokenPriceAud || 1).toFixed(2)} AUD per token = $${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
           returnUrl: window.location?.origin || 'http://localhost:3002'
         });
       })
     : window.stripePaymentService.createPaymentIntent({
         docketNumber,
         tokens: quote.tokens,
+        quantity: quote.tokens,
+        tokenPriceAud: quote.tokenPriceAud || 1,
         subtotalExGstAud: quote.subtotalExGstAud,
         taxAmountAud: quote.taxAmountAud,
         totalIncGstAud: quote.totalIncGstAud,
         amount: quote.totalIncGstAud,
         customerName: payerName,
-        description: `${quote.tokens} Courier Tokens ($${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
+        description: `${quote.tokens} Courier Tokens (${quote.tokens} tokens @ $${(quote.tokenPriceAud || 1).toFixed(2)} AUD per token = $${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total)`,
         returnUrl: window.location?.origin || 'http://localhost:3002'
       });
 

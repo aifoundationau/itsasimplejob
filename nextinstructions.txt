@@ -556,3 +556,15 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Enforced non-bookable checks across `submitCourierBooking()`, `bookProviderDirectly()`, `confirmBooking()`, `rebookSimilarCourier()`, and `acceptDriverBooking()` so sample profiles and sample data cannot be booked, while newly registered live drivers (`isSample: false`, `canBeBooked: true`) remain bookable.
 - Verified with `node scratch/verify_sample_profiles_non_bookable.mjs` and `npm run build` (0 errors).
 - Documented Section 11.40 (`SampleProfilesNonBookableContract`) in `data-contracts.MD`.
+
+[2026-11-09] Task 71: Fix Stripe Invoice & Checkout Line Items to Use Default $1.00 AUD Per Token (`unit_amount: 100`) × Quantity (`10`, `50`, `100`):
+- Fixed the Stripe Checkout / Invoice display issue where Product `prod_VaqooBzIgPduQC` (`unit_label: "token"`) previously showed `A$50.00 per token` when paired with a bundle price at `quantity: 1`:
+  1. Created official per-token Price `price_1UZgMSI8bClhBF4PKywysjAj` (`unit_amount: 100` cents = `$1.00 AUD per token`, `currency: "aud"`, `tax_behavior: "exclusive"`) via Stripe MCP (`PostPrices`) and set it as `default_price` on `prod_VaqooBzIgPduQC`.
+  2. Created 3 new Stripe Payment Links (`PostPaymentLinks`) using `price_1UZgMSI8bClhBF4PKywysjAj` (`$1.00 AUD per token`) with explicit `quantity`:
+     - **10 Tokens (`quantity: 10` × `A$1.00 per token` = `A$10.00`)**: `plink_1UZgMsI8bClhBF4PS4h9mV35` -> `https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07`
+     - **50 Tokens (`quantity: 50` × `A$1.00 per token` = `A$50.00`)**: `plink_1UZgMwI8bClhBF4PYU5fjcK3` -> `https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08`
+     - **100 Tokens (`quantity: 100` × `A$1.00 per token` = `A$100.00`)**: `plink_1UZgMzI8bClhBF4PcgVPyBwQ` -> `https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09`
+  3. Deactivated the old bundle prices (`price_1UZf7RI8bClhBF4PEhIGJoc3`, `price_1UZf7VI8bClhBF4PE52HKTjw`, `price_1UZf7ZI8bClhBF4PcJWNqJv0`) and old payment links (`plink_1UZf7xI8bClhBF4PtDTFX69n`, `plink_1UZf80I8bClhBF4P6FY69grP`, `plink_1UZf84I8bClhBF4PBAFYJRrc`) via Stripe MCP.
+  4. Updated `api/create-payment-intent.js`, `js/stripe-service.js`, and `js/app.js` so every Stripe Checkout Session passes `line_items: [{ price: 'price_1UZgMSI8bClhBF4PKywysjAj', quantity: tokens }]` (`unit_amount: 100` cents × `quantity: 10 | 50 | 100`).
+- Verified live Stripe Checkout Session line items via Stripe MCP (`GetCheckoutSessionsSessionLineItems`) and `node scratch/verify_stripe_token_tax_popup.mjs` + `npm run build` (0 errors).
+- Documented Section 11.41 (`StripeTokenUnitPriceAndQuantityContract`) in `data-contracts.MD`.

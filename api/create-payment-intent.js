@@ -19,16 +19,18 @@ const MAX_AMOUNT_AUD = 20000;   // safety ceiling
 const DOCKET_PATTERN = /^[A-Z0-9-]{4,40}$/i;
 
 // Provisioned via Stripe MCP on account acct_1UKnKUI8bClhBF4P (AI Foundation sandbox)
+// Default price is $1.00 AUD per token (unit_amount: 100 cents, tax_behavior: 'exclusive') with quantity = tokens (10, 50, or 100)
 const STRIPE_MCP_PRODUCT_ID = 'prod_VaqooBzIgPduQC';
+const STRIPE_MCP_DEFAULT_UNIT_PRICE_ID = 'price_1UZgMSI8bClhBF4PKywysjAj';
 const STRIPE_MCP_TOKEN_PRICE_IDS = {
-  10: 'price_1UZf7RI8bClhBF4PEhIGJoc3',
-  50: 'price_1UZf7VI8bClhBF4PE52HKTjw',
-  100: 'price_1UZf7ZI8bClhBF4PcJWNqJv0'
+  10: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
+  50: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
+  100: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID
 };
 const STRIPE_MCP_TOKEN_PAYMENT_LINKS = {
-  10: 'https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04',
-  50: 'https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05',
-  100: 'https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06'
+  10: 'https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07',
+  50: 'https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08',
+  100: 'https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09'
 };
 
 let cachedExclusiveGstTaxRateId = 'txr_1UWRnsI8bClhBF4PWROuyTyt';
@@ -121,32 +123,41 @@ export default async function handler(req, res) {
 
   try {
     const subtotalCents = Math.round(subtotalExGstAud * 100);
-    const mcpPriceId = tokens && STRIPE_MCP_TOKEN_PRICE_IDS[tokens];
+    const itemQuantity = tokens ? tokens : 1;
+    const unitAmountCents = tokens
+      ? Math.max(100, Math.round(subtotalCents / tokens))
+      : subtotalCents;
+    const unitPriceAud = Math.round(unitAmountCents) / 100;
+    const mcpPriceId = (tokens && unitAmountCents === 100) ? STRIPE_MCP_DEFAULT_UNIT_PRICE_ID : null;
 
-    // Use Stripe Tax (automatic_tax: { enabled: true }) with tax_behavior: 'exclusive'
-    // so Stripe automatically charges 10% GST ONLY to Australians (AU) and $0.00 GST to non-AU customers.
+    // Default price is $1.00 AUD per token (unit_amount: 100 cents) with quantity = tokens (e.g. Qty 50 × A$1.00 per token = A$50.00).
+    // Uses Stripe Tax (automatic_tax: { enabled: true }) with tax_behavior: 'exclusive' so 10% GST applies strictly to Australians (AU).
     const lineItems = mcpPriceId
-      ? [{ price: mcpPriceId, quantity: 1 }]
+      ? [{ price: mcpPriceId, quantity: itemQuantity }]
       : [
           {
             price_data: {
               currency: 'aud',
-              unit_amount: subtotalCents,
+              unit_amount: unitAmountCents,
               tax_behavior: 'exclusive',
-              product_data: {
-                name: tokens ? `${tokens} Courier Tokens ($1.00 AUD / Token)` : description,
-                tax_code: 'txcd_10000000',
-                description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD ex-GST subtotal (10% GST applies to Australian customers only)`
-              }
+              ...(tokens
+                ? { product: STRIPE_MCP_PRODUCT_ID }
+                : {
+                    product_data: {
+                      name: description,
+                      tax_code: 'txcd_10000000',
+                      description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD ex-GST subtotal (10% GST applies to Australian customers only)`
+                    }
+                  })
             },
-            quantity: 1
+            quantity: itemQuantity
           }
         ];
 
     const sharedMetadata = {
       businessId: BUSINESS_ID,
       docketNumber,
-      ...(tokens ? { tokens: String(tokens) } : {}),
+      ...(tokens ? { tokens: String(tokens), quantity: String(itemQuantity), unitPriceAud: String(unitPriceAud.toFixed(2)) } : {}),
       customerName,
       customerCountry,
       isAustralianCustomer: String(isAustralianCustomer),
@@ -191,8 +202,12 @@ export default async function handler(req, res) {
       checkoutSessionId: checkoutSession.id,
       checkoutUrl: checkoutSession.url,
       productId: STRIPE_MCP_PRODUCT_ID,
-      priceId: mcpPriceId || null,
-      paymentLinkUrl: (tokens && STRIPE_MCP_TOKEN_PAYMENT_LINKS[tokens]) || null,
+      priceId: mcpPriceId || STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
+      unitPriceAud,
+      unitAmountCents,
+      quantity: itemQuantity,
+      pricePerTokenLabel: `$${unitPriceAud.toFixed(2)} AUD per token`,
+      paymentLinkUrl: (tokens && unitAmountCents === 100 && STRIPE_MCP_TOKEN_PAYMENT_LINKS[tokens]) || null,
       status: intent.status,
       tokens,
       customerCountry,
