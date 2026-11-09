@@ -313,9 +313,18 @@ Created: 2026-11-01
   * Verified end-to-end with `scratch/verify_superadmin_token_management.mjs` and full regression test suite (all assertions passing).
   * Compiled clean bundle with `npm run build` (0 errors).
 
+[COMPLETED 2026-11-08] TASK 46: REMOVE REDUNDANT "AU AU" FROM ABSOLUTE BOTTOM FOOTER BAR
+- Clean Geolocation Footer Bar:
+  * Removed redundant country pill (`#geo-bar-country-pill`), flag element (`#geo-bar-flag`), and country text (`#geo-bar-country-name`) that displayed "AU AU" on Windows systems.
+  * The fixed bottom footer bar (`#geo-time-footer-bar`) now cleanly starts directly with the geolocation suburb pill (`📍 Southport, QLD`), followed by weather (`☀️ 24°C Sunny`), live clock (`🕒 1:30 PM AEST`), and Regional Settings.
+- Verification & Compliance:
+  * Documented Section 11.20 in data-contracts.MD.
+  * Verified end-to-end with scratch/verify_footer_no_au_au.mjs and full regression test suite (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY SUPERADMIN UNIVERSAL TOKEN MANAGEMENT IN BROWSER
+CURRENT TASK: VERIFY CLEAN BOTTOM GEOLOCATION FOOTER BAR IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, switch to SuperAdmin view (or log in as superadmin), open the SuperAdmin Driver Approval & Courier Rates card, locate the "SuperAdmin Universal Token Management" console, select any driver or vault account from the dropdown, and test adding tokens, minusing tokens, or refreshing tokens to 0 with two-step confirmation.
+1. In your browser at http://localhost:3002, look at the fixed bar at the absolute bottom of the screen and verify that the "AU AU" text has been removed, so the bar now cleanly displays the location pin and suburb (e.g., "📍 Southport, QLD") followed by weather, time, and Regional Settings.
 
 ================================================================================

@@ -2124,6 +2124,18 @@ Defines the strict contracts and interfaces for universal token balance manageme
      * `#topup-driver-balance`
      * `#superadmin-driver-approvals-list` (re-renders row balances)
 
+### 11.20 Thin Geolocation Footer Bar Clean Layout Contract (`ThinGeolocationFooterBarContract`)
+Defines the layout and elements of the absolute bottom fixed footer bar (`#geo-time-footer-bar`):
+1. **Content Sequence:**
+   - Geolocation Suburb Pill (`#geo-bar-suburb-pill`): Location pin icon + Suburb, State (e.g. `📍 Southport, QLD`).
+   - Weather Pill (`#geo-bar-weather-pill`): Weather icon + current temperature & condition (e.g. `☀️ 24°C Sunny`).
+   - Time Pill (`#geo-bar-time-pill`): Clock icon + localized time in 12h/24h format (e.g. `🕒 1:30 PM AEST`).
+   - Regional Settings Link (`.geo-bar-config-link`): Sliders icon + "Regional Settings" (opens `#geo-time-modal`).
+2. **Exclusion of Redundant Country / AU AU Indicators:**
+   - Any country pill, flag emoji (`#geo-bar-flag`), or country text (`#geo-bar-country-name`) rendering redundant "AU AU" is strictly removed from the bar.
+   - The platform exclusively serves Australia (South Brisbane to Coolangatta in AUD), so the bar begins directly with the local geolocation suburb.
+
+
 
 
 
