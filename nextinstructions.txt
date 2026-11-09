@@ -424,3 +424,11 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `renderDriverInformationView()`, `renderDriverAdminDashboard()`, `renderSupporterPanel()`, and `quickAccessDriverConsole()` in `js/app.js` so that clicking **Driver Admin Panel** sets the main title (`#portal-panel-main-title`) to **Driver Admin Panel** and clicking **Driver Information** reliably expands `#supporter-driver-info-subtab`.
 - Verified with `node scratch/verify_supporter_console_in_google_dropdown_only.mjs`, `node scratch/verify_driver_licence_superadmin_only.mjs`, `node scratch/verify_active_driver_profile_ownership_and_map_toggle.mjs`, `node scratch/verify_driver_application_no_auto_open_or_flicker.mjs`, and `npm run build` (0 errors).
 - Documented Section 11.29 (`DriverInformationPanelOnlyContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 57: DRIVER BOOKING NOTIFICATION SOUND & FRONT-PAGE RED MESSAGE ICON
+- Added Web Audio API dispatch chime synthesizer (`playDriverBookingNotificationSound()` in `js/app.js`) that plays a 4-note ascending chime whenever a driver receives a new booking (`submitCourierBooking()` or cross-tab `storage` update).
+- Added a prominent **Red Message Icon** (`#driver-booking-alert-btn` with unread badge `#driver-booking-alert-badge`) in `.nav-actions` on the front-page top navigation bar and a clickable **Red Message Alert Banner** (`#frontpage-driver-booking-alert` with `#btn-replay-booking-sound`) on `#courier-tab` in `index.html`.
+- Clicking the Red Message Icon (`handleDriverBookingAlertClick()`) opens the **Driver Admin Panel**, expands the **Driver Information** panel (`#supporter-driver-info-subtab`), and scrolls directly to the driver's Recorded Customer Orders (`#driver-admin-orders-container`).
+- Accepting the booking (`acceptDriverBooking(orderId)`) marks `unreadByDriver = false` and clears the Red Message Icon automatically.
+- Verified with `node scratch/verify_driver_booking_sound_and_red_icon.mjs` and `npm run build` (0 errors).
+- Documented Section 11.30 (`DriverBookingSoundAndRedMessageIconContract`) in `data-contracts.MD`.

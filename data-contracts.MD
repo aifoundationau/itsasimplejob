@@ -2476,3 +2476,51 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.30 Driver Booking Sound & Front-Page Red Message Icon Contract (`DriverBookingSoundAndRedMessageIconContract`)
+- **Incoming Booking Sound & Red Message Alert:**
+  1. When a customer submits a courier booking via `submitCourierBooking()` (or when `iasj_courier_orders_v3` updates across tabs), `triggerDriverBookingAlert(newOrder)` sets `unreadByDriver: true`, plays a 4-note ascending chime via Web Audio API (`playDriverBookingNotificationSound()`), and updates the front-page notification UI (`syncDriverBookingNotificationUI()`).
+  2. While one or more unaccepted bookings (`unreadByDriver === true`) exist for the driver:
+     - The top navigation bar on the front page displays the **Red Message Icon** (`#driver-booking-alert-btn`, `data-agent-id="driver-booking-alert-btn"`, `data-testid="driver-booking-alert-btn"`) with the unread count badge (`#driver-booking-alert-badge`).
+     - The front page (`#courier-tab`) displays the clickable **Red Message Alert Banner** (`#frontpage-driver-booking-alert`, `data-agent-id="frontpage-driver-booking-alert"`, `data-testid="frontpage-driver-booking-alert"`) with a **Sound** replay button (`#btn-replay-booking-sound`).
+     - The **Driver Information** panel header displays `#driver-info-new-booking-badge`.
+  3. Clicking the Red Message Icon (`handleDriverBookingAlertClick()`) opens the **Driver Admin Panel**, expands the **Driver Information** panel (`#supporter-driver-info-subtab`), and scrolls to `#driver-admin-orders-container`.
+  4. When the driver clicks **Accept Booking** (`acceptDriverBooking(orderId)`), `unreadByDriver` is set to `false` and the Red Message Icon clears automatically.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverBookingSoundAndRedMessageIconContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "navRedMessageIconId",
+    "navBadgeId",
+    "frontPageRedAlertBannerId",
+    "soundFunction",
+    "unreadFlagProperty"
+  ],
+  "properties": {
+    "navRedMessageIconId": {
+      "type": "string",
+      "const": "driver-booking-alert-btn"
+    },
+    "navBadgeId": {
+      "type": "string",
+      "const": "driver-booking-alert-badge"
+    },
+    "frontPageRedAlertBannerId": {
+      "type": "string",
+      "const": "frontpage-driver-booking-alert"
+    },
+    "soundFunction": {
+      "type": "string",
+      "const": "playDriverBookingNotificationSound"
+    },
+    "unreadFlagProperty": {
+      "type": "string",
+      "const": "unreadByDriver"
+    }
+  }
+}
+```

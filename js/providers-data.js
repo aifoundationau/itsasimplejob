@@ -691,6 +691,11 @@ class CourierOrderDatabase {
     return this.orders;
   }
 
+  getOrderById(orderId) {
+    if (!orderId) return null;
+    return this.orders.find(o => o.orderId === orderId) || null;
+  }
+
   getByDriver(driverIdOrSpn) {
     if (!driverIdOrSpn || driverIdOrSpn === 'all') return this.orders;
     return this.orders.filter(o => o.driverId === driverIdOrSpn || o.driverSpn === driverIdOrSpn);
@@ -703,6 +708,7 @@ class CourierOrderDatabase {
       createdAt: new Date().toISOString(),
       status: "Awaiting Customer PayID",
       paymentMethod: "Direct Driver PayID (AUD)",
+      unreadByDriver: true,
       ...orderData
     };
     this.orders.unshift(record);
@@ -710,10 +716,21 @@ class CourierOrderDatabase {
     return record;
   }
 
+  markOrderReadByDriver(orderId) {
+    const ord = this.orders.find(o => o.orderId === orderId);
+    if (!ord) return null;
+    ord.unreadByDriver = false;
+    this.save();
+    return ord;
+  }
+
   updateOrderStatus(orderId, newStatus) {
     const ord = this.orders.find(o => o.orderId === orderId);
     if (!ord) return null;
     ord.status = newStatus;
+    if (String(newStatus || '').includes('Accepted') || String(newStatus || '').includes('Picked Up') || String(newStatus || '').includes('Delivered')) {
+      ord.unreadByDriver = false;
+    }
     this.save();
     return ord;
   }

@@ -134,6 +134,11 @@ function initApp() {
   } catch (e) {
     console.warn('URL param navigation error:', e);
   }
+
+  try {
+    syncDriverBookingNotificationUI();
+    initDriverBookingCrossTabAlertListener();
+  } catch (e) {}
 }
 
 if (document.readyState === 'loading') {
@@ -3451,6 +3456,7 @@ function submitCourierBooking() {
   updateCourierPricingWithSettings(calc.distanceKm, calc.durationMins);
   renderDriverAdminDashboard();
   try { renderSupporterBookings(); } catch (e) {}
+  try { triggerDriverBookingAlert(newOrder); } catch (e) {}
 
   // 4. Open Direct Driver PayID Confirmation Modal
   const modalBody = document.getElementById('courier-payid-modal-body');
@@ -3513,6 +3519,199 @@ function closePayIdConfirmationModal() {
   document.getElementById('courier-payid-confirmation-modal')?.classList.remove('active');
 }
 window.closePayIdConfirmationModal = closePayIdConfirmationModal;
+
+/**
+ * Driver Incoming Booking Sound & Front-Page Red Message Icon Notification System
+ * Synthesizes an unmistakable multi-tone dispatch chime using Web Audio API
+ * and displays a red message icon on the front page (#driver-booking-alert-btn & #frontpage-driver-booking-alert).
+ */
+function playDriverBookingNotificationSound() {
+  appState.bookingSoundPlayCount = (appState.bookingSoundPlayCount || 0) + 1;
+  appState.lastBookingSoundPlayedAt = new Date().toISOString();
+
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return true;
+    if (!window._iasjBookingAudioCtx) {
+      window._iasjBookingAudioCtx = new AudioCtx();
+    }
+    const ctx = window._iasjBookingAudioCtx;
+    if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime || 0;
+    const notes = [
+      { freq: 587.33, start: 0.00, dur: 0.14 }, // D5
+      { freq: 880.00, start: 0.15, dur: 0.14 }, // A5
+      { freq: 1174.66, start: 0.30, dur: 0.26 }, // D6
+      { freq: 1174.66, start: 0.62, dur: 0.32 }  // D6 repeat chime
+    ];
+
+    notes.forEach(({ freq, start, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + start);
+
+      gain.gain.setValueAtTime(0.001, now + start);
+      gain.gain.exponentialRampToValueAtTime(0.28, now + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + start);
+      osc.stop(now + start + dur + 0.02);
+    });
+  } catch (e) {
+    // Graceful fallback in headless or audio-restricted environments
+  }
+  return true;
+}
+window.playDriverBookingNotificationSound = playDriverBookingNotificationSound;
+
+function getPendingDriverBookingAlerts() {
+  if (!window.courierOrderDB) return [];
+  const allOrders = window.courierOrderDB.getAll() || [];
+
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+
+  return allOrders.filter(ord => {
+    if (!ord) return false;
+    const statusStr = String(ord.status || '');
+    const isAlreadyHandled =
+      statusStr.includes('Accepted') ||
+      statusStr.includes('Picked Up') ||
+      statusStr.includes('Delivered');
+    if (isAlreadyHandled) return false;
+    if (ord.unreadByDriver !== true) return false;
+
+    if (activeRole === 'driver' && ownedDriver && ord.driverId && ord.driverId !== ownedDriver.id && ord.driverId !== appState.activeAdminDriverId) {
+      return false;
+    }
+    return true;
+  });
+}
+window.getPendingDriverBookingAlerts = getPendingDriverBookingAlerts;
+
+function syncDriverBookingNotificationUI() {
+  const pending = getPendingDriverBookingAlerts();
+  const count = pending.length;
+
+  const navAlertBtn = document.getElementById('driver-booking-alert-btn');
+  const navAlertBadge = document.getElementById('driver-booking-alert-badge');
+  const navAlertLabel = document.getElementById('driver-booking-alert-label');
+
+  const frontBanner = document.getElementById('frontpage-driver-booking-alert');
+  const frontCountDot = document.getElementById('frontpage-driver-booking-count-dot');
+  const frontDriverBadge = document.getElementById('frontpage-driver-booking-driver-badge');
+  const frontSummary = document.getElementById('frontpage-driver-booking-summary');
+
+  const infoNewBadge = document.getElementById('driver-info-new-booking-badge');
+  const infoNewCount = document.getElementById('driver-info-new-booking-count');
+
+  if (count > 0) {
+    const latest = pending[0];
+    if (navAlertBtn) navAlertBtn.style.display = 'inline-flex';
+    if (navAlertBadge) navAlertBadge.textContent = String(count);
+    if (navAlertLabel) {
+      navAlertLabel.textContent = count === 1 ? '1 New Booking' : `${count} New Bookings`;
+    }
+
+    if (frontBanner) frontBanner.style.display = 'flex';
+    if (frontCountDot) frontCountDot.textContent = String(count);
+    if (frontDriverBadge) {
+      frontDriverBadge.textContent = `Driver: ${latest.driverName || 'Assigned Driver'}`;
+    }
+    if (frontSummary) {
+      frontSummary.textContent = `${latest.orderId} • Pickup ${latest.pickupDate || 'Today'} @ ${latest.pickupTime || '9am–4pm'} — ${latest.originAddress || 'Origin'} → ${latest.destAddress || 'Destination'} ($${Number(latest.totalAud || 0).toFixed(2)} AUD). Click to view & accept.`;
+    }
+
+    if (infoNewBadge) infoNewBadge.style.display = 'inline-flex';
+    if (infoNewCount) infoNewCount.textContent = String(count);
+  } else {
+    if (navAlertBtn) navAlertBtn.style.display = 'none';
+    if (frontBanner) frontBanner.style.display = 'none';
+    if (infoNewBadge) infoNewBadge.style.display = 'none';
+  }
+}
+window.syncDriverBookingNotificationUI = syncDriverBookingNotificationUI;
+
+function triggerDriverBookingAlert(newOrder) {
+  if (newOrder) {
+    newOrder.unreadByDriver = true;
+    try { window.courierOrderDB?.save(); } catch (e) {}
+  }
+  playDriverBookingNotificationSound();
+  syncDriverBookingNotificationUI();
+}
+window.triggerDriverBookingAlert = triggerDriverBookingAlert;
+
+function handleDriverBookingAlertClick() {
+  const pending = getPendingDriverBookingAlerts();
+  if (pending.length > 0 && pending[0].driverId) {
+    appState.activeAdminDriverId = pending[0].driverId;
+  }
+
+  let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (!supporter && window.supporterDB) {
+    const targetDrv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+    supporter = window.supporterDB.addSupporter({
+      name: targetDrv?.name || 'Registered Courier Driver',
+      email: targetDrv?.email || 'driver@simplejob.com.au',
+      phone: targetDrv?.phone || '0400 000 000',
+      suburb: targetDrv?.baseSuburb || 'Southport QLD 4215'
+    });
+    supporter.role = 'driver';
+    supporter.approved = true;
+    window.supporterDB.save();
+    localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+    try {
+      localStorage.setItem('iasj_google_user', JSON.stringify({
+        displayName: supporter.name,
+        email: supporter.email,
+        phoneNumber: supporter.phone,
+        role: 'driver',
+        isDriver: true,
+        uid: targetDrv?.uid || 'drv-alert-session'
+      }));
+    } catch (e) {}
+  }
+
+  openDriverAdminPanelFromGoogleMenu();
+  toggleSupporterCollapsePanel('driver-information', true);
+  renderDriverInformationView();
+  renderDriverAdminDashboard();
+
+  const ordersContainer = document.getElementById('driver-admin-orders-container');
+  if (ordersContainer && typeof ordersContainer.scrollIntoView === 'function') {
+    try {
+      ordersContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {}
+  }
+  showToast('🔔 New Courier Booking opened in Driver Information — click "Accept Booking" to confirm!');
+}
+window.handleDriverBookingAlertClick = handleDriverBookingAlertClick;
+
+let _crossTabBookingListenerBound = false;
+function initDriverBookingCrossTabAlertListener() {
+  if (_crossTabBookingListenerBound || typeof window.addEventListener !== 'function') return;
+  _crossTabBookingListenerBound = true;
+  window.addEventListener('storage', (event) => {
+    if (event && event.key === 'iasj_courier_orders_v3' && window.courierOrderDB) {
+      const prevCount = getPendingDriverBookingAlerts().length;
+      window.courierOrderDB.orders = window.courierOrderDB.loadOrders();
+      const nextCount = getPendingDriverBookingAlerts().length;
+      if (nextCount > prevCount) {
+        playDriverBookingNotificationSound();
+      }
+      syncDriverBookingNotificationUI();
+      try { renderDriverAdminDashboard(); } catch (e) {}
+    }
+  });
+}
+window.initDriverBookingCrossTabAlertListener = initDriverBookingCrossTabAlertListener;
 
 /**
  * Auto-Geolocate Driver Form (Registration View)
@@ -5382,6 +5581,7 @@ function renderDriverAdminDashboard() {
   if (typeof renderSuperadminTokenBalance === 'function') {
     renderSuperadminTokenBalance();
   }
+  try { syncDriverBookingNotificationUI(); } catch (e) {}
 
   // Render Recorded Customer Orders for this Driver (non-superadmin drivers strictly see ONLY their own orders)
   const allOrders = window.courierOrderDB.getAll();
@@ -5706,6 +5906,7 @@ function acceptDriverBooking(orderId) {
 
   // Update order status to 'Driver Accepted'
   window.courierOrderDB?.updateOrderStatus(orderId, 'Driver Accepted');
+  window.courierOrderDB?.markOrderReadByDriver?.(orderId);
 
   // Sync to Firestore bookings collection
   if (window.firebaseService?.updateBookingStatusInFirestore) {
@@ -5718,6 +5919,7 @@ function acceptDriverBooking(orderId) {
 
   renderDriverAdminDashboard();
   try { renderSupporterBookings(); } catch (e) {}
+  try { syncDriverBookingNotificationUI(); } catch (e) {}
   showToast(`✅ Booking ${orderId} accepted by driver ${activeDriver?.name || 'Driver'}! Drive safely to pickup origin.`);
 }
 window.acceptDriverBooking = acceptDriverBooking;
@@ -5731,6 +5933,7 @@ function updateDriverOrderStatus(orderId, status) {
   }
   renderDriverAdminDashboard();
   try { renderSupporterBookings(); } catch (e) {}
+  try { syncDriverBookingNotificationUI(); } catch (e) {}
   showToast(`📦 Order ${orderId} status updated to: ${status}`);
 }
 window.updateDriverOrderStatus = updateDriverOrderStatus;
@@ -5739,6 +5942,7 @@ function deleteDriverOrder(orderId, btnEl) {
   const performDelete = () => {
     window.courierOrderDB?.deleteOrder(orderId);
     renderDriverAdminDashboard();
+    try { syncDriverBookingNotificationUI(); } catch (e) {}
     showToast(`🗑️ Order ${orderId} deleted.`);
   };
 
