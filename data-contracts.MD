@@ -3231,6 +3231,10 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "mobileNavbarRequiresScrollbar": {
+      "type": "boolean",
+      "const": false
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

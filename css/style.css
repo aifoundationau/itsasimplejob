@@ -4008,15 +4008,18 @@ textarea:focus-visible {
   }
 }
 
-/* ---------- Responsive Navbar: single sleek row on tablet/mobile ---------- */
+/* ---------- Responsive Navbar: sleek zero-scrollbar layout on tablet/mobile ---------- */
 @media (max-width: 960px) {
   .nav-container {
-    height: 64px;
-    flex-wrap: nowrap;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    gap: 0.4rem;
+    overflow: visible;
   }
 
   /* Hide duplicate desktop nav buttons on tablets/mobile since .app-section-tabs right below provides full navigation */
@@ -4026,35 +4029,59 @@ textarea:focus-visible {
 
   .nav-actions {
     margin-left: auto;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 0.4rem;
+    gap: 0.35rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .nav-actions .btn-sm {
-    padding: 0.45rem 0.75rem;
-    font-size: 0.82rem;
+    padding: 0.38rem 0.65rem;
+    font-size: 0.78rem;
     white-space: nowrap;
+  }
+
+  /* Zero-scrollbar responsive grid for main navigation items on Android & iPhone */
+  .app-section-tabs {
+    padding: 0.55rem 0;
+    overflow: hidden;
   }
 
   .tab-nav-bar {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 0.25rem;
-  }
-
-  .tab-nav-bar::-webkit-scrollbar {
-    display: none;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    padding-bottom: 0 !important;
+    width: 100%;
   }
 
   .tab-nav-btn {
-    white-space: nowrap;
-    flex: 0 0 auto;
-    padding: 0.65rem 1rem;
-    font-size: 0.88rem;
+    white-space: normal !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Ensure admin & supporter sub-navbars wrap cleanly with zero scrollbar on mobile/tablet */
+  .admin-tab-nav,
+  .supporter-subnav-bar {
+    flex-wrap: wrap !important;
+    overflow-x: hidden !important;
+    overflow: visible !important;
+  }
+
+  .admin-tab-btn {
+    flex: 1 1 calc(50% - 0.4rem);
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
   }
 
   .workspace-view {
@@ -6126,6 +6153,87 @@ body {
 
 /* 4. Standard iPhone & Android Phones (<= 640px: iPhone 15/16/16 Pro/17, Galaxy A06/S25) */
 @media screen and (max-width: 640px) {
+  /* Zero-scrollbar mobile navbar & section tab bar on iPhone & Android */
+  .navbar,
+  .nav-container,
+  .app-section-tabs,
+  .tab-nav-bar,
+  .admin-tab-nav,
+  .supporter-subnav-bar {
+    overflow-x: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  .navbar::-webkit-scrollbar,
+  .nav-container::-webkit-scrollbar,
+  .tab-nav-bar::-webkit-scrollbar,
+  .admin-tab-nav::-webkit-scrollbar,
+  .supporter-subnav-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .nav-container {
+    height: auto !important;
+    min-height: 52px;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+  }
+
+  .nav-actions {
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+
+  #driver-booking-alert-btn,
+  #nav-token-wallet-btn,
+  #nav-google-signin-btn {
+    padding: 0.3rem 0.52rem !important;
+    font-size: 0.72rem !important;
+    min-height: 34px !important;
+  }
+
+  /* 3-column zero-scrollbar navigation bar for 1. Book Courier, 2. Closest Drivers Map, 3. How It Works */
+  .app-section-tabs {
+    padding: 0.45rem 0 !important;
+  }
+
+  .tab-nav-bar {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-bottom: 0 !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+  }
+
+  .tab-nav-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.2rem !important;
+    padding: 0.45rem 0.25rem !important;
+    font-size: clamp(0.68rem, 2.6vw, 0.78rem) !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+    text-align: center !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+  }
+
+  .tab-nav-btn i {
+    font-size: 0.92rem !important;
+    margin: 0 !important;
+  }
+
   /* Dynamic viewport height (100dvh) prevents iOS Safari & Android Chrome address bar clipping */
   .modal-overlay {
     height: 100vh;
@@ -6294,12 +6402,29 @@ body {
 
 /* 6. Narrow Phones (<= 390px: iPhone 15 / 16 / 17 standard, iPhone SE, Galaxy S25 base) */
 @media screen and (max-width: 390px) {
-  .logo-title {
-    font-size: 0.85rem;
+  .logo-title,
+  .logo-brand-title {
+    font-size: 0.96rem !important;
   }
 
   .google-nav-name {
     max-width: 68px;
+  }
+
+  #driver-booking-alert-label {
+    display: none !important;
+  }
+
+  .tab-nav-bar {
+    gap: 0.28rem !important;
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+  }
+
+  .tab-nav-btn {
+    padding: 0.4rem 0.2rem !important;
+    font-size: 0.68rem !important;
+    min-height: 44px !important;
   }
 
   .tab-btn {
@@ -6326,23 +6451,37 @@ body {
 /* 7. Ultra-Compact Android Viewports (<= 360px: Samsung Galaxy A06 / A16 5G / Fold Cover) */
 @media screen and (max-width: 360px) {
   .container {
-    padding-left: 0.6rem;
-    padding-right: 0.6rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 
-  .logo-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 0.85rem;
+  .logo-icon,
+  .worker-brand-icon {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.85rem !important;
   }
 
-  .logo-title {
-    font-size: 0.8rem;
+  .logo-title,
+  .logo-brand-title {
+    font-size: 0.88rem !important;
   }
 
   .google-nav-name {
     max-width: 54px;
     font-size: 0.7rem;
+  }
+
+  .tab-nav-bar {
+    gap: 0.22rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+  }
+
+  .tab-nav-btn {
+    padding: 0.38rem 0.15rem !important;
+    font-size: 0.64rem !important;
+    min-height: 42px !important;
   }
 
   .btn,

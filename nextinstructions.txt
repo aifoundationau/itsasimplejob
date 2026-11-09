@@ -583,3 +583,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Added `syncMobileResponsiveViewport()` in `js/app.js` to automatically redraw Leaflet map tiles (`invalidateSize()`) on mobile orientation change and viewport resize (`<= 960px` only).
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
 - Documented Section 11.42 (`AndroidAndIphoneResponsiveWebAppContract`) in `data-contracts.MD`.
+
+[2026-11-09] Task 74: Zero-Scrollbar Responsive Navbar Items on Android & iPhone:
+- Replaced horizontal `overflow-x: auto` scrolling on `.tab-nav-bar`, `.navbar`, `.nav-container`, `.admin-tab-nav`, and `.supporter-subnav-bar` inside mobile media queries (`<= 960px`, `<= 640px`, `<= 390px`, `<= 360px`) in `css/style.css` with a 3-column responsive grid (`grid-template-columns: repeat(3, minmax(0, 1fr))`) and wrapping flex layout (`overflow-x: hidden !important`) so all navbar items (`1. Book Courier`, `2. Closest Drivers Map`, `3. How It Works`, and top navbar actions) fit completely on screen with zero scrollbar on Android and iPhone while leaving desktop/laptop (`> 960px`) 100% unchanged.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
