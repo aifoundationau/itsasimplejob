@@ -2059,8 +2059,8 @@ Combines the site footer into a single, cohesive section with consistent vertica
      * No internal divider lines (`border-top: 1px solid rgba(255,255,255,0.1)` removed).
    - Component Flow:
      1. Brand Title & Tagline: `It's A Simple Job — Short-Haul Couriers` with regional coverage, 9:00 AM – 4:00 PM window, and PayID AUD settlement note.
-     2. Primary Navigation Row: `Book Service`, `Closest Drivers`, `Supporter Portal` (gated), `How It Works`, `Terms of Service`, and `Courier Driver Application`.
-     3. Legal & Sub-Links Row: Copyright, ABN, AUD currency note, and secondary `Terms of Service • Courier Driver Application` pair.
+     2. Primary Navigation Row: `Book Service`, `Closest Drivers`, `Supporter Portal` (gated), `How It Works`, `Terms of Service`, and `Courier Driver Application` (gated to supporters).
+     3. Legal & Copyright Row: Clean copyright notice with ABN and AUD currency declaration (duplicate bottom Terms of Service and Courier Driver Application links removed).
 
 2. **DOM Automation & Testing Selectors:**
    - All interactive footer links maintain their explicit `data-agent-id`, `data-testid`, and `aria-label` attributes.
@@ -2070,7 +2070,7 @@ Defines the strict visibility and operational contracts for the driver applicati
 
 1. **Supporter-Only Driver Application Gating:**
    - Section `#driver-application-bottom-section` ("The Driver Network • Join the Fleet — Courier Driver Application") is hidden by default (`display:none;`) and exclusively made visible once a user is verified as a registered supporter (`isSupporterRegistered() === true`).
-   - The Courier Driver Application link in the footer (`#footer-driver-app-link`, `#footer-bottom-driver-app-bullet`, `#footer-bottom-driver-app-link`) is strictly hidden until the user is a registered supporter.
+   - The Courier Driver Application link in the footer (`#footer-driver-app-link`) is strictly hidden until the user is a registered supporter.
    - Deep-linking or attempting navigation to `#driver-application-bottom-section` without supporter registration redirects to the Supporter Portal with an instructive toast message.
 
 2. **SuperAdmin Approval Transition:**

@@ -283,9 +283,19 @@ Created: 2026-11-01
   * Verified end-to-end with verify_supporter_driver_info_lifecycle.mjs (all 7 assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 44: REMOVE DUPLICATE TERMS & COURIER APP LINKS FROM BOTTOM FOOTER AREA
+- Footer Layout De-duplication:
+  * Removed duplicate "Terms of Service • Courier Driver Application" links from the bottom copyright row of the site footer in index.html.
+  * The bottom footer now displays strictly the clean copyright notice: "© 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584. All prices in Australian Dollars ($ AUD)."
+  * All navigation links ("Book Service", "Closest Drivers", "Supporter Portal", "How It Works", "Terms of Service", and "Courier Driver Application") reside exclusively and cleanly in the primary navigation row above the copyright.
+- Verification & Compliance:
+  * Documented Section 11.17 updates in data-contracts.MD.
+  * Verified end-to-end across all 5 verification suites (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY SUPPORTER-GATED APPLICATION & DRIVER INFORMATION IN BROWSER
+CURRENT TASK: VERIFY CLEAN BOTTOM FOOTER COPYRIGHT & LINKS IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, verify that before signing in / registering as a supporter, the "Driver Network • Join the Fleet" section and footer application links are completely hidden; then sign in/register as a supporter to verify that the application appears on the footer, and once approved as a driver, verify that "Driver Information" appears right next to "Driver Dispatch Console".
+1. In your browser at http://localhost:3002, scroll down to the bottom footer and verify that the duplicate "Terms of Service • Courier Driver Application" links have been completely removed from beneath the copyright notice, leaving a clean, unified footer with all links organized in the main row above the copyright.
 
 ================================================================================
