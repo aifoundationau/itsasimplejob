@@ -2975,11 +2975,12 @@ async function approveDriverBySuperadmin(driverId) {
   }
 
   // If the logged in Google user is this driver, grant them role: 'driver' immediately
-  const activeUser = window.firebaseService?.getCurrentGoogleUser();
+  const activeUser = getActiveGoogleUser();
   if (activeUser && activeUser.email && activeUser.email.toLowerCase().trim() === (driver.email || '').toLowerCase().trim()) {
-    if (activeUser.role !== 'superadmin') {
+    if (activeUser.role !== 'superadmin' && !checkIsSuperadmin(activeUser)) {
       activeUser.role = 'driver';
       activeUser.isDriver = true;
+      activeUser.approved = true;
       localStorage.setItem('iasj_google_user', JSON.stringify(activeUser));
       try { updateGoogleAuthUI(activeUser); } catch (e) {}
     }
@@ -3066,12 +3067,14 @@ async function revokeDriverBySuperadmin(driverId) {
   }
 
   // If active user is this driver, demote from 'driver' back to 'supporter'
-  const activeUser = window.firebaseService?.getCurrentGoogleUser();
+  const activeUser = getActiveGoogleUser();
   if (activeUser && activeUser.email && activeUser.email.toLowerCase() === (driver.email || '').toLowerCase()) {
-    if (activeUser.role !== 'superadmin') {
+    if (activeUser.role !== 'superadmin' && !checkIsSuperadmin(activeUser)) {
       activeUser.role = 'supporter';
       activeUser.isDriver = false;
+      activeUser.approved = false;
       localStorage.setItem('iasj_google_user', JSON.stringify(activeUser));
+      try { updateGoogleAuthUI(activeUser); } catch (e) {}
     }
   }
 
@@ -4501,35 +4504,70 @@ class SupporterDatabase {
 
 window.supporterDB = new SupporterDatabase();
 
+function getActiveGoogleUser() {
+  try {
+    const svcUser = window.firebaseService?.getCurrentGoogleUser?.();
+    if (svcUser && svcUser.email) return svcUser;
+    const raw = localStorage.getItem('iasj_google_user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return (parsed && parsed.email) ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+}
+window.getActiveGoogleUser = getActiveGoogleUser;
+
+function isUserCurrentlyLoggedIn() {
+  return Boolean(getActiveGoogleUser());
+}
+window.isUserCurrentlyLoggedIn = isUserCurrentlyLoggedIn;
+
 function getCurrentSupporter() {
+  const gUser = getActiveGoogleUser();
+  if (!gUser || !gUser.email) {
+    // When logged out, never return a stale supporter session
+    try { localStorage.removeItem(CURRENT_SUPPORTER_KEY); } catch (e) {}
+    return null;
+  }
+
+  const gEmail = String(gUser.email || '').toLowerCase().trim();
+  const isSa = checkIsSuperadmin(gUser);
   const currentId = localStorage.getItem(CURRENT_SUPPORTER_KEY);
   if (currentId) {
     const found = window.supporterDB.findById(currentId);
-    if (found) return found;
-  }
-  const googleUserRaw = localStorage.getItem('iasj_google_user');
-  if (googleUserRaw) {
-    try {
-      const gUser = JSON.parse(googleUserRaw);
-      if (gUser && gUser.email) {
-        let supporter = window.supporterDB.findByEmail(gUser.email);
-        if (!supporter) {
-          supporter = window.supporterDB.addSupporter({
-            name: gUser.displayName || 'Google Supporter',
-            email: gUser.email,
-            phone: gUser.phoneNumber || '',
-            suburb: '',
-            photoURL: gUser.photoURL || '',
-            googleUid: gUser.uid || '',
-            registrationCompleted: Boolean(checkIsSuperadmin(gUser))
-          });
-        }
-        localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
-        return supporter;
+    if (found && String(found.email || '').toLowerCase().trim() === gEmail) {
+      if (isSa && found.registrationCompleted !== true) {
+        found.registrationCompleted = true;
+        found.isVerified = true;
+        found.role = 'superadmin';
+        window.supporterDB.save();
       }
-    } catch (e) {}
+      return found;
+    }
   }
-  return null;
+
+  let supporter = window.supporterDB.findByEmail(gUser.email);
+  if (!supporter) {
+    supporter = window.supporterDB.addSupporter({
+      name: gUser.displayName || (isSa ? 'SuperAdmin' : 'Community Supporter'),
+      email: gUser.email,
+      phone: gUser.phoneNumber || (isSa ? '0400 000 000' : ''),
+      suburb: isSa ? 'Southport QLD 4215' : '',
+      photoURL: gUser.photoURL || '',
+      googleUid: gUser.uid || '',
+      role: isSa ? 'superadmin' : 'supporter',
+      registrationCompleted: Boolean(isSa),
+      isVerified: Boolean(isSa)
+    });
+  } else if (isSa && supporter.registrationCompleted !== true) {
+    supporter.registrationCompleted = true;
+    supporter.isVerified = true;
+    supporter.role = 'superadmin';
+    window.supporterDB.save();
+  }
+  localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+  return supporter;
 }
 window.getCurrentSupporter = getCurrentSupporter;
 
@@ -4545,24 +4583,24 @@ function openDriverApplicationModal(event) {
   const modal = document.getElementById('driver-application-modal');
   if (!modal) return;
 
-  // Prevent redundant re-opening/flickering if already open
-  if (modal.classList.contains('active') && modal.style.display === 'flex') {
-    return;
-  }
-
-  const isRegistered = isSupporterRegistered();
+  const isLoggedIn = isUserCurrentlyLoggedIn();
+  const gUser = getActiveGoogleUser();
+  const isSa = Boolean(isLoggedIn && checkIsSuperadmin(gUser));
+  const isRegistered = isLoggedIn && (isSa || isSupporterRegistrationComplete());
   const supporter = isRegistered ? getCurrentSupporter() : null;
 
   const lockedEl = document.getElementById('driver-app-gate-locked');
   const unlockedEl = document.getElementById('driver-app-gate-unlocked');
 
-  if (isRegistered && supporter) {
+  if (isLoggedIn && (isSa || (isRegistered && supporter))) {
     if (lockedEl) lockedEl.style.display = 'none';
     if (unlockedEl) unlockedEl.style.display = 'block';
 
     const supNameBadge = document.getElementById('driver-app-unlocked-supporter-name');
     if (supNameBadge) {
-      supNameBadge.textContent = `${supporter.name || 'Community Supporter'} (${supporter.email})`;
+      const displayName = supporter?.name || gUser?.displayName || (isSa ? 'SuperAdmin' : 'Community Supporter');
+      const displayEmail = supporter?.email || gUser?.email || '';
+      supNameBadge.textContent = displayEmail ? `${displayName} (${displayEmail})` : displayName;
     }
 
     try {
@@ -4573,6 +4611,11 @@ function openDriverApplicationModal(event) {
   } else {
     if (lockedEl) lockedEl.style.display = 'block';
     if (unlockedEl) unlockedEl.style.display = 'none';
+  }
+
+  // Prevent redundant re-opening/flickering if already open
+  if (modal.classList.contains('active') && modal.style.display === 'flex') {
+    return;
   }
 
   modal.style.display = 'flex';
@@ -4641,10 +4684,9 @@ function scrollToDriverApplication(event) {
 window.scrollToDriverApplication = scrollToDriverApplication;
 
 function isSupporterRegistrationComplete(supporterObj = null) {
-  const gUser = window.firebaseService?.getCurrentGoogleUser?.() || (() => {
-    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch (e) { return null; }
-  })();
-  if (gUser && checkIsSuperadmin(gUser)) return true;
+  const gUser = getActiveGoogleUser();
+  if (!gUser) return false;
+  if (checkIsSuperadmin(gUser)) return true;
   const supporter = supporterObj || (typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null);
   if (!supporter) return false;
   if (supporter.registrationCompleted === true) return true;
@@ -4659,6 +4701,7 @@ function isSupporterRegistrationComplete(supporterObj = null) {
 window.isSupporterRegistrationComplete = isSupporterRegistrationComplete;
 
 function isSupporterRegistered() {
+  if (!isUserCurrentlyLoggedIn()) return false;
   return isSupporterRegistrationComplete();
 }
 window.isSupporterRegistered = isSupporterRegistered;
@@ -4684,12 +4727,15 @@ function updateDriverApplicationGateUI() {
     footerBottomBullet.style.display = 'inline';
   }
 
-  const isRegistered = isSupporterRegistered();
+  const isLoggedIn = isUserCurrentlyLoggedIn();
+  const gUser = getActiveGoogleUser();
+  const isSa = Boolean(isLoggedIn && checkIsSuperadmin(gUser));
+  const isRegistered = isLoggedIn && (isSa || isSupporterRegistered());
   const supporter = isRegistered ? getCurrentSupporter() : null;
   const lockedEl = document.getElementById('driver-app-gate-locked');
   const unlockedEl = document.getElementById('driver-app-gate-unlocked');
   if (lockedEl && unlockedEl) {
-    if (isRegistered && supporter) {
+    if (isLoggedIn && (isSa || (isRegistered && supporter))) {
       lockedEl.style.display = 'none';
       unlockedEl.style.display = 'block';
     } else {
@@ -4951,13 +4997,29 @@ window.openSupporterPanelFromGoogleMenu = openSupporterPanelFromGoogleMenu;
 
 function openDriverAdminPanelFromGoogleMenu() {
   closeGoogleUserMenu();
-  if (!isSupporterRegistrationComplete()) {
+  const isSa = checkIsSuperadmin();
+  if (!isSa && !isSupporterRegistrationComplete()) {
     appState.activePortalPanelMode = 'supporter';
     switchTab('driver-admin-tab');
     collapseAllSupporterPanels();
     toggleSupporterCollapsePanel('registration-details', true);
     try { renderSupporterPanel(); } catch (e) {}
-    showToast('⚠️ First-time users must register as a Community Supporter first before accessing Driver Admin.');
+    showToast('⚠️ First-time users must register as a Community Supporter first before applying as a driver.');
+    return;
+  }
+  const activeRole = getActiveUserRole();
+  if (!isSa && activeRole !== 'driver') {
+    appState.activePortalPanelMode = 'supporter';
+    switchTab('driver-admin-tab');
+    collapseAllSupporterPanels();
+    toggleSupporterCollapsePanel('register-driver', true);
+    try { renderSupporterPanel(); } catch (e) {}
+    const owned = getOwnedDriverProfile();
+    if (owned && !isDriverApproved(owned)) {
+      showToast('⏳ Your driver application is waiting for SuperAdmin approval. You remain a Community Supporter until approved.');
+    } else {
+      showToast('ℹ️ Submit your Register as a Driver application below and wait for SuperAdmin approval.');
+    }
     return;
   }
   appState.activePortalPanelMode = 'driver-admin';
@@ -5104,6 +5166,7 @@ window.getOwnedDriverProfile = getOwnedDriverProfile;
 
 function canUserAccessDriverProfile(driver) {
   if (!driver) return false;
+  if (checkIsSuperadmin()) return true;
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
   if (activeRole === 'superadmin') return true;
   if (activeRole !== 'driver') return false;
@@ -5117,6 +5180,7 @@ window.canUserAccessDriverProfile = canUserAccessDriverProfile;
  * Customers, supporters, and non-superadmin users never see driver licence numbers.
  */
 function canUserSeeDriverLicenceNumber() {
+  if (checkIsSuperadmin()) return true;
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
   return activeRole === 'superadmin';
 }
@@ -5124,6 +5188,9 @@ window.canUserSeeDriverLicenceNumber = canUserSeeDriverLicenceNumber;
 
 function getAccessibleDriverProfilesForCurrentUser() {
   if (!window.providerDB) return [];
+  if (checkIsSuperadmin()) {
+    return window.providerDB.getAll();
+  }
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
   if (activeRole === 'superadmin') {
     return window.providerDB.getAll();
@@ -5468,6 +5535,12 @@ function handleSupporterRegistrationSubmit(event) {
     return;
   }
 
+  const isSaEmail = checkIsSuperadmin({ email });
+  const existingApprovedDriver = window.providerDB?.getAll?.()?.find(
+    d => (d.email || '').toLowerCase().trim() === email.toLowerCase().trim() && isDriverApproved(d)
+  );
+  const resolvedRole = isSaEmail ? 'superadmin' : (existingApprovedDriver ? 'driver' : 'supporter');
+
   // Update active supporter in-place if one is currently selected, or add/update by email
   let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   if (supporter && window.supporterDB) {
@@ -5477,6 +5550,8 @@ function handleSupporterRegistrationSubmit(event) {
       phone,
       suburb,
       address: suburb,
+      role: resolvedRole,
+      approved: Boolean(isSaEmail || existingApprovedDriver),
       registrationCompleted: true,
       isVerified: true,
       updatedAt: new Date().toISOString()
@@ -5489,13 +5564,15 @@ function handleSupporterRegistrationSubmit(event) {
       phone,
       suburb,
       address: suburb,
+      role: resolvedRole,
+      approved: Boolean(isSaEmail || existingApprovedDriver),
       registrationCompleted: true,
       isVerified: true
     });
   }
   localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
 
-  // Sync cached Google user profile in localStorage if present
+  // Sync cached Google user profile in localStorage so user is logged in as Supporter (or SuperAdmin)
   try {
     const gRaw = localStorage.getItem('iasj_google_user');
     if (gRaw) {
@@ -5504,8 +5581,22 @@ function handleSupporterRegistrationSubmit(event) {
         gParsed.displayName = name;
         gParsed.email = email;
         gParsed.phoneNumber = phone;
+        gParsed.role = resolvedRole;
+        gParsed.isSuperadmin = Boolean(isSaEmail);
+        gParsed.isDriver = resolvedRole === 'driver';
         localStorage.setItem('iasj_google_user', JSON.stringify(gParsed));
       }
+    } else {
+      localStorage.setItem('iasj_google_user', JSON.stringify({
+        uid: supporter.googleUid || supporter.id || `sup-${Date.now()}`,
+        displayName: name,
+        email: email,
+        phoneNumber: phone,
+        role: resolvedRole,
+        isSuperadmin: Boolean(isSaEmail),
+        isDriver: resolvedRole === 'driver',
+        connectedAt: new Date().toISOString()
+      }));
     }
   } catch (e) {}
 
@@ -5648,10 +5739,10 @@ function renderSupporterPanel() {
       driverInfoSubtabView.style.display = 'none';
     }
 
-    // SuperAdmin console gating
+    // SuperAdmin console gating — SuperAdmin is always superadmin and can always access SuperAdmin controls
     const saCard = document.getElementById('superadmin-courier-config-card');
     if (saCard) {
-      saCard.style.display = (activeRole === 'superadmin') ? 'block' : 'none';
+      saCard.style.display = (checkIsSuperadmin() || activeRole === 'superadmin') ? 'block' : 'none';
     }
     if (avatarImg && supporter.photoURL) {
       avatarImg.src = supporter.photoURL;
@@ -6043,7 +6134,14 @@ window.quickAccessDriverConsole = quickAccessDriverConsole;
 function resetSupporterProfile() {
   localStorage.removeItem(CURRENT_SUPPORTER_KEY);
   localStorage.removeItem('iasj_google_user');
+  localStorage.removeItem('iasj_superadmin_mode');
+  try { sessionStorage.removeItem('iasj_superadmin_view_role'); } catch (e) {}
+  try { closeDriverApplicationModal(); } catch (e) {}
+  try { updateGoogleAuthUI(null); } catch (e) {}
   renderSupporterPanel();
+  try { syncSupporterDetailsToBookingForm(null, true); } catch (e) {}
+  try { updateDriverApplicationGateUI(); } catch (e) {}
+  try { syncSuperadminControls(); } catch (e) {}
   showToast('ℹ️ Signed out of Supporter Panel. Please sign in with Google to continue.');
 }
 window.resetSupporterProfile = resetSupporterProfile;
@@ -6417,6 +6515,15 @@ function handleDriverRegistrationSubmit(event) {
     });
   }
 
+  if (currentSupporter && window.supporterDB) {
+    currentSupporter.driverId = savedDriver.id;
+    if (!isDriverApproved(savedDriver) && !checkIsSuperadmin()) {
+      currentSupporter.role = 'supporter';
+      currentSupporter.approved = false;
+    }
+    window.supporterDB.save();
+  }
+
   appState.selectedCourierDriverId = savedDriver.id;
   appState.activeAdminDriverId = savedDriver.id;
 
@@ -6440,9 +6547,17 @@ function handleDriverRegistrationSubmit(event) {
   try { updateDriverApplicationGateUI(); } catch (e) {}
   try { renderSuperadminDriverApprovals(); } catch (e) {}
   try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
-  openDriverAdminPanelFromGoogleMenu();
-  toggleSupporterCollapsePanel('driver-information', true);
-  showToast(`🎉 Driver application submitted for ${savedDriver.name}! Super Admin approves all driver applications in the Super Admin Panel.`);
+
+  if (isDriverApproved(savedDriver) || checkIsSuperadmin()) {
+    openDriverAdminPanelFromGoogleMenu();
+    toggleSupporterCollapsePanel('driver-information', true);
+  } else {
+    appState.activePortalPanelMode = 'supporter';
+    switchTab('driver-admin-tab');
+    try { renderSupporterPanel(); } catch (e) {}
+    toggleSupporterCollapsePanel('register-driver', true);
+  }
+  showToast(`🎉 Driver application submitted for ${savedDriver.name}! You remain a Community Supporter while waiting for SuperAdmin to approve your driver application.`);
   return savedDriver;
 }
 window.handleDriverRegistrationSubmit = handleDriverRegistrationSubmit;
@@ -7354,7 +7469,7 @@ window.saveDriverAdminProfile = saveDriverAdminProfile;
  * Roles: 'superadmin' | 'driver' | 'supporter'
  */
 function getActiveUserRole() {
-  const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+  const gUser = getActiveGoogleUser();
   const isSa = checkIsSuperadmin(gUser);
   if (isSa) {
     let viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
@@ -7364,26 +7479,39 @@ function getActiveUserRole() {
     }
     return 'superadmin';
   }
-  if (gUser && (gUser.role === 'driver' || gUser.isDriver === true)) return 'driver';
-  if (gUser && gUser.email && window.supporterDB) {
-    const sup = window.supporterDB.findByEmail(gUser.email);
-    if (sup && (sup.role === 'driver' || sup.approved === true)) return 'driver';
-  }
-  if (gUser && window.providerDB) {
+  if (!gUser) return 'supporter';
+
+  if (window.providerDB) {
     const cleanEmail = (gUser.email || '').toLowerCase().trim();
-    const prov = window.providerDB.getAll().find(p => 
+    const prov = window.providerDB.getAll().find(p =>
       ((p.email || '').toLowerCase().trim() === cleanEmail) ||
-      (p.uid && p.uid === gUser.uid)
+      (p.uid && gUser.uid && p.uid === gUser.uid)
     );
-    if (prov && (prov.approved === true || prov.status === 'active' || prov.role === 'driver')) {
-      if (gUser.role !== 'driver') {
-        gUser.role = 'driver';
-        gUser.isDriver = true;
-        try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+    if (prov) {
+      if (isDriverApproved(prov)) {
+        if (gUser.role !== 'driver') {
+          gUser.role = 'driver';
+          gUser.isDriver = true;
+          try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+        }
+        return 'driver';
+      } else {
+        // Pending or revoked driver application — remains Supporter until SuperAdmin approves
+        if (gUser.role === 'driver' || gUser.isDriver === true) {
+          gUser.role = 'supporter';
+          gUser.isDriver = false;
+          try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+        }
+        return 'supporter';
       }
-      return 'driver';
     }
   }
+
+  if (gUser.email && window.supporterDB) {
+    const sup = window.supporterDB.findByEmail(gUser.email);
+    if (sup && sup.role === 'driver' && sup.approved === true) return 'driver';
+  }
+  if (gUser.role === 'driver' && gUser.approved === true) return 'driver';
   return 'supporter';
 }
 window.getActiveUserRole = getActiveUserRole;
@@ -11104,10 +11232,19 @@ async function signUpWithGoogle(role = 'supporter', bypassGate = false) {
 }
 
 function handleGoogleSignOut() {
+  localStorage.removeItem('iasj_google_user');
+  localStorage.removeItem(CURRENT_SUPPORTER_KEY);
+  localStorage.removeItem('iasj_superadmin_mode');
+  try { sessionStorage.removeItem('iasj_superadmin_view_role'); } catch (e) {}
   if (window.firebaseService?.signOutGoogle) {
     window.firebaseService.signOutGoogle();
   }
+  try { closeDriverApplicationModal(); } catch (e) {}
   updateGoogleAuthUI(null);
+  try { renderSupporterPanel(); } catch (e) {}
+  try { syncSupporterDetailsToBookingForm(null, true); } catch (e) {}
+  try { updateDriverApplicationGateUI(); } catch (e) {}
+  try { syncSuperadminControls(); } catch (e) {}
   if (appState.activeTab === 'driver-admin-tab') {
     switchTab('courier-tab');
   }
@@ -11524,17 +11661,31 @@ function routeUserToDashboard(user) {
 }
 
 function initGoogleAuthUI() {
-  const existingUser = window.firebaseService?.getCurrentGoogleUser?.();
+  const existingUser = getActiveGoogleUser();
   if (existingUser) {
     updateGoogleAuthUI(existingUser);
     // Do NOT automatically switch tabs on initial page load - user must remain on the main app page
+  } else {
+    localStorage.removeItem(CURRENT_SUPPORTER_KEY);
+    localStorage.removeItem('iasj_superadmin_mode');
+    try { sessionStorage.removeItem('iasj_superadmin_view_role'); } catch (e) {}
+    updateGoogleAuthUI(null);
   }
 
   window.addEventListener('googleAuthStateChanged', (e) => {
-    updateGoogleAuthUI(e.detail?.user);
+    const authUser = e.detail?.user || null;
+    if (!authUser) {
+      localStorage.removeItem(CURRENT_SUPPORTER_KEY);
+      localStorage.removeItem('iasj_superadmin_mode');
+      try { sessionStorage.removeItem('iasj_superadmin_view_role'); } catch (err) {}
+    }
+    updateGoogleAuthUI(authUser);
     syncSuperadminControls();
+    try { renderSupporterPanel(); } catch (err) {}
+    try { syncSupporterDetailsToBookingForm(null, false); } catch (err) {}
+    try { updateDriverApplicationGateUI(); } catch (err) {}
     if (e.detail?.action === 'login' && e.detail?.redirectOnLogin) {
-      routeUserToDashboard(e.detail?.user);
+      routeUserToDashboard(authUser);
     }
   });
 
@@ -13928,16 +14079,15 @@ function initGeoTimeBar() {
    ========================================================================== */
 function checkIsSuperadmin(user) {
   if (!user) {
-    const localUser = window.firebaseService?.getCurrentGoogleUser?.();
+    const localUser = getActiveGoogleUser();
     if (localUser) user = localUser;
-    else if (localStorage.getItem('iasj_superadmin_mode') === 'true') return true;
     else return false;
   }
   const email = (user.email || '').toLowerCase().trim();
   const rawAllowed = (window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au,davidrobertson.info@gmail.com') + '';
   const allowedList = rawAllowed.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
   const isSuperEmail = allowedList.includes(email) || email === 'support@aifoundation.net.au' || email === 'davidrobertson.info@gmail.com';
-  return isSuperEmail || user.isSuperadmin === true || user.role === 'superadmin' || localStorage.getItem('iasj_superadmin_mode') === 'true';
+  return isSuperEmail || user.isSuperadmin === true || user.role === 'superadmin';
 }
 
 function switchSuperadminViewRole(role, shouldNavigateTab = false) {
@@ -14013,13 +14163,13 @@ function switchSuperadminViewRole(role, shouldNavigateTab = false) {
 window.switchSuperadminViewRole = switchSuperadminViewRole;
 
 function syncSuperadminControls() {
-  const user = window.firebaseService?.getCurrentGoogleUser?.();
+  const user = getActiveGoogleUser();
   const isSa = checkIsSuperadmin(user);
   const viewRole = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
-  const showPriceTools = isSa && viewRole === 'superadmin';
+  const showPriceTools = isSa;
 
   const switcher = document.getElementById('superadmin-role-switcher-section');
-  if (switcher) switcher.style.display = (isSa && viewRole === 'superadmin') ? 'block' : 'none';
+  if (switcher) switcher.style.display = isSa ? 'block' : 'none';
 
   const menuSwitcher = document.getElementById('google-menu-superadmin-switcher');
   if (menuSwitcher) menuSwitcher.style.display = isSa ? 'block' : 'none';

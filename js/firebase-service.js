@@ -778,11 +778,19 @@ export async function signInWithGoogle(role = 'supporter') {
     .map(e => e.trim().toLowerCase())
     .filter(Boolean);
 
-  let actualRole = role;
+  let actualRole = 'supporter';
   if (claims.role === 'superadmin' || claims.isSuperAdmin === true || superadminEmails.includes(emailLower)) {
     actualRole = 'superadmin';
-  } else if (claims.role) {
-    actualRole = claims.role;
+  } else if (claims.role === 'driver' && claims.approved === true) {
+    actualRole = 'driver';
+  }
+
+  // Check local providerDB for SuperAdmin-approved driver profile
+  if (actualRole !== 'superadmin' && window.providerDB?.getAll) {
+    const localProv = window.providerDB.getAll().find(p => (p.email || '').toLowerCase().trim() === emailLower);
+    if (localProv && localProv.approved === true && localProv.status !== 'pending_approval' && localProv.status !== 'revoked') {
+      actualRole = 'driver';
+    }
   }
 
   // Check Firestore users collection for hardwired role (e.g. driver approved by superadmin)
@@ -792,7 +800,7 @@ export async function signInWithGoogle(role = 'supporter') {
       const userSnap = await withTimeout(getDoc(userRef), 2500);
       if (userSnap && userSnap.exists()) {
         const remoteData = userSnap.data();
-        if (actualRole !== 'superadmin' && (remoteData.role === 'driver' || remoteData.isDriver === true)) {
+        if (actualRole !== 'superadmin' && remoteData.approved === true && remoteData.status !== 'pending_approval' && remoteData.status !== 'revoked' && (remoteData.role === 'driver' || remoteData.isDriver === true)) {
           actualRole = 'driver';
         }
       }
@@ -803,7 +811,7 @@ export async function signInWithGoogle(role = 'supporter') {
           const provSnap = await withTimeout(getDocs(qProv), 2000);
           if (!provSnap.empty) {
             const pData = provSnap.docs[0].data();
-            if (pData.approved === true || pData.status === 'active' || pData.role === 'driver') {
+            if (pData.approved === true && pData.status !== 'pending_approval' && pData.status !== 'revoked') {
               actualRole = 'driver';
             }
           }
@@ -839,7 +847,7 @@ export async function signInWithGoogle(role = 'supporter') {
 
   localStorage.setItem('iasj_google_user', JSON.stringify(userData));
 
-  if (role === 'supporter' || role === 'customer') {
+  if (actualRole === 'supporter' || role === 'supporter' || role === 'customer') {
     getOrCreateCRN(user.phoneNumber || '', user.displayName || '');
     localStorage.setItem('iasj_customer_name', user.displayName || '');
     localStorage.setItem('iasj_customer_email', user.email || '');
@@ -863,6 +871,9 @@ export async function getIdToken() {
 
 export async function signOutGoogle() {
   localStorage.removeItem('iasj_google_user');
+  localStorage.removeItem('simplejob_current_supporter_id');
+  localStorage.removeItem('iasj_superadmin_mode');
+  try { sessionStorage.removeItem('iasj_superadmin_view_role'); } catch (e) {}
   if (auth) {
     try { await signOut(auth); } catch (e) {}
   }

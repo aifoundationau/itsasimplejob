@@ -3322,6 +3322,18 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
         ]
       }
     },
+    "loggedOutNeverShowsLoggedInWhenRegisteringAsDriver": {
+      "type": "boolean",
+      "const": true
+    },
+    "superAdminAlwaysSuperAdminCanDoAnything": {
+      "type": "boolean",
+      "const": true
+    },
+    "firstTimeRegistrantsBecomeSupporterAndWaitForSuperAdminDriverApproval": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

@@ -566,7 +566,7 @@ class ProviderDatabase {
       autoGeolocateEnabled: p.autoGeolocateEnabled !== false,
       profileTurnedOn: p.profileTurnedOn !== false && p.profileActive !== false,
       profileActive: p.profileTurnedOn !== false && p.profileActive !== false,
-      approved: p.approved !== false && p.status !== "pending_approval",
+      approved: p.approved !== false && p.status !== "pending_approval" && p.status !== "revoked",
       status: p.status || (p.approved === false ? "pending_approval" : "active"),
       calendarSchedule: p.calendarSchedule || getDefaultCalendarSchedule(true)
     };
@@ -1054,7 +1054,8 @@ class CandidateDatabase {
 
 function isDriverApproved(driver) {
   if (!driver) return false;
-  return driver.approved === true || (driver.approved !== false && driver.status === 'active' && driver.status !== 'pending_approval' && driver.status !== 'revoked' && driver.isActive !== false);
+  if (driver.approved === false || driver.status === 'pending_approval' || driver.status === 'revoked') return false;
+  return driver.approved === true || (driver.approved !== false && driver.status === 'active' && driver.isActive !== false);
 }
 
 function isDriverProfileTurnedOn(driver) {
