@@ -752,8 +752,9 @@ textarea {
   color: var(--text-light);
 }
 
-/* Interactive Tabs Section */
+/* Interactive Tabs Section (Hidden on Desktop/Laptop > 960px since top navbar .nav-menu already displays Book Courier & Closest Drivers) */
 .app-section-tabs {
+  display: none;
   background: var(--primary-navy);
   padding: 1.25rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -4049,6 +4050,7 @@ textarea:focus-visible {
   }
 
   .app-section-tabs {
+    display: block !important;
     padding: 0.55rem 0;
     overflow: hidden;
   }
@@ -6058,8 +6060,9 @@ body {
   }
 }
 
-/* 1b. Desktop / Laptop Preservation (> 960px): Courier Form Steps & Driver Cards Always Expanded, Mobile Toggles Hidden */
+/* 1b. Desktop / Laptop Preservation (> 960px): Hide Duplicate Section Tabs Bar Below Top Navbar, Courier Form Steps & Driver Cards Always Expanded, Mobile Toggles Hidden */
 @media screen and (min-width: 961px) {
+  .app-section-tabs,
   .courier-step-mobile-toggle,
   .driver-card-mobile-toggle {
     display: none !important;

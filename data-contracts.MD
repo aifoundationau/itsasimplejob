@@ -3247,6 +3247,10 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "desktopDuplicateSectionTabsBarHidden": {
+      "type": "boolean",
+      "const": true
+    },
     "mobileHowItWorksHiddenFromNavbar": {
       "type": "boolean",
       "const": true
