@@ -252,9 +252,23 @@ Created: 2026-11-01
   * Verified end-to-end with verify_apply_to_drive_footer_only.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 42: COMBINE BOTTOM FOOTER INTO ONE SECTION
+- Unified Single Section Structure:
+  * Restructured `<footer class="site-footer">` into a single cohesive `.container` with vertical flex column flow (`display:flex; flex-direction:column; gap:1.15rem;`).
+  * Removed internal divider border (`border-top:1px solid rgba(255,255,255,0.1); margin-top:1.5rem; padding-top:1rem;`) that previously split the footer into two separate subsections.
+  * Unified all footer components sequentially:
+    1. Title & Tagline: "It's A Simple Job — Short-Haul Couriers" • "South Brisbane to Gold Coast & Coolangatta • Pickup Window 9:00 AM – 4:00 PM • Direct Driver PayID Settlement in AUD Only."
+    2. Primary Navigation Row: "Book Service", "Closest Drivers", "Supporter Portal", "How It Works", "Terms of Service", and "Courier Driver Application".
+    3. Legal & Sub-Links Row: Copyright, ABN, AUD currency disclaimer, and secondary "Terms of Service • Courier Driver Application" pair.
+  * Preserved full responsive layout across mobile, tablet, laptop, and desktop viewport sizes.
+- Verification & Compliance:
+  * Documented Section 11.17 in data-contracts.MD.
+  * Verified end-to-end with verify_footer_combined_section.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY SUPPORTER PORTAL & FOOTER-ONLY DRIVER APPLICATION LINK IN BROWSER
+CURRENT TASK: VERIFY UNIFIED SINGLE-SECTION FOOTER IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the Supporter Portal to verify that the "Apply to Drive" button has been removed from the navigation subtabs and notices, and then scroll to the bottom footer to verify that "Courier Driver Application" is exclusively placed next to "Terms of Service".
+1. In your browser at http://localhost:3002, scroll down to the bottom of the page and verify that the footer is now seamlessly combined into one single unified section (with no dividing lines or fragmented sub-bars) displaying the short-haul courier title, tagline, navigation links, copyright, and the Terms of Service & Courier Driver Application links.
 
 ================================================================================

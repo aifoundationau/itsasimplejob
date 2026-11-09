@@ -2050,4 +2050,23 @@ Enforces that the application entry point to become a driver is exclusively acce
      * `#footer-bottom-driver-app-link`: Bottom sub-footer row, adjacent to `Terms of Service`.
      * `#terms-footer-driver-app-link`: `terms.html` reciprocal footer link.
 
+### 11.17 Unified Single-Section Footer Contract (`UnifiedSingleSectionFooterContract`)
+Combines the site footer into a single, cohesive section with consistent vertical rhythm, eliminating fragmented sub-footer dividers or split boxes:
+
+1. **Unified Container Layout:**
+   - `<footer class="site-footer">`:
+     * Single vertical flex column container (`.container` with `display:flex; flex-direction:column; gap:1.15rem;`).
+     * No internal divider lines (`border-top: 1px solid rgba(255,255,255,0.1)` removed).
+   - Component Flow:
+     1. Brand Title & Tagline: `It's A Simple Job — Short-Haul Couriers` with regional coverage, 9:00 AM – 4:00 PM window, and PayID AUD settlement note.
+     2. Primary Navigation Row: `Book Service`, `Closest Drivers`, `Supporter Portal` (gated), `How It Works`, `Terms of Service`, and `Courier Driver Application`.
+     3. Legal & Sub-Links Row: Copyright, ABN, AUD currency note, and secondary `Terms of Service • Courier Driver Application` pair.
+
+2. **DOM Automation & Testing Selectors:**
+   - All interactive footer links maintain their explicit `data-agent-id`, `data-testid`, and `aria-label` attributes.
+
+
+
+
+
 
