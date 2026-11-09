@@ -171,10 +171,10 @@
           </div>
           <div style="display:flex; flex-direction:column; gap:0.45rem;">
             <button type="button" class="btn btn-primary btn-sm" id="btn-menu-supporter-portal"
-              onclick="closeGoogleUserMenu(); switchTab('driver-admin-tab');"
+              onclick="openSupporterPanelFromGoogleMenu();"
               style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:var(--brand-orange); border-color:var(--brand-orange); color:#ffffff;"
-              data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal" aria-label="Open Supporter Console">
-              <i class="fa-solid fa-shield-heart"></i> Supporter Console
+              data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal" aria-label="Open Supporter Panel">
+              <i class="fa-solid fa-shield-heart"></i> Supporter Panel
             </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
               style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
@@ -572,14 +572,14 @@
     </section>
 
     <!-- =====================================================================
-         VIEW 4: SUPPORTER & DRIVER ADMIN CONSOLE (ACCESSED VIA GOOGLE LOGIN DROPDOWN MENU)
+         VIEW 4: SUPPORTER PANEL (ACCESSED VIA GOOGLE LOG ON DROPDOWN MENU)
          ===================================================================== -->
     <section class="workspace-view" id="driver-admin-tab">
       <div class="section-header">
         <span class="section-tag">Community Supporter Network • AUD Only</span>
-        <h2 class="section-title">Supporter Console</h2>
+        <h2 class="section-title">Supporter Panel</h2>
         <p class="section-desc">
-          Register as a community supporter first. Behind the private supporter panel, verified members can access driver onboarding, dispatch tools, and account settings.
+          Select any panel below to view your registration details, register or update your details, check your bookings history, or buy tokens in Australian Dollars ($ AUD).
         </p>
       </div>
 
@@ -613,70 +613,298 @@
         </div>
       </div>
 
-      <!-- Supporter Panel & Menu (Active when logged in with Google) -->
+      <!-- Supporter Panel & Collapsed Panels Stack (Active when logged in with Google) -->
       <div id="supporter-panel-wrapper" style="display:none;">
 
-        <!-- Supporter Top Status Bar -->
-        <div id="supporter-panel-bar" class="courier-calc-card" style="margin-bottom:1.25rem; background:linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color:#ffffff; padding:1.25rem 1.5rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-            <div style="display:flex; align-items:center; gap:0.85rem;">
-              <img id="supporter-avatar-img" src="https://lh3.googleusercontent.com/a/default-user" alt="Supporter Avatar"
-                style="width:48px; height:48px; border-radius:50%; border:2px solid #60A5FA; object-fit:cover;">
-              <div>
-                <div style="font-size:0.72rem; font-weight:800; color:#93C5FD; text-transform:uppercase; letter-spacing:0.05em;">
-                  <i class="fa-solid fa-shield-halved"></i> Active Supporter Profile
-                </div>
-                <div style="font-size:1.2rem; font-weight:800; color:#ffffff; margin:0.15rem 0;" id="supporter-display-name">
-                  Community Supporter
-                </div>
-                <div style="font-size:0.82rem; color:#CBD5E1;" id="supporter-display-details">
-                  Logged in with Google • Verified Supporter
+        <!-- 4 Collapsed Supporter Panels: Registration Details, Register Details, My Bookings History, Buy Tokens -->
+        <div id="supporter-collapsed-panels-stack" style="display:flex; flex-direction:column; gap:0.95rem; margin-bottom:1.5rem;" data-agent-id="supporter-collapsed-panels-stack" data-testid="supporter-collapsed-panels-stack">
+
+          <!-- COLLAPSED PANEL 1: Registration Details -->
+          <div id="supporter-panel-registration-details" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-registration-details" data-testid="supporter-panel-registration-details">
+            <button type="button" id="btn-toggle-panel-registration-details"
+              onclick="toggleSupporterCollapsePanel('registration-details')"
+              aria-expanded="false" aria-controls="supporter-collapse-body-registration-details"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-registration-details" data-testid="btn-toggle-panel-registration-details" aria-label="Toggle Registration Details Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-id-card"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Registration Details</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">View your verified supporter profile, contact details &amp; account status</span>
                 </div>
               </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-              <button type="button" class="btn btn-sm" onclick="makeNewBookingAsSupporter()"
-                style="background:var(--brand-orange); color:#ffffff; font-weight:800; border:none; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); box-shadow:0 2px 8px rgba(234,88,12,0.35);"
-                data-agent-id="btn-supporter-make-booking-top" data-testid="btn-supporter-make-booking-top"
-                aria-label="Make a New Courier Booking">
-                <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
-              </button>
-              <!-- Supporter Token Wallet & Purchase Button -->
-              <div style="background:rgba(255, 255, 255, 0.12); border:1px solid rgba(255, 255, 255, 0.25); border-radius:var(--radius-sm); padding:0.35rem 0.75rem; display:inline-flex; align-items:center; gap:0.6rem;">
-                <div>
-                  <div style="font-size:0.65rem; font-weight:800; color:#FDE68A; text-transform:uppercase;">
-                    <i class="fa-solid fa-coins"></i> Tokens
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span id="supporter-reg-details-status-pill" style="font-size:0.74rem; font-weight:800; background:#DCFCE7; color:#15803D; padding:0.2rem 0.65rem; border-radius:999px;">
+                  <i class="fa-solid fa-shield-halved"></i> Verified
+                </span>
+                <i id="chevron-panel-registration-details" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+            <div id="supporter-collapse-body-registration-details" class="supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);" data-agent-id="supporter-collapse-body-registration-details" data-testid="supporter-collapse-body-registration-details">
+              <div id="supporter-panel-bar" style="margin-bottom:1.15rem; background:linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color:#ffffff; padding:1.25rem 1.5rem; border-radius:var(--radius-md);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                  <div style="display:flex; align-items:center; gap:0.85rem;">
+                    <img id="supporter-avatar-img" src="https://lh3.googleusercontent.com/a/default-user" alt="Supporter Avatar"
+                      style="width:48px; height:48px; border-radius:50%; border:2px solid #60A5FA; object-fit:cover;">
+                    <div>
+                      <div style="font-size:0.72rem; font-weight:800; color:#93C5FD; text-transform:uppercase; letter-spacing:0.05em;">
+                        <i class="fa-solid fa-shield-halved"></i> Active Supporter Profile
+                      </div>
+                      <div style="font-size:1.2rem; font-weight:800; color:#ffffff; margin:0.15rem 0;" id="supporter-display-name">
+                        Community Supporter
+                      </div>
+                      <div style="font-size:0.82rem; color:#CBD5E1;" id="supporter-display-details">
+                        Logged in with Google • Verified Supporter
+                      </div>
+                    </div>
                   </div>
-                  <div id="supporter-token-balance" style="font-size:0.95rem; font-weight:900; color:#ffffff; line-height:1.1;">
-                    25 Tokens
+                  <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-sm" onclick="makeNewBookingAsSupporter()"
+                      style="background:var(--brand-orange); color:#ffffff; font-weight:800; border:none; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); box-shadow:0 2px 8px rgba(234,88,12,0.35);"
+                      data-agent-id="btn-supporter-make-booking-top" data-testid="btn-supporter-make-booking-top"
+                      aria-label="Make a New Courier Booking">
+                      <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="resetSupporterProfile()"
+                      style="color:#ffffff; border-color:rgba(255,255,255,0.4);"
+                      data-agent-id="btn-switch-supporter" data-testid="btn-switch-supporter"
+                      aria-label="Sign Out or Switch Supporter Account">
+                      <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saved Registration Details Summary Grid -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:0.85rem; margin-bottom:1rem;">
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Full Name</div>
+                  <div id="supporter-reg-detail-name" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Community Supporter</div>
+                </div>
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Email Address</div>
+                  <div id="supporter-reg-detail-email" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">—</div>
+                </div>
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Mobile Phone</div>
+                  <div id="supporter-reg-detail-phone" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Not entered yet</div>
+                </div>
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Registered Address &amp; Suburb</div>
+                  <div id="supporter-reg-detail-suburb" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Not entered yet</div>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="toggleSupporterCollapsePanel('register-details', true)"
+                  style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;"
+                  data-agent-id="btn-goto-register-details" data-testid="btn-goto-register-details" aria-label="Edit Registration Details">
+                  <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Update in Register Details
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLLAPSED PANEL 2: Register Details -->
+          <div id="supporter-panel-register-details" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-register-details" data-testid="supporter-panel-register-details">
+            <button type="button" id="btn-toggle-panel-register-details"
+              onclick="toggleSupporterCollapsePanel('register-details')"
+              aria-expanded="false" aria-controls="supporter-details-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-register-details" data-testid="btn-toggle-panel-register-details" aria-label="Toggle Register Details Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="width:36px; height:36px; border-radius:50%; background:#FFF7ED; color:var(--brand-orange); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-user-pen"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Register Details</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Enter or update your full name, email, mobile phone &amp; suburb/postcode</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.65rem; border-radius:999px;">
+                  <i class="fa-solid fa-address-card"></i> Form
+                </span>
+                <i id="chevron-panel-register-details" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+            <div id="supporter-details-subtab" class="supporter-subview supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);">
+              <div style="margin-bottom:1.15rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
+                <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0;">
+                  <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Register Your Supporter Details
+                </h3>
+                <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
+                  Your Google name and email are pre-filled below. Please provide your phone number and suburb/postcode.
+                </p>
+              </div>
+
+              <form id="supporter-registration-form" onsubmit="handleSupporterRegistrationSubmit(event)">
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="supporter-reg-name">Full Name:</label>
+                    <input type="text" id="supporter-reg-name" class="form-control" required placeholder="e.g. Alex Henderson"
+                      data-agent-id="supporter-reg-name" data-testid="supporter-reg-name" aria-label="Supporter Full Name">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="supporter-reg-email">Email Address (from Google):</label>
+                    <input type="email" id="supporter-reg-email" class="form-control" required placeholder="support@aifoundation.net.au"
+                      data-agent-id="supporter-reg-email" data-testid="supporter-reg-email" aria-label="Supporter Email Address">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="supporter-reg-phone">Mobile Phone:</label>
+                    <input type="tel" id="supporter-reg-phone" class="form-control" required placeholder="e.g. 0422 111 222"
+                      data-agent-id="supporter-reg-phone" data-testid="supporter-reg-phone" aria-label="Supporter Mobile Phone">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="supporter-reg-suburb">Full Address, Suburb &amp; Postcode:</label>
+                    <input type="text" id="supporter-reg-suburb" class="form-control" required placeholder="e.g. 12 Marine Parade, Southport QLD 4215"
+                      data-agent-id="supporter-reg-suburb" data-testid="supporter-reg-suburb" aria-label="Full Address, Suburb and Postcode">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; font-weight:800;"
+                  data-agent-id="btn-submit-supporter-reg" data-testid="btn-submit-supporter-reg"
+                  aria-label="Save Supporter Details">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Supporter Details
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- COLLAPSED PANEL 3: My Bookings History -->
+          <div id="supporter-panel-bookings-history" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-bookings-history" data-testid="supporter-panel-bookings-history">
+            <button type="button" id="btn-toggle-panel-bookings-history"
+              onclick="toggleSupporterCollapsePanel('bookings-history')"
+              aria-expanded="false" aria-controls="supporter-bookings-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-bookings-history" data-testid="btn-toggle-panel-bookings-history" aria-label="Toggle My Bookings History Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="width:36px; height:36px; border-radius:50%; background:#ECFDF5; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">My Bookings History</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Review your past and active 9:00 AM – 4:00 PM courier bookings &amp; PayID details</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span id="supporter-bookings-count-badge" style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.6rem; border-radius:999px;">0 Bookings</span>
+                <i id="chevron-panel-bookings-history" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+            <div id="supporter-bookings-subtab" class="supporter-subview supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
+                <div>
+                  <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History
+                  </h3>
+                  <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
+                    Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, and PayID payment details.
+                  </p>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+                  style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
+                  data-agent-id="btn-supporter-new-booking-subtab" data-testid="btn-supporter-new-booking-subtab"
+                  aria-label="Make a New Courier Booking">
+                  <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+                </button>
+              </div>
+
+              <!-- List Container for Bookings -->
+              <div id="supporter-bookings-list-container" style="display:flex; flex-direction:column; gap:1rem;">
+                <!-- Populated dynamically by renderSupporterBookings() -->
+              </div>
+            </div>
+          </div>
+
+          <!-- COLLAPSED PANEL 4: Buy Tokens -->
+          <div id="supporter-panel-buy-tokens" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-buy-tokens" data-testid="supporter-panel-buy-tokens">
+            <button type="button" id="btn-toggle-panel-buy-tokens"
+              onclick="toggleSupporterCollapsePanel('buy-tokens')"
+              aria-expanded="false" aria-controls="supporter-buy-tokens-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-buy-tokens" data-testid="btn-toggle-panel-buy-tokens" aria-label="Toggle Buy Tokens Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="width:36px; height:36px; border-radius:50%; background:#FFFBEB; color:#D97706; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-coins"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Buy Tokens</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Top up your Supporter Token Wallet in Australian Dollars ($ AUD)</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span id="supporter-token-balance" style="font-size:0.78rem; font-weight:900; background:#FEF3C7; color:#92400E; padding:0.25rem 0.7rem; border-radius:999px; border:1px solid #FDE68A;">
+                  25 Tokens
+                </span>
+                <i id="chevron-panel-buy-tokens" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+            <div id="supporter-buy-tokens-subtab" class="supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);" data-agent-id="supporter-buy-tokens-subtab" data-testid="supporter-buy-tokens-subtab">
+              <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:1rem 1.25rem; margin-bottom:1.15rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <div>
+                  <div style="font-size:0.75rem; font-weight:800; color:#92400E; text-transform:uppercase;">
+                    <i class="fa-solid fa-wallet"></i> Supporter Token Wallet ($ AUD Only)
+                  </div>
+                  <div style="font-size:0.84rem; color:#78350F; margin-top:0.2rem;">
+                    1 Token = $1 AUD (Whole Australian Dollars Only). Select a token pack below to add tokens immediately:
                   </div>
                 </div>
                 <button type="button" class="btn btn-sm" onclick="openDriverTokenTopupModal('supporter')"
-                  style="background:#F59E0B; color:#1E3A8A; font-weight:800; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-size:0.76rem;"
+                  style="background:#F59E0B; color:#1E3A8A; font-weight:800; border:none; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); font-size:0.8rem;"
                   data-agent-id="btn-supporter-buy-tokens" data-testid="btn-supporter-buy-tokens"
                   aria-label="Supporter Buy Tokens in AUD">
-                  <i class="fa-solid fa-plus"></i> Buy Tokens
+                  <i class="fa-solid fa-plus"></i> Open Token Checkout ($ AUD)
                 </button>
               </div>
-              <button type="button" class="btn btn-outline btn-sm" onclick="resetSupporterProfile()"
-                style="color:#ffffff; border-color:rgba(255,255,255,0.4);"
-                data-agent-id="btn-switch-supporter" data-testid="btn-switch-supporter"
-                aria-label="Sign Out or Switch Supporter Account">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-              </button>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.85rem;">
+                <div style="background:#FFFFFF; border:1.5px solid #FDE68A; border-radius:var(--radius-md); padding:1rem; text-align:center;">
+                  <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 10 Tokens</div>
+                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$10 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(10)"
+                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                    data-agent-id="btn-supporter-pack-10" data-testid="btn-supporter-pack-10" aria-label="Buy 10 Tokens in AUD">
+                    Buy 10 Tokens ($10 AUD)
+                  </button>
+                </div>
+                <div style="background:#FFFFFF; border:2px solid #F59E0B; border-radius:var(--radius-md); padding:1rem; text-align:center;">
+                  <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 50 Tokens</div>
+                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$50 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(50)"
+                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                    data-agent-id="btn-supporter-pack-50" data-testid="btn-supporter-pack-50" aria-label="Buy 50 Tokens in AUD">
+                    Buy 50 Tokens ($50 AUD)
+                  </button>
+                </div>
+                <div style="background:#FFFFFF; border:1.5px solid #FDE68A; border-radius:var(--radius-md); padding:1rem; text-align:center;">
+                  <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 100 Tokens</div>
+                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$100 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(100)"
+                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                    data-agent-id="btn-supporter-pack-100" data-testid="btn-supporter-pack-100" aria-label="Buy 100 Tokens in AUD">
+                    Buy 100 Tokens ($100 AUD)
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Supporter Menu Navigation Subtabs -->
-        <div class="supporter-subnav-bar">
-          <button type="button" class="supporter-subnav-btn active" id="subtab-btn-details"
-            onclick="switchSupporterSubTab('supporter-details-subtab')"
+        </div> <!-- /#supporter-collapsed-panels-stack -->
+
+        <!-- Driver & SuperAdmin Navigation Subtabs (Hidden for Regular Supporters) -->
+        <div class="supporter-subnav-bar" style="margin-bottom:1rem;">
+          <button type="button" class="supporter-subnav-btn" id="subtab-btn-details"
+            onclick="toggleSupporterCollapsePanel('register-details', true)"
+            style="display:none;"
             data-agent-id="subtab-btn-details" data-testid="subtab-btn-details" aria-label="1. Register Details">
             <i class="fa-solid fa-address-card"></i> 1. Register Details
           </button>
           <button type="button" class="supporter-subnav-btn" id="subtab-btn-bookings"
-            onclick="switchSupporterSubTab('supporter-bookings-subtab')"
+            onclick="toggleSupporterCollapsePanel('bookings-history', true)"
+            style="display:none;"
             data-agent-id="subtab-btn-bookings" data-testid="subtab-btn-bookings" aria-label="2. My Bookings History">
             <i class="fa-solid fa-clock-rotate-left"></i> 2. My Bookings History
           </button>
@@ -692,80 +920,6 @@
             data-agent-id="subtab-btn-driver-info" data-testid="subtab-btn-driver-info" aria-label="Driver Information">
             <i class="fa-solid fa-id-card-clip"></i> Driver Information
           </button>
-        </div>
-
-        <!-- SUBTAB 1: Register Supporter Details -->
-        <div id="supporter-details-subtab" class="supporter-subview">
-          <div class="courier-calc-card" style="margin-bottom:1.5rem;">
-            <div style="margin-bottom:1.15rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
-              <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0;">
-                <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Register Your Supporter Details
-              </h3>
-              <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                Your Google name and email are pre-filled below. Please provide your phone number and suburb/postcode.
-              </p>
-            </div>
-
-            <form id="supporter-registration-form" onsubmit="handleSupporterRegistrationSubmit(event)">
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="supporter-reg-name">Full Name:</label>
-                  <input type="text" id="supporter-reg-name" class="form-control" required placeholder="e.g. Alex Henderson"
-                    data-agent-id="supporter-reg-name" data-testid="supporter-reg-name" aria-label="Supporter Full Name">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="supporter-reg-email">Email Address (from Google):</label>
-                  <input type="email" id="supporter-reg-email" class="form-control" required placeholder="support@aifoundation.net.au"
-                    data-agent-id="supporter-reg-email" data-testid="supporter-reg-email" aria-label="Supporter Email Address">
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="supporter-reg-phone">Mobile Phone:</label>
-                  <input type="tel" id="supporter-reg-phone" class="form-control" required placeholder="e.g. 0422 111 222"
-                    data-agent-id="supporter-reg-phone" data-testid="supporter-reg-phone" aria-label="Supporter Mobile Phone">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="supporter-reg-suburb">Full Address, Suburb &amp; Postcode:</label>
-                  <input type="text" id="supporter-reg-suburb" class="form-control" required placeholder="e.g. 12 Marine Parade, Southport QLD 4215"
-                    data-agent-id="supporter-reg-suburb" data-testid="supporter-reg-suburb" aria-label="Full Address, Suburb and Postcode">
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width:100%; font-weight:800;"
-                data-agent-id="btn-submit-supporter-reg" data-testid="btn-submit-supporter-reg"
-                aria-label="Save Supporter Details">
-                <i class="fa-solid fa-floppy-disk"></i> Save Supporter Details
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <!-- SUBTAB 2: My Bookings History & Make New Booking -->
-        <div id="supporter-bookings-subtab" class="supporter-subview" style="display:none;">
-          <div class="courier-calc-card" style="margin-bottom:1.5rem; border-top:4px solid var(--brand-orange);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
-              <div>
-                <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
-                  <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History
-                  <span id="supporter-bookings-count-badge" style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.6rem; border-radius:999px;">0 Bookings</span>
-                </h3>
-                <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                  Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, and PayID payment details.
-                </p>
-              </div>
-              <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
-                style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
-                data-agent-id="btn-supporter-new-booking-subtab" data-testid="btn-supporter-new-booking-subtab"
-                aria-label="Make a New Courier Booking">
-                <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
-              </button>
-            </div>
-
-            <!-- List Container for Bookings -->
-            <div id="supporter-bookings-list-container" style="display:flex; flex-direction:column; gap:1rem;">
-              <!-- Populated dynamically by renderSupporterBookings() -->
-            </div>
-          </div>
         </div>
 
       <!-- SUBTAB 3: Driver Dispatch Console -->

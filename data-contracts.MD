@@ -2191,3 +2191,21 @@ Defines the placement and navigation behavior for the Supporter Console (`#drive
    - `initSuperadminViewMode()` passes `shouldNavigateTab = false` to `switchSuperadminViewRole(activeView, false)` so opening or refreshing the web app front page always stays on `#courier-tab` (**Book Short-Haul Courier Pickup**) and never replaces the front page with the Supporter Console.
 2. **Accessed Exclusively via the Dropdown Menu under the Google Log In:**
    - Inside `#google-user-menu` (the dropdown menu opened by clicking the Google Log In chip `#google-user-chip`), `#btn-menu-supporter-portal` (**Supporter Console**) provides one-click navigation (`closeGoogleUserMenu(); switchTab('driver-admin-tab');`) to the Supporter Console.
+
+### 11.24 Supporter Panel 4 Collapsed Panels Contract (`SupporterPanelCollapsedAccordionsContract`)
+Defines the **Supporter Panel** accessed via `#btn-menu-supporter-portal` (**Supporter Panel**) under the Google Log On dropdown menu (`#google-user-menu`):
+1. **Trigger under Google Log On:**
+   - Clicking **Supporter Panel** (`#btn-menu-supporter-portal`) calls `openSupporterPanelFromGoogleMenu()`, closing `#google-user-menu`, navigating to `#driver-admin-tab` (**Supporter Panel**), and resetting all 4 supporter accordion panels to their collapsed state (`collapseAllSupporterPanels()`).
+2. **The 4 Collapsed Panels (`#supporter-collapsed-panels-stack`):**
+   - **Panel 1 — Registration Details (`#supporter-panel-registration-details`):**
+     * Header button `#btn-toggle-panel-registration-details` toggles `#supporter-collapse-body-registration-details` via `toggleSupporterCollapsePanel('registration-details')`.
+     * Displays the verified supporter banner (`#supporter-panel-bar`) and the saved registration summary grid (`#supporter-reg-detail-name`, `#supporter-reg-detail-email`, `#supporter-reg-detail-phone`, `#supporter-reg-detail-suburb`).
+   - **Panel 2 — Register Details (`#supporter-panel-register-details`):**
+     * Header button `#btn-toggle-panel-register-details` toggles `#supporter-details-subtab` via `toggleSupporterCollapsePanel('register-details')`.
+     * Hosts `#supporter-registration-form` (`#supporter-reg-name`, `#supporter-reg-email`, `#supporter-reg-phone`, `#supporter-reg-suburb`, `#btn-submit-supporter-reg`).
+   - **Panel 3 — My Bookings History (`#supporter-panel-bookings-history`):**
+     * Header button `#btn-toggle-panel-bookings-history` toggles `#supporter-bookings-subtab` via `toggleSupporterCollapsePanel('bookings-history')`.
+     * Displays `#supporter-bookings-count-badge`, `+ Make a New Booking` (`#btn-supporter-new-booking-subtab`), and `#supporter-bookings-list-container`.
+   - **Panel 4 — Buy Tokens (`#supporter-panel-buy-tokens`):**
+     * Header button `#btn-toggle-panel-buy-tokens` toggles `#supporter-buy-tokens-subtab` via `toggleSupporterCollapsePanel('buy-tokens')`.
+     * Displays `#supporter-token-balance` and 1-click AUD token packs (`10 Tokens — $10 AUD`, `50 Tokens — $50 AUD`, `100 Tokens — $100 AUD`) via `purchaseSupporterTokenPack(10|50|100)` plus `#btn-supporter-buy-tokens`.

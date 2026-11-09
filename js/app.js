@@ -3905,9 +3905,129 @@ function initDriverAppDraftAutoSave() {
 }
 window.initDriverAppDraftAutoSave = initDriverAppDraftAutoSave;
 
+const SUPPORTER_COLLAPSE_PANELS = {
+  'registration-details': {
+    btnId: 'btn-toggle-panel-registration-details',
+    chevronId: 'chevron-panel-registration-details',
+    bodyId: 'supporter-collapse-body-registration-details'
+  },
+  'register-details': {
+    btnId: 'btn-toggle-panel-register-details',
+    chevronId: 'chevron-panel-register-details',
+    bodyId: 'supporter-details-subtab'
+  },
+  'bookings-history': {
+    btnId: 'btn-toggle-panel-bookings-history',
+    chevronId: 'chevron-panel-bookings-history',
+    bodyId: 'supporter-bookings-subtab'
+  },
+  'buy-tokens': {
+    btnId: 'btn-toggle-panel-buy-tokens',
+    chevronId: 'chevron-panel-buy-tokens',
+    bodyId: 'supporter-buy-tokens-subtab'
+  }
+};
+
+function collapseAllSupporterPanels() {
+  Object.keys(SUPPORTER_COLLAPSE_PANELS).forEach(key => {
+    const cfg = SUPPORTER_COLLAPSE_PANELS[key];
+    const bodyEl = document.getElementById(cfg.bodyId);
+    const btnEl = document.getElementById(cfg.btnId);
+    const chevEl = document.getElementById(cfg.chevronId);
+    if (bodyEl) bodyEl.style.display = 'none';
+    if (btnEl) btnEl.setAttribute('aria-expanded', 'false');
+    if (chevEl) {
+      chevEl.classList.remove('fa-chevron-up');
+      chevEl.classList.add('fa-chevron-down');
+    }
+  });
+}
+window.collapseAllSupporterPanels = collapseAllSupporterPanels;
+
+function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
+  const cfg = SUPPORTER_COLLAPSE_PANELS[panelKey];
+  if (!cfg) return;
+  const bodyEl = document.getElementById(cfg.bodyId);
+  const btnEl = document.getElementById(cfg.btnId);
+  const chevEl = document.getElementById(cfg.chevronId);
+  if (!bodyEl) return;
+
+  const isCurrentlyOpen = bodyEl.style.display === 'block';
+  const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !isCurrentlyOpen;
+
+  bodyEl.style.display = nextOpen ? 'block' : 'none';
+  if (btnEl) btnEl.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  if (chevEl) {
+    chevEl.classList.toggle('fa-chevron-up', nextOpen);
+    chevEl.classList.toggle('fa-chevron-down', !nextOpen);
+  }
+
+  if (nextOpen) {
+    if (panelKey === 'registration-details' || panelKey === 'register-details' || panelKey === 'buy-tokens') {
+      try { renderSupporterPanel(); } catch (e) {}
+    }
+    if (panelKey === 'bookings-history') {
+      try { renderSupporterBookings(); } catch (e) {}
+    }
+  }
+}
+window.toggleSupporterCollapsePanel = toggleSupporterCollapsePanel;
+
+function openSupporterPanelFromGoogleMenu() {
+  closeGoogleUserMenu();
+  switchTab('driver-admin-tab');
+  collapseAllSupporterPanels();
+  try { renderSupporterPanel(); } catch (e) {}
+}
+window.openSupporterPanelFromGoogleMenu = openSupporterPanelFromGoogleMenu;
+
+function purchaseSupporterTokenPack(tokensAmount) {
+  const amount = Math.round(Number(tokensAmount) || 0);
+  if (amount <= 0) return;
+  let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (!supporter && window.supporterDB) {
+    const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+    supporter = window.supporterDB.addSupporter({
+      name: gUser?.displayName || 'Community Supporter',
+      email: gUser?.email || 'supporter@simplejob.com.au',
+      phone: '',
+      suburb: ''
+    });
+    localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+  }
+  if (supporter && window.supporterDB) {
+    supporter.tokenBalance = Math.max(0, Math.round((supporter.tokenBalance ?? 25) + amount));
+    window.supporterDB.save();
+  }
+  try { renderSupporterPanel(); } catch (e) {}
+  if (typeof syncAllTokenDisplays === 'function') {
+    try { syncAllTokenDisplays(); } catch (e) {}
+  }
+  if (typeof showToast === 'function') {
+    showToast(`🪙 Added ${amount} Tokens ($${amount} AUD) to your Supporter Token Wallet!`);
+  }
+}
+window.purchaseSupporterTokenPack = purchaseSupporterTokenPack;
+
 function switchSupporterSubTab(subtabId) {
   if (subtabId === 'supporter-driver-app-subtab') {
     scrollToDriverApplication();
+    return;
+  }
+
+  if (subtabId === 'supporter-details-subtab') {
+    const dispatchView = document.getElementById('supporter-dispatch-subtab');
+    const infoView = document.getElementById('supporter-driver-info-subtab');
+    if (dispatchView) dispatchView.style.display = 'none';
+    if (infoView) infoView.style.display = 'none';
+    const subBtns = document.querySelectorAll('.supporter-subnav-btn');
+    subBtns.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('subtab-btn-details')?.classList.add('active');
+    return;
+  }
+
+  if (subtabId === 'supporter-bookings-subtab') {
+    toggleSupporterCollapsePanel('bookings-history', true);
     return;
   }
 
@@ -3918,11 +4038,13 @@ function switchSupporterSubTab(subtabId) {
     if (typeof showToast === 'function') {
       showToast('🔒 Driver features are only accessible to approved Courier Drivers and SuperAdmin.');
     }
-    subtabId = 'supporter-details-subtab';
+    return;
   }
 
-  const subviews = document.querySelectorAll('.supporter-subview');
-  subviews.forEach(v => v.style.display = 'none');
+  const dispatchView = document.getElementById('supporter-dispatch-subtab');
+  const infoView = document.getElementById('supporter-driver-info-subtab');
+  if (dispatchView) dispatchView.style.display = 'none';
+  if (infoView) infoView.style.display = 'none';
 
   const target = document.getElementById(subtabId);
   if (target) target.style.display = 'block';
@@ -3930,12 +4052,7 @@ function switchSupporterSubTab(subtabId) {
   const subBtns = document.querySelectorAll('.supporter-subnav-btn');
   subBtns.forEach(btn => btn.classList.remove('active'));
 
-  if (subtabId === 'supporter-details-subtab') {
-    document.getElementById('subtab-btn-details')?.classList.add('active');
-  } else if (subtabId === 'supporter-bookings-subtab') {
-    document.getElementById('subtab-btn-bookings')?.classList.add('active');
-    try { renderSupporterBookings(); } catch (e) {}
-  } else if (subtabId === 'supporter-dispatch-subtab') {
+  if (subtabId === 'supporter-dispatch-subtab') {
     document.getElementById('subtab-btn-dispatch')?.classList.add('active');
     try { renderDriverAdminDashboard(); } catch (e) {}
   } else if (subtabId === 'supporter-driver-info-subtab') {
@@ -4362,6 +4479,16 @@ function renderSupporterPanel() {
     if (supTokenEl) {
       supTokenEl.textContent = `${supporter.tokenBalance ?? 25} Tokens`;
     }
+
+    // Update Registration Details Summary Grid inside Collapsed Panel 1
+    const regDetName = document.getElementById('supporter-reg-detail-name');
+    if (regDetName) regDetName.textContent = supporter.name || 'Community Supporter';
+    const regDetEmail = document.getElementById('supporter-reg-detail-email');
+    if (regDetEmail) regDetEmail.textContent = supporter.email || '—';
+    const regDetPhone = document.getElementById('supporter-reg-detail-phone');
+    if (regDetPhone) regDetPhone.textContent = supporter.phone || 'Not entered yet';
+    const regDetSuburb = document.getElementById('supporter-reg-detail-suburb');
+    if (regDetSuburb) regDetSuburb.textContent = supporter.suburb || supporter.address || 'Not entered yet';
 
     // Role-based visibility for Driver Dispatch Console & Driver Information: strictly driver and superadmin ONLY
     const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');

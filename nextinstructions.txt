@@ -360,12 +360,20 @@ Created: 2026-11-01
 [COMPLETED 2026-11-09] TASK 50: MOVE SUPPORTER CONSOLE OFF WEB APP FRONT PAGE INTO GOOGLE LOG IN DROPDOWN MENU
 - Removed `#tab-btn-supporter-admin` from the front page top navigation bar (`.nav-menu`) and kept `#footer-supporter-link` hidden on the front page.
 - Updated `initSuperadminViewMode()` and `switchSuperadminViewRole(role, shouldNavigateTab = false)` in `js/app.js` so initial page loads and front-page Google sign-ins stay on the web app front page (`#courier-tab`) rather than auto-switching to `#driver-admin-tab`.
-- Styled and configured `#btn-menu-supporter-portal` (**Supporter Console**) inside `#google-user-menu` (the dropdown menu under the Google Log In button/chip `#google-user-chip`).
+- Styled and configured `#btn-menu-supporter-portal` inside `#google-user-menu` (the dropdown menu under the Google Log In button/chip `#google-user-chip`).
+
+[COMPLETED 2026-11-09] TASK 51: SUPPORTER PANEL UNDER GOOGLE LOG ON WITH 4 COLLAPSED PANELS
+- Labeled `#btn-menu-supporter-portal` under the Google Log On dropdown menu (`#google-user-menu`) as **Supporter Panel** calling `openSupporterPanelFromGoogleMenu()`.
+- Configured `#supporter-collapsed-panels-stack` inside **Supporter Panel** (`#driver-admin-tab`) with 4 collapsed accordion panels (`display: none` initially, toggled via `toggleSupporterCollapsePanel`):
+  1. **Registration Details** (`#supporter-panel-registration-details`)
+  2. **Register Details** (`#supporter-panel-register-details`)
+  3. **My Bookings History** (`#supporter-panel-bookings-history`)
+  4. **Buy Tokens** (`#supporter-panel-buy-tokens`)
 - Verified with `scratch/verify_supporter_console_in_google_dropdown_only.mjs` and `npm run build` (0 errors).
 
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY SUPPORTER CONSOLE UNDER GOOGLE LOG IN DROPDOWN MENU
+CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 --------------------------------------------------------------------------------
-1. Refresh http://localhost:3002 in your browser to confirm the web app opens on the front page without a Supporter Console button in the top navigation bar, and click your Google Log In profile chip at the top-right to open the dropdown menu and select "Supporter Console".
+1. Refresh http://localhost:3002 in your browser, click your Google Log On profile chip at the top-right, click "Supporter Panel", and verify that it opens the 4 collapsed panels: Registration Details, Register Details, My Bookings History, and Buy Tokens.
 
 ================================================================================
