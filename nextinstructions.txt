@@ -92,9 +92,15 @@ Created: 2026-11-01
   * Ran end-to-end verification script verify_bicycle_courier.mjs (all assertions passing).
   * Ran npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 29: FULL-WIDTH SINGLE-LINE PICKUP AND DELIVERY ADDRESS FIELDS
+- Separated Pickup Origin Address and Delivery Destination Address into individual full-width rows (100% card width).
+- Removed the 2-column grid constraint so long street names, suburbs, states, and postcodes display without horizontal scrolling or text crowding.
+- Autocomplete suggestions dropdown expands across the full container width for enhanced visibility.
+- Verified responsive layout and clean production build with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST BICYCLE COURIER & UNIQUE DRIVER APPLICATION IN BROWSER
+CURRENT TASK: VERIFY FULL-WIDTH ADDRESS FIELDS IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the Supporter Portal > "3. Driver Application", check the "Bicycle Courier Option" checkbox to reveal the Bicycle Rates box, adjust the bicycle rate per km, submit the form with your email address to verify it updates your existing application without duplicating, and check the customer booking form to see your driver profile with its Bicycle Courier option.
+1. In your browser at http://localhost:3002, navigate to the customer courier booking form on the "1. Book Courier" tab, and verify that "Pickup Origin Address" and "Delivery Destination Address" are each cleanly displayed on their own individual full-width lines for optimal readability.
 
 ================================================================================

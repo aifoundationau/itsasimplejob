@@ -237,51 +237,48 @@
                 </h3>
               </div>
 
-              <div class="form-row">
-                <!-- Pickup Origin -->
-                <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
-                  <label class="input-label" for="courier-origin">
-                    <i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> Pickup Origin Address
-                  </label>
-                  <div class="input-with-action">
-                    <input type="text" id="courier-origin" class="form-control osm-address-input"
-                      value="10 Smith Street, Southport QLD 4215" placeholder="Enter pickup street address & suburb..."
-                      required autocomplete="off" onchange="calculateCourierQuote()"
-                      data-agent-id="input-courier-origin" data-testid="input-courier-origin"
-                      aria-label="Pickup Origin Address">
-                    <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')"
-                      title="Use Current GPS for Pickup" data-agent-id="btn-gps-courier-origin"
-                      data-testid="btn-gps-courier-origin" aria-label="Use Current GPS for Pickup">
-                      <i class="fa-solid fa-location-crosshairs"></i>
-                    </button>
-                  </div>
-                  <ul id="courier-origin-suggestions" class="osm-suggestions-dropdown" role="listbox"
-                    aria-label="Pickup suggestions" style="display:none;" data-agent-id="osm-courier-origin-suggestions"
-                    data-testid="osm-courier-origin-suggestions"></ul>
+              <!-- 1. Pickup Origin Address (Full Line) -->
+              <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
+                <label class="input-label" for="courier-origin" style="font-weight:700;">
+                  <i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> Pickup Origin Address
+                </label>
+                <div class="input-with-action">
+                  <input type="text" id="courier-origin" class="form-control osm-address-input"
+                    value="10 Smith Street, Southport QLD 4215" placeholder="Enter pickup street address & suburb..."
+                    required autocomplete="off" onchange="calculateCourierQuote()"
+                    data-agent-id="input-courier-origin" data-testid="input-courier-origin"
+                    aria-label="Pickup Origin Address">
+                  <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')"
+                    title="Use Current GPS for Pickup" data-agent-id="btn-gps-courier-origin"
+                    data-testid="btn-gps-courier-origin" aria-label="Use Current GPS for Pickup">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                  </button>
                 </div>
+                <ul id="courier-origin-suggestions" class="osm-suggestions-dropdown" role="listbox"
+                  aria-label="Pickup suggestions" style="display:none;" data-agent-id="osm-courier-origin-suggestions"
+                  data-testid="osm-courier-origin-suggestions"></ul>
+              </div>
 
-                <!-- Delivery Destination -->
-                <div class="input-group osm-autocomplete-wrapper" style="position: relative;">
-                  <label class="input-label" for="courier-dest">
-                    <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination
-                    Address
-                  </label>
-                  <div class="input-with-action">
-                    <input type="text" id="courier-dest" class="form-control osm-address-input"
-                      value="42 Surf Parade, Broadbeach QLD 4218"
-                      placeholder="Enter delivery destination address & suburb..." required autocomplete="off"
-                      onchange="calculateCourierQuote()" data-agent-id="input-courier-dest"
-                      data-testid="input-courier-dest" aria-label="Delivery Destination Address">
-                    <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-dest')"
-                      title="Use Current GPS for Destination" data-agent-id="btn-gps-courier-dest"
-                      data-testid="btn-gps-courier-dest" aria-label="Use Current GPS for Destination">
-                      <i class="fa-solid fa-location-crosshairs"></i>
-                    </button>
-                  </div>
-                  <ul id="courier-dest-suggestions" class="osm-suggestions-dropdown" role="listbox"
-                    aria-label="Destination suggestions" style="display:none;"
-                    data-agent-id="osm-courier-dest-suggestions" data-testid="osm-courier-dest-suggestions"></ul>
+              <!-- 2. Delivery Destination Address (Full Line) -->
+              <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
+                <label class="input-label" for="courier-dest" style="font-weight:700;">
+                  <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination Address
+                </label>
+                <div class="input-with-action">
+                  <input type="text" id="courier-dest" class="form-control osm-address-input"
+                    value="42 Surf Parade, Broadbeach QLD 4218"
+                    placeholder="Enter delivery destination address & suburb..." required autocomplete="off"
+                    onchange="calculateCourierQuote()" data-agent-id="input-courier-dest"
+                    data-testid="input-courier-dest" aria-label="Delivery Destination Address">
+                  <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-dest')"
+                    title="Use Current GPS for Destination" data-agent-id="btn-gps-courier-dest"
+                    data-testid="btn-gps-courier-dest" aria-label="Use Current GPS for Destination">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                  </button>
                 </div>
+                <ul id="courier-dest-suggestions" class="osm-suggestions-dropdown" role="listbox"
+                  aria-label="Destination suggestions" style="display:none;"
+                  data-agent-id="osm-courier-dest-suggestions" data-testid="osm-courier-dest-suggestions"></ul>
               </div>
 
               <!-- Pickup Date, Pickup Time (9am-4pm), and Speed Tier -->
