@@ -572,3 +572,14 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-09] Task 72: Remove "G" Letter Icon (`fa-brands fa-google`) from Google Profile Button:
 - Removed `<i class="fa-brands fa-google"></i>` (the red "G" letter icon) from `#google-user-chip` (`#google-nav-name`), `#nav-google-signin-btn`, and `#google-menu-role-badge` in `index.html` and `updateGoogleAuthUI()` in `js/app.js`.
 - Verified with `node scratch/verify_google_profile_no_g.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 73: Ultra-Responsive Android & iPhone Web App Version (Zero Desktop/Laptop Changes):
+- Added standalone PWA / mobile web app metadata (`apple-mobile-web-app-capable`, `mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `theme-color`, `<link rel="manifest" href="/manifest.json">`) in `index.html` and created `public/manifest.json`.
+- Added strictly scoped mobile, tablet, landscape, foldable, and touch-screen media queries (`@media (hover: none) and (pointer: coarse)`, `max-width: 960px`, `768px`, `640px`, `480px`, `390px`, `360px`, `orientation: landscape`, `horizontal-viewport-segments: 2`) in `css/style.css` with zero top-level desktop CSS changes (`> 960px` desktop/laptop layout is 100% untouched):
+  1. iPhone Notch / Dynamic Island & Home Indicator / Android gesture bar safe-area insets (`env(safe-area-inset-*)`) on `.navbar`, `.geo-time-footer-bar`, `.superadmin-viewing-banner`, and modals.
+  2. Dynamic viewport units (`100dvh`) for mobile modals while preserving `#stripe-small-popup-box` and `#geo-time-modal .geo-modal-box` as compact, centered, rounded mobile popup cards (`width: min(94vw, 380px)`).
+  3. Mobile viewport clamping for `#google-user-menu`, Leaflet map popups, Supporter/SuperAdmin collapsible panels, and 1-column order detail grids on phones.
+  4. Touch ergonomics (`touch-action: manipulation`, tap-to-reveal token fiat prices on coarse pointers, smooth momentum scrolling).
+- Added `syncMobileResponsiveViewport()` in `js/app.js` to automatically redraw Leaflet map tiles (`invalidateSize()`) on mobile orientation change and viewport resize (`<= 960px` only).
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+- Documented Section 11.42 (`AndroidAndIphoneResponsiveWebAppContract`) in `data-contracts.MD`.

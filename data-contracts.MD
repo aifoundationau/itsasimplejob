@@ -3192,3 +3192,52 @@ Because Stripe Product `prod_VaqooBzIgPduQC` (**Simple Job Platform Tokens**) us
   }
 }
 ```
+
+### 11.42 Android & iPhone Responsive Web App Contract (`AndroidAndIphoneResponsiveWebAppContract`)
+Enforces an ultra-responsive Android and iPhone web app experience across all mobile, tablet, and foldable viewports (`<= 960px` and `@media (hover: none) and (pointer: coarse)`) while leaving the desktop/laptop interface (`> 960px`) **100% unchanged**.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AndroidAndIphoneResponsiveWebAppContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "desktopUnchanged",
+    "manifestPath",
+    "displayMode",
+    "safeAreaInsetsEnabled",
+    "dynamicViewportUnitsEnabled",
+    "supportedMobileBreakpointsPx"
+  ],
+  "properties": {
+    "desktopUnchanged": {
+      "type": "boolean",
+      "const": true
+    },
+    "manifestPath": {
+      "type": "string",
+      "const": "/manifest.json"
+    },
+    "displayMode": {
+      "type": "string",
+      "const": "standalone"
+    },
+    "safeAreaInsetsEnabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "dynamicViewportUnitsEnabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "supportedMobileBreakpointsPx": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "enum": [960, 768, 640, 480, 390, 360]
+      }
+    }
+  }
+}
+```

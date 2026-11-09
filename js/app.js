@@ -13289,3 +13289,43 @@ window.addEventListener('iasjPricingChanged', () => {
 
 try { initGeoTimeBar(); } catch (e) { console.warn('Geo bar init error:', e); }
 try { syncSuperadminControls(); } catch (e) {}
+
+/* ==========================================================================
+   Mobile & iPhone / Android Responsive Map & Viewport Sync (<= 960px Only)
+   Leaves Desktop / Laptop (> 960px) 100% unchanged.
+   ========================================================================== */
+function syncMobileResponsiveViewport() {
+  if (typeof window === 'undefined') return { isMobileViewport: false, desktopUnchanged: true };
+  const width = Number(window.innerWidth || 1280);
+  const isMobileViewport = width <= 960;
+
+  // Never alter anything on desktop/laptop screens (> 960px)
+  if (!isMobileViewport) {
+    return { isMobileViewport: false, width, desktopUnchanged: true };
+  }
+
+  try {
+    if (appState.osmMap && typeof appState.osmMap.invalidateSize === 'function') {
+      appState.osmMap.invalidateSize({ animate: false });
+    }
+    if (appState.osmCourierMap && typeof appState.osmCourierMap.invalidateSize === 'function') {
+      appState.osmCourierMap.invalidateSize({ animate: false });
+    }
+  } catch (e) {}
+
+  return { isMobileViewport: true, width, desktopUnchanged: true };
+}
+
+window.syncMobileResponsiveViewport = syncMobileResponsiveViewport;
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('orientationchange', () => {
+    setTimeout(syncMobileResponsiveViewport, 180);
+  });
+  window.addEventListener('resize', () => {
+    if ((window.innerWidth || 1280) <= 960) {
+      syncMobileResponsiveViewport();
+    }
+  });
+}
+

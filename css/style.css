@@ -5932,3 +5932,465 @@ body {
     grid-column: 2;
   }
 }
+
+/* ==========================================================================
+   ANDROID & IPHONE ULTRA-RESPONSIVE WEB APP LAYER (MOBILE, TABLET & TOUCH ONLY)
+   Strictly scoped to mobile/tablet/touch media queries so Desktop & Laptop
+   interfaces (> 960px with fine pointer) remain 100% unchanged.
+   Covers: iPhone 15 / 16 / 16 Pro / 16 Pro Max / 17 / 17 Pro Max,
+   Samsung Galaxy A06 / A16 5G / A55 5G / S25 Ultra, iPad / iPad Air,
+   Galaxy Tab A9, and dual-screen foldables.
+   ========================================================================== */
+
+/* 1. Touch-Screen Ergonomics (iOS Safari & Android Chrome — Zero Desktop Impact) */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a,
+  summary,
+  input,
+  select,
+  textarea,
+  label,
+  [role="button"],
+  .btn,
+  .tab-btn,
+  .driver-select-card,
+  .contractor-card,
+  .stripe-token-tier-btn,
+  .google-user-chip,
+  .geo-time-trigger-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Active press feedback on mobile touch screens */
+  .btn:active,
+  .tab-btn:active,
+  .stripe-token-tier-btn:active,
+  .google-user-chip:active {
+    transform: scale(0.98);
+  }
+
+  /* Allow tapping token badges on touch devices to inspect AUD/USD hover price */
+  .token-price-badge {
+    cursor: pointer;
+  }
+
+  .token-price-badge:active .token-fiat-hover,
+  .token-price-badge:focus .token-fiat-hover,
+  .token-price-badge:focus-within .token-fiat-hover {
+    display: inline-flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Smooth momentum scrolling inside scrollable mobile panels & modals */
+  .modal-box,
+  .modal-box-lg,
+  .driver-selection-list,
+  .dispatch-feed-list,
+  .google-user-menu,
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* 2. Tablet & Mobile Safe-Area & Fluid Viewport Foundation (<= 960px) */
+@media screen and (max-width: 960px) {
+  html,
+  body {
+    overflow-x: clip;
+    max-width: 100vw;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    padding-bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .navbar {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
+  .container {
+    padding-left: max(1rem, env(safe-area-inset-left, 1rem));
+    padding-right: max(1rem, env(safe-area-inset-right, 1rem));
+  }
+
+  /* Fixed bottom Geo & Time bar respects iPhone Home Indicator & Android gesture bar */
+  .geo-time-footer-bar {
+    height: auto !important;
+    min-height: 36px;
+    padding-top: 0.3rem;
+    padding-bottom: calc(0.3rem + env(safe-area-inset-bottom, 0px));
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0.75rem));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0.75rem));
+  }
+
+  /* Superadmin viewing banner safe-area support on tablets & phones */
+  .superadmin-viewing-banner {
+    padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0.75rem));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0.75rem));
+  }
+}
+
+/* 3. Large Phablets & Mobile Viewports (<= 768px: iPhone Pro Max, Galaxy S25 Ultra, A55, A16) */
+@media screen and (max-width: 768px) {
+  /* Supporter & Superadmin collapsible panels stack cleanly without horizontal overflow */
+  #supporter-collapsed-panels-stack {
+    gap: 0.75rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  #supporter-collapsed-panels-stack > details > summary,
+  #superadmin-courier-config-card > details > summary {
+    padding: 0.85rem 1rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  #supporter-collapsed-panels-stack > details > div,
+  #superadmin-courier-config-card > details > div {
+    padding: 0.9rem 1rem 1.1rem !important;
+  }
+
+  /* Superadmin Free Hour Promo banner & controls stack cleanly on mobile */
+  #superadmin-free-hour-promo-box {
+    padding: 0.85rem 0.95rem !important;
+  }
+
+  #superadmin-free-hour-promo-box > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+
+  #superadmin-free-hour-btn,
+  #superadmin-end-free-hour-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px;
+  }
+
+  /* Superadmin pending & verified driver approval rows stack cleanly */
+  #superadmin-pending-drivers-list > div,
+  #superadmin-verified-drivers-list > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  #superadmin-pending-drivers-list > div > div,
+  #superadmin-verified-drivers-list > div > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Driver & Supporter order cards adapt 2-column detail grids to mobile */
+  #driver-admin-orders-container [style*="grid-template-columns: 1fr 1fr"],
+  #supporter-bookings-list [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
+  }
+
+  /* Leaflet Map Controls & Popups optimized for mobile fingers */
+  .leaflet-popup-content-wrapper {
+    max-width: min(290px, calc(100vw - 44px)) !important;
+    border-radius: 12px !important;
+  }
+
+  .leaflet-popup-content {
+    margin: 10px 12px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 0.84rem !important;
+  }
+
+  .leaflet-popup-content div[style*="min-width"] {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .leaflet-control-zoom a {
+    width: 38px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-size: 1.1rem !important;
+  }
+}
+
+/* 4. Standard iPhone & Android Phones (<= 640px: iPhone 15/16/16 Pro/17, Galaxy A06/S25) */
+@media screen and (max-width: 640px) {
+  /* Dynamic viewport height (100dvh) prevents iOS Safari & Android Chrome address bar clipping */
+  .modal-overlay {
+    height: 100vh;
+    height: 100dvh;
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-box,
+  .modal-box-lg {
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Keep the compact Stripe Token Popup & Geo/Time Modal centered & rounded on phones */
+  #stripe-payment-modal.modal-overlay,
+  #geo-time-modal.geo-modal-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.75rem !important;
+  }
+
+  .modal-box.stripe-small-popup-box,
+  #stripe-small-popup-box {
+    width: min(94vw, 380px) !important;
+    max-width: min(94vw, 380px) !important;
+    max-height: calc(92dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 14px !important;
+    padding: 1rem 1.05rem !important;
+    margin: auto !important;
+  }
+
+  .stripe-token-tier-grid {
+    gap: 0.4rem !important;
+  }
+
+  .stripe-token-tier-btn {
+    padding: 0.5rem 0.25rem !important;
+    min-height: 54px;
+  }
+
+  /* Google Profile Dropdown Menu stays inside mobile viewport */
+  .google-auth-nav-wrap {
+    position: relative;
+  }
+
+  .google-user-menu {
+    position: fixed !important;
+    top: calc(58px + env(safe-area-inset-top, 0px)) !important;
+    right: 0.65rem !important;
+    left: auto !important;
+    width: min(290px, calc(100vw - 1.3rem)) !important;
+    max-height: calc(100dvh - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    overflow-y: auto !important;
+    z-index: 3000 !important;
+  }
+
+  /* Courier booking card & address autocomplete mobile ergonomics */
+  .address-suggestions-list {
+    max-height: 210px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1500 !important;
+  }
+
+  .address-suggestion-item {
+    padding: 0.7rem 0.85rem !important;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Driver selection cards & contractor cards stack cleanly on phones */
+  .driver-select-card {
+    padding: 0.85rem !important;
+  }
+
+  .driver-select-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Toast notification sits cleanly above the mobile bottom bar + safe area */
+  .toast {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    bottom: calc(54px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    text-align: center;
+  }
+}
+
+/* 5. Compact iPhone & Android Viewports (<= 480px) */
+@media screen and (max-width: 480px) {
+  .container {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0.75rem));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0.75rem));
+  }
+
+  /* Navbar brand + Google profile button + hamburger fit on one row without crowding */
+  .nav-container {
+    gap: 0.35rem;
+  }
+
+  .brand-logo {
+    gap: 0.4rem;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .logo-title {
+    font-size: 0.92rem;
+  }
+
+  .google-user-chip {
+    padding: 0.25rem 0.55rem 0.25rem 0.25rem;
+    gap: 0.35rem;
+  }
+
+  .google-nav-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .google-nav-name {
+    max-width: 82px;
+    font-size: 0.75rem;
+  }
+
+  .btn-google-signin {
+    padding: 0.38rem 0.65rem;
+    font-size: 0.76rem;
+  }
+
+  /* Hero section & quick actions compact spacing */
+  .hero-title {
+    font-size: clamp(1.5rem, 6.5vw, 1.95rem);
+    line-height: 1.18;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  /* Courier route summary & pricing badges wrap cleanly */
+  .route-metrics-bar,
+  .courier-quote-breakdown {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Geo & Time Modal fits compact mobile screens without scrollbars */
+  .geo-modal-box {
+    width: calc(100vw - 1.25rem) !important;
+    max-width: 350px !important;
+    padding: 0.95rem 1rem !important;
+  }
+}
+
+/* 6. Narrow Phones (<= 390px: iPhone 15 / 16 / 17 standard, iPhone SE, Galaxy S25 base) */
+@media screen and (max-width: 390px) {
+  .logo-title {
+    font-size: 0.85rem;
+  }
+
+  .google-nav-name {
+    max-width: 68px;
+  }
+
+  .tab-btn {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  .modal-box.stripe-small-popup-box,
+  #stripe-small-popup-box {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    padding: 0.85rem 0.85rem !important;
+  }
+
+  .stripe-token-tier-btn .tier-tokens {
+    font-size: 0.8rem !important;
+  }
+
+  .stripe-token-tier-btn .tier-price {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* 7. Ultra-Compact Android Viewports (<= 360px: Samsung Galaxy A06 / A16 5G / Fold Cover) */
+@media screen and (max-width: 360px) {
+  .container {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .logo-title {
+    font-size: 0.8rem;
+  }
+
+  .google-nav-name {
+    max-width: 54px;
+    font-size: 0.7rem;
+  }
+
+  .btn,
+  .btn-lg {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.84rem;
+  }
+}
+
+/* 8. Mobile Landscape Mode (iPhone & Android rotated horizontally) */
+@media screen and (max-height: 520px) and (orientation: landscape) {
+  .navbar {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .modal-overlay {
+    align-items: flex-start !important;
+    overflow-y: auto !important;
+    padding: 0.5rem !important;
+  }
+
+  .modal-box,
+  .modal-box-lg,
+  .modal-box.stripe-small-popup-box,
+  #stripe-small-popup-box {
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    margin: auto !important;
+  }
+
+  .osm-map-canvas {
+    height: 240px !important;
+    min-height: 200px !important;
+  }
+}
+
+/* 9. Dual-Screen Foldables (Samsung Galaxy Z Fold, Pixel Fold, Surface Duo) */
+@media (horizontal-viewport-segments: 2) {
+  .container {
+    max-width: 100%;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .modal-box,
+  .modal-box.stripe-small-popup-box {
+    margin: auto;
+  }
+}
