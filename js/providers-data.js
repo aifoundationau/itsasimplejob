@@ -448,6 +448,10 @@ class ProviderDatabase {
     return this.providers;
   }
 
+  getAllApproved() {
+    return this.providers.filter(p => isDriverApproved(p));
+  }
+
   getActiveDrivers() {
     return this.providers.filter(p => p.status !== "paused");
   }
@@ -722,6 +726,12 @@ class CandidateDatabase {
   search() { return []; }
 }
 
+function isDriverApproved(driver) {
+  if (!driver) return false;
+  return driver.approved === true || (driver.approved !== false && driver.status === 'active' && driver.status !== 'pending_approval' && driver.status !== 'revoked' && driver.isActive !== false);
+}
+
+window.isDriverApproved = isDriverApproved;
 window.INITIAL_PROVIDERS = INITIAL_PROVIDERS;
 window.INITIAL_CANDIDATES = [];
 window.providerDB = new ProviderDatabase();

@@ -189,9 +189,25 @@ Created: 2026-11-01
   * Verified end-to-end with verify_remove_customer_role.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 38: SUPERADMIN DRIVER APPROVAL MAP VISIBILITY GATING
+- Map Visibility Gating by Approval Status:
+  * Implemented authoritative helper isDriverApproved(driver) in js/providers-data.js.
+  * Gated Leaflet contractor markers in updateOsmContractorMarkers(): unapproved drivers (pending, revoked, or unverified) are strictly excluded from map plotting.
+  * Gated route driver markers in renderOsmCourierRouteMap(): unapproved drivers are not plotted along courier pickup-to-destination routes.
+  * Excluded unapproved drivers from filterContractors() public listings and radius counts.
+  * Enhanced SuperAdmin Driver Approval Console:
+    - Status badges explicitly display "Approved by SuperAdmin (Shown on Map)" vs "Pending SuperAdmin Approval (Hidden from Map)".
+    - Row indicators display "Shown on Map" (green pin icon) vs "Hidden from Map" (amber crossed-eye icon).
+    - Action buttons labeled "Approve (Show on Map)" and "Revoke (Hide from Map)".
+  * Real-Time Map Synchronization: Approving or revoking a driver immediately calls updateOsmContractorMarkers() and renderOsmCourierRouteMap(), updating pins on live maps instantly without manual reload.
+- Verification & Compliance:
+  * Documented Section 11.13 in data-contracts.MD.
+  * Verified end-to-end with verify_superadmin_approval_map_gate.mjs (all 6 checks passed).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST REMOVAL OF CUSTOMER ROLE IN BROWSER
+CURRENT TASK: TEST DRIVER APPROVAL MAP VISIBILITY GATING IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, open the SuperAdmin Role Switcher (at the bottom of the Supporter Portal or in the top-right profile menu) and verify that the "Customer" option has been removed, displaying only the 3 canonical roles: "SuperAdmin (Supreme Ruler)", "Driver (Courier Driver)", and "Supporter (Community & Bookings)".
+1. In your browser at http://localhost:3002, navigate to the "2. Closest Drivers to Pickup Map" tab, then switch to SuperAdmin mode and use the Driver Approval Console to toggle a driver between "Revoke (Hide from Map)" and "Approve (Show on Map)" to observe their pin immediately disappear and reappear on the live map.
 
 ================================================================================

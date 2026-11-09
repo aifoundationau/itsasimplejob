@@ -1944,6 +1944,35 @@ Formally retires the separate `'customer'` RBAC role and unifies all client and 
      * `🤝 Supporter (Community & Bookings)`
    - The former `🛒 Customer` perspective button and dropdown option have been removed from the user interface.
 
+### 11.13 SuperAdmin Driver Approval Map Visibility Gating Contract (`SuperadminDriverApprovalMapGatingContract`)
+Enforces the mandatory rule that unapproved drivers cannot be shown on any map, while approved drivers are immediately visible:
+
+1. **Authoritative Approval Helper (`isDriverApproved`):**
+   - Implemented in `js/providers-data.js` and registered as `window.isDriverApproved`.
+   - Criteria: `driver.approved === true || (driver.approved !== false && driver.status === 'active' && driver.status !== 'pending_approval' && driver.status !== 'revoked' && driver.isActive !== false)`.
+   - Any driver with `approved === false`, `status === 'pending_approval'`, `status === 'revoked'`, or `isActive === false` is considered unapproved.
+
+2. **Map Visibility Enforcement:**
+   - **Contractor Directory Map (`updateOsmContractorMarkers`):** Leaflet marker generation iterates through all providers and strictly filters via `isDriverApproved(provider)`. Unapproved drivers are never placed on the map, never included in the distance radius, and never shown in the public map directory.
+   - **Courier Route Map (`renderOsmCourierRouteMap`):** Real-time driver pins (Pink for female, Blue for male) plotted along the pickup-to-destination route strictly filter `allDrivers` with `isDriverApproved(drv)`. Unapproved drivers are never plotted around the customer's route polyline.
+   - **Contractor List Filtering (`filterContractors`):** Excludes unapproved drivers from directory search results and contractor listings.
+
+3. **SuperAdmin Driver Approval Console (`renderSuperadminDriverApprovals`):**
+   - Status badge explicitly communicates map visibility:
+     * Approved: `"Approved by SuperAdmin (Shown on Map)"` (`#065F46` / `#ECFDF5`).
+     * Pending/Revoked: `"Pending SuperAdmin Approval (Hidden from Map)"` (`#92400E` / `#FEF3C7`).
+   - Driver row info indicator:
+     * Approved: `<strong style="color:#059669;"><i class="fa-solid fa-map-location-dot"></i> Shown on Map</strong>`.
+     * Pending/Revoked: `<strong style="color:#D97706;"><i class="fa-solid fa-eye-slash"></i> Hidden from Map</strong>`.
+   - Action buttons:
+     * `[<i class="fa-solid fa-check"></i> Approve (Show on Map)]`
+     * `[<i class="fa-solid fa-ban"></i> Revoke (Hide from Map)]`
+
+4. **Live Reactive Map Updates:**
+   - `approveDriverBySuperadmin(driverId)`: Sets `approved = true`, `status = 'active'`, updates Firestore, re-renders the SuperAdmin approvals table, and immediately triggers `updateOsmContractorMarkers()` and `renderOsmCourierRouteMap()`. Displays toast: `"✅ Driver '<name>' has been APPROVED by SuperAdmin and is now LIVE ON THE MAP!"`.
+   - `revokeDriverBySuperadmin(driverId)`: Sets `approved = false`, `status = 'pending_approval'`, updates Firestore, re-renders the table, and immediately triggers `updateOsmContractorMarkers()` and `renderOsmCourierRouteMap()`. Displays toast: `"⚠️ Driver '<name>' approval has been REVOKED by SuperAdmin and REMOVED FROM THE MAP."`.
+
+
 
 
 

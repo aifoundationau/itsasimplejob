@@ -392,6 +392,12 @@ function updateOsmContractorMarkers() {
   const matched = [];
 
   allProviders.forEach(provider => {
+    // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map
+    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked');
+    if (!isApproved) {
+      return;
+    }
+
     if ((provider.maxWeightKg || 500) < minWeight) return;
     const pLat = provider.lat ?? provider.coords?.lat ?? -27.9635;
     const pLng = provider.lng ?? provider.coords?.lng ?? 153.4064;
@@ -561,7 +567,8 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
     .bindPopup(`<strong style="color:#0B192C;">🏁 Delivery Destination</strong><br><span style="font-size:0.8rem; color:#64748B;">${destText || 'Broadbeach QLD'}</span>`);
 
   // Also plot live Courier Driver pins around the route (Pink = Female, Blue = Male)
-  const allDrivers = window.providerDB ? window.providerDB.getAll() : [];
+  // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map
+  const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked')) : [];
   allDrivers.forEach(drv => {
     if (!drv.lat || !drv.lng) return;
     const isSelected = drv.id === appState.selectedCourierDriverId;
@@ -1266,7 +1273,9 @@ function filterContractors() {
   }
 
   allProviders.forEach(provider => {
-    if (provider.approved === false || provider.status === 'pending_approval') {
+    // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map or in the directory
+    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked');
+    if (!isApproved) {
       return; // Only SuperAdmin-approved drivers appear in public map directory
     }
 
@@ -2310,7 +2319,13 @@ async function approveDriverBySuperadmin(driverId) {
   renderDriverAdminDashboard();
   filterContractors();
   calculateCourierQuote();
-  showToast(`✅ Driver "${driver.name}" has been APPROVED by SuperAdmin. Role granted: Driver.`);
+  if (appState.osmMap && window.L) {
+    try { updateOsmContractorMarkers(); } catch (e) {}
+  }
+  if (appState.osmCourierMap && window.L) {
+    try { renderOsmCourierRouteMap(); } catch (e) {}
+  }
+  showToast(`✅ Driver "${driver.name}" has been APPROVED by SuperAdmin and is now LIVE ON THE MAP!`);
 }
 window.approveDriverBySuperadmin = approveDriverBySuperadmin;
 
@@ -2373,7 +2388,13 @@ async function revokeDriverBySuperadmin(driverId) {
   renderSupporterPanel();
   filterContractors();
   calculateCourierQuote();
-  showToast(`⚠️ Driver "${driver.name}" approval has been REVOKED by SuperAdmin. Role reverted to Supporter.`);
+  if (appState.osmMap && window.L) {
+    try { updateOsmContractorMarkers(); } catch (e) {}
+  }
+  if (appState.osmCourierMap && window.L) {
+    try { renderOsmCourierRouteMap(); } catch (e) {}
+  }
+  showToast(`⚠️ Driver "${driver.name}" approval has been REVOKED by SuperAdmin and REMOVED FROM THE MAP.`);
 }
 window.revokeDriverBySuperadmin = revokeDriverBySuperadmin;
 
@@ -2383,7 +2404,7 @@ function renderSuperadminDriverApprovals() {
   if (!container) return;
 
   const drivers = window.providerDB ? window.providerDB.getAll() : [];
-  const pendingCount = drivers.filter(d => d.approved === false || d.status === 'pending_approval').length;
+  const pendingCount = drivers.filter(d => typeof isDriverApproved === 'function' ? !isDriverApproved(d) : (d.approved === false || d.status === 'pending_approval')).length;
 
   if (badgeEl) {
     badgeEl.textContent = `${pendingCount} Driver${pendingCount === 1 ? '' : 's'} Awaiting Approval`;
@@ -2397,7 +2418,7 @@ function renderSuperadminDriverApprovals() {
   }
 
   container.innerHTML = drivers.map(d => {
-    const isApproved = d.approved !== false && d.status !== 'pending_approval';
+    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked');
     return `
       <div style="background:#FFFBEB; border:1px solid ${isApproved ? '#A7F3D0' : '#FCD34D'}; border-left:4px solid ${isApproved ? '#059669' : '#D97706'}; border-radius:6px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;" data-agent-id="sa-driver-row-${d.id}" data-testid="sa-driver-row-${d.id}">
         <div style="flex:1; min-width:240px;">
@@ -2405,7 +2426,7 @@ function renderSuperadminDriverApprovals() {
             <strong style="font-size:0.92rem; color:#1E3A8A;">${escapeAttr(d.name)}</strong>
             <span style="font-size:0.76rem; color:#475569;">(${escapeAttr(d.businessName || 'Express Courier')})</span>
             <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isApproved ? '#ECFDF5' : '#FEF3C7'}; color:${isApproved ? '#065F46' : '#92400E'};">
-              <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin' : 'Pending SuperAdmin Approval'}
+              <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin (Shown on Map)' : 'Pending SuperAdmin Approval (Hidden from Map)'}
             </span>
           </div>
 
@@ -2415,6 +2436,7 @@ function renderSuperadminDriverApprovals() {
             <span><i class="fa-solid fa-location-dot"></i> ${escapeAttr(d.baseSuburb || 'Southport QLD')}</span>
             <span><i class="fa-solid fa-coins" style="color:#D97706;"></i> Balance: <strong>${d.tokenBalance ?? 0} Tokens</strong></span>
             <span><i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> PayID: <strong>${escapeAttr(d.payIdValue || d.phone)}</strong></span>
+            <span>${isApproved ? '<strong style="color:#059669;"><i class="fa-solid fa-map-location-dot"></i> Shown on Map</strong>' : '<strong style="color:#D97706;"><i class="fa-solid fa-eye-slash"></i> Hidden from Map</strong>'}</span>
           </div>
         </div>
 
@@ -2424,14 +2446,14 @@ function renderSuperadminDriverApprovals() {
               style="background:#059669; border-color:#059669; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
               data-agent-id="btn-sa-approve-drv-${d.id}" data-testid="btn-sa-approve-drv-${d.id}"
               aria-label="Approve Driver ${escapeAttr(d.name)}">
-              <i class="fa-solid fa-check"></i> Approve Driver
+              <i class="fa-solid fa-check"></i> Approve (Show on Map)
             </button>
           ` : `
             <button type="button" class="btn btn-outline btn-sm" onclick="handleRevokeDriverClick(this, '${d.id}')"
               style="color:#DC2626; border-color:#FECACA; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
               data-agent-id="btn-sa-revoke-drv-${d.id}" data-testid="btn-sa-revoke-drv-${d.id}"
               aria-label="Revoke Driver ${escapeAttr(d.name)}">
-              <i class="fa-solid fa-ban"></i> Revoke Driver
+              <i class="fa-solid fa-ban"></i> Revoke (Hide from Map)
             </button>
           `}
         </div>
