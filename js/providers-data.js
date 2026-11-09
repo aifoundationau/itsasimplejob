@@ -54,6 +54,22 @@ const INITIAL_PROVIDERS = [
     payIdType: "phone",
     payIdValue: "0412 889 341",
     payIdAccountName: "Callum Evans Courier Services",
+    hasVehicleCourier: true,
+    hasBicycleCourier: false,
+    vehiclePerKmRateAud: 2.20,
+    vehicleSameDayFeeAud: 18,
+    vehicleUrgentFeeAud: 35,
+    vehicleMaxWeightKg: 800,
+    vehicleMaxHeightCm: 160,
+    vehicleMaxWidthCm: 140,
+    vehicleMaxLengthCm: 280,
+    bicyclePerKmRateAud: 1.80,
+    bicycleSameDayFeeAud: 0,
+    bicycleUrgentFeeAud: 0,
+    bicycleMaxWeightKg: 8,
+    bicycleMaxHeightCm: 35,
+    bicycleMaxWidthCm: 30,
+    bicycleMaxLengthCm: 40,
     perKmRateAud: 2.20,
     sameDayFeeAud: 18,
     urgentFeeAud: 35,
@@ -114,6 +130,10 @@ const INITIAL_PROVIDERS = [
     vehiclePerKmRateAud: 2.10,
     vehicleSameDayFeeAud: 12,
     vehicleUrgentFeeAud: 25,
+    vehicleMaxWeightKg: 35,
+    vehicleMaxHeightCm: 65,
+    vehicleMaxWidthCm: 80,
+    vehicleMaxLengthCm: 110,
     hasVehicleCourier: true,
     hasBicycleCourier: true,
     bicyclePerKmRateAud: 1.60,
@@ -390,6 +410,22 @@ class ProviderDatabase {
     const femaleNames = ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica', 'claire', 'amy', 'olivia', 'mia', 'zoe'];
     const inferredGender = femaleNames.some(n => (p.name || '').toLowerCase().includes(n)) ? 'female' : 'male';
     const gender = p.gender || (p.id === 'drv-102' || p.id === 'drv-105' ? 'female' : inferredGender);
+    const vehiclePerKmRateAud = Number(p.vehiclePerKmRateAud ?? p.perKmRateAud ?? p.perKmRate ?? 2.20);
+    const vehicleSameDayFeeAud = Number(p.vehicleSameDayFeeAud ?? p.sameDayFeeAud ?? p.sameDayFee ?? 0);
+    const vehicleUrgentFeeAud = Number(p.vehicleUrgentFeeAud ?? p.urgentFeeAud ?? p.urgentFee ?? 0);
+    const vehicleMaxWeightKg = Number(p.vehicleMaxWeightKg ?? p.maxWeightKg ?? 50);
+    const vehicleMaxHeightCm = Number(p.vehicleMaxHeightCm ?? p.maxHeightCm ?? 70);
+    const vehicleMaxWidthCm = Number(p.vehicleMaxWidthCm ?? p.maxWidthCm ?? 50);
+    const vehicleMaxLengthCm = Number(p.vehicleMaxLengthCm ?? p.maxLengthCm ?? 50);
+
+    const bicyclePerKmRateAud = Number(p.bicyclePerKmRateAud ?? (p.id === 'drv-102' ? 1.60 : 1.80));
+    const bicycleSameDayFeeAud = Number(p.bicycleSameDayFeeAud ?? (p.id === 'drv-102' ? 8 : 0));
+    const bicycleUrgentFeeAud = Number(p.bicycleUrgentFeeAud ?? (p.id === 'drv-102' ? 18 : 0));
+    const bicycleMaxWeightKg = Number(p.bicycleMaxWeightKg ?? 8);
+    const bicycleMaxHeightCm = Number(p.bicycleMaxHeightCm ?? 35);
+    const bicycleMaxWidthCm = Number(p.bicycleMaxWidthCm ?? 30);
+    const bicycleMaxLengthCm = Number(p.bicycleMaxLengthCm ?? 40);
+
     return {
       ...p,
       gender,
@@ -397,16 +433,20 @@ class ProviderDatabase {
       hasVehicleCourier,
       hasBicycleCourier,
       vehicle: p.vehicle || (hasBicycleCourier && !hasVehicleCourier ? "Bicycle / E-Bike" : "Courier Van"),
-      vehiclePerKmRateAud: Number(p.vehiclePerKmRateAud ?? p.perKmRateAud ?? 2.20),
-      vehicleSameDayFeeAud: Number(p.vehicleSameDayFeeAud ?? p.sameDayFeeAud ?? 0),
-      vehicleUrgentFeeAud: Number(p.vehicleUrgentFeeAud ?? p.urgentFeeAud ?? 0),
-      bicyclePerKmRateAud: Number(p.bicyclePerKmRateAud ?? (p.id === 'drv-102' ? 1.60 : 1.80)),
-      bicycleSameDayFeeAud: Number(p.bicycleSameDayFeeAud ?? (p.id === 'drv-102' ? 8 : 0)),
-      bicycleUrgentFeeAud: Number(p.bicycleUrgentFeeAud ?? (p.id === 'drv-102' ? 18 : 0)),
-      bicycleMaxWeightKg: Number(p.bicycleMaxWeightKg ?? 8),
-      bicycleMaxHeightCm: Number(p.bicycleMaxHeightCm ?? 35),
-      bicycleMaxWidthCm: Number(p.bicycleMaxWidthCm ?? 30),
-      bicycleMaxLengthCm: Number(p.bicycleMaxLengthCm ?? 40),
+      vehiclePerKmRateAud,
+      vehicleSameDayFeeAud,
+      vehicleUrgentFeeAud,
+      vehicleMaxWeightKg,
+      vehicleMaxHeightCm,
+      vehicleMaxWidthCm,
+      vehicleMaxLengthCm,
+      bicyclePerKmRateAud,
+      bicycleSameDayFeeAud,
+      bicycleUrgentFeeAud,
+      bicycleMaxWeightKg,
+      bicycleMaxHeightCm,
+      bicycleMaxWidthCm,
+      bicycleMaxLengthCm,
       licenceNumber: p.licenceNumber || "482910384",
       licenceState: p.licenceState || "QLD",
       licenceClass: p.licenceClass || "C (Car / Van)",
@@ -418,13 +458,13 @@ class ProviderDatabase {
       payIdType: p.payIdType || "phone",
       payIdValue: p.payIdValue || p.phone || "0412 000 000",
       payIdAccountName: p.payIdAccountName || p.businessName || p.name || "Verified Driver",
-      perKmRateAud: Number(p.perKmRateAud ?? p.perKmRate ?? 2.20),
-      sameDayFeeAud: Number(p.sameDayFeeAud ?? p.sameDayFee ?? 0),
-      urgentFeeAud: Number(p.urgentFeeAud ?? p.urgentFee ?? 0),
-      maxWeightKg: Number(p.maxWeightKg ?? 50),
-      maxHeightCm: Number(p.maxHeightCm ?? 70),
-      maxWidthCm: Number(p.maxWidthCm ?? 50),
-      maxLengthCm: Number(p.maxLengthCm ?? 50),
+      perKmRateAud: vehiclePerKmRateAud,
+      sameDayFeeAud: vehicleSameDayFeeAud,
+      urgentFeeAud: vehicleUrgentFeeAud,
+      maxWeightKg: vehicleMaxWeightKg,
+      maxHeightCm: vehicleMaxHeightCm,
+      maxWidthCm: vehicleMaxWidthCm,
+      maxLengthCm: vehicleMaxLengthCm,
       tokenBalance: Number.isFinite(Number(p.tokenBalance)) ? Number(p.tokenBalance) : 25,
       lat: Number(p.lat ?? -27.9678),
       lng: Number(p.lng ?? 153.4011),

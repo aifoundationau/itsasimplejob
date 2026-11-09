@@ -205,9 +205,28 @@ Created: 2026-11-01
   * Verified end-to-end with verify_superadmin_approval_map_gate.mjs (all 6 checks passed).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 39: SEPARATE MOTOR VEHICLE & BICYCLE COURIER SERVICES
+- Independent Service Definitions, Rates, and Capacities:
+  * Motor Vehicle and Bicycle Courier are configured and treated as two completely distinct services.
+  * Pricing per KM is strictly separate: vehiclePerKmRateAud ($ AUD/km) vs bicyclePerKmRateAud ($ AUD/km).
+  * Fees are strictly separate: vehicleSameDayFeeAud & vehicleUrgentFeeAud vs bicycleSameDayFeeAud & bicycleUrgentFeeAud.
+  * Capacities are strictly separate:
+    - Motor Vehicle: vehicleMaxWeightKg (up to 10,000kg) • vehicleMaxHeightCm × vehicleMaxWidthCm × vehicleMaxLengthCm.
+    - Bicycle Courier: bicycleMaxWeightKg (capped for letters/food/backpack) • bicycleMaxHeightCm × bicycleMaxWidthCm × bicycleMaxLengthCm.
+- Forms & UI Architecture:
+  * Driver Registration Form (#driver-registration-form): Contains independent Motor Vehicle service box and independent Bicycle Courier service box, each with its own rate and capacity inputs.
+  * Driver Admin Settings Form (#adm-drv-form): Contains independent rate and capacity inputs for both services.
+  * Quoting & Fit Calculation (executeCourierQuoteCalculation): Tests package weight and dimensions against the specific limits of the selected service mode, and computes prices with the service's per-km rate.
+  * Contractor Cards & Leaflet Popups: [Motor Vehicle] and [Bicycle Courier] toggle buttons switch displayed rates, fees, max weight, and max dimensions in real time.
+  * SuperAdmin Approval Console: Displays side-by-side badges detailing both services' rates and dimensions for each driver.
+- Verification & Compliance:
+  * Documented Section 11.14 in data-contracts.MD.
+  * Verified end-to-end with verify_separate_vehicle_bicycle_services.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST DRIVER APPROVAL MAP VISIBILITY GATING IN BROWSER
+CURRENT TASK: TEST SEPARATE VEHICLE AND BICYCLE SERVICES IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the "2. Closest Drivers to Pickup Map" tab, then switch to SuperAdmin mode and use the Driver Approval Console to toggle a driver between "Revoke (Hide from Map)" and "Approve (Show on Map)" to observe their pin immediately disappear and reappear on the live map.
+1. In your browser at http://localhost:3002, scroll down to the Driver Application form (or open the Driver Settings in the Supporter Portal), check both "Motor Vehicle Courier" and "Bicycle Courier Option", and verify that each service displays its own separate Rates ($ AUD/km, fees) and its own separate Maximum Weight and Dimensions (Height, Width, Length cm).
 
 ================================================================================

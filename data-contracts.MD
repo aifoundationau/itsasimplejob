@@ -1972,6 +1972,43 @@ Enforces the mandatory rule that unapproved drivers cannot be shown on any map, 
    - `approveDriverBySuperadmin(driverId)`: Sets `approved = true`, `status = 'active'`, updates Firestore, re-renders the SuperAdmin approvals table, and immediately triggers `updateOsmContractorMarkers()` and `renderOsmCourierRouteMap()`. Displays toast: `"✅ Driver '<name>' has been APPROVED by SuperAdmin and is now LIVE ON THE MAP!"`.
    - `revokeDriverBySuperadmin(driverId)`: Sets `approved = false`, `status = 'pending_approval'`, updates Firestore, re-renders the table, and immediately triggers `updateOsmContractorMarkers()` and `renderOsmCourierRouteMap()`. Displays toast: `"⚠️ Driver '<name>' approval has been REVOKED by SuperAdmin and REMOVED FROM THE MAP."`.
 
+### 11.14 Separate Motor Vehicle & Bicycle Courier Services Contract (`SeparateVehicleAndBicycleServicesContract`)
+Enforces the mandatory architectural rule that Motor Vehicle Courier and Bicycle Courier are two completely separate services with independent pricing and distinct physical constraints:
+
+1. **Independent Rate & Capacity Schemas:**
+   - **Motor Vehicle Courier Service:**
+     * `vehiclePerKmRateAud`: Per-kilometer rate in $ AUD (e.g. $2.20 AUD / km default).
+     * `vehicleSameDayFeeAud`: Flat same-day dispatch fee in $ AUD (default $0).
+     * `vehicleUrgentFeeAud`: Flat urgent dispatch fee in $ AUD (default $0).
+     * `vehicleMaxWeightKg`: Maximum payload weight in kg (default 50 kg, configurable up to 10,000 kg for vans/utes).
+     * `vehicleMaxHeightCm`: Maximum item height in cm (default 70 cm).
+     * `vehicleMaxWidthCm`: Maximum item width in cm (default 50 cm).
+     * `vehicleMaxLengthCm`: Maximum item length in cm (default 50 cm).
+   - **Bicycle Courier Service (Letters, Documents & Food Deliveries Only):**
+     * `bicyclePerKmRateAud`: Per-kilometer rate in $ AUD (e.g. $1.80 AUD / km default).
+     * `bicycleSameDayFeeAud`: Flat same-day fee in $ AUD (default $0).
+     * `bicycleUrgentFeeAud`: Flat urgent fee in $ AUD (default $0).
+     * `bicycleMaxWeightKg`: Maximum backpack/pannier weight in kg (default 8 kg, strictly capped for cycling safety).
+     * `bicycleMaxHeightCm`: Maximum backpack height in cm (default 35 cm).
+     * `bicycleMaxWidthCm`: Maximum backpack width in cm (default 30 cm).
+     * `bicycleMaxLengthCm`: Maximum backpack length in cm (default 40 cm).
+
+2. **Form Architecture & DOM Automation:**
+   - **Driver Registration Form (`#driver-registration-form`):**
+     * Motor Vehicle box (`#drv-reg-vehicle-rates-box`): Contains `drv-reg-per-km`, `drv-reg-sameday-fee`, `drv-reg-urgent-fee`, `drv-reg-max-weight`, `drv-reg-max-height`, `drv-reg-max-width`, `drv-reg-max-length`.
+     * Bicycle Courier box (`#drv-reg-bicycle-rates-box`): Contains `drv-reg-bike-per-km`, `drv-reg-bike-sameday-fee`, `drv-reg-bike-urgent-fee`, `drv-reg-bike-max-weight`, `drv-reg-bike-max-height`, `drv-reg-bike-max-width`, `drv-reg-bike-max-length`.
+   - **Driver Admin Profile Form (`#adm-drv-form`):**
+     * Motor Vehicle box (`#adm-vehicle-rates-box`): Contains `adm-drv-per-km`, `adm-drv-sameday-fee`, `adm-drv-urgent-fee`, `adm-drv-max-weight`, `adm-drv-max-height`, `adm-drv-max-width`, `adm-drv-max-length`.
+     * Bicycle Courier box (`#adm-bicycle-rates-box`): Contains `adm-drv-bike-per-km`, `adm-drv-bike-sameday-fee`, `adm-drv-bike-urgent-fee`, `adm-drv-bike-max-weight`, `adm-drv-bike-max-height`, `adm-drv-bike-max-width`, `adm-drv-bike-max-length`.
+   - All 20 inputs are bound with `data-agent-id`, `data-testid`, and descriptive `aria-label` attributes.
+
+3. **Quoting, Fit & Pricing Enforcement:**
+   - When a job is quoted under Bicycle mode, package weight and dimensions are strictly tested against `driver.bicycleMaxWeightKg` and `driver.bicycleMaxHeightCm/Width/Length`, and priced via `driver.bicyclePerKmRateAud`.
+   - When quoted under Motor Vehicle mode, package weight and dimensions are tested against `driver.vehicleMaxWeightKg` and `driver.vehicleMaxHeightCm/Width/Length`, and priced via `driver.vehiclePerKmRateAud`.
+   - Contractor cards and Leaflet map popups provide instant toggle buttons (`[🚗 Motor Vehicle]` and `[🚲 Bicycle Courier]`), dynamically switching displayed rates, fees, max weight, and max dimensions to reflect the chosen service.
+   - SuperAdmin Driver Approval Console displays both service profiles side-by-side with complete rate and dimension breakdowns.
+
+
 
 
 

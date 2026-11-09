@@ -444,10 +444,10 @@ function updateOsmContractorMarkers() {
       : Number(provider.vehicleUrgentFeeAud ?? provider.urgentFeeAud ?? 35).toFixed(0);
     const weightVal = isBicyclePopup
       ? `${provider.bicycleMaxWeightKg || 8}kg (Small/Letters/Food)`
-      : `${provider.maxWeightKg || 500}kg`;
+      : `${provider.vehicleMaxWeightKg || provider.maxWeightKg || 500}kg`;
     const dimsVal = isBicyclePopup
       ? `${provider.bicycleMaxHeightCm || 35}×${provider.bicycleMaxWidthCm || 30}×${provider.bicycleMaxLengthCm || 40}cm`
-      : `${provider.maxHeightCm || 150}×${provider.maxWidthCm || 130}×${provider.maxLengthCm || 250}cm`;
+      : `${provider.vehicleMaxHeightCm || provider.maxHeightCm || 150}×${provider.vehicleMaxWidthCm || provider.maxWidthCm || 130}×${provider.vehicleMaxLengthCm || provider.maxLengthCm || 250}cm`;
 
     const popupHtml = `
       <div style="min-width:240px; font-family:'Plus Jakarta Sans', sans-serif; padding:4px;">
@@ -1387,10 +1387,10 @@ function renderContractorCards(contractors) {
       : Number(c.vehicleUrgentFeeAud ?? c.urgentFeeAud ?? 35).toFixed(0);
     const maxWeight = isBicycleView
       ? `${c.bicycleMaxWeightKg || 8} kg (Small/Letters/Food Only)`
-      : `${c.maxWeightKg || 500} kg`;
+      : `${c.vehicleMaxWeightKg || c.maxWeightKg || 500} kg`;
     const maxDims = isBicycleView
       ? `${c.bicycleMaxHeightCm || 35}×${c.bicycleMaxWidthCm || 30}×${c.bicycleMaxLengthCm || 40} cm`
-      : `${c.maxHeightCm || 150}×${c.maxWidthCm || 130}×${c.maxLengthCm || 250} cm`;
+      : `${c.vehicleMaxHeightCm || c.maxHeightCm || 150}×${c.vehicleMaxWidthCm || c.maxWidthCm || 130}×${c.vehicleMaxLengthCm || c.maxLengthCm || 250} cm`;
     const displayVehicleTitle = isBicycleView
       ? 'Bicycle Courier (Letters & Food Only)'
       : (c.vehicle || c.tradeTitle || 'Courier Driver');
@@ -2438,6 +2438,19 @@ function renderSuperadminDriverApprovals() {
             <span><i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> PayID: <strong>${escapeAttr(d.payIdValue || d.phone)}</strong></span>
             <span>${isApproved ? '<strong style="color:#059669;"><i class="fa-solid fa-map-location-dot"></i> Shown on Map</strong>' : '<strong style="color:#D97706;"><i class="fa-solid fa-eye-slash"></i> Hidden from Map</strong>'}</span>
           </div>
+
+          <div style="font-size:0.73rem; color:#475569; margin-top:0.35rem; display:flex; flex-wrap:wrap; gap:0.5rem;">
+            ${d.hasVehicleCourier !== false ? `
+              <span style="background:#EFF6FF; color:#1E40AF; padding:2px 7px; border-radius:4px; border:1px solid #BFDBFE;">
+                <i class="fa-solid fa-truck"></i> <strong>Vehicle Service:</strong> $${Number(d.vehiclePerKmRateAud ?? d.perKmRateAud ?? 2.20).toFixed(2)}/km • Max ${d.vehicleMaxWeightKg ?? d.maxWeightKg ?? 50}kg (${d.vehicleMaxHeightCm ?? d.maxHeightCm ?? 70}×${d.vehicleMaxWidthCm ?? d.maxWidthCm ?? 50}×${d.vehicleMaxLengthCm ?? d.maxLengthCm ?? 50}cm)
+              </span>
+            ` : ''}
+            ${d.hasBicycleCourier ? `
+              <span style="background:#F0FDF4; color:#065F46; padding:2px 7px; border-radius:4px; border:1px solid #BBF7D0;">
+                <i class="fa-solid fa-bicycle"></i> <strong>Bicycle Service:</strong> $${Number(d.bicyclePerKmRateAud ?? 1.80).toFixed(2)}/km • Max ${d.bicycleMaxWeightKg ?? 8}kg (${d.bicycleMaxHeightCm ?? 35}×${d.bicycleMaxWidthCm ?? 30}×${d.bicycleMaxLengthCm ?? 40}cm)
+              </span>
+            ` : ''}
+          </div>
         </div>
 
         <div style="display:flex; gap:0.45rem;">
@@ -2758,10 +2771,10 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
         fitBadge = '<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-bicycle"></i> Fits Bicycle (Letters/Food/Small, Max ' + bMaxW + 'kg • ' + bMaxH + '×' + bMaxWi + '×' + bMaxL + 'cm)</span>';
       }
     } else {
-      const maxW = drv.maxWeightKg || 500;
-      const maxH = drv.maxHeightCm || 150;
-      const maxWi = drv.maxWidthCm || 130;
-      const maxL = drv.maxLengthCm || 250;
+      const maxW = drv.vehicleMaxWeightKg || drv.maxWeightKg || 500;
+      const maxH = drv.vehicleMaxHeightCm || drv.maxHeightCm || 150;
+      const maxWi = drv.vehicleMaxWidthCm || drv.maxWidthCm || 130;
+      const maxL = drv.vehicleMaxLengthCm || drv.maxLengthCm || 250;
 
       fitsWeight = weightKg <= maxW;
       fitsDims = heightCm <= maxH && widthCm <= maxWi && lengthCm <= maxL;
@@ -2770,9 +2783,9 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       if (!hasVeh) {
         fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-ban"></i> Vehicle Mode Inactive</span>';
       } else if (!fitsWeight) {
-        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Max Weight (' + maxW + 'kg)</span>';
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Vehicle Weight (' + maxW + 'kg max)</span>';
       } else if (!fitsDims) {
-        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Max Size (' + maxH + '×' + maxWi + '×' + maxL + 'cm)</span>';
+        fitBadge = '<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Over Vehicle Dimensions (' + maxH + '×' + maxWi + '×' + maxL + 'cm)</span>';
       } else {
         fitBadge = '<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-truck"></i> Fits Vehicle (Max ' + maxW + 'kg • ' + maxH + '×' + maxWi + '×' + maxL + 'cm)</span>';
       }
@@ -3819,17 +3832,22 @@ function prefillDriverRegistrationForm(supporter) {
     const chkBicycle = document.getElementById('drv-reg-has-bicycle');
     if (chkBicycle) chkBicycle.checked = !!existingDriver.hasBicycleCourier;
 
-    setVal('drv-reg-rate-per-km', existingDriver.vehiclePerKmRateAud ?? existingDriver.perKmRateAud ?? existingDriver.perKmRate ?? 2.50);
+    setVal('drv-reg-per-km', existingDriver.vehiclePerKmRateAud ?? existingDriver.perKmRateAud ?? 2.20);
+    setVal('drv-reg-rate-per-km', existingDriver.vehiclePerKmRateAud ?? existingDriver.perKmRateAud ?? 2.20);
     setVal('drv-reg-sameday-fee', existingDriver.vehicleSameDayFeeAud ?? existingDriver.sameDayFeeAud ?? 0);
     setVal('drv-reg-urgent-fee', existingDriver.vehicleUrgentFeeAud ?? existingDriver.urgentFeeAud ?? 0);
-    setVal('drv-reg-max-weight', existingDriver.maxWeightKg ?? 50);
-    setVal('drv-reg-max-height', existingDriver.maxHeightCm ?? 70);
-    setVal('drv-reg-max-width', existingDriver.maxWidthCm ?? 50);
-    setVal('drv-reg-max-length', existingDriver.maxLengthCm ?? 50);
+    setVal('drv-reg-max-weight', existingDriver.vehicleMaxWeightKg ?? existingDriver.maxWeightKg ?? 50);
+    setVal('drv-reg-max-height', existingDriver.vehicleMaxHeightCm ?? existingDriver.maxHeightCm ?? 70);
+    setVal('drv-reg-max-width', existingDriver.vehicleMaxWidthCm ?? existingDriver.maxWidthCm ?? 50);
+    setVal('drv-reg-max-length', existingDriver.vehicleMaxLengthCm ?? existingDriver.maxLengthCm ?? 50);
 
     setVal('drv-reg-bike-per-km', existingDriver.bicyclePerKmRateAud ?? 1.80);
     setVal('drv-reg-bike-sameday-fee', existingDriver.bicycleSameDayFeeAud ?? 0);
     setVal('drv-reg-bike-urgent-fee', existingDriver.bicycleUrgentFeeAud ?? 0);
+    setVal('drv-reg-bike-max-weight', existingDriver.bicycleMaxWeightKg ?? 8);
+    setVal('drv-reg-bike-max-height', existingDriver.bicycleMaxHeightCm ?? 35);
+    setVal('drv-reg-bike-max-width', existingDriver.bicycleMaxWidthCm ?? 30);
+    setVal('drv-reg-bike-max-length', existingDriver.bicycleMaxLengthCm ?? 40);
 
     if (existingDriver.coords?.lat) setVal('drv-reg-lat', existingDriver.coords.lat);
     if (existingDriver.coords?.lng) setVal('drv-reg-lng', existingDriver.coords.lng);
@@ -3896,6 +3914,15 @@ function handleDriverRegistrationSubmit(event) {
   const maxWidthCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-width')?.value) || 50);
   const maxLengthCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-length')?.value) || 50);
 
+  const bikeMaxWeightRaw = document.getElementById('drv-reg-bike-max-weight')?.value;
+  const bikeMaxHeightRaw = document.getElementById('drv-reg-bike-max-height')?.value;
+  const bikeMaxWidthRaw = document.getElementById('drv-reg-bike-max-width')?.value;
+  const bikeMaxLengthRaw = document.getElementById('drv-reg-bike-max-length')?.value;
+  const bicycleMaxWeightKg = bikeMaxWeightRaw !== '' && !isNaN(parseFloat(bikeMaxWeightRaw)) ? Math.max(1, parseFloat(bikeMaxWeightRaw)) : 8;
+  const bicycleMaxHeightCm = bikeMaxHeightRaw !== '' && !isNaN(parseFloat(bikeMaxHeightRaw)) ? Math.max(5, parseFloat(bikeMaxHeightRaw)) : 35;
+  const bicycleMaxWidthCm = bikeMaxWidthRaw !== '' && !isNaN(parseFloat(bikeMaxWidthRaw)) ? Math.max(5, parseFloat(bikeMaxWidthRaw)) : 30;
+  const bicycleMaxLengthCm = bikeMaxLengthRaw !== '' && !isNaN(parseFloat(bikeMaxLengthRaw)) ? Math.max(5, parseFloat(bikeMaxLengthRaw)) : 40;
+
   const lat = parseFloat(document.getElementById('drv-reg-lat')?.value) || -27.9678;
   const lng = parseFloat(document.getElementById('drv-reg-lng')?.value) || 153.4011;
 
@@ -3946,10 +3973,14 @@ function handleDriverRegistrationSubmit(event) {
       bicyclePerKmRateAud,
       bicycleSameDayFeeAud,
       bicycleUrgentFeeAud,
-      bicycleMaxWeightKg: 8,
-      bicycleMaxHeightCm: 35,
-      bicycleMaxWidthCm: 30,
-      bicycleMaxLengthCm: 40,
+      bicycleMaxWeightKg,
+      bicycleMaxHeightCm,
+      bicycleMaxWidthCm,
+      bicycleMaxLengthCm,
+      vehicleMaxWeightKg: maxWeightKg,
+      vehicleMaxHeightCm: maxHeightCm,
+      vehicleMaxWidthCm: maxWidthCm,
+      vehicleMaxLengthCm: maxLengthCm,
       maxWeightKg,
       maxHeightCm,
       maxWidthCm,
@@ -3988,11 +4019,18 @@ function handleDriverRegistrationSubmit(event) {
       bicyclePerKmRateAud,
       bicycleSameDayFeeAud,
       bicycleUrgentFeeAud,
-      bicycleMaxWeightKg: 8,
-      bicycleMaxHeightCm: 35,
-      bicycleMaxWidthCm: 30,
-      bicycleMaxLengthCm: 40,
+      bicycleMaxWeightKg,
+      bicycleMaxHeightCm,
+      bicycleMaxWidthCm,
+      bicycleMaxLengthCm,
+      vehicleMaxWeightKg: maxWeightKg,
+      vehicleMaxHeightCm: maxHeightCm,
+      vehicleMaxWidthCm: maxWidthCm,
+      vehicleMaxLengthCm: maxLengthCm,
       maxWeightKg,
+      maxHeightCm,
+      maxWidthCm,
+      maxLengthCm,
       maxHeightCm,
       maxWidthCm,
       maxLengthCm,
@@ -4086,16 +4124,21 @@ function renderDriverAdminDashboard() {
   if (bChk) bChk.checked = activeDriver.hasBicycleCourier === true;
   toggleAdminModesUI();
 
-  setVal('adm-drv-per-km', activeDriver.perKmRateAud ?? activeDriver.vehiclePerKmRateAud ?? 2.20);
-  setVal('adm-drv-sameday-fee', activeDriver.sameDayFeeAud ?? activeDriver.vehicleSameDayFeeAud ?? 0);
-  setVal('adm-drv-urgent-fee', activeDriver.urgentFeeAud ?? activeDriver.vehicleUrgentFeeAud ?? 0);
+  setVal('adm-drv-per-km', activeDriver.vehiclePerKmRateAud ?? activeDriver.perKmRateAud ?? 2.20);
+  setVal('adm-drv-sameday-fee', activeDriver.vehicleSameDayFeeAud ?? activeDriver.sameDayFeeAud ?? 0);
+  setVal('adm-drv-urgent-fee', activeDriver.vehicleUrgentFeeAud ?? activeDriver.urgentFeeAud ?? 0);
+  setVal('adm-drv-max-weight', activeDriver.vehicleMaxWeightKg ?? activeDriver.maxWeightKg ?? 50);
+  setVal('adm-drv-max-height', activeDriver.vehicleMaxHeightCm ?? activeDriver.maxHeightCm ?? 70);
+  setVal('adm-drv-max-width', activeDriver.vehicleMaxWidthCm ?? activeDriver.maxWidthCm ?? 50);
+  setVal('adm-drv-max-length', activeDriver.vehicleMaxLengthCm ?? activeDriver.maxLengthCm ?? 50);
+
   setVal('adm-drv-bike-per-km', activeDriver.bicyclePerKmRateAud ?? 1.80);
   setVal('adm-drv-bike-sameday-fee', activeDriver.bicycleSameDayFeeAud ?? 0);
   setVal('adm-drv-bike-urgent-fee', activeDriver.bicycleUrgentFeeAud ?? 0);
-  setVal('adm-drv-max-weight', activeDriver.maxWeightKg ?? 50);
-  setVal('adm-drv-max-height', activeDriver.maxHeightCm ?? 70);
-  setVal('adm-drv-max-width', activeDriver.maxWidthCm ?? 50);
-  setVal('adm-drv-max-length', activeDriver.maxLengthCm ?? 50);
+  setVal('adm-drv-bike-max-weight', activeDriver.bicycleMaxWeightKg ?? 8);
+  setVal('adm-drv-bike-max-height', activeDriver.bicycleMaxHeightCm ?? 35);
+  setVal('adm-drv-bike-max-width', activeDriver.bicycleMaxWidthCm ?? 30);
+  setVal('adm-drv-bike-max-length', activeDriver.bicycleMaxLengthCm ?? 40);
   setVal('adm-drv-payid-value', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
   setVal('adm-drv-licence', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
 
@@ -4315,6 +4358,15 @@ function saveDriverAdminProfile(event) {
   const maxWidthCm = maxWidthRaw !== '' && !isNaN(parseFloat(maxWidthRaw)) ? Math.max(10, parseFloat(maxWidthRaw)) : 50;
   const maxLengthCm = maxLengthRaw !== '' && !isNaN(parseFloat(maxLengthRaw)) ? Math.max(10, parseFloat(maxLengthRaw)) : 50;
 
+  const bikeMaxWeightRaw = document.getElementById('adm-drv-bike-max-weight')?.value;
+  const bikeMaxHeightRaw = document.getElementById('adm-drv-bike-max-height')?.value;
+  const bikeMaxWidthRaw = document.getElementById('adm-drv-bike-max-width')?.value;
+  const bikeMaxLengthRaw = document.getElementById('adm-drv-bike-max-length')?.value;
+  const bicycleMaxWeightKg = bikeMaxWeightRaw !== '' && !isNaN(parseFloat(bikeMaxWeightRaw)) ? Math.max(1, parseFloat(bikeMaxWeightRaw)) : 8;
+  const bicycleMaxHeightCm = bikeMaxHeightRaw !== '' && !isNaN(parseFloat(bikeMaxHeightRaw)) ? Math.max(5, parseFloat(bikeMaxHeightRaw)) : 35;
+  const bicycleMaxWidthCm = bikeMaxWidthRaw !== '' && !isNaN(parseFloat(bikeMaxWidthRaw)) ? Math.max(5, parseFloat(bikeMaxWidthRaw)) : 30;
+  const bicycleMaxLengthCm = bikeMaxLengthRaw !== '' && !isNaN(parseFloat(bikeMaxLengthRaw)) ? Math.max(5, parseFloat(bikeMaxLengthRaw)) : 40;
+
   const updatedDriver = {
     ...activeDriver,
     hasVehicleCourier: hasVehicle,
@@ -4328,10 +4380,14 @@ function saveDriverAdminProfile(event) {
     bicyclePerKmRateAud,
     bicycleSameDayFeeAud,
     bicycleUrgentFeeAud,
-    bicycleMaxWeightKg: 8,
-    bicycleMaxHeightCm: 35,
-    bicycleMaxWidthCm: 30,
-    bicycleMaxLengthCm: 40,
+    bicycleMaxWeightKg,
+    bicycleMaxHeightCm,
+    bicycleMaxWidthCm,
+    bicycleMaxLengthCm,
+    vehicleMaxWeightKg: maxWeightKg,
+    vehicleMaxHeightCm: maxHeightCm,
+    vehicleMaxWidthCm: maxWidthCm,
+    vehicleMaxLengthCm: maxLengthCm,
     maxWeightKg,
     maxHeightCm,
     maxWidthCm,
