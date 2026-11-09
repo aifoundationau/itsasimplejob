@@ -1775,3 +1775,22 @@ Defines the authoritative state transitions, permissions, and multi-tenant persi
      * Displays `Active Approved Courier Driver • Logged In`.
    - **Customer Directory & Map**:
      * Driver becomes visible as active and available on the live customer booking map and driver selection cards.
+
+### 11.6 SuperAdmin All-Roles Perspective Contract (`SuperAdminAllRolesViewPerspectiveContract`)
+Defines the state persistence, session simulation, and UI adaptation enabling SuperAdmin to preview and experience the platform from all roles:
+
+1. **Role Perspectives Available:**
+   - **`superadmin`**: Supreme Ruler (All Access). Unconditional full control over distance tiers, token prices, driver approvals, wiping tokens, and full admin tools.
+   - **`driver`**: Approved Courier Driver View. Experiences the active Driver Dispatch Console (`#supporter-dispatch-subtab`), booking acceptance, token balance purchases, and custom rate settings ($ AUD). SuperAdmin controls are hidden.
+   - **`supporter`**: Community Supporter View. Experiences supporter personal details, booking history, and the `#supporter-not-driver-notice` banner on the dispatch tab. SuperAdmin controls and dispatch console are hidden.
+   - **`customer`**: Public Customer Booking View. Redirects to `#courier-tab` to experience the public courier booking form, package limits, and closest drivers map. Supporter portal and dispatch consoles are inaccessible.
+
+2. **Persistence & Execution Architecture:**
+   - Perspective selection is stored in `sessionStorage['iasj_superadmin_view_role']`.
+   - `getActiveUserRole()` authoritatively honors `sessionStorage['iasj_superadmin_view_role']` when the authenticated user is SuperAdmin, ensuring all downstream components react consistently.
+   - `switchSuperadminViewRole(role)` coordinates navigation, UI updates, and perspective indicators.
+
+3. **Floating Banner & 1-Click Return:**
+   - When previewing as Driver, Supporter, or Customer, the persistent floating banner (`#superadmin-viewing-banner`) remains fixed at the top of the viewport.
+   - Displays the active perspective, an in-banner perspective selector dropdown (`#sa-banner-role-select`), and a 1-click `"Return to Superadmin"` button (`#btn-reset-superadmin-view`).
+   - Also accessible via the Google Profile Menu dropdown (`#google-menu-superadmin-switcher`) and the SuperAdmin Console card (`#superadmin-role-switcher-section`).

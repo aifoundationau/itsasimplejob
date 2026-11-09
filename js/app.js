@@ -102,6 +102,7 @@ function initApp() {
   }
 
   try { syncSuperadminDistanceTierInputs(); } catch (e) {}
+  try { initSuperadminViewMode(); } catch (e) {}
 
   // Calculate initial courier route & rank closest drivers
   if (document.getElementById('courier-origin')) {
@@ -4007,7 +4008,14 @@ window.saveDriverAdminProfile = saveDriverAdminProfile;
  */
 function getActiveUserRole() {
   const gUser = window.firebaseService?.getCurrentGoogleUser?.();
-  if (checkIsSuperadmin(gUser)) return 'superadmin';
+  const isSa = checkIsSuperadmin(gUser);
+  if (isSa) {
+    const viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
+    if (viewRole && viewRole !== 'superadmin') {
+      return viewRole;
+    }
+    return 'superadmin';
+  }
   if (gUser && (gUser.role === 'driver' || gUser.isDriver === true)) return 'driver';
   if (gUser && gUser.email && window.supporterDB) {
     const sup = window.supporterDB.findByEmail(gUser.email);
@@ -9916,27 +9924,42 @@ function checkIsSuperadmin(user) {
 }
 
 function switchSuperadminViewRole(role) {
+  const user = window.firebaseService?.getCurrentGoogleUser?.();
+  if (!checkIsSuperadmin(user)) return;
+
   const roleNames = {
-    superadmin: 'Superadmin (All Access)',
-    customer: 'Customer View',
-    provider: 'Service Provider View',
-    franchise_admin: 'Franchise Admin View'
+    superadmin: 'SuperAdmin (Supreme Ruler)',
+    driver: 'Driver (Approved Courier Driver)',
+    supporter: 'Community Supporter',
+    customer: 'Customer (Public Booking View)'
   };
 
   sessionStorage.setItem('iasj_superadmin_view_role', role);
 
-  // Update switcher buttons in dropdown
+  // Update switcher buttons
   document.querySelectorAll('.superadmin-role-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-role') === role);
+    const btnRole = btn.getAttribute('data-role');
+    const isActive = btnRole === role;
+    btn.classList.toggle('active', isActive);
+    if (isActive) {
+      btn.style.fontWeight = '900';
+      btn.style.boxShadow = '0 0 0 2px rgba(245, 158, 11, 0.4)';
+    } else {
+      btn.style.fontWeight = '700';
+      btn.style.boxShadow = 'none';
+    }
   });
 
   const currentRoleLabel = document.getElementById('superadmin-current-role-label');
   if (currentRoleLabel) {
-    currentRoleLabel.textContent = role === 'superadmin' ? 'All Access' : roleNames[role] || role;
+    currentRoleLabel.textContent = roleNames[role] || role;
   }
 
   const floatingBanner = document.getElementById('superadmin-viewing-banner');
   const viewNameEl = document.getElementById('sa-active-view-name');
+  const bannerSelect = document.getElementById('sa-banner-role-select');
+
+  if (bannerSelect) bannerSelect.value = role;
 
   if (role === 'superadmin') {
     if (floatingBanner) floatingBanner.style.display = 'none';
@@ -9949,25 +9972,29 @@ function switchSuperadminViewRole(role) {
 
   // Navigate or adapt layout based on simulated role perspective
   if (role === 'customer') {
-    if (typeof switchTab === 'function') switchTab('ai-book-tab');
-  } else if (role === 'provider') {
-    if (typeof switchTab === 'function') switchTab('provider-network-tab');
-  } else if (role === 'franchise_admin') {
-    if (typeof switchTab === 'function') switchTab('franchise-tab');
+    if (typeof switchTab === 'function') switchTab('courier-tab', true);
+  } else if (role === 'driver') {
+    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
+  } else if (role === 'supporter') {
+    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-details-subtab');
+  } else if (role === 'superadmin') {
+    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   }
 
   syncSuperadminControls();
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { updateGoogleAuthUI(user); } catch (e) {}
 
   if (typeof showToast === 'function') {
     showToast(`👑 Viewing site as: ${roleNames[role] || role}`);
   }
 }
+window.switchSuperadminViewRole = switchSuperadminViewRole;
 
-/**
- * Show superadmin tools (role switcher, price list, courier rate controls, driver approvals) only to superadmins,
- * and hide the price tools while a superadmin is previewing the site as another role.
- * The server checks the role again before saving any price.
- */
 function syncSuperadminControls() {
   const user = window.firebaseService?.getCurrentGoogleUser?.();
   const isSa = checkIsSuperadmin(user);
@@ -9975,7 +10002,10 @@ function syncSuperadminControls() {
   const showPriceTools = isSa && viewRole === 'superadmin';
 
   const switcher = document.getElementById('superadmin-role-switcher-section');
-  if (switcher) switcher.style.display = isSa ? 'block' : 'none';
+  if (switcher) switcher.style.display = (isSa && viewRole === 'superadmin') ? 'block' : 'none';
+
+  const menuSwitcher = document.getElementById('google-menu-superadmin-switcher');
+  if (menuSwitcher) menuSwitcher.style.display = isSa ? 'block' : 'none';
   if (isSa) {
     document.querySelectorAll('.superadmin-role-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-role') === viewRole);
