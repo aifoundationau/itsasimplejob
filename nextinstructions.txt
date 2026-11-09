@@ -682,3 +682,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Styled `dialog.welcome-intro-dialog` in `css/style.css` as a 3-column grid on desktop (`> 960px`) and a single-column responsive stack on tablets, Android, and iPhone (`<= 960px`), with `overscroll-behavior: contain` and light-dismiss support.
 - Wired `initWelcomeIntroPopup()`, `openWelcomeIntroPopup()`, and `closeWelcomeIntroPopup()` in `js/app.js`.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-10] Task 91: Remove MIT Licence (`mitlicence.txt`):
+- Removed `mitlicence.txt` from the repository per user request.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
