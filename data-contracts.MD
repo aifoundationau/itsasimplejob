@@ -2030,10 +2030,24 @@ Defines the mandatory layout and navigation contract ensuring the Courier Driver
 3. **DOM Automation & Accessibility:**
    - Attributes: `data-agent-id="footer-driver-app-link"`, `data-testid="footer-driver-app-link"`, `aria-label="Courier Driver Application"`.
 
+### 11.16 Apply to Drive Footer-Exclusivity Contract (`ApplyToDriveFooterExclusivityContract`)
+Enforces that the application entry point to become a driver is exclusively accessible via the bottom footer next to Terms of Service, eliminating clutter and redundant buttons in the Supporter Portal:
 
+1. **Elimination of Redundant Portal Buttons:**
+   - `#subtab-btn-driver-app-scroll` ("Apply to Drive (Bottom of Page)") is strictly removed from the `.supporter-subnav-bar`.
+   - `#btn-goto-driver-app` ("Apply to Become Driver (Bottom of Page)") is strictly removed from the `#supporter-not-driver-notice` inside the Dispatch subtab.
+   - Any other non-footer buttons or tabs for applying to drive are deprecated and removed.
 
+2. **Clean Supporter Subnavigation Architecture:**
+   - The Supporter Portal subnav contains exclusively:
+     * `1. Register Details` (`#subtab-btn-details`)
+     * `2. My Bookings History` (`#subtab-btn-bookings`)
+     * `Driver Dispatch Console` (`#subtab-btn-dispatch` — visible only to approved drivers & superadmin).
 
-
-
+3. **Footer-Only Entry Point:**
+   - The Courier Driver Application is exclusively linked via:
+     * `#footer-driver-app-link`: Main footer navigation row, immediately following `Terms of Service`.
+     * `#footer-bottom-driver-app-link`: Bottom sub-footer row, adjacent to `Terms of Service`.
+     * `#terms-footer-driver-app-link`: `terms.html` reciprocal footer link.
 
 

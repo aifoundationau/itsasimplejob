@@ -236,9 +236,25 @@ Created: 2026-11-01
   * Verified end-to-end with verify_footer_driver_app.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 41: REMOVE APPLY TO DRIVE FROM SUPPORTER PANEL (FOOTER-ONLY ENTRY POINT)
+- Supporter Portal Streamlining:
+  * Removed `#subtab-btn-driver-app-scroll` ("Apply to Drive (Bottom of Page)") from the `.supporter-subnav-bar`.
+  * The Supporter Portal subnav now strictly contains the 3 core tabs:
+    1. Register Details (`#subtab-btn-details`)
+    2. My Bookings History (`#subtab-btn-bookings`)
+    3. Driver Dispatch Console (`#subtab-btn-dispatch` — visible only to approved drivers & superadmin).
+  * Removed `#btn-goto-driver-app` ("Apply to Become Driver (Bottom of Page)") from `#supporter-not-driver-notice`.
+  * Updated introductory notices to point directly to the Courier Driver Application in the bottom footer.
+- Exclusivity on Bottom Footer:
+  * "Courier Driver Application" is strictly accessible from the bottom footer next to Terms of Service (`#footer-driver-app-link` and `#footer-bottom-driver-app-link`).
+- Verification & Compliance:
+  * Documented Section 11.16 in data-contracts.MD.
+  * Verified end-to-end with verify_apply_to_drive_footer_only.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST COURIER DRIVER APPLICATION LINK IN FOOTER IN BROWSER
+CURRENT TASK: VERIFY SUPPORTER PORTAL & FOOTER-ONLY DRIVER APPLICATION LINK IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, scroll to the bottom of the page to the footer, verify that "Courier Driver Application" is placed right next to "Terms of Service", and click it to verify that it smoothly scrolls directly to the Courier Driver Application form.
+1. In your browser at http://localhost:3002, navigate to the Supporter Portal to verify that the "Apply to Drive" button has been removed from the navigation subtabs and notices, and then scroll to the bottom footer to verify that "Courier Driver Application" is exclusively placed next to "Terms of Service".
 
 ================================================================================
