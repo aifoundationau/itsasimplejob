@@ -568,3 +568,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
   4. Updated `api/create-payment-intent.js`, `js/stripe-service.js`, and `js/app.js` so every Stripe Checkout Session passes `line_items: [{ price: 'price_1UZgMSI8bClhBF4PKywysjAj', quantity: tokens }]` (`unit_amount: 100` cents × `quantity: 10 | 50 | 100`).
 - Verified live Stripe Checkout Session line items via Stripe MCP (`GetCheckoutSessionsSessionLineItems`) and `node scratch/verify_stripe_token_tax_popup.mjs` + `npm run build` (0 errors).
 - Documented Section 11.41 (`StripeTokenUnitPriceAndQuantityContract`) in `data-contracts.MD`.
+
+[2026-11-09] Task 72: Remove "G" Letter Icon (`fa-brands fa-google`) from Google Profile Button:
+- Removed `<i class="fa-brands fa-google"></i>` (the red "G" letter icon) from `#google-user-chip` (`#google-nav-name`), `#nav-google-signin-btn`, and `#google-menu-role-badge` in `index.html` and `updateGoogleAuthUI()` in `js/app.js`.
+- Verified with `node scratch/verify_google_profile_no_g.mjs` and `npm run build` (0 errors).

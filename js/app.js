@@ -10526,7 +10526,7 @@ function updateGoogleAuthUI(user) {
     if (navText) {
       navText.textContent = `${firstName} (Logged In)`;
     } else if (navName) {
-      navName.innerHTML = `<i class="fa-brands fa-google" style="color:#EA4335; font-size:0.75rem;"></i> <span>${firstName} (Logged In)</span>`;
+      navName.innerHTML = `<span>${firstName} (Logged In)</span>`;
     }
     if (navAvatar) navAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
 
@@ -10534,7 +10534,7 @@ function updateGoogleAuthUI(user) {
     if (menuName) menuName.textContent = user.displayName || 'Google Supporter';
     if (menuEmail) menuEmail.textContent = user.email || '';
     if (menuRoleBadge) {
-      menuRoleBadge.innerHTML = `<i class="fa-brands fa-google" style="color:#EA4335;"></i> Active ${roleDisplay} • Logged In`;
+      menuRoleBadge.innerHTML = `Active ${roleDisplay} • Logged In`;
     }
 
     const btnSwitchProvider = document.getElementById('google-menu-switch-to-provider');
