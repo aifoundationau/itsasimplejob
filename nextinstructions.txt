@@ -520,3 +520,11 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `iasjCurrency.getDriverOrderTokenCharge(km)` (`js/currency.js`) and `submitCourierBooking()` (`js/app.js`) so that during the 1-hour free window, `tokensChargedToDriver` is `0`, drivers do not pay SuperAdmin any tokens, and even drivers with `0` tokens can receive bookings without needing a top-up.
 - Verified end-to-end with `node scratch/verify_superadmin_free_driver_hour.mjs` and `npm run build` (0 errors).
 - Documented Section 11.37 (`SuperadminFreeDriverHourContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 66: FIX STRIPE TRANSFER STATUS GRAMMAR & PRE-FETCH CHECKOUT SESSION FOR INSTANT RESPONSIVENESS
+- Removed double-plus (`+ +$1.00 AUD`) grammar issue across `#stripe-token-transfer-status`, descriptions, `aria-label` attributes, and toast messages in `js/app.js` so the status cleanly displays:
+  `Redirecting to Stripe Checkout ($10.00 AUD subtotal + $1.00 AUD GST = $11.00 AUD total)...`
+- Made the Stripe transfer significantly faster and more responsive:
+  1. Seeded `cachedExclusiveGstTaxRateId = 'txr_1UWRnsI8bClhBF4PWROuyTyt'` and parallelized `stripe.paymentIntents.create` + `stripe.checkout.sessions.create` via `Promise.all` in `api/create-payment-intent.js`.
+  2. Added `prefetchStripeTokenCheckoutSession(packTokens)` in `js/app.js` so the Stripe Checkout Session is pre-warmed as soon as the user opens the small Stripe popup (`openDriverTokenTopupModal`) or switches token packs (`selectStripeTokenPack`), allowing `confirmStripeTokenPopupPurchase()` to redirect immediately.
+- Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).

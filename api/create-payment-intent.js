@@ -31,7 +31,7 @@ const STRIPE_MCP_TOKEN_PAYMENT_LINKS = {
   100: 'https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06'
 };
 
-let cachedExclusiveGstTaxRateId = null;
+let cachedExclusiveGstTaxRateId = 'txr_1UWRnsI8bClhBF4PWROuyTyt';
 
 async function getExclusiveAudGstTaxRateId(stripe) {
   if (cachedExclusiveGstTaxRateId) return cachedExclusiveGstTaxRateId;
@@ -107,35 +107,6 @@ export default async function handler(req, res) {
   ).replace(/\/+$/, '');
 
   try {
-    let intent = await stripe.paymentIntents.create({
-      amount: amountCents,
-      currency: 'aud',
-      description: `${description} (AUD Only • Exclusive 10% GST)`.slice(0, 200),
-      // Cards and wallets only, so checkout completes inside the modal without a page redirect
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-      metadata: {
-        businessId: BUSINESS_ID,
-        docketNumber,
-        ...(tokens ? { tokens: String(tokens) } : {}),
-        customerName,
-        invoiceCurrency: 'AUD',
-        collectTax,
-        taxBehavior,
-        subtotalExGstAud: String(subtotalExGstAud.toFixed(2)),
-        taxAmountAud: String(taxAmountAud.toFixed(2)),
-        totalIncGstAud: String(amountAud.toFixed(2))
-      }
-    }, {
-      // Re-opening checkout for the same docket and amount returns the same PaymentIntent
-      idempotencyKey: `iasj-pi-${docketNumber}-${amountCents}`
-    });
-
-    // A replayed request returns the original response, so fetch the current state (it may already be paid)
-    if (intent.lastResponse?.headers?.['idempotent-replayed'] === 'true') {
-      intent = await stripe.paymentIntents.retrieve(intent.id);
-    }
-
-    // Also create a Stripe Hosted Checkout Session (checkout.stripe.com) with AUD-only + 10% Exclusive GST
     const gstTaxRateId = await getExclusiveAudGstTaxRateId(stripe);
     const subtotalCents = Math.round(subtotalExGstAud * 100);
     const taxCents = Math.round(taxAmountAud * 100);
@@ -149,7 +120,7 @@ export default async function handler(req, res) {
               tax_behavior: 'exclusive',
               product_data: {
                 name: tokens ? `${tokens} Courier Tokens ($1.00 AUD / Token)` : description,
-                description: `AUD Only • Quote Subtotal $${subtotalExGstAud.toFixed(2)} AUD + 10% Exclusive GST ($${taxAmountAud.toFixed(2)} AUD) = Total $${amountAud.toFixed(2)} AUD`
+                description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD subtotal + $${taxAmountAud.toFixed(2)} AUD 10% GST = $${amountAud.toFixed(2)} AUD total`
               }
             },
             quantity: 1,
@@ -181,25 +152,43 @@ export default async function handler(req, res) {
           }] : [])
         ];
 
-    const checkoutSession = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      currency: 'aud',
-      line_items: lineItems,
-      success_url: `${reqOrigin}/?stripe_token_success=1&tokens=${encodeURIComponent(tokens || 10)}&docket=${encodeURIComponent(docketNumber)}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${reqOrigin}/?stripe_token_cancel=1&tokens=${encodeURIComponent(tokens || 10)}`,
-      metadata: {
-        businessId: BUSINESS_ID,
-        docketNumber,
-        ...(tokens ? { tokens: String(tokens) } : {}),
-        customerName,
-        invoiceCurrency: 'AUD',
-        collectTax,
-        taxBehavior,
-        subtotalExGstAud: String(subtotalExGstAud.toFixed(2)),
-        taxAmountAud: String(taxAmountAud.toFixed(2)),
-        totalIncGstAud: String(amountAud.toFixed(2))
-      }
-    });
+    const sharedMetadata = {
+      businessId: BUSINESS_ID,
+      docketNumber,
+      ...(tokens ? { tokens: String(tokens) } : {}),
+      customerName,
+      invoiceCurrency: 'AUD',
+      collectTax,
+      taxBehavior,
+      subtotalExGstAud: String(subtotalExGstAud.toFixed(2)),
+      taxAmountAud: String(taxAmountAud.toFixed(2)),
+      totalIncGstAud: String(amountAud.toFixed(2))
+    };
+
+    const [createdIntent, checkoutSession] = await Promise.all([
+      stripe.paymentIntents.create({
+        amount: amountCents,
+        currency: 'aud',
+        description: `${description} (AUD only • 10% exclusive GST)`.slice(0, 200),
+        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+        metadata: sharedMetadata
+      }, {
+        idempotencyKey: `iasj-pi-${docketNumber}-${amountCents}`
+      }),
+      stripe.checkout.sessions.create({
+        mode: 'payment',
+        currency: 'aud',
+        line_items: lineItems,
+        success_url: `${reqOrigin}/?stripe_token_success=1&tokens=${encodeURIComponent(tokens || 10)}&docket=${encodeURIComponent(docketNumber)}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${reqOrigin}/?stripe_token_cancel=1&tokens=${encodeURIComponent(tokens || 10)}`,
+        metadata: sharedMetadata
+      })
+    ]);
+
+    let intent = createdIntent;
+    if (intent.lastResponse?.headers?.['idempotent-replayed'] === 'true') {
+      intent = await stripe.paymentIntents.retrieve(intent.id);
+    }
 
     return sendJson(res, 200, {
       paymentIntentId: intent.id,
