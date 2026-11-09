@@ -177,11 +177,21 @@ Created: 2026-11-01
   * Verified end-to-end with verify_dispatch_console_roles.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 37: REMOVE CUSTOMER ROLE AND UNIFY CLIENT BOOKINGS UNDER SUPPORTER ROLE
+- Customer Role Removal & Supporter Role Unification:
+  * Eliminated the separate 'customer' RBAC role across the UI, JavaScript logic, and Firebase auth handlers.
+  * System roles are now strictly: SuperAdmin (Supreme Ruler), Driver (Approved Courier Driver), and Supporter (Community Supporters & Booking Customers).
+  * Removed the 'Customer' perspective button and dropdown option from #superadmin-role-switcher-section, #sa-banner-role-select, and #google-menu-superadmin-switcher.
+  * Added fallback remapping so any legacy sessions with stored 'customer' role seamlessly resolve to 'supporter'.
+  * Default Google Sign-In role now initializes directly to 'supporter'.
+- Verification & Compliance:
+  * Documented Section 11.12 in data-contracts.MD.
+  * Verified end-to-end with verify_remove_customer_role.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST DRIVER DISPATCH CONSOLE RBAC VISIBILITY IN BROWSER
+CURRENT TASK: TEST REMOVAL OF CUSTOMER ROLE IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, open the Supporter Portal (tab 4) and use the SuperAdmin Role Switcher at the bottom of the portal:
-   - Click "Supporter (Community)": confirm that the "Driver Dispatch Console" subtab button disappears completely, leaving only "1. Register Details" and "2. My Bookings History".
-   - Click "Driver (Courier Driver)" or "SuperAdmin (Supreme Ruler)": confirm that the "Driver Dispatch Console" subtab button reappears and opens the live dispatch console.
+1. In your browser at http://localhost:3002, open the SuperAdmin Role Switcher (at the bottom of the Supporter Portal or in the top-right profile menu) and verify that the "Customer" option has been removed, displaying only the 3 canonical roles: "SuperAdmin (Supreme Ruler)", "Driver (Courier Driver)", and "Supporter (Community & Bookings)".
 
 ================================================================================

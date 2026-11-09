@@ -3309,11 +3309,6 @@ function scrollToDriverApplication() {
 window.scrollToDriverApplication = scrollToDriverApplication;
 
 function isSupporterRegistered() {
-  // If SuperAdmin is explicitly simulating 'customer' view, treat as unregistered so admin can test the locked gate
-  const viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
-  if (viewRole === 'customer') {
-    return false;
-  }
   const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   return !!(supporter && (supporter.email || supporter.name));
 }
@@ -4349,7 +4344,8 @@ function getActiveUserRole() {
   const gUser = window.firebaseService?.getCurrentGoogleUser?.();
   const isSa = checkIsSuperadmin(gUser);
   if (isSa) {
-    const viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
+    let viewRole = sessionStorage.getItem('iasj_superadmin_view_role');
+    if (viewRole === 'customer') viewRole = 'supporter';
     if (viewRole && viewRole !== 'superadmin') {
       return viewRole;
     }
@@ -5216,7 +5212,7 @@ function iasjConfirmDelete(btn, onConfirmed, options = {}) {
         isConfirmed: true,
         armedAt: armedAt,
         confirmedAt: new Date().toISOString(),
-        userRole: (window.firebaseService?.getCurrentGoogleUser?.()?.role) || 'customer'
+        userRole: (window.firebaseService?.getCurrentGoogleUser?.()?.role) || 'supporter'
       });
     } catch(err) {}
 
@@ -7505,7 +7501,7 @@ function getGoogleCalendarUrl(booking) {
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startIso}/${endIso}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
 }
 
-async function triggerGoogleSignIn(role = 'customer') {
+async function triggerGoogleSignIn(role = 'supporter') {
   try {
     if (window.firebaseService?.signInWithGoogle) {
       const user = await window.firebaseService.signInWithGoogle(role);
@@ -10267,11 +10263,12 @@ function switchSuperadminViewRole(role) {
   const user = window.firebaseService?.getCurrentGoogleUser?.();
   if (!checkIsSuperadmin(user)) return;
 
+  if (role === 'customer') role = 'supporter';
+
   const roleNames = {
     superadmin: 'SuperAdmin (Supreme Ruler)',
     driver: 'Driver (Approved Courier Driver)',
-    supporter: 'Community Supporter',
-    customer: 'Customer (Public Booking View)'
+    supporter: 'Community Supporter'
   };
 
   sessionStorage.setItem('iasj_superadmin_view_role', role);
@@ -10311,9 +10308,7 @@ function switchSuperadminViewRole(role) {
   }
 
   // Navigate or adapt layout based on simulated role perspective
-  if (role === 'customer') {
-    if (typeof switchTab === 'function') switchTab('courier-tab', true);
-  } else if (role === 'driver') {
+  if (role === 'driver') {
     if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
     if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   } else if (role === 'supporter') {
@@ -10376,7 +10371,8 @@ function initSuperadminViewMode() {
 
   if (isSa && switcherSec) {
     switcherSec.style.display = 'block';
-    const activeView = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
+    let activeView = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
+    if (activeView === 'customer') activeView = 'supporter';
     switchSuperadminViewRole(activeView);
   } else {
     if (switcherSec) switcherSec.style.display = 'none';

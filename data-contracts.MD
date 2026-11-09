@@ -1924,8 +1924,26 @@ Defines the strict role-based access control (RBAC) ensuring the Driver Dispatch
      * Automatically redirects to `#supporter-details-subtab`.
 
 4. **SuperAdmin Multi-Role Simulation Compatibility:**
-   - When SuperAdmin simulates the `'supporter'` or `'customer'` perspective, `#subtab-btn-dispatch` and `#driver-dispatch-console` are hidden instantly, allowing the administrator to verify the restricted supporter view.
+   - When SuperAdmin simulates the `'supporter'` perspective, `#subtab-btn-dispatch` and `#driver-dispatch-console` are hidden instantly, allowing the administrator to verify the restricted supporter view.
    - When SuperAdmin switches back to `'driver'` or `'superadmin'`, `#subtab-btn-dispatch` and the console are immediately restored.
+
+### 11.12 Unified Supporter Role & Customer Role Retirement Contract (`UnifiedSupporterRoleContract`)
+Formally retires the separate `'customer'` RBAC role and unifies all client and community member capabilities under the `'supporter'` role:
+
+1. **Role Taxonomy:**
+   - Authoritative system roles are strictly:
+     * `superadmin`: Supreme Ruler with full administrative privileges, driver approvals, distance tier pricing, token economy controls, and role simulation.
+     * `driver`: Approved courier drivers with access to live dispatch, order acceptance, auto-geolocation, vehicle/bicycle mode settings, and token wallet management.
+     * `supporter`: Community supporters and booking customers who can book courier pickups, review booking history, buy tokens, and apply to become independent drivers.
+   - The `'customer'` role identifier is completely retired. Any legacy references or sessions with `role: 'customer'` automatically resolve to `'supporter'`.
+
+2. **UI & Navigation Unification:**
+   - SuperAdmin switcher panels (`#superadmin-role-switcher-section`, `#sa-banner-role-select`, `#google-menu-superadmin-switcher`) display strictly the three canonical roles:
+     * `👑 SuperAdmin (Supreme Ruler)`
+     * `🚚 Driver (Approved Courier Driver)`
+     * `🤝 Supporter (Community & Bookings)`
+   - The former `🛒 Customer` perspective button and dropdown option have been removed from the user interface.
+
 
 
 

@@ -41,8 +41,7 @@
         data-agent-id="sa-banner-role-select" data-testid="sa-banner-role-select" aria-label="Switch Perspective">
         <option value="superadmin">👑 SuperAdmin (Supreme Ruler)</option>
         <option value="driver">🚚 Driver (Approved Courier Driver)</option>
-        <option value="supporter">🤝 Supporter (Community Supporter)</option>
-        <option value="customer">🛒 Customer (Public Booking View)</option>
+        <option value="supporter">🤝 Supporter (Community &amp; Bookings)</option>
       </select>
       <button type="button" class="sa-reset-btn" onclick="switchSuperadminViewRole('superadmin')"
         data-agent-id="btn-reset-superadmin-view" data-testid="btn-reset-superadmin-view"
@@ -172,11 +171,6 @@
                 style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#10B981; color:#065F46;"
                 data-agent-id="btn-menu-view-supporter" data-testid="btn-menu-view-supporter" aria-label="View as Supporter">
                 🤝 Supporter
-              </button>
-              <button type="button" class="btn btn-sm btn-outline superadmin-role-btn" data-role="customer" onclick="switchSuperadminViewRole('customer'); closeGoogleUserMenu();"
-                style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:var(--brand-orange); color:var(--brand-orange);"
-                data-agent-id="btn-menu-view-customer" data-testid="btn-menu-view-customer" aria-label="View as Customer">
-                🛒 Customer
               </button>
             </div>
           </div>
@@ -1155,12 +1149,7 @@
             <button type="button" class="btn btn-outline superadmin-role-btn" data-role="supporter" onclick="switchSuperadminViewRole('supporter')"
               style="display:flex; align-items:center; gap:0.5rem; justify-content:center; padding:0.65rem 0.85rem; font-size:0.82rem; font-weight:800; border-color:#10B981; color:#065F46;"
               data-agent-id="btn-sa-view-supporter" data-testid="btn-sa-view-supporter" aria-label="View as Supporter">
-              <i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> Supporter (Community)
-            </button>
-            <button type="button" class="btn btn-outline superadmin-role-btn" data-role="customer" onclick="switchSuperadminViewRole('customer')"
-              style="display:flex; align-items:center; gap:0.5rem; justify-content:center; padding:0.65rem 0.85rem; font-size:0.82rem; font-weight:800; border-color:var(--brand-orange); color:var(--brand-orange);"
-              data-agent-id="btn-sa-view-customer" data-testid="btn-sa-view-customer" aria-label="View as Customer">
-              <i class="fa-solid fa-cart-shopping" style="color:var(--brand-orange);"></i> Customer (Public Booking)
+              <i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> Supporter (Community &amp; Bookings)
             </button>
           </div>
         </div>

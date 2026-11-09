@@ -726,7 +726,7 @@ const GOOGLE_SIGN_IN_ERRORS = {
 /**
  * Google Sign-In. Fails with a readable error instead of ever inventing a user.
  */
-export async function signInWithGoogle(role = 'customer') {
+export async function signInWithGoogle(role = 'supporter') {
   if (!auth || !googleProvider) {
     throw new Error('Google sign-in is unavailable right now. Please try again later.');
   }
@@ -839,7 +839,7 @@ export async function signInWithGoogle(role = 'customer') {
 
   localStorage.setItem('iasj_google_user', JSON.stringify(userData));
 
-  if (role === 'customer') {
+  if (role === 'supporter' || role === 'customer') {
     getOrCreateCRN(user.phoneNumber || '', user.displayName || '');
     localStorage.setItem('iasj_customer_name', user.displayName || '');
     localStorage.setItem('iasj_customer_email', user.email || '');
