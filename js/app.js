@@ -3914,6 +3914,11 @@ const SUPPORTER_COLLAPSE_PANELS = {
     chevronId: 'chevron-panel-registration-details',
     bodyId: 'supporter-collapse-body-registration-details'
   },
+  'driver-information': {
+    btnId: 'btn-toggle-panel-driver-information',
+    chevronId: 'chevron-panel-driver-information',
+    bodyId: 'supporter-driver-info-subtab'
+  },
   'bookings-history': {
     btnId: 'btn-toggle-panel-bookings-history',
     chevronId: 'chevron-panel-bookings-history',
@@ -3965,6 +3970,10 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
     if (normalizedKey === 'registration-details' || normalizedKey === 'buy-tokens') {
       try { renderSupporterPanel(); } catch (e) {}
     }
+    if (normalizedKey === 'driver-information') {
+      try { renderDriverInformationView(); } catch (e) {}
+      try { renderDriverAdminDashboard(); } catch (e) {}
+    }
     if (normalizedKey === 'bookings-history') {
       try { renderSupporterBookings(); } catch (e) {}
     }
@@ -3974,11 +3983,23 @@ window.toggleSupporterCollapsePanel = toggleSupporterCollapsePanel;
 
 function openSupporterPanelFromGoogleMenu() {
   closeGoogleUserMenu();
+  appState.activePortalPanelMode = 'supporter';
   switchTab('driver-admin-tab');
   collapseAllSupporterPanels();
   try { renderSupporterPanel(); } catch (e) {}
 }
 window.openSupporterPanelFromGoogleMenu = openSupporterPanelFromGoogleMenu;
+
+function openDriverAdminPanelFromGoogleMenu() {
+  closeGoogleUserMenu();
+  appState.activePortalPanelMode = 'driver-admin';
+  switchTab('driver-admin-tab');
+  collapseAllSupporterPanels();
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderDriverInformationView(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+}
+window.openDriverAdminPanelFromGoogleMenu = openDriverAdminPanelFromGoogleMenu;
 
 function purchaseSupporterTokenPack(tokensAmount) {
   const amount = Math.round(Number(tokensAmount) || 0);
@@ -4014,14 +4035,11 @@ function switchSupporterSubTab(subtabId) {
     return;
   }
 
+  // Driver Dispatch Console is retired; keep legacy dispatch container permanently hidden
+  const dispatchView = document.getElementById('supporter-dispatch-subtab');
+  if (dispatchView) dispatchView.style.display = 'none';
+
   if (subtabId === 'supporter-details-subtab') {
-    const dispatchView = document.getElementById('supporter-dispatch-subtab');
-    const infoView = document.getElementById('supporter-driver-info-subtab');
-    if (dispatchView) dispatchView.style.display = 'none';
-    if (infoView) infoView.style.display = 'none';
-    const subBtns = document.querySelectorAll('.supporter-subnav-btn');
-    subBtns.forEach(btn => btn.classList.remove('active'));
-    document.getElementById('subtab-btn-details')?.classList.add('active');
     toggleSupporterCollapsePanel('registration-details', true);
     return;
   }
@@ -4031,33 +4049,10 @@ function switchSupporterSubTab(subtabId) {
     return;
   }
 
-  // Driver Dispatch Console & Driver Information can ONLY be seen by approved Courier Drivers and SuperAdmin
-  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const canSeeDriverFeatures = (activeRole === 'driver' || activeRole === 'superadmin');
-  if ((subtabId === 'supporter-dispatch-subtab' || subtabId === 'supporter-driver-info-subtab') && !canSeeDriverFeatures) {
-    if (typeof showToast === 'function') {
-      showToast('🔒 Driver features are only accessible to approved Courier Drivers and SuperAdmin.');
-    }
-    return;
-  }
-
-  const dispatchView = document.getElementById('supporter-dispatch-subtab');
-  const infoView = document.getElementById('supporter-driver-info-subtab');
-  if (dispatchView) dispatchView.style.display = 'none';
-  if (infoView) infoView.style.display = 'none';
-
-  const target = document.getElementById(subtabId);
-  if (target) target.style.display = 'block';
-
-  const subBtns = document.querySelectorAll('.supporter-subnav-btn');
-  subBtns.forEach(btn => btn.classList.remove('active'));
-
-  if (subtabId === 'supporter-dispatch-subtab') {
-    document.getElementById('subtab-btn-dispatch')?.classList.add('active');
-    try { renderDriverAdminDashboard(); } catch (e) {}
-  } else if (subtabId === 'supporter-driver-info-subtab') {
-    document.getElementById('subtab-btn-driver-info')?.classList.add('active');
-    try { renderDriverInformationView(); } catch (e) {}
+  if (subtabId === 'supporter-driver-info-subtab' || subtabId === 'supporter-dispatch-subtab') {
+    appState.activePortalPanelMode = 'driver-admin';
+    try { renderSupporterPanel(); } catch (e) {}
+    toggleSupporterCollapsePanel('driver-information', true);
   }
 }
 window.switchSupporterSubTab = switchSupporterSubTab;
@@ -4545,34 +4540,30 @@ function renderSupporterPanel() {
     const regDetSuburb = document.getElementById('supporter-reg-detail-suburb');
     if (regDetSuburb) regDetSuburb.textContent = supporter.suburb || supporter.address || 'Not entered yet';
 
-    // Role-based visibility for Driver Dispatch Console & Driver Information: strictly driver and superadmin ONLY
-    const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');
-    const dispatchSubtabBtn = document.getElementById('subtab-btn-dispatch');
-    const driverInfoSubtabBtn = document.getElementById('subtab-btn-driver-info');
-    const dispatchNotice = document.getElementById('supporter-not-driver-notice');
+    // Driver Dispatch Console is retired ("We do not need Driver Dispatch Console")
     const dispatchConsole = document.getElementById('driver-dispatch-console');
     const dispatchSubtabView = document.getElementById('supporter-dispatch-subtab');
+    if (dispatchConsole) dispatchConsole.style.display = 'none';
+    if (dispatchSubtabView) dispatchSubtabView.style.display = 'none';
+
+    // Determine whether Driver Admin Panel mode or Supporter Panel mode is active
+    const isDriverAdminMode = appState.activePortalPanelMode === 'driver-admin' ||
+      (appState.activePortalPanelMode !== 'supporter' && (activeRole === 'driver' || activeRole === 'superadmin'));
+
+    // Update Panel 1 Header Title: 'Register Details' in Driver Admin Panel, 'Registration Details' in Supporter Panel
+    const regTitleEl = document.getElementById('title-panel-registration-details');
+    if (regTitleEl) {
+      regTitleEl.textContent = isDriverAdminMode ? 'Register Details' : 'Registration Details';
+    }
+
+    // Show or hide the 'Driver Information' collapsed panel (#supporter-panel-driver-information)
+    const driverInfoPanelCard = document.getElementById('supporter-panel-driver-information');
     const driverInfoSubtabView = document.getElementById('supporter-driver-info-subtab');
-
-    if (dispatchSubtabBtn) {
-      dispatchSubtabBtn.style.display = canSeeDispatch ? 'inline-flex' : 'none';
+    if (driverInfoPanelCard) {
+      driverInfoPanelCard.style.display = isDriverAdminMode ? 'block' : 'none';
     }
-    if (driverInfoSubtabBtn) {
-      driverInfoSubtabBtn.style.display = canSeeDispatch ? 'inline-flex' : 'none';
-    }
-
-    if (!canSeeDispatch) {
-      if (dispatchNotice) dispatchNotice.style.display = 'none';
-      if (dispatchConsole) dispatchConsole.style.display = 'none';
-      if (dispatchSubtabView) dispatchSubtabView.style.display = 'none';
-      if (driverInfoSubtabView) driverInfoSubtabView.style.display = 'none';
-      const activeSubBtn = document.querySelector('.supporter-subnav-btn.active');
-      if (activeSubBtn && (activeSubBtn.id === 'subtab-btn-dispatch' || activeSubBtn.id === 'subtab-btn-driver-info')) {
-        switchSupporterSubTab('supporter-details-subtab');
-      }
-    } else {
-      if (dispatchNotice) dispatchNotice.style.display = 'none';
-      if (dispatchConsole) dispatchConsole.style.display = 'block';
+    if (!isDriverAdminMode && driverInfoSubtabView) {
+      driverInfoSubtabView.style.display = 'none';
     }
 
     // SuperAdmin console gating
@@ -4595,6 +4586,10 @@ function renderSupporterPanel() {
     if (regSuburb) regSuburb.value = supporter.suburb || supporter.address || '';
     
     try { renderSupporterBookings(); } catch (e) {}
+    if (isDriverAdminMode) {
+      try { renderDriverInformationView(); } catch (e) {}
+      try { renderDriverAdminDashboard(); } catch (e) {}
+    }
   } else {
     if (onboardingCard) onboardingCard.style.display = 'block';
     if (panelWrapper) panelWrapper.style.display = 'none';
@@ -5183,8 +5178,8 @@ function handleDriverRegistrationSubmit(event) {
 
   document.getElementById('driver-registration-form')?.reset();
   try { updateDriverApplicationGateUI(); } catch (e) {}
-  switchTab('driver-admin-tab');
-  switchSupporterSubTab('supporter-dispatch-subtab');
+  openDriverAdminPanelFromGoogleMenu();
+  toggleSupporterCollapsePanel('driver-information', true);
   showToast(`🎉 Driver application submitted for ${savedDriver.name}! Awaiting SuperAdmin approval.`);
 }
 window.handleDriverRegistrationSubmit = handleDriverRegistrationSubmit;
@@ -5209,13 +5204,13 @@ function renderDriverAdminDashboard() {
     if (selectEl) selectEl.innerHTML = '';
     if (selectorWrap) selectorWrap.style.display = 'none';
     if (dispatchConsole) dispatchConsole.style.display = 'none';
-    if (notDriverNotice) notDriverNotice.style.display = 'block';
+    if (notDriverNotice) notDriverNotice.style.display = 'none';
     return;
   }
 
   if (selectorWrap) selectorWrap.style.display = 'block';
   if (notDriverNotice) notDriverNotice.style.display = 'none';
-  if (dispatchConsole) dispatchConsole.style.display = 'block';
+  if (dispatchConsole) dispatchConsole.style.display = 'none';
 
   let activeDriver = accessibleDrivers.find(d => d.id === appState.activeAdminDriverId) || accessibleDrivers[0];
   if (!activeDriver) return;
@@ -5483,6 +5478,7 @@ function onDriverAdminSelectionChange(driverId) {
   appState.activeAdminDriverId = driverId;
   appState.selectedCourierDriverId = driverId;
   renderDriverAdminDashboard();
+  try { renderDriverInformationView(); } catch (e) {}
   calculateCourierQuote();
 }
 window.onDriverAdminSelectionChange = onDriverAdminSelectionChange;
@@ -5507,6 +5503,7 @@ function triggerDriverAdminGeolocate() {
 
     window.providerDB.updateDriverLocation(activeDriver.id, lat, lng, suburbLabel);
     renderDriverAdminDashboard();
+    try { renderDriverInformationView(); } catch (e) {}
     calculateCourierQuote();
     filterContractors();
     showToast(`✅ ${activeDriver.name} auto-geolocated at ${suburbLabel}!`);
@@ -8991,6 +8988,8 @@ function updateGoogleAuthUI(user) {
     if (footerSupporterLink) footerSupporterLink.style.display = 'none';
     const menuSupporterBtn = document.getElementById('btn-menu-supporter-portal');
     if (menuSupporterBtn) menuSupporterBtn.style.display = 'inline-flex';
+    const menuDriverAdminBtn = document.getElementById('btn-menu-driver-admin-panel');
+    if (menuDriverAdminBtn) menuDriverAdminBtn.style.display = 'inline-flex';
     
     const isSa = checkIsSuperadmin(user);
     if (isSa && user.role !== 'superadmin') {
@@ -11605,16 +11604,16 @@ function switchSuperadminViewRole(role, shouldNavigateTab = false) {
     }
   }
 
-  // Update subtab inside Supporter Console; do NOT switch away from the front page unless explicitly requested
+  // Update mode inside Portal; do NOT switch away from the front page unless explicitly requested
   if (role === 'driver') {
+    appState.activePortalPanelMode = 'driver-admin';
     if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
-    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   } else if (role === 'supporter') {
+    appState.activePortalPanelMode = 'supporter';
     if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
-    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-details-subtab');
   } else if (role === 'superadmin') {
+    appState.activePortalPanelMode = 'driver-admin';
     if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
-    if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   }
 
   syncSuperadminControls();

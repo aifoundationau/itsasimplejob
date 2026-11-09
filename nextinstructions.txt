@@ -395,3 +395,14 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `handleSupporterRegistrationSubmit()` and `renderSupporterPanel()` in `js/app.js` so editing and saving Registration Details inside the Registration Details screen immediately updates the supporter's profile in `window.supporterDB`, `localStorage`, and all summary cards.
 - Verified with `node scratch/verify_supporter_console_in_google_dropdown_only.mjs` and `npm run build` (0 errors).
 - Documented Section 11.26 (`SupporterRegistrationDetailsInlineEditContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 54: DRIVER ADMIN PANEL UNDER GOOGLE LOG ON WITH 4 COLLAPSED PANELS & NO DRIVER DISPATCH CONSOLE
+- Added **Driver Admin Panel** button (`#btn-menu-driver-admin-panel`, `onclick="openDriverAdminPanelFromGoogleMenu();"`, `data-agent-id="btn-menu-driver-admin-panel"`, `data-testid="btn-menu-driver-admin-panel"`) inside the Google Log On dropdown menu (`#google-user-menu`) in `index.html`.
+- Configured **Driver Admin Panel** (`openDriverAdminPanelFromGoogleMenu()` in `js/app.js`) to open `#driver-admin-tab` in `'driver-admin'` mode displaying 4 collapsed panels inside `#supporter-collapsed-panels-stack`:
+  1. **Register Details** (`#supporter-panel-registration-details` -> `#supporter-collapse-body-registration-details`)
+  2. **Driver Information** (`#supporter-panel-driver-information` -> `#supporter-driver-info-subtab`)
+  3. **My Bookings History** (`#supporter-panel-bookings-history` -> `#supporter-bookings-subtab`)
+  4. **Buy Tokens** (`#supporter-panel-buy-tokens` -> `#supporter-buy-tokens-subtab`)
+- Removed **Driver Dispatch Console** navigation buttons (`#subtab-btn-dispatch` and `#btn-info-goto-dispatch`) and kept `#supporter-dispatch-subtab` / `#driver-dispatch-console` permanently hidden while placing `#superadmin-courier-config-card` directly inside `#supporter-panel-wrapper`.
+- Verified with `node scratch/verify_supporter_console_in_google_dropdown_only.mjs`, `node scratch/verify_active_driver_profile_ownership_and_map_toggle.mjs`, `node scratch/verify_driver_licence_superadmin_only.mjs`, and `npm run build` (0 errors).
+- Documented Section 11.27 (`DriverAdminPanelCollapsedPanelsContract`) in `data-contracts.MD`.

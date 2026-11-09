@@ -2334,3 +2334,56 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.27 Driver Admin Panel Under Google Log On & 4 Collapsed Panels Contract (`DriverAdminPanelCollapsedPanelsContract`)
+- **Rule:**
+  1. Under the Google Log On dropdown menu (`#google-user-menu`), clicking **Driver Admin Panel** (`#btn-menu-driver-admin-panel`, `onclick="openDriverAdminPanelFromGoogleMenu();"`) opens `#driver-admin-tab` in `'driver-admin'` mode.
+  2. The **Driver Admin Panel** displays 4 collapsed accordion panels inside `#supporter-collapsed-panels-stack`:
+     - **Register Details** (`#supporter-panel-registration-details` -> `#supporter-collapse-body-registration-details`)
+     - **Driver Information** (`#supporter-panel-driver-information` -> `#supporter-driver-info-subtab`)
+     - **My Bookings History** (`#supporter-panel-bookings-history` -> `#supporter-bookings-subtab`)
+     - **Buy Tokens** (`#supporter-panel-buy-tokens` -> `#supporter-buy-tokens-subtab`)
+  3. **Driver Dispatch Console Retired:** `#subtab-btn-dispatch` and `#btn-info-goto-dispatch` are removed, and `#supporter-dispatch-subtab` / `#driver-dispatch-console` remain permanently hidden (`display: none`).
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverAdminPanelCollapsedPanelsContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "googleDropdownButtonId",
+    "openHandler",
+    "collapsedPanels",
+    "driverDispatchConsoleRemoved"
+  ],
+  "properties": {
+    "googleDropdownButtonId": {
+      "type": "string",
+      "const": "btn-menu-driver-admin-panel"
+    },
+    "openHandler": {
+      "type": "string",
+      "const": "openDriverAdminPanelFromGoogleMenu"
+    },
+    "collapsedPanels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "register-details",
+          "driver-information",
+          "bookings-history",
+          "buy-tokens"
+        ]
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "driverDispatchConsoleRemoved": {
+      "type": "boolean",
+      "const": true
+    }
+  }
+}
+```
