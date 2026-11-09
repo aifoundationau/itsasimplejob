@@ -12,6 +12,7 @@ window.L = L;
 
 // Core Service & Application Modules (loaded in deterministic order)
 import './firebase-service.js';
+import './currency.js';
 import './stripe-service.js';
 import './token-wallet.js';
 import './imgbb-service.js';
@@ -19,3 +20,5 @@ import './providers-data.js';
 import './work-teams-service.js';
 import './ai-engine.js';
 import './app.js';
+import './superadmin-pricing.js';
+import './messages-panel.js';

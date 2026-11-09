@@ -1,14 +1,15 @@
 /**
  * POST /api/token-purchase  (Authorization: Bearer <Firebase ID token>)
- * Body: { tokens, currency?: 'AUD' | 'USD', purchaseId }
- * Prices the tokens on the server and starts a Stripe payment for them.
+ * Body: { tokens, purchaseId }
+ * Prices the tokens on the server and starts a Stripe payment for them, always in AUD
+ * (1 token = the superadmin's token price, default A$1). Visitors outside Australia and
+ * New Zealand are shown a USD estimate, but are charged in AUD.
  * Tokens are credited later by /api/token-purchase-confirm once Stripe confirms payment.
  */
 
 import { allowMethods, readJsonBody, sendError, sendJson } from '../server/http.js';
 import { requireAdminDb, requireUser } from '../server/firebase-admin.js';
 import { BUSINESS_ID, getStripe, sendStripeError } from '../server/stripe.js';
-import { resolveCurrency } from '../server/geo.js';
 import { quoteTokens } from '../server/token-pricing.js';
 import { recordPendingPurchase } from '../server/tokens.js';
 
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
 
   let quote;
   try {
-    quote = await quoteTokens(body.tokens, resolveCurrency(req, body.currency));
+    quote = await quoteTokens(body.tokens);
   } catch (err) {
     if (err instanceof RangeError) return sendJson(res, 400, { error: err.message });
     return sendError(res, err, 'Could not price tokens right now.');
@@ -54,7 +55,7 @@ export default async function handler(req, res) {
     intent = await stripe.paymentIntents.create({
       amount: quote.totalCents,
       currency: quote.currency.toLowerCase(),
-      description: `${quote.tokens} It's A Simple Job tokens`,
+      description: `${quote.tokens} It's A Simple Job tokens (charged in AUD)`,
       automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
       ...(user.emailVerified && user.email ? { receipt_email: user.email } : {}),
       metadata: {
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
         type: 'token_purchase',
         uid: user.uid,
         tokens: String(quote.tokens),
-        fxRate: String(quote.fxRate)
+        tokenPriceAud: String(quote.tokenPriceAud)
       }
     }, {
       // A double-click or retry of the same checkout reuses one PaymentIntent
@@ -82,8 +83,9 @@ export default async function handler(req, res) {
     paymentIntentId: intent.id,
     clientSecret: intent.client_secret,
     tokens: quote.tokens,
-    total: quote.total,
+    totalAud: quote.totalAud,
     currency: quote.currency,
-    fxRate: quote.fxRate
+    usdEstimate: quote.usdEstimate,
+    audToUsd: quote.audToUsd
   });
 }

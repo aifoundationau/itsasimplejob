@@ -13,6 +13,7 @@ const SERVER_ENV_KEYS = [
   'FIREBASE_PROJECT_ID',
   'FIREBASE_DATABASE_ID',
   'SUPERADMIN_EMAILS',
+  'FX_FALLBACK_AUD_USD',
   'FX_FALLBACK_USD_AUD',
   'DEV_COUNTRY'
 ];
@@ -57,7 +58,8 @@ export default defineConfig(({ mode }) => {
           customerAdmin: resolve(__dirname, 'customer-admin.html'),
           franchise: resolve(__dirname, 'franchise.html'),
           provider: resolve(__dirname, 'provider.html'),
-          serviceProvider: resolve(__dirname, 'service-provider.html')
+          serviceProvider: resolve(__dirname, 'service-provider.html'),
+          terms: resolve(__dirname, 'terms.html')
         }
       }
     },

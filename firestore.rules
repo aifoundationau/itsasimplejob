@@ -9,14 +9,16 @@ service cloud.firestore {
     // This security rules file assumes the following data structures:
     //
     // Collection: platform_settings
-    // Document ID: settingId ('global', 'fx_usd_aud', etc.)
+    // Document ID: settingId ('global', 'pricing', 'fx_aud_usd', legacy 'fx_usd_aud')
     // Fields:
     //   - isTokenSystemEnabled: bool (optional) - toggle token economy
-    //   - isAudEnabled: bool (optional) - toggle AUD pricing in Australia
-    //   - isUsdEnabled: bool (optional) - toggle USD pricing globally
+    //   - isAudEnabled / isUsdEnabled: bool (optional, legacy) - display currency now follows region
     //   - updatedAt: string or timestamp (optional) - last updated ISO timestamp
     //   - updatedBy: string (optional, max 120 chars) - admin email who made update
-    //   - rate: number (optional, > 0 and < 10) - live USD to AUD exchange rate
+    //   - 'pricing' doc: superadmin price list in whole tokens (tokenPriceAud, hourlyTokens,
+    //     fees, courier, tokenPacks). Written by the /api/pricing server function (Admin SDK),
+    //     which validates every value; tokenPriceAud is the AUD price of 1 token (default 1)
+    //   - rate: number (optional, > 0 and < 10) - live AUD to USD exchange rate ('fx_aud_usd')
     //   - rateDate: string or null (optional) - date of live FX rate
     //   - source: string (optional, max 100 chars) - FX feed source provider
     //   - fetchedAt: number (optional) - epoch ms timestamp of rate fetch
@@ -158,6 +160,7 @@ service cloud.firestore {
              (!('isUsdEnabled' in data) || data.isUsdEnabled is bool) &&
              (!('updatedBy' in data) || (data.updatedBy is string && data.updatedBy.size() <= 120)) &&
              (!('rate' in data) || (data.rate is number && data.rate > 0 && data.rate < 10)) &&
+             (!('tokenPriceAud' in data) || (data.tokenPriceAud is int && data.tokenPriceAud >= 1 && data.tokenPriceAud <= 1000)) &&
              (!('source' in data) || (data.source is string && data.source.size() <= 100));
     }
 
@@ -292,9 +295,9 @@ service cloud.firestore {
     // Collection Security Rules
     // ===============================================================
 
-    // 1. Platform Settings: Public read for 'global' and 'fx_usd_aud'; writes Superadmin only
+    // 1. Platform Settings: Public read for 'global', 'pricing' and the FX rates; writes Superadmin only
     match /platform_settings/{settingId} {
-      allow read: if isSuperAdmin() || settingId in ['global', 'fx_usd_aud'];
+      allow read: if isSuperAdmin() || settingId in ['global', 'pricing', 'fx_aud_usd', 'fx_usd_aud'];
       allow create, update: if isSuperAdmin() && isValidPlatformSetting(request.resource.data);
       allow delete: if isSuperAdmin();
     }
@@ -436,6 +439,14 @@ service cloud.firestore {
       allow read: if isSuperAdmin();
       allow create: if isAuthenticated() && isValidAiPrompt(request.resource.data);
       allow update, delete: if false;
+    }
+
+    // 12. Messages between users: server only (/api/messages, Firebase Admin SDK).
+    //     mailboxes/{owner} (owner = uid or 'superadmin') with inbox/ and sent/ subcollections.
+    //     The server checks the sender, charges tokens for paid messages and delivers in one
+    //     transaction, so browsers must never read or write these documents directly.
+    match /mailboxes/{owner}/{document=**} {
+      allow read, write: if false;
     }
 
     // ===============================================================

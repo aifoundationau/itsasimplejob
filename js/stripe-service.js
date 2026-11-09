@@ -249,8 +249,9 @@ class StripePaymentService {
       payId: settlementData.provider?.payId || '',
       bsb: settlementData.provider?.bankDetails?.bsb || '',
       accountNumber: settlementData.provider?.bankDetails?.accountNumber || '',
-      amountAud: settlementData.amount,
-      amountCents: Math.round(settlementData.amount * 100),
+      // Whole Australian Dollars only (rounded up)
+      amountAud: window.iasjCurrency.wholeUp(settlementData.amount),
+      amountCents: window.iasjCurrency.wholeUp(settlementData.amount) * 100,
       currency: 'AUD',
       paymentMethod: settlementData.paymentMethod || 'payid', // 'payid' or 'direct_eft'
       status: 'paid_out_of_band',

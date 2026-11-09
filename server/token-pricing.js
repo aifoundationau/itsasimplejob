@@ -1,32 +1,91 @@
 /**
- * It's A Simple Job - Token pricing.
- * 1 token = US$1. Visitors in Australia see and pay the AUD equivalent at a daily live rate;
- * everyone else sees and pays USD.
+ * It's A Simple Job - Token pricing (server only).
+ * Everything is priced and charged in AUD. 1 token = the superadmin's token price (default A$1).
+ * Visitors outside Australia and New Zealand are shown a USD conversion at a daily live rate
+ * (2 decimal places maximum, rounded up to the cent), but every payment is still charged and invoiced in AUD.
  */
 
 import { getAdminDb } from './firebase-admin.js';
+import {
+  BASE_CURRENCY,
+  DEFAULT_PRICING,
+  MAX_TOKEN_PURCHASE,
+  MIN_TOKEN_PURCHASE,
+  convertAudToUsd,
+  normalizePricing
+} from '../shared/pricing.js';
 
-export const TOKEN_PRICE_USD = 1;
-export const MIN_TOKEN_PURCHASE = 1;
-export const MAX_TOKEN_PURCHASE = 10000;
-export const TOKEN_PACKS = [10, 25, 50, 100];
+export { MAX_TOKEN_PURCHASE, MIN_TOKEN_PURCHASE };
 
+const PRICING_DOC_PATH = 'platform_settings/pricing';
+const PRICING_MAX_AGE_MS = 60 * 1000;
+
+const FX_DOC_PATH = 'platform_settings/fx_aud_usd';
 const FX_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const FX_DOC_PATH = 'platform_settings/fx_usd_aud';
-const DEFAULT_FALLBACK_RATE = 1.45;
+const DEFAULT_FALLBACK_AUD_USD = 0.70;
 
-let cachedRate = null; // { rate, rateDate, source, fetchedAt }
+let cachedPricing = null; // { pricing, updatedAt, updatedBy, fetchedAt }
+let cachedRate = null;    // { rate, rateDate, source, fetchedAt }
+
+/* ----------------------------------------------------------------------------
+   Superadmin price list
+   ---------------------------------------------------------------------------- */
+
+/**
+ * The live price list. Read from Firestore (cached for a minute per instance);
+ * falls back to the built-in defaults when Firestore is unavailable.
+ */
+export async function getPricing() {
+  if (cachedPricing && Date.now() - cachedPricing.fetchedAt < PRICING_MAX_AGE_MS) return cachedPricing;
+
+  const db = getAdminDb();
+  if (db) {
+    try {
+      const snap = await db.doc(PRICING_DOC_PATH).get();
+      const data = snap.exists ? snap.data() : null;
+      cachedPricing = {
+        pricing: normalizePricing(data).pricing,
+        updatedAt: data?.updatedAt || null,
+        updatedBy: data?.updatedBy || null,
+        fetchedAt: Date.now()
+      };
+      return cachedPricing;
+    } catch (err) {
+      console.warn('🪙 [Pricing] Could not read price list, using defaults:', err.message);
+    }
+  }
+
+  return cachedPricing || { pricing: normalizePricing(DEFAULT_PRICING).pricing, updatedAt: null, updatedBy: null, fetchedAt: Date.now() };
+}
+
+/**
+ * Save a new price list (superadmin only; the caller checks the role).
+ * Every amount is rounded up to a whole number; out-of-range values are rejected.
+ */
+export async function savePricing(db, input, user) {
+  const { pricing, errors } = normalizePricing(input, { strict: true });
+  if (errors.length) return { errors };
+
+  const updatedAt = new Date().toISOString();
+  await db.doc(PRICING_DOC_PATH).set({ ...pricing, updatedAt, updatedBy: user.email || user.uid });
+  cachedPricing = { pricing, updatedAt, updatedBy: user.email || user.uid, fetchedAt: Date.now() };
+  return { pricing, updatedAt };
+}
+
+/* ----------------------------------------------------------------------------
+   AUD -> USD currency conversion
+   ---------------------------------------------------------------------------- */
 
 const FX_SOURCES = [
   {
     name: 'frankfurter.dev (ECB)',
-    url: 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD',
-    read: data => ({ rate: Number(data?.rates?.AUD), rateDate: data?.date || null })
+    url: 'https://api.frankfurter.dev/v1/latest?base=AUD&symbols=USD',
+    read: data => ({ rate: Number(data?.rates?.USD), rateDate: data?.date || null })
   },
   {
     name: 'open.er-api.com',
-    url: 'https://open.er-api.com/v6/latest/USD',
-    read: data => ({ rate: Number(data?.rates?.AUD), rateDate: data?.time_last_update_utc || null })
+    url: 'https://open.er-api.com/v6/latest/AUD',
+    read: data => ({ rate: Number(data?.rates?.USD), rateDate: data?.time_last_update_utc || null })
   }
 ];
 
@@ -36,8 +95,8 @@ async function fetchLiveRate() {
       const response = await fetch(source.url, { signal: AbortSignal.timeout(4000) });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const { rate, rateDate } = source.read(await response.json());
-      // Sanity bounds so a bad feed can never misprice tokens
-      if (!(rate > 0.8 && rate < 3)) throw new Error(`rate ${rate} out of range`);
+      // Sanity bounds so a bad feed can never show a wildly wrong conversion
+      if (!(rate > 0.3 && rate < 1.3)) throw new Error(`rate ${rate} out of range`);
       return { rate, rateDate, source: source.name, fetchedAt: Date.now() };
     } catch (err) {
       console.warn(`💱 [FX] ${source.name} unavailable:`, err.message);
@@ -46,13 +105,22 @@ async function fetchLiveRate() {
   return null;
 }
 
+function fallbackRate() {
+  const direct = Number(process.env.FX_FALLBACK_AUD_USD);
+  if (direct > 0) return direct;
+  // Older deployments configured the inverse (USD -> AUD) rate
+  const inverse = Number(process.env.FX_FALLBACK_USD_AUD);
+  if (inverse > 0) return 1 / inverse;
+  return DEFAULT_FALLBACK_AUD_USD;
+}
+
 const isFresh = entry => entry && Date.now() - entry.fetchedAt < FX_MAX_AGE_MS;
 
 /**
- * USD -> AUD rate, refreshed at most once a day. Cached in memory and, when the server
+ * AUD -> USD rate, refreshed at most once a day. Cached in memory and, when the server
  * has Firestore access, in platform_settings so all serverless instances share one rate.
  */
-export async function getUsdToAudRate() {
+export async function getAudToUsdRate() {
   if (isFresh(cachedRate)) return cachedRate;
 
   const db = getAdminDb();
@@ -80,34 +148,40 @@ export async function getUsdToAudRate() {
   // Both feeds down: use the last known rate, then the configured fallback
   const lastKnown = cachedRate || stored;
   if (lastKnown) return lastKnown;
-
-  const fallbackRate = Number(process.env.FX_FALLBACK_USD_AUD) || DEFAULT_FALLBACK_RATE;
-  return { rate: fallbackRate, rateDate: null, source: 'fallback', fetchedAt: Date.now() };
+  return { rate: fallbackRate(), rateDate: null, source: 'fallback', fetchedAt: Date.now() };
 }
 
 /**
- * Price a number of tokens in AUD or USD
+ * USD conversion of an AUD amount for display: 2 decimal places maximum, rounded up to the cent
  */
-export async function quoteTokens(tokens, currency) {
-  const count = Math.floor(Number(tokens));
-  if (!Number.isFinite(count) || count < MIN_TOKEN_PURCHASE || count > MAX_TOKEN_PURCHASE) {
-    throw new RangeError(`Token amount must be between ${MIN_TOKEN_PURCHASE} and ${MAX_TOKEN_PURCHASE}.`);
+export const audToUsd = (aud, rate) => convertAudToUsd(aud, rate);
+
+/* ----------------------------------------------------------------------------
+   Token quotes
+   ---------------------------------------------------------------------------- */
+
+/**
+ * Price a number of tokens. Always charged in AUD; usdEstimate is for display only.
+ */
+export async function quoteTokens(tokens, { pricing, fx } = {}) {
+  const count = Number(tokens);
+  if (!Number.isInteger(count) || count < MIN_TOKEN_PURCHASE || count > MAX_TOKEN_PURCHASE) {
+    throw new RangeError(`Token amount must be a whole number from ${MIN_TOKEN_PURCHASE} to ${MAX_TOKEN_PURCHASE}.`);
   }
 
-  const usdCents = Math.round(count * TOKEN_PRICE_USD * 100);
-  if (currency !== 'AUD') {
-    return { tokens: count, currency: 'USD', totalCents: usdCents, total: usdCents / 100, fxRate: 1 };
-  }
+  const activePricing = pricing || (await getPricing()).pricing;
+  const rate = fx || await getAudToUsdRate();
+  const totalAud = count * activePricing.tokenPriceAud;
 
-  const fx = await getUsdToAudRate();
-  const totalCents = Math.round(usdCents * fx.rate);
   return {
     tokens: count,
-    currency: 'AUD',
-    totalCents,
-    total: totalCents / 100,
-    fxRate: fx.rate,
-    fxDate: fx.rateDate,
-    fxSource: fx.source
+    currency: BASE_CURRENCY,
+    tokenPriceAud: activePricing.tokenPriceAud,
+    totalAud,
+    totalCents: totalAud * 100,
+    usdEstimate: audToUsd(totalAud, rate.rate),
+    audToUsd: rate.rate,
+    fxDate: rate.rateDate || null,
+    fxSource: rate.source || null
   };
 }

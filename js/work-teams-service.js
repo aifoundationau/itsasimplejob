@@ -12,7 +12,10 @@
  *      * Date & time of jobs
  *      * Individual pricing for each service provider
  *      * Franchise margin, royalties & central settlement breakdown (if for franchise)
+ * All money is whole Australian Dollars, rounded up.
  */
+
+import { wholeUp } from '../shared/pricing.js';
 
 const WORK_TEAMS_STORAGE_KEY = 'iasj_work_teams';
 
@@ -498,7 +501,7 @@ class WorkTeamsService {
       phone: memberData.phone || '0400 000 000',
       email: memberData.email || 'member@example.com',
       avatar: memberData.avatar || 'assets/images/tradie_worker.jpg',
-      pricingRate: parseFloat(memberData.pricingRate) || 85.00,
+      pricingRate: wholeUp(parseFloat(memberData.pricingRate) || 85),
       pricingUnit: memberData.pricingUnit || 'hourly',
       isPic: !!memberData.isPic,
       status: 'active',
@@ -626,8 +629,8 @@ class WorkTeamsService {
     // Calculate total payouts for assigned members
     let totalProviderPayout = 0;
     const assignedWithCalc = (jobData.assignedMembers || []).map(m => {
-      const hours = parseFloat(jobData.estimatedHours) || 8;
-      const rate = parseFloat(m.pricing) || 85;
+      const hours = wholeUp(parseFloat(jobData.estimatedHours) || 8);
+      const rate = wholeUp(parseFloat(m.pricing) || 85);
       const isFixed = m.pricingType === 'fixed';
       const payout = isFixed ? rate : (rate * hours);
       totalProviderPayout += payout;
@@ -641,8 +644,8 @@ class WorkTeamsService {
 
     // If franchise job, compute franchise margin / cut
     const isFranchise = !!jobData.isFranchise;
-    const marginPercent = parseFloat(jobData.franchiseMarginPercent) || (isFranchise ? 12 : 0);
-    const franchiseCut = isFranchise ? (totalProviderPayout * (marginPercent / 100)) : 0;
+    const marginPercent = wholeUp(parseFloat(jobData.franchiseMarginPercent) || (isFranchise ? 12 : 0));
+    const franchiseCut = isFranchise ? wholeUp(totalProviderPayout * marginPercent / 100) : 0;
     const totalQuote = totalProviderPayout + franchiseCut;
 
     const newJob = {
@@ -652,15 +655,15 @@ class WorkTeamsService {
       location: jobData.location || 'Site Address',
       jobDate: jobData.jobDate || new Date().toISOString().split('T')[0],
       jobTime: jobData.jobTime || '07:30 AM',
-      estimatedHours: parseFloat(jobData.estimatedHours) || 8,
+      estimatedHours: wholeUp(parseFloat(jobData.estimatedHours) || 8),
       status: 'scheduled',
       createdBy: `${team.personInCharge?.name || 'Person In Charge'} (PIC)`,
       isFranchise: isFranchise,
       franchiseName: jobData.franchiseName || (isFranchise ? team.ownerName : ''),
       franchiseMarginPercent: marginPercent,
-      franchiseCutAmount: parseFloat(franchiseCut.toFixed(2)),
+      franchiseCutAmount: franchiseCut,
       assignedMembers: assignedWithCalc,
-      totalCustomerQuote: parseFloat(totalQuote.toFixed(2)),
+      totalCustomerQuote: totalQuote,
       createdAt: new Date().toISOString()
     };
 

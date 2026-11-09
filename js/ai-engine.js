@@ -2,7 +2,10 @@
  * It's A Simple Job - SimpleAI Natural Language Engine & Provider Matcher
  * Powered by Google Gemini 3.8 Flash (Project: gen-lang-client-0551298781)
  * Seamless hybrid execution: Remote Gemini Agent with resilient local fallback.
+ * Prices come from the superadmin price list (tokens, 1 token = A$1 by default), in whole numbers.
  */
+
+import { priceCategoryJob, DEFAULT_PRICING } from '../shared/pricing.js';
 
 // Google Gemini API Configuration (Agent Platform API loaded from .env)
 const GEMINI_CONFIG = {
@@ -24,7 +27,6 @@ class SimpleAIEngine {
         ],
         name: "Plumbing & Water Services",
         defaultDuration: 1.5,
-        defaultHourlyRate: 98,
         requiredLicense: "QBCC Licensed Plumber",
         suggestedMaterials: ["Standard replacement tap washers / ceramic disc cartridge", "O-rings & thread seal tape", "Pipe fittings"]
       },
@@ -36,7 +38,6 @@ class SimpleAIEngine {
         ],
         name: "Courier & Express Freight",
         defaultDuration: 1.0,
-        defaultHourlyRate: 55,
         requiredLicense: "Commercial Carrier / Insured Transit",
         suggestedMaterials: ["Protective blankets & tie-down straps", "Heavy-duty hand trolley", "Weatherproof cargo hold"]
       },
@@ -48,7 +49,6 @@ class SimpleAIEngine {
         ],
         name: "Licensed Electrical Services",
         defaultDuration: 1.5,
-        defaultHourlyRate: 110,
         requiredLicense: "QBCC Electrical Contractor Licence",
         suggestedMaterials: ["Clipsal double power points", "Cable testing equipment", "Safety switch isolators"]
       },
@@ -60,7 +60,6 @@ class SimpleAIEngine {
         ],
         name: "General Handyman & Assembly",
         defaultDuration: 2.0,
-        defaultHourlyRate: 75,
         requiredLicense: "Insured General Handyman / Builder Restricted",
         suggestedMaterials: ["Heavy-duty hollow wall anchors & stud finder", "Laser level & cordless driver kit", "Plaster patch compound & sanders"]
       },
@@ -71,7 +70,6 @@ class SimpleAIEngine {
         ],
         name: "Garden & Lawn Maintenance",
         defaultDuration: 2.0,
-        defaultHourlyRate: 68,
         requiredLicense: "Public Liability & Horticulture Care",
         suggestedMaterials: ["Commercial lawnmower & trimmer", "Gutter vacuum & safety harness", "Green waste disposal trailer"]
       },
@@ -82,7 +80,6 @@ class SimpleAIEngine {
         ],
         name: "Painting & Surface Repairs",
         defaultDuration: 3.0,
-        defaultHourlyRate: 72,
         requiredLicense: "Trade Painter & Surface Prep",
         suggestedMaterials: ["Drop sheets & low-bleed painter's tape", "Undercoat sealer & matching interior tint", "Pro roller kit"]
       },
@@ -93,7 +90,6 @@ class SimpleAIEngine {
         ],
         name: "Appliance Repair & Installation",
         defaultDuration: 1.5,
-        defaultHourlyRate: 90,
         requiredLicense: "Restricted Electrical / Appliance Cert",
         suggestedMaterials: ["Multimeter diagnostic tester", "Hose clamps & intake solenoid valves", "Thermal fuse components"]
       }
@@ -143,7 +139,7 @@ Given a user's plain English job request, extract the work requirements and repl
   "categoryName": "Official Trade Title (e.g. Master Plumbing & Water Solutions)",
   "isUrgent": boolean,
   "detectedLocation": "Detected Australian suburb/city or Gold Coast Region",
-  "estimatedHours": number,
+  "estimatedHours": whole number of hours (integer, round up),
   "suggestedMaterials": ["item1", "item2", "item3"],
   "explanation": "Friendly, professional 2-sentence Australian explanation of the problem, required safety gear/licensing, and estimated hours",
   "recommendedShift": "emergency_24_7" | "morning" | "afternoon" | "evening" | "overnight"
@@ -201,21 +197,27 @@ Given a user's plain English job request, extract the work requirements and repl
   }
 
   /**
+   * Price a job from the superadmin price list: whole hours, whole AUD, GST included (all rounded up)
+   */
+  priceJob(category, hours, isUrgent, categoryName) {
+    const args = { category, hours, isUrgent, categoryName };
+    return window.iasjCurrency?.priceCategoryJob
+      ? window.iasjCurrency.priceCategoryJob(args)
+      : priceCategoryJob(args, DEFAULT_PRICING);
+  }
+
+  /**
    * Enrich Gemini output with local pricing, providers, and multi-tenant logging
    */
   enrichGeminiResult(geminiData, rawPrompt) {
     const catKey = (geminiData.category || "handyman").toLowerCase();
     const meta = this.taxonomy[catKey] || this.taxonomy.handyman;
 
-    const estimatedHours = geminiData.estimatedHours || meta.defaultDuration;
-    const hourlyRate = meta.defaultHourlyRate;
     const isUrgent = geminiData.isUrgent || false;
-    const calloutFee = isUrgent ? 55 : (catKey === "courier" ? 25 : 35);
-    const baseLabour = Math.round(hourlyRate * estimatedHours);
-    const materialsEstimate = catKey === "courier" ? 0 : 25;
-    const subtotal = calloutFee + baseLabour + materialsEstimate;
-    const gst = Math.round(subtotal * 0.10 * 100) / 100;
-    const estimatedTotal = subtotal + gst;
+    // Superadmin price list, whole hours and whole AUD (rounded up)
+    const pricing = this.priceJob(catKey, geminiData.estimatedHours || meta.defaultDuration, isUrgent, geminiData.categoryName || meta.name);
+    const estimatedHours = pricing.hours;
+    const estimatedTotal = pricing.estimatedTotal;
 
     const allProviders = window.providerDB ? window.providerDB.getAll() : [];
     const matchedProviders = this.matchProviders(allProviders, catKey, geminiData.detectedLocation || "Gold Coast", isUrgent);
@@ -229,15 +231,7 @@ Given a user's plain English job request, extract the work requirements and repl
       isUrgent,
       detectedLocation: geminiData.detectedLocation || "Gold Coast Region",
       estimatedHours,
-      pricing: {
-        calloutFee,
-        baseLabour,
-        hourlyRate,
-        materialsEstimate,
-        subtotal,
-        gst,
-        estimatedTotal
-      },
+      pricing,
       suggestedMaterials: geminiData.suggestedMaterials || meta.suggestedMaterials,
       explanation: geminiData.explanation || this.generateExplanation(rawPrompt, catKey, estimatedHours, geminiData.detectedLocation, isUrgent),
       matchedProviders
@@ -304,12 +298,10 @@ Given a user's plain English job request, extract the work requirements and repl
     if (cleanText.includes("quick") || cleanText.includes("small") || cleanText.includes("minor")) estimatedHours = Math.max(1.0, estimatedHours - 0.5);
     if (cleanText.includes("large") || cleanText.includes("whole") || cleanText.includes("overgrown")) estimatedHours += 1.5;
 
-    const calloutFee = isUrgent ? 55 : (bestCategory === "courier" ? 25 : 35);
-    const baseLabour = Math.round(categoryMeta.defaultHourlyRate * estimatedHours);
-    const materialsEstimate = bestCategory === "courier" ? 0 : 25;
-    const subtotal = calloutFee + baseLabour + materialsEstimate;
-    const gst = Math.round(subtotal * 0.10);
-    const estimatedTotal = subtotal + gst;
+    // Superadmin price list, whole hours and whole AUD (rounded up)
+    const pricing = this.priceJob(bestCategory, estimatedHours, isUrgent, categoryMeta.name);
+    estimatedHours = pricing.hours;
+    const estimatedTotal = pricing.estimatedTotal;
 
     const aiExplanation = this.generateExplanation(cleanText, bestCategory, estimatedHours, detectedLocation, isUrgent);
     const allProviders = window.providerDB ? window.providerDB.getAll() : [];
@@ -324,15 +316,7 @@ Given a user's plain English job request, extract the work requirements and repl
       isUrgent,
       detectedLocation,
       estimatedHours,
-      pricing: {
-        calloutFee,
-        baseLabour,
-        hourlyRate: categoryMeta.defaultHourlyRate,
-        materialsEstimate,
-        subtotal,
-        gst,
-        estimatedTotal
-      },
+      pricing,
       suggestedMaterials: categoryMeta.suggestedMaterials,
       explanation: aiExplanation,
       matchedProviders

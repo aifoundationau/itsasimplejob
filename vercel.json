@@ -22,6 +22,10 @@
     {
       "source": "/franchise",
       "destination": "/franchise.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
     }
   ],
   "headers": [

@@ -5154,3 +5154,164 @@ body {
     overflow: visible !important;
   }
 }
+
+/* ==========================================================================
+   AUD currency disclaimer (invoices, estimates, checkout, token wallet)
+   ========================================================================== */
+.aud-disclaimer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+.aud-disclaimer i { color: #2563EB; margin-top: 0.15rem; }
+.aud-disclaimer strong { color: var(--primary-navy); }
+.aud-disclaimer a { color: #2563EB; font-weight: 600; white-space: nowrap; }
+.aud-disclaimer-compact { padding: 0.45rem 0.65rem; font-size: 0.72rem; margin: 0.6rem 0 0; }
+
+/* ==========================================================================
+   Superadmin price list editor
+   ========================================================================== */
+.sa-price-group {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem 0.65rem;
+  margin: 0 0 0.85rem;
+}
+.sa-price-group legend {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary-navy);
+  padding: 0 0.35rem;
+}
+.sa-price-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 6.5rem;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.3rem 0;
+  font-size: 0.82rem;
+}
+.sa-price-row label { color: var(--text-main, #1F2937); }
+.sa-price-input { display: flex; align-items: center; gap: 0.35rem; }
+.sa-price-input input {
+  width: 6rem;
+  height: 32px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+}
+.sa-price-unit { font-size: 0.72rem; color: var(--text-muted); min-width: 4.5rem; }
+.sa-price-aud { font-size: 0.75rem; font-weight: 700; color: #059669; text-align: right; }
+@media (max-width: 560px) {
+  .sa-price-row { grid-template-columns: 1fr auto; }
+  .sa-price-aud { grid-column: 2; }
+}
+
+/* ==========================================================================
+   Messages panel (Admin Page > Messages)
+   ========================================================================== */
+.msg-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  background: #DC2626;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.msg-free-note {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0.9rem;
+}
+.msg-free-note i { margin-right: 0.25rem; }
+.msg-compose {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: #F8FAFC;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+.msg-field { margin-bottom: 0.7rem; }
+.msg-label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 0.25rem; }
+.msg-to-options { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; }
+.msg-to-options label { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.msg-free-pill {
+  background: #DCFCE7;
+  color: #166534;
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+.msg-cost-line { font-size: 0.8rem; color: #374151; margin-bottom: 0.7rem; }
+.msg-folder-tabs { display: flex; gap: 0.35rem; border-bottom: 1px solid var(--border-light); margin-bottom: 0.5rem; }
+.msg-folder-btn {
+  border: none;
+  background: none;
+  padding: 0.45rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.msg-folder-btn.active { color: var(--primary-navy); border-bottom-color: var(--brand-orange); }
+.msg-list { display: flex; flex-direction: column; }
+.msg-empty { font-size: 0.85rem; color: var(--text-muted); padding: 1rem 0; text-align: center; }
+.msg-item { border-bottom: 1px solid #F1F5F9; }
+.msg-item-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 0.6rem minmax(7rem, 11rem) minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 0.65rem 0.25rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #334155;
+}
+.msg-item-head:hover { background: #F8FAFC; }
+.msg-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: transparent; }
+.msg-item.unread .msg-dot { background: #2563EB; }
+.msg-item.unread .msg-who, .msg-item.unread .msg-subject { font-weight: 800; color: var(--primary-navy); }
+.msg-who, .msg-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-meta { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+.msg-cost { font-weight: 700; border-radius: 999px; padding: 0.05rem 0.4rem; margin-right: 0.3rem; }
+.msg-cost.free { background: #DCFCE7; color: #166534; }
+.msg-cost.paid { background: #FEF3C7; color: #92400E; }
+.msg-item-body { padding: 0.25rem 0.25rem 0.9rem 1.45rem; }
+.msg-address { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+.msg-text { white-space: pre-wrap; word-break: break-word; font-size: 0.88rem; line-height: 1.55; color: #1F2937; margin-bottom: 0.65rem; }
+.msg-status { border-radius: var(--radius-sm); padding: 0.6rem 0.85rem; font-size: 0.8rem; margin-top: 0.75rem; }
+.msg-status-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.msg-status-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+@media (max-width: 640px) {
+  .msg-item-head { grid-template-columns: 0.6rem minmax(0, 1fr); }
+  .msg-subject, .msg-meta { grid-column: 2; }
+}

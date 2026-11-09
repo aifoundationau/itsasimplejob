@@ -175,6 +175,10 @@
         <button type="button" class="admin-tab-btn" id="tab-btn-customer" onclick="switchAdminMainView('customer-controls')" data-agent-id="tab-btn-customer" data-testid="tab-btn-customer" aria-label="Tab Btn Customer">
           <i class="fa-solid fa-sliders"></i> Customer Schedule & Budget Settings
         </button>
+        <button type="button" class="admin-tab-btn" id="tab-btn-messages" onclick="switchAdminMainView('messages')" data-agent-id="tab-btn-messages" data-testid="tab-btn-messages" aria-label="Messages">
+          <i class="fa-solid fa-envelope" style="color:var(--brand-orange);"></i> Messages
+          <span class="msg-unread-badge" style="display:none;" aria-label="Unread messages"></span>
+        </button>
       </div>
 
       <!-- =========================================================================
@@ -427,7 +431,7 @@
             <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
               <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.9rem; text-align:right;">
                 <div style="font-size:0.7rem; color:#BFDBFE; font-weight:700;">APPROVED RATE CAP</div>
-                <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="customer-header-rate-cap">$95.00 / hr</div>
+                <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="customer-header-rate-cap">$95 AUD / hr</div>
               </div>
             </div>
           </div>
@@ -722,7 +726,7 @@
                   <td><span style="background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Plumbing</span></td>
                   <td>Lachlan Miller (SPN-101001)</td>
                   <td>Tomorrow, 9:30 AM</td>
-                  <td>$85.00/hr</td>
+                  <td>$85/hr</td>
                   <td><span style="color:#059669; font-weight:700;">🟢 Confirmed</span></td>
                   <td>
                     <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Reschedule requested. Contractor will be notified.')" style="padding:0.25rem 0.5rem; font-size:0.75rem;" data-agent-id="btn-10" data-testid="btn-10" aria-label="Btn 10">Reschedule</button>
@@ -733,7 +737,7 @@
                   <td><span style="background:#FFF7ED; color:#C2410C; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">Electrical</span></td>
                   <td>Jack Morrison (SPN-101002)</td>
                   <td>Friday, 2:00 PM</td>
-                  <td>$90.00/hr</td>
+                  <td>$90/hr</td>
                   <td><span style="color:#2563EB; font-weight:700;">⏳ Dispatched</span></td>
                   <td>
                     <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Booking cancelled.')" style="padding:0.25rem 0.5rem; font-size:0.75rem; color:#EF4444; border-color:#FCA5A5;" data-agent-id="btn-9" data-testid="btn-9" aria-label="Btn 9">Cancel</button>
@@ -744,6 +748,14 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- =========================================================================
+           VIEW C: MESSAGES BETWEEN USERS (js/messages-panel.js)
+           Messages to the superadmin are free; messages to other users cost tokens (superadmin price list)
+           ========================================================================= -->
+      <div id="view-messages-panel" style="display:none;">
+        <div id="messages-panel-root"></div>
       </div>
 
     </div>
@@ -1018,15 +1030,15 @@
           <div class="franchise-financial-pill">
             <div>
               <span style="font-size:0.72rem; color:#6D28D9; display:block;">Total Provider Payout:</span>
-              <strong style="font-size:0.95rem; color:#1E1B4B;" id="calc-provider-payout">$0.00</strong>
+              <strong style="font-size:0.95rem; color:#1E1B4B;" id="calc-provider-payout">$0</strong>
             </div>
             <div>
               <span style="font-size:0.72rem; color:#6D28D9; display:block;">Franchise Cut / Royalty:</span>
-              <strong style="font-size:0.95rem; color:#7E22CE;" id="calc-franchise-cut">$0.00</strong>
+              <strong style="font-size:0.95rem; color:#7E22CE;" id="calc-franchise-cut">$0</strong>
             </div>
             <div>
               <span style="font-size:0.72rem; color:#6D28D9; display:block;">Total Customer Invoice Quote:</span>
-              <strong style="font-size:1.15rem; color:#059669;" id="calc-customer-quote">$0.00</strong>
+              <strong style="font-size:1.15rem; color:#059669;" id="calc-customer-quote">$0 AUD</strong>
             </div>
           </div>
         </div>
@@ -1046,27 +1058,33 @@
   <script type="module" src="/js/main.js"></script>
 
   <script>
+    // Whole Australian Dollars only, rounded up (same rule as js/currency.js)
+    const wholeAud = v => (window.iasjCurrency ? window.iasjCurrency.wholeUp(v) : Math.ceil(Math.round((Number(v) || 0) * 1e6) / 1e6));
+    const fmtAud = v => `$${wholeAud(v).toLocaleString('en-AU')}`;
+
     // State management for Work Teams in Admin Panel
     let currentActiveTeamId = null;
 
     function switchAdminMainView(viewName) {
-      const teamsPanel = document.getElementById('view-work-teams-panel');
-      const customerPanel = document.getElementById('view-customer-controls-panel');
-      const btnTeams = document.getElementById('tab-btn-teams');
-      const btnCustomer = document.getElementById('tab-btn-customer');
+      const views = {
+        'work-teams': { panel: 'view-work-teams-panel', button: 'tab-btn-teams' },
+        'customer-controls': { panel: 'view-customer-controls-panel', button: 'tab-btn-customer' },
+        'messages': { panel: 'view-messages-panel', button: 'tab-btn-messages' }
+      };
+      const active = views[viewName] ? viewName : 'customer-controls';
 
-      if (viewName === 'work-teams') {
-        if (teamsPanel) teamsPanel.style.display = 'block';
-        if (customerPanel) customerPanel.style.display = 'none';
-        btnTeams?.classList.add('active');
-        btnCustomer?.classList.remove('active');
-        renderWorkTeamsUI();
-      } else {
-        if (teamsPanel) teamsPanel.style.display = 'none';
-        if (customerPanel) customerPanel.style.display = 'block';
-        btnCustomer?.classList.add('active');
-        btnTeams?.classList.remove('active');
-        updateCustomerAdminUI();
+      Object.entries(views).forEach(([name, ids]) => {
+        const panel = document.getElementById(ids.panel);
+        if (panel) panel.style.display = name === active ? 'block' : 'none';
+        document.getElementById(ids.button)?.classList.toggle('active', name === active);
+      });
+
+      try {
+        if (active === 'work-teams') renderWorkTeamsUI();
+        else if (active === 'customer-controls') updateCustomerAdminUI();
+        else window.messagesPanel?.onShow?.();
+      } catch (err) {
+        console.warn('Admin view render error:', err);
       }
     }
 
@@ -1219,7 +1237,7 @@
             <div style="border-top:1px solid var(--border-light); padding-top:0.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
               <div>
                 <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Individual Rate:</span>
-                <strong style="font-size:0.95rem; color:#059669;">$${parseFloat(m.pricingRate || 85).toFixed(2)}/hr</strong>
+                <strong style="font-size:0.95rem; color:#059669;">${fmtAud(m.pricingRate || 85)}/hr</strong>
               </div>
               <div style="display:flex; gap:0.4rem;">
                 ${!m.isPic ? `
@@ -1321,7 +1339,7 @@
                 </div>
                 <div style="text-align:right;">
                   <span style="font-size:0.7rem; color:var(--text-muted); display:block;">Total Customer Quote:</span>
-                  <strong style="font-size:1.25rem; color:#059669;">$${parseFloat(j.totalCustomerQuote || 0).toFixed(2)}</strong>
+                  <strong style="font-size:1.25rem; color:#059669;">${fmtAud(j.totalCustomerQuote || 0)} AUD</strong>
                 </div>
               </div>
 
@@ -1349,8 +1367,8 @@
                     <tr>
                       <td><strong>${escapeHtml(m.name)}</strong> <span style="font-size:0.72rem; color:var(--text-muted);">(${escapeHtml(m.spn)})</span></td>
                       <td>${escapeHtml(m.role || m.trade)}</td>
-                      <td><strong style="color:#059669;">$${parseFloat(m.pricing || 85).toFixed(2)}/${escapeHtml(m.pricingType || 'hr')}</strong></td>
-                      <td><strong>$${(m.estimatedPayout || 0).toFixed(2)}</strong></td>
+                      <td><strong style="color:#059669;">${fmtAud(m.pricing || 85)}/${escapeHtml(m.pricingType || 'hr')}</strong></td>
+                      <td><strong>${fmtAud(m.estimatedPayout || 0)}</strong></td>
                       <td style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(m.notes || '-')}</td>
                     </tr>
                   `).join('')}
@@ -1366,7 +1384,7 @@
                   </div>
                   <div>
                     <span style="font-size:0.72rem; color:#6D28D9; font-weight:700;">Franchise Cut (${j.franchiseMarginPercent || 12}%):</span>
-                    <strong style="font-size:0.95rem; color:#7E22CE;">+$${(j.franchiseCutAmount || 0).toFixed(2)}</strong>
+                    <strong style="font-size:0.95rem; color:#7E22CE;">+${fmtAud(j.franchiseCutAmount || 0)}</strong>
                   </div>
                   <div>
                     <span style="font-size:0.72rem; color:#6D28D9; font-weight:700;">Settlement:</span>
@@ -1499,7 +1517,7 @@
       const trade = document.getElementById('add-member-trade')?.value.trim();
       const role = document.getElementById('add-member-role')?.value.trim();
       const phone = document.getElementById('add-member-phone')?.value.trim();
-      const rate = parseFloat(document.getElementById('add-member-rate')?.value || 90);
+      const rate = wholeAud(parseFloat(document.getElementById('add-member-rate')?.value || 90));
       const isPic = document.getElementById('add-member-is-pic')?.checked;
 
       try {
@@ -1640,29 +1658,29 @@
     }
 
     function recalculateJobFinancials() {
-      const hours = parseFloat(document.getElementById('job-hours')?.value || 8);
+      const hours = wholeAud(parseFloat(document.getElementById('job-hours')?.value || 8));
       const isFranchise = document.getElementById('job-is-franchise')?.checked;
-      const marginPercent = parseFloat(document.getElementById('job-franchise-margin')?.value || 12);
+      const marginPercent = wholeAud(parseFloat(document.getElementById('job-franchise-margin')?.value || 12));
 
       let totalPayout = 0;
       const assigneeRows = document.querySelectorAll('#job-assigned-members-selector > div');
       assigneeRows.forEach(row => {
         const checked = row.querySelector('.job-assignee-check')?.checked;
-        const rate = parseFloat(row.querySelector('.job-assignee-rate')?.value || 85);
+        const rate = wholeAud(parseFloat(row.querySelector('.job-assignee-rate')?.value || 85));
         if (checked) {
           totalPayout += (rate * hours);
         }
       });
 
-      const franchiseCut = isFranchise ? (totalPayout * (marginPercent / 100)) : 0;
+      const franchiseCut = isFranchise ? wholeAud(totalPayout * marginPercent / 100) : 0;
       const totalQuote = totalPayout + franchiseCut;
 
       const payoutEl = document.getElementById('calc-provider-payout');
       const cutEl = document.getElementById('calc-franchise-cut');
       const quoteEl = document.getElementById('calc-customer-quote');
-      if (payoutEl) payoutEl.textContent = `$${totalPayout.toFixed(2)}`;
-      if (cutEl) cutEl.textContent = `$${franchiseCut.toFixed(2)}`;
-      if (quoteEl) quoteEl.textContent = `$${totalQuote.toFixed(2)}`;
+      if (payoutEl) payoutEl.textContent = fmtAud(totalPayout);
+      if (cutEl) cutEl.textContent = fmtAud(franchiseCut);
+      if (quoteEl) quoteEl.textContent = `${fmtAud(totalQuote)} AUD`;
     }
 
     function handleCreateJobSubmit(e) {
@@ -1672,11 +1690,11 @@
       const title = document.getElementById('job-title')?.value.trim();
       const date = document.getElementById('job-date')?.value;
       const time = document.getElementById('job-start-time')?.value;
-      const hours = parseFloat(document.getElementById('job-hours')?.value || 8);
+      const hours = wholeAud(parseFloat(document.getElementById('job-hours')?.value || 8));
       const location = document.getElementById('job-location')?.value.trim();
       const workRequired = document.getElementById('job-work-required')?.value.trim();
       const isFranchise = document.getElementById('job-is-franchise')?.checked;
-      const margin = parseFloat(document.getElementById('job-franchise-margin')?.value || 12);
+      const margin = wholeAud(parseFloat(document.getElementById('job-franchise-margin')?.value || 12));
       const franchiseName = document.getElementById('job-franchise-entity')?.value.trim();
 
       const team = window.workTeamsService.getTeamById(currentActiveTeamId);
@@ -1689,7 +1707,7 @@
           const spn = check.value;
           const memberObj = (team.members || []).find(m => m.spn === spn);
           const role = row.querySelector('.job-assignee-role')?.value.trim() || (memberObj?.trade || 'Worker');
-          const rate = parseFloat(row.querySelector('.job-assignee-rate')?.value || 85);
+          const rate = wholeAud(parseFloat(row.querySelector('.job-assignee-rate')?.value || 85));
           assigned.push({
             spn,
             name: memberObj?.name || spn,
@@ -1903,7 +1921,7 @@
         if (emergEl) emergEl.value = settings.rates.emergencyAllowance || '1.5';
         if (distEl) distEl.value = settings.rates.maxDistance || 35;
         if (unitEl) unitEl.value = settings.rates.distanceUnit || 'km';
-        if (headerCapEl) headerCapEl.textContent = `$${parseFloat(settings.rates.hourlyCap || 95).toFixed(2)} / hr`;
+        if (headerCapEl) headerCapEl.textContent = `${fmtAud(settings.rates.hourlyCap || 95)} AUD / hr`;
       }
     }
 
@@ -2056,8 +2074,8 @@
 
     function saveCustomerRates() {
       const settings = getCustomerSettings();
-      const hourlyCap = parseFloat(document.getElementById('cust-rate-hourly-cap')?.value || '95');
-      const calloutCap = parseFloat(document.getElementById('cust-rate-callout-cap')?.value || '65');
+      const hourlyCap = wholeAud(parseFloat(document.getElementById('cust-rate-hourly-cap')?.value || '95'));
+      const calloutCap = wholeAud(parseFloat(document.getElementById('cust-rate-callout-cap')?.value || '65'));
       const emergencyAllowance = document.getElementById('cust-emergency-rate-allowance')?.value || '1.5';
       const maxDistance = parseFloat(document.getElementById('cust-max-travel-distance')?.value || '35');
       const distanceUnit = document.getElementById('cust-distance-unit')?.value || 'km';
@@ -2072,7 +2090,7 @@
 
       saveCustomerSettings(settings);
       const capEl = document.getElementById('customer-header-rate-cap');
-      if (capEl) capEl.textContent = `$${hourlyCap.toFixed(2)} / hr`;
+      if (capEl) capEl.textContent = `${fmtAud(hourlyCap)} AUD / hr`;
       if (typeof showToast === 'function') showToast('Rate preferences & budget caps saved successfully!');
     }
 
@@ -2130,6 +2148,8 @@
 
       if (requestedView === 'customer-controls' || requestedView === 'customer') {
         switchAdminMainView('customer-controls');
+      } else if (requestedView === 'messages') {
+        switchAdminMainView('messages');
       } else {
         // Default to Work Teams & Multi-Person Dispatch for Franchises and Service Providers
         switchAdminMainView('work-teams');

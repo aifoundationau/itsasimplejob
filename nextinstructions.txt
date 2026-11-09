@@ -28,6 +28,31 @@ Created: 2026-11-01
 - Pushed to GitHub remote: origin/main.
 - Verified live production deployment on Vercel: https://www.itsasimplejob.com (READY).
 
+[COMPLETED 2026-11-02] TASK 6: AUD DEFAULT CURRENCY, WHOLE NUMBERS & SUPERADMIN PRICE LIST
+- Everything priced, invoiced and charged in AUD; 1 token = A$1 by default; whole numbers only, rounded up.
+- Superadmin Price List (Superadmin Mode menu > Price List) saves to platform_settings/pricing via PUT /api/pricing.
+- Geolocation (IP country) sets the default region; AU/NZ see AUD, everyone else a USD conversion (AUD -> USD daily rate).
+- AUD disclaimers on estimates, courier quote, invoices, Stripe checkout, token wallet and footer; new /terms.html (tokens & currency).
+- Fixed: missing app.js exports crashing module load, initGeoTimeBar never called, courier quote never loading on page load,
+  superadmin courier rate card visible to all visitors.
+- Documented in data-contracts.MD (Sections 1.3, 2.2, 4.2, 4.3, 5.2, 5.3, 5.5, 6.4, 6.6, change log).
+- USD conversions (display only) show 2 decimal places maximum, rounded up to the cent (e.g. ≈ $68.85 USD);
+  AUD amounts, tokens and invoices stay whole dollars.
+- Refund requests must be made in writing by sending a message to the superadmin (support@aifoundation.net.au):
+  Terms of Service section 5 "Refunds", the tokens FAQ and the Token Wallet. Messages to the superadmin are free
+  (never charged in tokens or AUD; do not add them to the price list).
+- Messages panel on the Admin Page (customer-admin.html?view=messages, also in the user menu): users message each
+  other by email or the superadmin. Messages to/from the superadmin are free; to other users they cost fees.message
+  tokens (default 1, superadmin price list), charged in the same transaction that delivers the message.
+  Server: /api/messages + server/messages.js; data in mailboxes/{uid|superadmin}/inbox|sent (server-only rule).
+- DEPLOYED: firestore.rules to database 'itsasimplejob' (ruleset a84ec432-9110-4c36-ad39-9d4ce83576db,
+  released 2026-11-01T21:25:18Z); verified live rules match the repo file.
+- FOLLOW-UP: a live end-to-end message send needs two signed-in accounts (tested with an in-memory database and a
+  mocked API only, to avoid writing to production).
+- FOLLOW-UPS: (done) deploy firestore.rules; optionally set FX_FALLBACK_AUD_USD in
+  Vercel (the old FX_FALLBACK_USD_AUD is still read and inverted); have the Terms of Service reviewed by a lawyer;
+  FAQ "How does payment work" still says "We do not take the customer's payment", which conflicts with token purchases.
+
 --------------------------------------------------------------------------------
 CURRENT TASK: AUDIT CLOUD FIRESTORE DATABASE SECURITY RULES
 --------------------------------------------------------------------------------

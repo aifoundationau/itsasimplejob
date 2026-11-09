@@ -1,11 +1,12 @@
 /**
  * It's A Simple Job - Token wallet ledger (server only).
- * 1 token = US$1. Balances are changed only here, inside Firestore transactions,
+ * Tokens are whole numbers bought in AUD (1 token = the superadmin's token price, default A$1).
+ * Balances are changed only here, inside Firestore transactions,
  * after Stripe has confirmed the payment. Browsers have no write access to these documents.
  *
  * Data layout (database: itsasimplejob):
  *   wallets/{uid}                      { uid, email, available, held, createdAt, updatedAt }
- *   wallets/{uid}/purchases/{piId}     { tokens, amountCents, currency, fxRate, status, ... }
+ *   wallets/{uid}/purchases/{piId}     { tokens, amountCents, currency: 'AUD', tokenPriceAud, status, ... }
  *   wallets/{uid}/ledger/{entryId}     { type, tokens, availableAfter, ref, createdAt, ... }
  */
 
@@ -42,7 +43,7 @@ export async function recordPendingPurchase(db, user, intent, quote, purchaseId)
       tokens: quote.tokens,
       amountCents: quote.totalCents,
       currency: quote.currency,
-      fxRate: quote.fxRate,
+      tokenPriceAud: quote.tokenPriceAud,
       purchaseId,
       status: 'pending',
       createdAt: now,

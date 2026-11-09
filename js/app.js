@@ -2,7 +2,10 @@
  * It's A Simple Job - Interactive Client Application Logic
  * Integrates Google Maps API, Places Autocomplete, Geolocation Locator,
  * Dynamic Contractor Search & Map Markers, and Courier Route Directions.
+ * All prices are AUD (whole numbers, rounded up) from the superadmin price list via window.iasjCurrency.
  */
+
+import { MAX_COURIER_WEIGHT_KG } from '../shared/pricing.js';
 
 // Application State
 const appState = {
@@ -133,7 +136,11 @@ function initApp() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
-  initApp();
+  // Module scripts run when readyState is already 'interactive'. Defer until this module has finished
+  // evaluating, so the let/const declarations further down (e.g. courierCalcDebounce, geoTimeState)
+  // exist when initApp uses them. Calling initApp() directly here hit them before initialisation and
+  // the try/catch blocks silently swallowed the errors (the courier quote never loaded).
+  queueMicrotask(initApp);
 }
 
 /**
@@ -406,7 +413,7 @@ function updateOsmContractorMarkers() {
       popupAnchor: [0, -30]
     });
 
-    const tokenPriceHtml = formatTokenItemPrice(provider.hourlyRate, 'AU', 'hr');
+    const tokenPriceHtml = formatTokenItemPrice(provider.hourlyRate, { suffix: '/hr' });
 
     const popupHtml = `
       <div style="min-width:210px; font-family:'Inter', sans-serif; padding:4px;">
@@ -1069,10 +1076,8 @@ async function locateCustomer(targetInputId) {
             .then(data => {
               if (data?.address?.country_code) {
                 const c = data.address.country_code.toUpperCase();
-                geoTimeState.country = c;
-                appState.userCountry = c;
                 localStorage.setItem('iasj_user_country', c);
-                updateGeoTimeBar();
+                setUserCountry(c, 'gps');
               }
             }).catch(() => {});
         } catch (e) {}
@@ -1259,7 +1264,7 @@ function filterContractors() {
                 <div class="gmap-info-trade">${provider.tradeTitle}</div>
                 <div class="gmap-info-rating"><i class="fa-solid fa-star"></i> ${provider.rating.toFixed(2)} (${provider.reviewCount} jobs)</div>
                 <div style="font-size:0.8rem; color:#475569; margin-bottom:0.4rem;">
-                  <strong>$${provider.hourlyRate}/hr</strong> • ${distanceKm.toFixed(1)} km from you
+                  <strong>${window.iasjCurrency.formatMoney(provider.hourlyRate, { suffix: '/hr' })}</strong> • ${distanceKm.toFixed(1)} km from you
                 </div>
                 <button class="gmap-info-btn" onclick="bookProviderDirectly('${provider.id}')">
                   <i class="fa-solid fa-bolt"></i> Book With AI
@@ -1298,54 +1303,52 @@ function filterContractors() {
  * Render Contractor Cards List in Search View
  */
 
+// Function declarations (not consts) so they are usable while initApp() runs during module start-up
+function escapeAttr(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// Money typed into provider / franchise forms is stored in whole dollars (rounded up)
+function wholeMoney(value) {
+  return value == null ? value : window.iasjCurrency.wholeUp(value);
+}
+
 /**
- * Format an item's price according to Token Economy & Geolocation Directives:
- * - Strict integers only (Math.round, no decimals) for tokens.
- * - Displays token icon & amount primarily: 🪙 X Tokens
- * - Shows AUD / USD price strictly on hover (tooltip / hover tag).
- * - AUD displays only in AU via geolocation; USD displays elsewhere.
- * - Admin flags: isTokenSystemEnabled, isAudEnabled, isUsdEnabled.
+ * Format an item's price with tokens first and the money price on hover.
+ * - Prices are AUD amounts; tokens = AUD / token price (1 token = A$1 by default), whole numbers rounded up.
+ * - Australia & New Zealand see AUD; everyone else sees a USD conversion (always invoiced in AUD).
+ * - data-price-aud lets refreshPriceTags() redraw the tag when the region or exchange rate changes.
  */
 function formatTokenItemPrice(fiatAudAmount, options = {}) {
-  const isTokenEnabled = window.platformSettings?.isTokenSystemEnabled !== false;
-  const isAudEnabled = window.platformSettings?.isAudEnabled !== false;
-  const isUsdEnabled = window.platformSettings?.isUsdEnabled !== false;
-
-  const userCountry = appState?.userCountry || 'AU';
-  const isAustralia = userCountry === 'AU';
-  const fxRate = window.appState?.usdToAudRate || 1.42;
-
-  const numVal = parseFloat(fiatAudAmount) || 0;
-  // Strict integers only (Math.round, no decimals)
-  const tokens = Math.round(numVal / fxRate);
-  const usdAmount = (numVal / fxRate).toFixed(2);
-  const audAmount = numVal.toFixed(2);
-
-  let hoverFiat = '';
-  if (isAustralia && isAudEnabled) {
-    hoverFiat = `${audAmount} AUD`;
-  } else if (isUsdEnabled) {
-    hoverFiat = `${usdAmount} USD`;
-  } else if (isAudEnabled) {
-    hoverFiat = `${audAmount} AUD`;
-  }
-
+  const cur = window.iasjCurrency;
   const suffix = options.suffix || '';
+  const aud = cur.wholeUp(fiatAudAmount);
+  const tokens = cur.tokensForAud(aud);
+  const money = cur.formatMoney(aud, { suffix });
+  const common = `data-price-aud="${aud}" data-price-suffix="${escapeAttr(suffix)}" title="${escapeAttr(cur.moneyTitle(aud, { suffix }))}"`;
 
-  if (isTokenEnabled) {
-    return `
-      <span class="token-price-tag" title="${hoverFiat ? `Price: ${hoverFiat}${suffix}` : ''}" data-agent-id="token-price-tag" data-testid="token-price-tag" data-tokens="${tokens}" data-fiat="${hoverFiat}">
-        <span class="token-amount"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokens} Tokens${suffix}</span>
-        ${hoverFiat ? `<span class="token-fiat-hover">${hoverFiat}${suffix}</span>` : ''}
-      </span>
-    `;
-  } else {
-    return `
-      <span class="fiat-price-tag" data-agent-id="fiat-price-tag" data-testid="fiat-price-tag">
-        <strong>${hoverFiat || `${audAmount} AUD`}${suffix}</strong>
-      </span>
-    `;
+  if (window.platformSettings?.isTokenSystemEnabled === false) {
+    return `<span class="fiat-price-tag" data-price-format="fiat" ${common} data-agent-id="fiat-price-tag" data-testid="fiat-price-tag"><strong>${money}</strong></span>`;
   }
+
+  return `<span class="token-price-tag" data-price-format="token" ${common} data-agent-id="token-price-tag" data-testid="token-price-tag" data-tokens="${tokens}" data-fiat="${escapeAttr(money)}">
+      <span class="token-amount"><i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(tokens, suffix)}</span>
+      <span class="token-fiat-hover">${money}</span>
+    </span>`;
+}
+
+/**
+ * Redraw every price tag on the page (after the region, exchange rate or token price changes)
+ */
+function refreshPriceTags(root = document) {
+  root.querySelectorAll('[data-price-aud][data-price-format]').forEach(el => {
+    const aud = Number(el.dataset.priceAud);
+    const options = { suffix: el.dataset.priceSuffix || '' };
+    const html = el.dataset.priceFormat === 'price'
+      ? formatPriceWithTokenHover(aud, options)
+      : formatTokenItemPrice(aud, options);
+    el.outerHTML = html.trim();
+  });
 }
 
 function renderContractorCards(contractors) {
@@ -1670,55 +1673,31 @@ function selectMatchedProvider(providerId) {
   });
   document.getElementById(`card-prov-${providerId}`)?.classList.add('selected');
 
-  // Recalculate price if provider hourly rate differs
+  // Recalculate price with the chosen provider's own hourly rate (whole numbers, rounded up)
   const provider = window.providerDB.findById(providerId);
   if (provider && appState.currentAnalysis) {
     const analysis = appState.currentAnalysis;
-    const rate = provider.hourlyRate;
-    const hours = analysis.estimatedHours;
-    const callout = analysis.pricing.calloutFee;
-    const materials = analysis.pricing.materialsEstimate;
-    const labour = Math.round(rate * hours);
-    const subtotal = callout + labour + materials;
-    const gst = Math.round(subtotal * 0.10);
-    const total = subtotal + gst;
-
-    // Mutate pricing
-    analysis.pricing.hourlyRate = rate;
-    analysis.pricing.baseLabour = labour;
-    analysis.pricing.subtotal = subtotal;
-    analysis.pricing.gst = gst;
-    analysis.pricing.estimatedTotal = total;
-
+    analysis.pricedProviderId = providerId;
+    priceAnalysis(analysis);
     updatePricingCard(analysis);
   }
 }
 
 /**
- * Format Price Tag showing Fiat Currency by default with Token count revealed on hover
- * Satisfies: "it needs to show price and tokens can be seen when hovering"
+ * Format a price with the money amount shown and the token count revealed on hover.
+ * Australia & New Zealand see "$95 AUD"; everyone else sees "≈ $62 USD" (always invoiced in AUD).
  */
 function formatPriceWithTokenHover(fiatAudAmount, options = {}) {
-  const userCountry = (appState?.userCountry || geoTimeState?.country || 'AU').toUpperCase();
-  const isAudRegion = userCountry === 'AU' || userCountry === 'NZ';
-  const currency = isAudRegion ? 'AUD' : 'USD';
-  const fxRate = 1.42; // 1 Token = $1.42 AUD = $1.00 USD
-
-  const numVal = parseFloat(fiatAudAmount) || 0;
-  const fiatAmount = isAudRegion ? numVal : (numVal / fxRate);
-  const formattedFiat = `${fiatAmount.toFixed(2)}`;
-  const tokens = Math.round(numVal / fxRate);
+  const cur = window.iasjCurrency;
   const suffix = options.suffix || '';
+  const aud = cur.wholeUp(fiatAudAmount);
+  const tokens = cur.tokensForAud(aud);
+  const money = cur.formatMoney(aud, { suffix });
 
-  const tokenHoverText = `${tokens} Tokens${suffix}`;
-  const fiatText = `${formattedFiat}${options.includeCurrency !== false ? ` ${currency}` : ''}${suffix}`;
-
-  return `
-    <span class="price-token-hover-tag" title="Equivalent: ${tokenHoverText}" data-agent-id="price-token-tag" data-testid="price-token-tag" data-fiat="${fiatText}" data-tokens="${tokens}">
-      <span class="price-display-amount">${fiatText}</span>
-      <span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokenHoverText}</span>
-    </span>
-  `;
+  return `<span class="price-token-hover-tag" data-price-format="price" data-price-aud="${aud}" data-price-suffix="${escapeAttr(suffix)}" title="${escapeAttr(cur.moneyTitle(aud, { suffix }))}" data-agent-id="price-token-tag" data-testid="price-token-tag" data-fiat="${escapeAttr(money)}" data-tokens="${tokens}">
+      <span class="price-display-amount">${money}</span>
+      <span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(tokens, suffix)}</span>
+    </span>`;
 }
 window.formatPriceWithTokenHover = formatPriceWithTokenHover;
 
@@ -1729,13 +1708,32 @@ function updatePricingCard(analysis) {
   const p = analysis.pricing;
 
   const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
-  setHtml('invoice-est-hours', analysis.estimatedHours);
+  setHtml('invoice-est-hours', p.hours ?? analysis.estimatedHours);
   setHtml('invoice-hourly-rate', formatPriceWithTokenHover(p.hourlyRate, { suffix: '/hr' }));
   setHtml('price-labour-val', formatPriceWithTokenHover(p.baseLabour));
   setHtml('price-callout-val', formatPriceWithTokenHover(p.calloutFee));
   setHtml('price-materials-val', formatPriceWithTokenHover(p.materialsEstimate));
   setHtml('price-gst-val', formatPriceWithTokenHover(p.gst));
   setHtml('price-total-val', formatPriceWithTokenHover(p.estimatedTotal));
+  setHtml('price-currency-disclaimer', window.iasjCurrency.disclaimerHtml({ compact: true }));
+}
+
+/**
+ * Price the current AI analysis from the live price list. Uses the chosen provider's own
+ * hourly rate once the customer has picked one, otherwise the superadmin's rate for the trade.
+ */
+function priceAnalysis(analysis) {
+  const cur = window.iasjCurrency;
+  const provider = analysis.pricedProviderId ? window.providerDB?.findById(analysis.pricedProviderId) : null;
+  analysis.pricing = cur.priceCategoryJob({
+    category: analysis.category,
+    hours: analysis.estimatedHours,
+    isUrgent: analysis.isUrgent,
+    categoryName: analysis.categoryName,
+    hourlyTokens: provider ? cur.tokensForAud(provider.hourlyRate) : undefined
+  });
+  analysis.estimatedHours = analysis.pricing.hours;
+  return analysis.pricing;
 }
 
 /**
@@ -2031,46 +2029,54 @@ function selectPackageType(type, elem) {
 }
 
 /**
- * Courier Superadmin Settings Management
+ * Courier pricing comes from the superadmin price list (tokens; 1 token = A$1 by default)
  */
 function getCourierPricingSettings() {
-  const saved = localStorage.getItem('iasj_courier_pricing_settings');
-  if (saved) {
-    try { return JSON.parse(saved); } catch(e) {}
-  }
-  return {
-    asapSurchargePct: 20,       // Superadmin ASAP surcharge % (+10%, +20%, +30% etc.)
-    over20kmSurchargePct: 10,   // Superadmin surcharge % per km after 20km (+5%, +10% etc.)
-    maxWeightKg: 20,            // Maximum standard parcel weight: 20kg
-    baseLoadingFeeAud: 35.00,   // Base loading fee
-    baseKmRateAud: 1.20         // Base km rate
-  };
+  return { ...window.iasjCurrency.getPricing().courier, maxWeightKg: MAX_COURIER_WEIGHT_KG };
 }
 
-function saveCourierPricingSettings(newSettings) {
-  const current = getCourierPricingSettings();
-  const updated = { ...current, ...newSettings };
-  localStorage.setItem('iasj_courier_pricing_settings', JSON.stringify(updated));
-  return updated;
+/**
+ * Superadmin only: save courier settings to the live price list on the server
+ */
+async function saveCourierPricingSettings(newSettings) {
+  const pricing = window.iasjCurrency.getPricing();
+  const saved = await window.iasjCurrency.savePricing({ ...pricing, courier: { ...pricing.courier, ...newSettings } });
+  return { ...saved.courier, maxWeightKg: MAX_COURIER_WEIGHT_KG };
 }
 window.saveCourierPricingSettings = saveCourierPricingSettings;
 window.getCourierPricingSettings = getCourierPricingSettings;
 
-function onSuperadminCourierSettingsChange() {
+async function onSuperadminCourierSettingsChange() {
   const asapSelect = document.getElementById('sa-asap-pct-select');
-  const over20Select = document.getElementById('sa-over20-pct-select');
+  const extraKmSelect = document.getElementById('sa-over20-pct-select');
   const asapPct = parseInt(asapSelect?.value || '20', 10);
-  const over20Pct = parseInt(over20Select?.value || '10', 10);
+  const extraKmPct = parseInt(extraKmSelect?.value || '10', 10);
 
-  saveCourierPricingSettings({
-    asapSurchargePct: asapPct,
-    over20kmSurchargePct: over20Pct
-  });
-
-  calculateCourierQuote();
-  showToast(`⚙️ Superadmin rates updated: ASAP +${asapPct}%, Over-20km +${over20Pct}%`);
+  try {
+    await saveCourierPricingSettings({ asapSurchargePct: asapPct, extraKmSurchargePct: extraKmPct });
+    showToast(`⚙️ Price list updated: ASAP +${asapPct}%, extra distance +${extraKmPct}%`);
+  } catch (err) {
+    showToast(err.message);
+    syncSuperadminCourierControls(); // put the selects back to the saved values
+  }
 }
 window.onSuperadminCourierSettingsChange = onSuperadminCourierSettingsChange;
+
+/**
+ * Keep the superadmin courier selects in step with the saved price list
+ */
+function syncSuperadminCourierControls() {
+  const courier = window.iasjCurrency.getPricing().courier;
+  [['sa-asap-pct-select', courier.asapSurchargePct, 'ASAP Token Surcharge'],
+   ['sa-over20-pct-select', courier.extraKmSurchargePct, `per km over ${courier.includedKm}km`]].forEach(([id, value, label]) => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    if (![...select.options].some(o => Number(o.value) === value)) {
+      select.add(new Option(`+${value}% ${label}`, String(value)));
+    }
+    select.value = String(value);
+  });
+}
 
 /**
  * Recalculate Courier Route & Pricing
@@ -2152,97 +2158,52 @@ async function executeCourierQuoteCalculation() {
   updateCourierPricingWithSettings(roadDistanceKm, durationMins);
 }
 
+/**
+ * Price the courier run from the superadmin price list. Whole km, whole tokens, whole AUD (all rounded up).
+ * The price is the same everywhere; only the display currency follows the visitor's region
+ * (AUD in Australia & New Zealand, a USD conversion elsewhere). GST is always included: it is an Australian tax invoice.
+ */
 function updateCourierPricingWithSettings(distanceKm, durationMins) {
+  const cur = window.iasjCurrency;
   const settings = getCourierPricingSettings();
   const weightInput = document.getElementById('courier-weight');
-  let rawWeight = parseFloat(weightInput?.value) || 12;
+  const rawWeight = parseFloat(weightInput?.value) || 12;
   const warningEl = document.getElementById('courier-weight-warning');
 
   // Validate maximum weight (20kg limit)
-  if (rawWeight > settings.maxWeightKg) {
-    if (warningEl) {
-      warningEl.style.display = 'block';
-      warningEl.textContent = `⚠️ Maximum weight is ${settings.maxWeightKg}kg for courier dispatch. Capped at ${settings.maxWeightKg}kg.`;
-    }
-    rawWeight = settings.maxWeightKg;
-  } else {
-    if (warningEl) warningEl.style.display = 'none';
+  if (warningEl) {
+    warningEl.style.display = rawWeight > settings.maxWeightKg ? 'block' : 'none';
+    warningEl.textContent = `⚠️ Maximum weight is ${settings.maxWeightKg}kg for courier dispatch. Capped at ${settings.maxWeightKg}kg.`;
   }
 
   const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
   const isAsap = pickupTime === 'asap';
 
-  // 1. Base Loading & Dispatch Fee
-  const baseLoadingAud = settings.baseLoadingFeeAud || 35.00;
+  appState.lastCourierRoute = { distanceKm, durationMins };
+  const quote = cur.priceCourier({ distanceKm, isAsap });
+  const line = key => quote.lines.find(l => l.key === key) || { aud: 0, tokens: 0 };
 
-  // 2. Distance Calculation
-  // First 20 km at base rate
-  const baseKm = Math.min(distanceKm, 20);
-  const baseDistanceFeeAud = Math.round(baseKm * settings.baseKmRateAud * 100) / 100;
-
-  // Every km after 20km adds the superadmin percentage surcharge
-  const extraKm = Math.max(0, distanceKm - 20);
-  const over20kmKmRate = settings.baseKmRateAud * (1 + (settings.over20kmSurchargePct / 100));
-  const over20kmDistanceFeeAud = Math.round(extraKm * over20kmKmRate * 100) / 100;
-  const totalDistanceFeeAud = Math.round((baseDistanceFeeAud + over20kmDistanceFeeAud) * 100) / 100;
-
-  // 3. ASAP Surcharge
-  // If ASAP, add as token price decided by superadmin percentage (+10%, +20%, +30% etc.)
-  let asapFeeAud = 0;
-  if (isAsap) {
-    asapFeeAud = Math.round((baseLoadingAud + totalDistanceFeeAud) * (settings.asapSurchargePct / 100) * 100) / 100;
-  }
-
-  // 4. Subtotal & Australian GST
-  const subtotalAud = Math.round((baseLoadingAud + totalDistanceFeeAud + asapFeeAud) * 100) / 100;
-
-  // Geolocation currency determination:
-  // "Total Delivery Price 119 Tokens should show Tokens and AUD price (for Australia, New Zealand)
-  // If not Australia or New Zealand, show Tokens and USD price According to geolocation"
-  const userCountry = (appState?.userCountry || geoTimeState?.country || 'AU').toUpperCase();
-  const isAudRegion = userCountry === 'AU' || userCountry === 'NZ';
-  const fiatCurrency = isAudRegion ? 'AUD' : 'USD';
-  const fxRate = 1.42; // 1 Token = $1.42 AUD = $1.00 USD
-
-  // Australian GST (10%) applies in Australia
-  const gstAud = (userCountry === 'AU') ? Math.round(subtotalAud * 0.10 * 100) / 100 : 0;
-  const totalAud = Math.round((subtotalAud + gstAud) * 100) / 100;
-
-  // Strict integer token calculations (Math.round, no decimals)
-  const totalTokens = Math.round(totalAud / fxRate);
-  const totalFiat = isAudRegion ? totalAud.toFixed(2) : (totalAud / fxRate).toFixed(2);
-
-  const baseTokens = Math.round(baseLoadingAud / fxRate);
-  const distTokens = Math.round(totalDistanceFeeAud / fxRate);
-  const asapTokens = Math.round(asapFeeAud / fxRate);
-  const gstTokens = Math.round(gstAud / fxRate);
-
-  function formatRowPrice(audVal, tokensVal) {
-    const fiatVal = isAudRegion ? audVal.toFixed(2) : (audVal / fxRate).toFixed(2);
-    return `<span class="token-amount" style="font-weight:700;"><i class="fa-solid fa-coins token-coin-icon"></i> ${tokensVal} Tokens</span> <span class="fiat-badge" style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">(${fiatVal} ${fiatCurrency})</span>`;
-  }
+  const formatRowPrice = aud => `<span class="token-amount" style="font-weight:700;"><i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(cur.tokensForAud(aud))}</span> <span class="fiat-badge" style="font-size:0.8rem; color:var(--text-muted); font-weight:600;" title="${escapeAttr(cur.moneyTitle(aud))}">(${cur.formatMoney(aud)})</span>`;
 
   // Safe DOM Updates
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
 
-  setEl('courier-calc-distance', `${distanceKm} km`);
-  setEl('courier-calc-time', `${durationMins} Mins`);
-  setEl('courier-dist-km', distanceKm);
+  setEl('courier-calc-distance', `${quote.distanceKm} km`);
+  setEl('courier-calc-time', `${cur.wholeUp(durationMins)} Mins`);
+  setEl('courier-dist-km', quote.distanceKm);
 
-  setHtml('courier-base-fee', formatRowPrice(baseLoadingAud, baseTokens));
-  setHtml('courier-dist-fee', formatRowPrice(totalDistanceFeeAud, distTokens));
+  setHtml('courier-base-fee', formatRowPrice(line('base').aud));
+  setHtml('courier-dist-fee', formatRowPrice(line('distance').aud));
 
-  // Extra km surcharge description
+  // Distance rate description
   const extraKmEl = document.getElementById('courier-extra-km-info');
   if (extraKmEl) {
-    if (extraKm > 0) {
-      extraKmEl.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">First 20km @ $1.20/km • <strong>${extraKm.toFixed(1)} km</strong> over 20km @ +${settings.over20kmSurchargePct}% ($0.12/km surcharge)</span>`;
-      extraKmEl.style.display = 'block';
-    } else {
-      extraKmEl.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Standard route within 20km @ $1.20/km</span>`;
-      extraKmEl.style.display = 'block';
-    }
+    const perKm = cur.formatMoney(cur.audForTokens(settings.perKm), { suffix: '/km' });
+    extraKmEl.innerHTML = quote.extraKm > 0
+      ? `<span style="color:var(--text-muted); font-size:0.75rem;">First ${quote.standardKm} km @ ${perKm} • <strong>${quote.extraKm} km</strong> over ${settings.includedKm} km @ +${settings.extraKmSurchargePct}%</span>`
+      : `<span style="color:var(--text-muted); font-size:0.75rem;">Standard route within ${settings.includedKm} km @ ${perKm}</span>`;
+    extraKmEl.style.display = 'block';
   }
 
   // ASAP surcharge row
@@ -2251,33 +2212,35 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
   if (asapPctLabel) asapPctLabel.textContent = settings.asapSurchargePct;
   if (asapRow) {
     asapRow.style.display = isAsap ? 'flex' : 'none';
-    setHtml('courier-asap-fee', formatRowPrice(asapFeeAud, asapTokens));
+    setHtml('courier-asap-fee', formatRowPrice(line('asap').aud));
   }
 
-  // GST row
+  // GST row (Australian tax invoice)
   const gstRow = document.getElementById('courier-gst-row');
   if (gstRow) {
-    if (userCountry === 'AU') {
-      gstRow.style.display = 'flex';
-      setHtml('courier-gst-fee', formatRowPrice(gstAud, gstTokens));
-    } else {
-      gstRow.style.display = 'none';
-    }
+    gstRow.style.display = 'flex';
+    setHtml('courier-gst-fee', formatRowPrice(quote.gst));
   }
 
-  // Total Delivery Price
-  // "Total Delivery Price 119 Tokens should show Tokens and AUD price (for Australia, New Zealand)
-  // If not Australia or New Zealand, show Tokens and USD price According to geolocation"
+  // Total Delivery Price: tokens plus AUD (Australia, New Zealand) or a USD conversion (everywhere else)
   setHtml('courier-total-fee', `
     <span class="token-amount" style="font-size:1.25rem; font-weight:800; color:var(--brand-orange); display:inline-flex; align-items:center; gap:0.35rem;">
-      <i class="fa-solid fa-coins token-coin-icon"></i> ${totalTokens} Tokens
+      <i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(quote.tokens.estimatedTotal)}
     </span>
-    <span class="fiat-badge" style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-left:0.4rem;">
-      (${totalFiat} ${fiatCurrency})
+    <span class="fiat-badge" style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-left:0.4rem;" title="${escapeAttr(cur.moneyTitle(quote.estimatedTotal))}">
+      (${cur.formatMoney(quote.estimatedTotal)})
     </span>
   `);
+  setHtml('courier-currency-disclaimer', cur.disclaimerHtml({ compact: true }));
 
-  return { distanceKm, durationMins, totalTokens, totalFiat, fiatCurrency, totalAud };
+  return {
+    distanceKm: quote.distanceKm,
+    durationMins,
+    totalTokens: quote.tokens.estimatedTotal,
+    totalAud: quote.estimatedTotal,
+    fiatCurrency: cur.displayCurrency(),
+    totalFiat: cur.isAud() ? quote.estimatedTotal : cur.toUsd(quote.estimatedTotal)
+  };
 }
 
 function bookCourierDispatch() {
@@ -2286,16 +2249,12 @@ function bookCourierDispatch() {
   const desc = document.getElementById('courier-desc')?.value || 'Parcels';
   const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
   const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
-  const weight = parseFloat(document.getElementById('courier-weight')?.value) || 12;
-  const urgency = document.getElementById('courier-urgency')?.value || 'express';
 
-  // Calculate pricing mathematically so invoice lines add up perfectly to total
-  const baseLoading = 35.00;
-  const quote = updateCourierPricingUI(78.5, 67, weight, urgency);
-  const total = quote.total || 169.62;
-  const subtotal = quote.subtotal || 154.20;
-  const gst = quote.gst || 15.42;
-  const baseLabour = Math.max(0, Math.round((subtotal - baseLoading) * 100) / 100);
+  // Price the booked run exactly as quoted (whole numbers; the invoice lines add up to the total)
+  const pricing = window.iasjCurrency.priceCourier({
+    distanceKm: appState.lastCourierRoute?.distanceKm || 20,
+    isAsap: pickupTime === 'asap'
+  });
 
   const docketNumber = 'IASJ-CR-' + Math.floor(100000 + Math.random() * 900000);
   const customerRefNumber = window.firebaseService?.getOrCreateCRN?.() || (`CRN-${Math.floor(100000 + Math.random() * 900000)}`);
@@ -2319,15 +2278,9 @@ function bookCourierDispatch() {
       businessName: 'Gold Coast Rapid Express Couriers',
       qbccLicense: 'Commercial Carrier Lic #CC-88219',
       insurance: '$10M Transit Goods Cover',
-      hourlyRate: 55
+      hourlyRate: window.iasjCurrency.audForTokens(window.iasjCurrency.getPricing().hourlyTokens.courier)
     },
-    pricing: {
-      calloutFee: baseLoading,
-      baseLabour: baseLabour,
-      materialsEstimate: 0,
-      gst: gst,
-      estimatedTotal: Math.round((baseLoading + baseLabour + gst) * 100) / 100
-    },
+    pricing,
     packagePhotoUrl: appState.uploadedCourierPhoto?.url || null,
     status: 'Courier Dispatched'
   };
@@ -2353,7 +2306,7 @@ function handleProviderRegistration(event) {
   const businessName = document.getElementById('reg-business')?.value.trim();
   const category = document.getElementById('reg-trade')?.value;
   const qbccLicense = document.getElementById('reg-license')?.value.trim();
-  const hourlyRate = parseFloat(document.getElementById('reg-rate')?.value) || 85;
+  const hourlyRate = wholeMoney(parseFloat(document.getElementById('reg-rate')?.value) || 85);
   const suburbs = document.getElementById('reg-suburbs')?.value.split(',').map(s => s.trim());
   const skills = document.getElementById('reg-skills')?.value.split(',').map(s => s.trim());
 
@@ -2404,6 +2357,38 @@ function handleProviderRegistration(event) {
 }
 
 /**
+ * Invoice lines and totals for a booking, in whole AUD (rounded up).
+ * New bookings carry their own priced lines. Older bookings saved with cents are rounded up
+ * line by line and GST recalculated, so the invoice, the dispatch feed and the Stripe charge always agree.
+ */
+function getInvoiceTotals(booking) {
+  const cur = window.iasjCurrency;
+  const p = booking?.pricing || {};
+
+  if (Array.isArray(p.lines) && p.lines.length && Number.isInteger(p.estimatedTotal)) {
+    return {
+      lines: p.lines.map(l => ({ label: l.label, aud: l.aud, tokens: l.tokens })),
+      subtotal: p.subtotal,
+      gst: p.gst,
+      total: p.estimatedTotal,
+      totalTokens: p.tokens?.estimatedTotal ?? cur.tokensForAud(p.estimatedTotal),
+      gstTokens: p.tokens?.gst ?? cur.tokensForAud(p.gst)
+    };
+  }
+
+  const lines = [
+    { label: `${booking?.categoryName || 'Service'} - Base Allocated Labour`, aud: cur.wholeUp(p.baseLabour) },
+    { label: 'Insured Vehicle Transit & Mobilisation', aud: cur.wholeUp(p.calloutFee) },
+    { label: 'Consumables / Materials Buffer', aud: cur.wholeUp(p.materialsEstimate) }
+  ].map(l => ({ ...l, tokens: cur.tokensForAud(l.aud) }));
+  const subtotal = lines.reduce((sum, l) => sum + l.aud, 0);
+  const gst = cur.wholeUp(subtotal * cur.GST_PERCENT / 100);
+  const total = subtotal + gst;
+  return { lines, subtotal, gst, total, totalTokens: cur.tokensForAud(total), gstTokens: cur.tokensForAud(gst) };
+}
+window.getInvoiceTotals = getInvoiceTotals;
+
+/**
  * Dispatch Dashboard Simulator Functions
  */
 function addJobToDispatchFeed(booking) {
@@ -2420,7 +2405,7 @@ function addJobToDispatchFeed(booking) {
   item.innerHTML = `
     <div class="dispatch-job-header">
       <h5><i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> [NEW] ${booking.categoryName}</h5>
-      <span class="dispatch-earnings">$${booking.pricing.estimatedTotal.toFixed(2)} AUD</span>
+      <span class="dispatch-earnings">${window.iasjCurrency.formatAud(getInvoiceTotals(booking).total)}</span>
     </div>
     <p class="dispatch-job-desc">
       ${booking.custName} • ${booking.custAddress} • ${booking.shift}
@@ -2483,6 +2468,9 @@ function renderInvoiceModal(booking) {
   // "Pay via Stripe" always pays the docket shown in this invoice
   currentPayingBooking = booking;
   syncStripePayButton(booking);
+
+  const cur = window.iasjCurrency;
+  const totals = getInvoiceTotals(booking);
 
   const gcalUrl = getGoogleCalendarUrl(booking);
   const addGcalBtn = document.getElementById('btn-add-to-google-cal');
@@ -2568,36 +2556,38 @@ function renderInvoiceModal(booking) {
         </div>
       ` : ''}
 
-      <table style="width:100%; font-size:0.85rem; border-collapse:collapse; margin-bottom:1rem;">
+      <table style="width:100%; font-size:0.85rem; border-collapse:collapse; margin-bottom:0.6rem;">
         <thead>
           <tr style="border-bottom:2px solid var(--border-light); text-align:left;">
             <th style="padding:0.4rem 0;">Description</th>
+            <th style="padding:0.4rem 0; text-align:right;">Tokens</th>
             <th style="padding:0.4rem 0; text-align:right;">Amount (AUD)</th>
           </tr>
         </thead>
         <tbody>
+          ${totals.lines.map(line => `
           <tr>
-            <td style="padding:0.4rem 0;">${booking.categoryName} - Base Allocated Labour</td>
-            <td style="text-align:right;">$${booking.pricing.baseLabour.toFixed(2)}</td>
-          </tr>
+            <td style="padding:0.4rem 0;">${line.label}</td>
+            <td style="text-align:right; color:var(--text-muted);">${cur.formatWhole(line.tokens)}</td>
+            <td style="text-align:right;">$${cur.formatWhole(line.aud)}</td>
+          </tr>`).join('')}
           <tr>
-            <td style="padding:0.4rem 0;">Insured Vehicle Transit & Mobilisation</td>
-            <td style="text-align:right;">$${booking.pricing.calloutFee.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding:0.4rem 0;">Consumables / Materials Buffer</td>
-            <td style="text-align:right;">$${booking.pricing.materialsEstimate.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding:0.4rem 0;">Australian Goods & Services Tax (GST 10%)</td>
-            <td style="text-align:right;">$${booking.pricing.gst.toFixed(2)}</td>
+            <td style="padding:0.4rem 0;">Australian Goods & Services Tax (GST ${cur.GST_PERCENT}%)</td>
+            <td style="text-align:right; color:var(--text-muted);">${cur.formatWhole(totals.gstTokens)}</td>
+            <td style="text-align:right;">$${cur.formatWhole(totals.gst)}</td>
           </tr>
           <tr style="border-top:2px solid var(--primary-navy); font-weight:800; font-size:1.05rem;">
-            <td style="padding:0.6rem 0;">TOTAL INVOICE (No Upfront Charges)</td>
-            <td style="text-align:right; color:var(--brand-orange);">$${booking.pricing.estimatedTotal.toFixed(2)}</td>
+            <td style="padding:0.6rem 0;">TOTAL INVOICE (AUD, GST inclusive)</td>
+            <td style="text-align:right; color:var(--text-muted);">${cur.formatWhole(totals.totalTokens)}</td>
+            <td style="text-align:right; color:var(--brand-orange);">${cur.formatAud(totals.total)}</td>
           </tr>
         </tbody>
       </table>
+      ${cur.isAud() ? '' : `
+        <div style="text-align:right; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.6rem;" title="${escapeAttr(cur.moneyTitle(totals.total))}">
+          ${cur.formatMoney(totals.total)} at today's rate (for your information only). You will be invoiced and charged <strong>${cur.formatAud(totals.total)}</strong>.
+        </div>`}
+      ${cur.disclaimerHtml()}
 
       <!-- Direct Payment to Provider (PayID & BSB Bank Account) -->
       <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-sm); padding:0.85rem 1rem; margin-bottom:1rem;">
@@ -2638,7 +2628,8 @@ function renderInvoiceModal(booking) {
 
       <div style="background:#fff; padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-light); font-size:0.78rem; color:var(--text-muted);">
         <i class="fa-solid fa-circle-info" style="color:var(--brand-orange);"></i> 
-        <strong>Payment Terms:</strong> Invoice issued on completion. Payment via direct bank transfer or credit card once you inspect and sign off on the job.
+        <strong>Payment Terms:</strong> Invoice issued on completion in Australian Dollars (AUD), GST inclusive. Payment via direct bank transfer, credit card or tokens once you inspect and sign off on the job.
+        1 token = ${cur.formatAud(cur.tokenPriceAud())}. See our <a href="/terms.html#tokens" target="_blank" rel="noopener">Terms of Service</a> for how tokens work.
       </div>
     </div>
   `;
@@ -2696,8 +2687,18 @@ async function openStripePaymentModal() {
   const nameInput = document.getElementById('stripe-cardholder-name');
   const testHint = document.getElementById('stripe-test-mode-hint');
 
+  const cur = window.iasjCurrency;
+  const totals = getInvoiceTotals(booking);
+  const usdNote = document.getElementById('stripe-modal-usd-note');
+  const disclaimerBox = document.getElementById('stripe-currency-disclaimer');
+
   if (docketElem) docketElem.textContent = booking.docketNumber;
-  if (amountElem) amountElem.textContent = `$${booking.pricing.estimatedTotal.toFixed(2)} AUD`;
+  if (amountElem) amountElem.textContent = cur.formatAud(totals.total);
+  if (usdNote) {
+    usdNote.textContent = cur.isAud() ? '' : `${cur.formatMoney(totals.total)} at today's rate`;
+    usdNote.style.display = cur.isAud() ? 'none' : 'block';
+  }
+  if (disclaimerBox) disclaimerBox.innerHTML = cur.disclaimerHtml({ compact: true });
   if (nameInput && !nameInput.value) nameInput.value = booking.custName || '';
   if (testHint) testHint.style.display = stripeService?.config.isTestMode ? 'block' : 'none';
   if (submitBtn) submitBtn.disabled = true;
@@ -2716,7 +2717,7 @@ async function openStripePaymentModal() {
   try {
     const intent = await stripeService.createPaymentIntent({
       docketNumber: booking.docketNumber,
-      amount: booking.pricing.estimatedTotal,
+      amount: totals.total, // whole AUD, matches the invoice
       customerName: booking.custName,
       description: `Payment for docket ${booking.docketNumber} (${booking.categoryName || 'Trade Service'})`
     });
@@ -2770,7 +2771,7 @@ async function finalizeStripePayment(booking, paymentIntentId) {
 
   syncStripePayButton(booking);
   closeStripePaymentModal();
-  showToast(`Payment of $${verified.amount.toFixed(2)} AUD confirmed by Stripe (Ref: ${verified.paymentIntentId}).`);
+  showToast(`Payment of ${window.iasjCurrency.formatAud(verified.amount)} confirmed by Stripe (Ref: ${verified.paymentIntentId}).`);
 }
 
 async function handleStripePaymentSubmit(event) {
@@ -3421,7 +3422,7 @@ function handleCandidateRegisterSubmit(event) {
   const tradeTitle = document.getElementById('cand-reg-trade')?.value.trim();
   const category = document.getElementById('cand-reg-cat')?.value;
   const suburb = document.getElementById('cand-reg-suburb')?.value.trim();
-  const hourlyRate = parseFloat(document.getElementById('cand-reg-rate')?.value) || 65;
+  const hourlyRate = wholeMoney(parseFloat(document.getElementById('cand-reg-rate')?.value) || 65);
   const experienceYears = parseInt(document.getElementById('cand-reg-exp')?.value) || 5;
   const skills = document.getElementById('cand-reg-skills')?.value.split(',').map(s => s.trim());
   const resumeSummary = document.getElementById('cand-reg-summary')?.value.trim();
@@ -4195,8 +4196,8 @@ function collectServicesFeeData(prefix) {
     }
 
     const feeStructure = feeSelect ? feeSelect.value : 'hourly';
-    const rate = rateInput ? parseFloat(rateInput.value) || 0 : 0;
-    const callout = calloutInput ? parseFloat(calloutInput.value) || 0 : 0;
+    const rate = rateInput ? wholeMoney(parseFloat(rateInput.value) || 0) : 0;
+    const callout = calloutInput ? wholeMoney(parseFloat(calloutInput.value) || 0) : 0;
 
     services.push({
       name: serviceName,
@@ -4287,17 +4288,17 @@ async function handleAdvancedProviderSubmit(event, isInline = false) {
 
   // Pricing models
   const hourlyChecked = document.getElementById(`${ratePrefix}rate-hourly`)?.checked || false;
-  const hourlyRate = hourlyChecked ? (parseFloat(document.getElementById(`${prefix}hourly`)?.value) || 85) : 85;
+  const hourlyRate = wholeMoney(hourlyChecked ? (parseFloat(document.getElementById(`${prefix}hourly`)?.value) || 85) : 85);
 
   const flatChecked = document.getElementById(`${ratePrefix}rate-flat`)?.checked || false;
-  const flatRate = flatChecked ? (parseFloat(document.getElementById(`${prefix}flat`)?.value) || 130) : null;
+  const flatRate = wholeMoney(flatChecked ? (parseFloat(document.getElementById(`${prefix}flat`)?.value) || 130) : null);
 
   const calloutChecked = document.getElementById(`${ratePrefix}rate-callout`)?.checked || false;
-  const calloutFee = calloutChecked ? (parseFloat(document.getElementById(`${prefix}callout`)?.value) || 35) : 35;
+  const calloutFee = wholeMoney(calloutChecked ? (parseFloat(document.getElementById(`${prefix}callout`)?.value) || 35) : 35);
 
   const distanceChecked = document.getElementById(`${ratePrefix}rate-distance`)?.checked || false;
-  const calloutPerUnit = distanceChecked ? (parseFloat(document.getElementById(`${prefix}callout-per-km`)?.value) || 1.50) : 0;
-  const courierPerUnit = distanceChecked ? (parseFloat(document.getElementById(`${prefix}courier-per-km`)?.value) || 1.20) : 0;
+  const calloutPerUnit = wholeMoney(distanceChecked ? (parseFloat(document.getElementById(`${prefix}callout-per-km`)?.value) || 2) : 0);
+  const courierPerUnit = wholeMoney(distanceChecked ? (parseFloat(document.getElementById(`${prefix}courier-per-km`)?.value) || 2) : 0);
   const freeDistance = distanceChecked ? (parseFloat(document.getElementById(`${prefix}free-km`)?.value) || 10) : 0;
 
   const servicesList = collectServicesFeeData(isInline ? 'page' : 'modal');
@@ -4853,7 +4854,7 @@ function loadProviderIntoAdmin(providerId) {
   const calloutEl = document.getElementById('admin-callout-fee');
   if (calloutEl) calloutEl.value = provider.pricing?.calloutFee || 35;
   const distRateEl = document.getElementById('admin-distance-rate');
-  if (distRateEl) distRateEl.value = provider.pricing?.distanceCharging?.calloutPerUnit || 1.50;
+  if (distRateEl) distRateEl.value = provider.pricing?.distanceCharging?.calloutPerUnit || 2;
   const distUnitEl = document.getElementById('admin-distance-unit');
   if (distUnitEl) distUnitEl.value = provider.distanceUnit || 'km';
 
@@ -5092,9 +5093,9 @@ function saveProviderAdminSchedule() {
   if (!provider) return;
 
   const schedule = getMatrixSchedule('admin');
-  const hourly = parseFloat(document.getElementById('admin-hourly-rate')?.value) || provider.hourlyRate;
-  const callout = parseFloat(document.getElementById('admin-callout-fee')?.value) || 35;
-  const distRate = parseFloat(document.getElementById('admin-distance-rate')?.value) || 1.50;
+  const hourly = wholeMoney(parseFloat(document.getElementById('admin-hourly-rate')?.value) || provider.hourlyRate);
+  const callout = wholeMoney(parseFloat(document.getElementById('admin-callout-fee')?.value) || 35);
+  const distRate = wholeMoney(parseFloat(document.getElementById('admin-distance-rate')?.value) || 2);
   const distUnit = document.getElementById('admin-distance-unit')?.value || 'km';
   const pauseReason = document.getElementById('admin-pause-reason')?.value || provider.pausedReason;
 
@@ -5314,7 +5315,7 @@ function getGoogleCalendarUrl(booking) {
     `Provider Business: ${booking.provider?.businessName || 'Verified Trade Partner'}`,
     `Customer Address: ${booking.custAddress || 'On-site'}`,
     `Shift Window: ${booking.shift || 'Urgent Dispatch'}`,
-    `Estimated Total: $${booking.pricing?.estimatedTotal?.toFixed(2) || '0.00'} AUD`,
+    `Estimated Total: ${window.iasjCurrency.formatAud(getInvoiceTotals(booking).total)} (invoiced in Australian Dollars)`,
     `24/7 Operations Hotline: 0495 019 791`
   ].join('\n');
 
@@ -5595,6 +5596,7 @@ function initGoogleAuthUI() {
 
   window.addEventListener('googleAuthStateChanged', (e) => {
     updateGoogleAuthUI(e.detail?.user);
+    syncSuperadminControls();
     if (e.detail?.action === 'login' && e.detail?.redirectOnLogin) {
       routeUserToDashboard(e.detail?.user);
     }
@@ -5845,14 +5847,14 @@ async function handleFranchiseRegisterSubmit(e) {
 
     // Pricing & Rates
     const hourlyActive = document.getElementById(`franchise-staff-${i}-rate-hourly`)?.checked !== false;
-    const hourlyRate = parseFloat(document.getElementById(`franchise-staff-${i}-hourly-rate`)?.value) || 95;
+    const hourlyRate = wholeMoney(parseFloat(document.getElementById(`franchise-staff-${i}-hourly-rate`)?.value) || 95);
     const flatActive = document.getElementById(`franchise-staff-${i}-rate-flat`)?.checked || false;
-    const flatRate = parseFloat(document.getElementById(`franchise-staff-${i}-flat-rate`)?.value) || 150;
+    const flatRate = wholeMoney(parseFloat(document.getElementById(`franchise-staff-${i}-flat-rate`)?.value) || 150);
     const calloutActive = document.getElementById(`franchise-staff-${i}-rate-callout`)?.checked || false;
-    const calloutRate = parseFloat(document.getElementById(`franchise-staff-${i}-callout-rate`)?.value) || 45;
+    const calloutRate = wholeMoney(parseFloat(document.getElementById(`franchise-staff-${i}-callout-rate`)?.value) || 45);
     const chargeDistance = document.getElementById(`franchise-staff-${i}-rate-distance`)?.checked || false;
-    const calloutPerKm = parseFloat(document.getElementById(`franchise-staff-${i}-callout-per-km`)?.value) || 1.50;
-    const courierPerKm = parseFloat(document.getElementById(`franchise-staff-${i}-courier-per-km`)?.value) || 1.20;
+    const calloutPerKm = wholeMoney(parseFloat(document.getElementById(`franchise-staff-${i}-callout-per-km`)?.value) || 2);
+    const courierPerKm = wholeMoney(parseFloat(document.getElementById(`franchise-staff-${i}-courier-per-km`)?.value) || 2);
     const freeKm = parseFloat(document.getElementById(`franchise-staff-${i}-free-km`)?.value) || 10;
 
     const services = collectServicesFeeData(`franchise-staff-${i}`);
@@ -7024,7 +7026,7 @@ function addFranchiseStaffMember(data = null) {
             <label class="input-label" style="font-size:0.75rem;" for="franchise-staff-${index}-callout-per-km">Call-out Travel Fee per km</label>
             <div style="display:flex; align-items:center; gap:0.3rem;">
               <span style="font-weight:700; color:#92400E;">$</span>
-              <input type="number" id="franchise-staff-${index}-callout-per-km" class="form-control" step="0.10" value="${data?.calloutPerKm || 1.50}">
+              <input type="number" id="franchise-staff-${index}-callout-per-km" class="form-control" step="1" min="0" value="${data?.calloutPerKm || 2}">
               <span style="font-size:0.75rem; color:#92400E;">/km</span>
             </div>
           </div>
@@ -7032,7 +7034,7 @@ function addFranchiseStaffMember(data = null) {
             <label class="input-label" style="font-size:0.75rem;" for="franchise-staff-${index}-courier-per-km">Freight Rate per km</label>
             <div style="display:flex; align-items:center; gap:0.3rem;">
               <span style="font-weight:700; color:#92400E;">$</span>
-              <input type="number" id="franchise-staff-${index}-courier-per-km" class="form-control" step="0.10" value="${data?.courierPerKm || 1.20}">
+              <input type="number" id="franchise-staff-${index}-courier-per-km" class="form-control" step="1" min="0" value="${data?.courierPerKm || 2}">
               <span style="font-size:0.75rem; color:#92400E;">/km</span>
             </div>
           </div>
@@ -7394,8 +7396,8 @@ function saveFranchiseApplicationDraft(notify = false) {
       rateCalloutActive: document.getElementById(`franchise-staff-${idx}-rate-callout`)?.checked || false,
       calloutRate: document.getElementById(`franchise-staff-${idx}-callout-rate`)?.value || '45',
       chargeDistance: document.getElementById(`franchise-staff-${idx}-rate-distance`)?.checked || false,
-      calloutPerKm: document.getElementById(`franchise-staff-${idx}-callout-per-km`)?.value || '1.50',
-      courierPerKm: document.getElementById(`franchise-staff-${idx}-courier-per-km`)?.value || '1.20',
+      calloutPerKm: document.getElementById(`franchise-staff-${idx}-callout-per-km`)?.value || '2',
+      courierPerKm: document.getElementById(`franchise-staff-${idx}-courier-per-km`)?.value || '2',
       freeKm: document.getElementById(`franchise-staff-${idx}-free-km`)?.value || '10',
 
       services: collectServicesFeeData(`franchise-staff-${idx}`),
@@ -7665,22 +7667,39 @@ export const geoTimeState = {
   weatherLoaded: false
 };
 
+/**
+ * Set the visitor's region everywhere it is used: the geo footer bar, distance units and
+ * the display currency (AUD in Australia & New Zealand, a USD conversion elsewhere).
+ */
+function setUserCountry(country, source = 'saved') {
+  const code = String(country || '').toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return;
+  geoTimeState.country = code;
+  appState.userCountry = code;
+  window.iasjCurrency?.setCountry(code, source);
+  updateGeoTimeBar();
+}
+
+/**
+ * Default region, in order of preference: the visitor's own saved choice (or GPS),
+ * then IP geolocation (applied in initGeoTimeBar once /api/pricing answers), then the device time zone.
+ * Returns where the country came from.
+ */
 function detectInitialCountry() {
   const savedSettings = localStorage.getItem('iasj_regional_settings');
   if (savedSettings) {
     try {
       const parsed = JSON.parse(savedSettings);
       Object.assign(geoTimeState, parsed);
-      appState.userCountry = geoTimeState.country || 'AU';
-      return geoTimeState.country;
+      setUserCountry(geoTimeState.country || 'AU', 'saved');
+      return 'saved';
     } catch (e) {}
   }
 
   const savedCountry = localStorage.getItem('iasj_user_country');
   if (savedCountry) {
-    geoTimeState.country = savedCountry.toUpperCase();
-    appState.userCountry = geoTimeState.country;
-    return geoTimeState.country;
+    setUserCountry(savedCountry, 'saved');
+    return 'saved';
   }
 
   try {
@@ -7702,8 +7721,23 @@ function detectInitialCountry() {
     }
   } catch (e) {}
 
-  appState.userCountry = geoTimeState.country || 'AU';
-  return geoTimeState.country;
+  setUserCountry(geoTimeState.country || 'AU', 'timezone');
+  return 'timezone';
+}
+
+/**
+ * Time zone, date format and temperature unit that go with a country
+ */
+function applyCountryDefaults(country) {
+  const defaults = {
+    AU: ['Australia/Brisbane', 'DD/MM/YYYY', 'C'],
+    NZ: ['Pacific/Auckland', 'DD/MM/YYYY', 'C'],
+    US: ['America/New_York', 'MM/DD/YYYY', 'F'],
+    GB: ['Europe/London', 'DD/MM/YYYY', 'C'],
+    CA: ['America/Toronto', 'YYYY-MM-DD', 'C']
+  }[country];
+  if (!defaults) return;
+  [geoTimeState.timezone, geoTimeState.dateFormat, geoTimeState.tempUnit] = defaults;
 }
 
 async function fetchOpenMeteoWeather(lat, lng) {
@@ -7818,28 +7852,8 @@ function closeGeoTimeModal() {
 }
 
 function handleCountrySelectChange(country) {
-  geoTimeState.country = country;
-  if (country === 'AU') {
-    geoTimeState.timezone = 'Australia/Brisbane';
-    geoTimeState.dateFormat = 'DD/MM/YYYY';
-    geoTimeState.tempUnit = 'C';
-  } else if (country === 'NZ') {
-    geoTimeState.timezone = 'Pacific/Auckland';
-    geoTimeState.dateFormat = 'DD/MM/YYYY';
-    geoTimeState.tempUnit = 'C';
-  } else if (country === 'US') {
-    geoTimeState.timezone = 'America/New_York';
-    geoTimeState.dateFormat = 'MM/DD/YYYY';
-    geoTimeState.tempUnit = 'F';
-  } else if (country === 'GB') {
-    geoTimeState.timezone = 'Europe/London';
-    geoTimeState.dateFormat = 'DD/MM/YYYY';
-    geoTimeState.tempUnit = 'C';
-  } else if (country === 'CA') {
-    geoTimeState.timezone = 'America/Toronto';
-    geoTimeState.dateFormat = 'YYYY-MM-DD';
-    geoTimeState.tempUnit = 'C';
-  }
+  // Only fills in the form; the region is applied when the visitor presses Save
+  applyCountryDefaults(country);
 
   const selDateFormat = document.getElementById('geo-select-date-format');
   const selTz = document.getElementById('geo-select-timezone');
@@ -7857,14 +7871,14 @@ function saveGeoTimeSettings() {
   const selTz = document.getElementById('geo-select-timezone')?.value || 'Australia/Brisbane';
   const selTemp = document.getElementById('geo-select-temp-unit')?.value || 'C';
 
-  geoTimeState.country = selCountry;
   geoTimeState.suburb = inSuburb;
   geoTimeState.timeFormat = selTimeFormat;
   geoTimeState.dateFormat = selDateFormat;
   geoTimeState.timezone = selTz;
   geoTimeState.tempUnit = selTemp;
 
-  appState.userCountry = selCountry;
+  // The visitor's own choice overrides geolocation from now on
+  setUserCountry(selCountry, 'saved');
   if (typeof syncCustomerDistanceUnits === 'function') {
     syncCustomerDistanceUnits(selCountry);
   }
@@ -7905,14 +7919,13 @@ async function reDetectGpsLocation() {
           
           if (addr.country_code) {
             const detectedCountry = addr.country_code.toUpperCase();
-            geoTimeState.country = detectedCountry;
-            appState.userCountry = detectedCountry;
             localStorage.setItem('iasj_user_country', detectedCountry);
             const selCountry = document.getElementById('geo-select-country');
             if (selCountry) {
               selCountry.value = detectedCountry;
               handleCountrySelectChange(detectedCountry);
             }
+            setUserCountry(detectedCountry, 'gps');
           }
 
           const suburb = addr.suburb || addr.city_district || addr.town || addr.city || '';
@@ -7941,7 +7954,19 @@ async function reDetectGpsLocation() {
 }
 
 function initGeoTimeBar() {
-  detectInitialCountry();
+  const source = detectInitialCountry();
+
+  // Geolocation sets the default region: use the IP country unless the visitor chose one themselves
+  window.iasjCurrency?.ready.then(({ ipCountry }) => {
+    if (source === 'saved' || !ipCountry || ipCountry === geoTimeState.country) return;
+    applyCountryDefaults(ipCountry);
+    setUserCountry(ipCountry, 'ip');
+    updateGeoTimeBarTime();
+  });
+
+  // The thin footer bar only exists on the main page
+  if (!document.getElementById('geo-time-footer-bar')) return;
+
   updateGeoTimeBar();
   updateGeoTimeBarTime();
   setInterval(updateGeoTimeBarTime, 1000);
@@ -8018,9 +8043,36 @@ function switchSuperadminViewRole(role) {
     if (typeof switchTab === 'function') switchTab('franchise-tab');
   }
 
+  syncSuperadminControls();
+
   if (typeof showToast === 'function') {
     showToast(`👑 Viewing site as: ${roleNames[role] || role}`);
   }
+}
+
+/**
+ * Show superadmin tools (role switcher, price list, courier rate controls) only to superadmins,
+ * and hide the price tools while a superadmin is previewing the site as another role.
+ * The server checks the role again before saving any price.
+ */
+function syncSuperadminControls() {
+  const user = window.firebaseService?.getCurrentGoogleUser?.();
+  const isSa = !!user && checkIsSuperadmin(user);
+  const viewRole = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
+  const showPriceTools = isSa && viewRole === 'superadmin';
+
+  const switcher = document.getElementById('superadmin-role-switcher-section');
+  if (switcher) switcher.style.display = isSa ? 'block' : 'none';
+  if (isSa) {
+    document.querySelectorAll('.superadmin-role-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-role') === viewRole);
+    });
+  }
+
+  document.querySelectorAll('.superadmin-only').forEach(el => {
+    el.style.display = showPriceTools ? '' : 'none';
+  });
+  if (showPriceTools) syncSuperadminCourierControls();
 }
 
 function initSuperadminViewMode() {
@@ -8065,8 +8117,7 @@ window.handleCandidatePhotoUpload = handleCandidatePhotoUpload;
 window.confirmBooking = confirmBooking;
 window.selectPackageType = selectPackageType;
 window.calculateCourierQuote = calculateCourierQuote;
-window.fallbackCourierCalculation = fallbackCourierCalculation;
-window.updateCourierPricingUI = updateCourierPricingUI;
+window.updateCourierPricingWithSettings = updateCourierPricingWithSettings;
 window.bookCourierDispatch = bookCourierDispatch;
 window.handleProviderRegistration = handleProviderRegistration;
 window.addJobToDispatchFeed = addJobToDispatchFeed;
@@ -8126,3 +8177,35 @@ window.initSuperadminViewMode = initSuperadminViewMode;
 window.formatTokenItemPrice = formatTokenItemPrice;
 
 window.iasjConfirmDelete = iasjConfirmDelete;
+window.refreshPriceTags = refreshPriceTags;
+window.syncSuperadminControls = syncSuperadminControls;
+window.setUserCountry = setUserCountry;
+
+/* ==========================================================================
+   Currency & price list wiring
+   Runs last, once every function and the geoTimeState above are defined.
+   ========================================================================== */
+
+// Redraw prices when the region, exchange rate or superadmin price list changes
+// Each step is guarded separately so one failure never stops the other prices from updating
+window.addEventListener('iasjPricingChanged', () => {
+  const steps = [
+    () => {
+      if (!appState.currentAnalysis) return;
+      priceAnalysis(appState.currentAnalysis);
+      updatePricingCard(appState.currentAnalysis);
+    },
+    () => {
+      if (!appState.lastCourierRoute) return;
+      updateCourierPricingWithSettings(appState.lastCourierRoute.distanceKm, appState.lastCourierRoute.durationMins);
+    },
+    () => refreshPriceTags(),
+    () => syncSuperadminControls()
+  ];
+  steps.forEach(run => {
+    try { run(); } catch (e) { console.warn('💱 Price refresh step failed:', e); }
+  });
+});
+
+try { initGeoTimeBar(); } catch (e) { console.warn('Geo bar init error:', e); }
+try { syncSuperadminControls(); } catch (e) {}

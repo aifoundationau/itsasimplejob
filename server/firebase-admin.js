@@ -75,10 +75,28 @@ export async function requireUser(req) {
 }
 
 // Superadmins are listed by email in SUPERADMIN_EMAILS (comma-separated)
-export function isSuperadmin(user) {
+export function isSuperadminEmail(email) {
   const allowed = (process.env.SUPERADMIN_EMAILS || '')
     .split(',')
-    .map(email => email.trim().toLowerCase())
+    .map(entry => entry.trim().toLowerCase())
     .filter(Boolean);
-  return !!user?.emailVerified && allowed.includes(user.email.toLowerCase());
+  return !!email && allowed.includes(String(email).trim().toLowerCase());
+}
+
+export function isSuperadmin(user) {
+  return !!user?.emailVerified && isSuperadminEmail(user.email);
+}
+
+/**
+ * Look up a registered user by email (used to address messages). Returns null if there is no such user.
+ */
+export async function findUserByEmail(email) {
+  if (!hasAdminCredentials()) throw new HttpError(503, 'Messages are not configured on the server yet.');
+  try {
+    const record = await getAuth(getAdminApp()).getUserByEmail(String(email).trim());
+    return { uid: record.uid, email: record.email || '', name: record.displayName || '' };
+  } catch (err) {
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') return null;
+    throw err;
+  }
 }

@@ -18,10 +18,15 @@
    - Zero hardcoded credentials or client-side secret exposure.
 
 3. **Token Economy & Currency Integrity:**
-   - Token amounts must strictly be positive integers (`Math.round`, no floating decimals).
-   - Stripe amounts must strictly be positive integer cents (e.g., \$10.00 AUD = `1000`).
-   - AUD displays exclusively in Australia (`AU`) via geolocation; USD displays for international visitors.
-   - Admin controls `isTokenSystemEnabled`, `isAudEnabled`, `isUsdEnabled`, and item CRUD independently.
+   - **Australian Dollars for everything.** Every price, quote, invoice and payment is in AUD (`BASE_CURRENCY = 'AUD'`). Stripe always charges in `aud`.
+   - **Whole numbers only — never decimals.** Every token amount, AUD amount, GST amount, billable hour and billable km is a whole number. Every calculated value is **rounded up** with `wholeUp()` (`shared/pricing.js`), which strips floating-point noise before `Math.ceil` (so `150 * 0.1` gives `15`, not `16`).
+   - **Exception — USD conversions: 2 decimal places maximum.** `convertAudToUsd(aud, audToUsd)` rounds **up to the next cent** with `roundUpToCents()` (e.g. A$98 × 0.70246 = 68.841 → `68.85`) and is displayed with exactly 2 decimals (`≈ $68.85 USD`). USD is display-only; the AUD amount is always what is charged.
+   - **Tokens.** 1 token = `tokenPriceAud` AUD (default **A$1**). The superadmin sets the token amount for every service and product sold, and the token price, in the price list (`platform_settings/pricing`, Section 6.6).
+   - **Stripe amounts** are whole dollars expressed in cents (e.g. \$10 AUD = `1000`); the cents part is always `00`.
+   - **Region & display currency.** Geolocation sets the default region (Section 2.2). Australia (`AU`) and New Zealand (`NZ`) see AUD. All other regions see an approximate USD conversion (AUD → USD daily live rate), but are still invoiced and charged in AUD.
+   - **Disclaimers.** Every invoice, estimate, checkout and token wallet shows that all invoices are in AUD (`iasjCurrency.disclaimerHtml()`). Terms of Service: `/terms.html` (`#tokens`, `#currency`).
+   - **GST.** 10% of the AUD subtotal, rounded up, on every invoice regardless of the viewer's region (Australian tax invoice).
+   - Single source of truth: `shared/pricing.js` (imported by both the browser bundle and the `/api` functions).
 
 ---
 
@@ -100,6 +105,19 @@ Stored locally in `localStorage['iasj_regional_settings']` and synchronized acro
   }
 }
 ```
+
+### 2.2 Default Region Resolution (Geolocation)
+The visitor's region drives the display currency (`window.iasjCurrency.setCountry`). Precedence, highest first:
+
+| Source | `countrySource` | Where it comes from |
+| :--- | :--- | :--- |
+| Visitor's saved choice | `saved` | Regional settings modal (`iasj_regional_settings` / `iasj_user_country`) |
+| GPS / address reverse geocode | `gps` | Nominatim reverse geocode of the device location (also persisted to `iasj_user_country`) |
+| IP geolocation | `ip` | `GET /api/pricing` → `country` (Vercel `x-vercel-ip-country`; `DEV_COUNTRY` locally) |
+| Device time zone | `timezone` | `Intl.DateTimeFormat().resolvedOptions().timeZone` heuristic |
+| Fallback | `default` | `AU` |
+
+`AU` and `NZ` → display `AUD`; any other ISO 3166-1 alpha-2 code → display `USD` conversion.
 
 ---
 
@@ -384,9 +402,10 @@ Enforces zero-latency touch event bindings, ResizeObserver responsiveness, and f
     "weightKg",
     "isAsap",
     "asapSurchargePct",
-    "over20kmSurchargePct",
+    "extraKmSurchargePct",
     "distanceKm",
     "totalTokens",
+    "totalAud",
     "totalFiat",
     "fiatCurrency"
   ],
@@ -397,36 +416,102 @@ Enforces zero-latency touch event bindings, ResizeObserver responsiveness, and f
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "description": "Standard parcel weight capped at 20kg"
+      "description": "Standard parcel weight capped at 20kg (MAX_COURIER_WEIGHT_KG)"
     },
     "isAsap": { "type": "boolean" },
     "asapSurchargePct": {
       "type": "integer",
       "minimum": 0,
       "maximum": 100,
-      "description": "Superadmin configured ASAP percentage (+10%, +20%, +30% etc.)"
+      "description": "Superadmin price list courier.asapSurchargePct (+10%, +20%, +30% etc.)"
     },
-    "over20kmSurchargePct": {
+    "extraKmSurchargePct": {
       "type": "integer",
       "minimum": 0,
       "maximum": 100,
-      "description": "Superadmin configured distance percentage surcharge per km over 20km"
+      "description": "Superadmin price list courier.extraKmSurchargePct, applied to each km beyond courier.includedKm (default 20 km)"
     },
-    "distanceKm": { "type": "number", "minimum": 0.1 },
+    "distanceKm": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Road distance rounded UP to whole km"
+    },
     "totalTokens": {
       "type": "integer",
       "minimum": 1,
-      "description": "Strict integer tokens (Math.round, no decimals)"
+      "description": "Whole tokens, rounded up: ceil(totalAud / tokenPriceAud)"
     },
-    "totalFiat": { "type": "number", "minimum": 0.01 },
+    "totalAud": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Invoice total in whole AUD including GST (always charged in AUD)"
+    },
+    "totalFiat": {
+      "type": "number",
+      "minimum": 0.01,
+      "multipleOf": 0.01,
+      "description": "Display amount: totalAud (whole) for AU/NZ, otherwise convertAudToUsd(totalAud, audToUsd) (2 decimal places maximum, rounded up to the cent)"
+    },
     "fiatCurrency": {
       "type": "string",
       "enum": ["AUD", "USD"],
-      "description": "AUD for Australia and New Zealand via geolocation; USD for all other regions"
+      "description": "Display currency only: AUD for Australia and New Zealand via geolocation; USD conversion for all other regions"
     }
   }
 }
 ```
+
+Pricing (`priceCourier` in `shared/pricing.js`): `base = courier.baseLoading`; `distance = standardKm × perKm + ceil(extraKm × perKm × (100 + extraKmSurchargePct) / 100)`; `asap = ceil((base + distance) × asapSurchargePct / 100)`; `gst = ceil(subtotalAud × 10 / 100)`. GST applies regardless of the viewer's region.
+
+### 4.3 Booking Pricing Object (`booking.pricing`)
+Produced by `priceJob` / `priceCategoryJob` / `priceCourier` and saved with every booking. All amounts are whole AUD; `tokens` mirrors them in whole tokens.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BookingPricingContract",
+  "type": "object",
+  "required": ["currency", "tokenPriceAud", "gstPercent", "lines", "subtotal", "gst", "estimatedTotal", "tokens", "calloutFee", "baseLabour", "materialsEstimate"],
+  "properties": {
+    "currency": { "type": "string", "const": "AUD" },
+    "tokenPriceAud": { "type": "integer", "minimum": 1 },
+    "gstPercent": { "type": "integer", "const": 10 },
+    "hours": { "type": "integer", "minimum": 1, "description": "Billable hours, rounded up (trade jobs)" },
+    "hourlyRate": { "type": "integer", "minimum": 1, "description": "AUD per hour (trade jobs)" },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "label", "tokens", "aud"],
+        "properties": {
+          "key": { "type": "string", "enum": ["labour", "callout", "materials", "base", "distance", "asap"] },
+          "label": { "type": "string" },
+          "tokens": { "type": "integer", "minimum": 0 },
+          "aud": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "subtotal": { "type": "integer", "minimum": 0 },
+    "gst": { "type": "integer", "minimum": 0, "description": "ceil(subtotal × 10 / 100)" },
+    "estimatedTotal": { "type": "integer", "minimum": 1, "description": "subtotal + gst, whole AUD; the amount charged by Stripe" },
+    "calloutFee": { "type": "integer", "minimum": 0 },
+    "baseLabour": { "type": "integer", "minimum": 0 },
+    "materialsEstimate": { "type": "integer", "minimum": 0 },
+    "tokens": {
+      "type": "object",
+      "required": ["subtotal", "gst", "estimatedTotal"],
+      "properties": {
+        "subtotal": { "type": "integer" },
+        "gst": { "type": "integer" },
+        "estimatedTotal": { "type": "integer", "description": "ceil(estimatedTotal / tokenPriceAud)" }
+      }
+    }
+  }
+}
+```
+
+Bookings saved before November 2026 may hold cents (e.g. `222.75`). `getInvoiceTotals()` rounds each line up, recalculates GST and uses that whole-dollar total for the invoice, dispatch feed and Stripe charge.
 
 ---
 
@@ -462,8 +547,8 @@ Returns the authenticated Firebase user profile, verified role, and superadmin s
 }
 ```
 
-### 5.2 `GET /api/token-quote`
-Calculates live token pricing in AUD or USD based on visitor location and daily FX rates.
+### 5.2 `GET /api/token-quote?tokens=&currency=`
+Prices tokens in whole AUD (`tokens × tokenPriceAud`). Tokens are always charged in AUD; `usdEstimate` is a display-only conversion. Without `tokens`, returns the superadmin's token packs. Non-integer `tokens` → `400`.
 
 ```json
 {
@@ -471,13 +556,14 @@ Calculates live token pricing in AUD or USD based on visitor location and daily 
   "title": "ApiTokenQuoteResponseContract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["country", "currency", "defaultCurrency", "tokenPriceUsd", "fxRate", "quotes"],
+  "required": ["country", "chargeCurrency", "displayCurrency", "defaultDisplayCurrency", "tokenPriceAud", "audToUsd", "quotes"],
   "properties": {
     "country": { "type": "string", "pattern": "^[A-Z]{2}$" },
-    "currency": { "type": "string", "enum": ["AUD", "USD"] },
-    "defaultCurrency": { "type": "string", "enum": ["AUD", "USD"] },
-    "tokenPriceUsd": { "type": "number", "minimum": 0 },
-    "fxRate": { "type": "number", "minimum": 0 },
+    "chargeCurrency": { "type": "string", "const": "AUD" },
+    "displayCurrency": { "type": "string", "enum": ["AUD", "USD"] },
+    "defaultDisplayCurrency": { "type": "string", "enum": ["AUD", "USD"], "description": "AUD for AU/NZ by IP country, otherwise USD" },
+    "tokenPriceAud": { "type": "integer", "minimum": 1 },
+    "audToUsd": { "type": "number", "exclusiveMinimum": 0, "description": "Daily AUD -> USD rate (frankfurter.dev ECB, then open.er-api.com, then FX_FALLBACK_AUD_USD)" },
     "fxDate": { "type": ["string", "null"] },
     "fxSource": { "type": ["string", "null"] },
     "quotes": {
@@ -485,11 +571,12 @@ Calculates live token pricing in AUD or USD based on visitor location and daily 
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["tokens", "total", "totalCents"],
+        "required": ["tokens", "totalAud", "totalCents", "usdEstimate"],
         "properties": {
-          "tokens": { "type": "integer", "minimum": 1 },
-          "total": { "type": "number" },
-          "totalCents": { "type": "integer", "minimum": 0 }
+          "tokens": { "type": "integer", "minimum": 1, "maximum": 10000 },
+          "totalAud": { "type": "integer", "minimum": 1 },
+          "totalCents": { "type": "integer", "minimum": 100, "description": "totalAud × 100" },
+          "usdEstimate": { "type": "number", "minimum": 0.01, "multipleOf": 0.01, "description": "convertAudToUsd(totalAud, audToUsd): 2 decimal places maximum, rounded up to the cent; display only" }
         }
       }
     }
@@ -498,7 +585,7 @@ Calculates live token pricing in AUD or USD based on visitor location and daily 
 ```
 
 ### 5.3 `POST /api/token-purchase`
-Initiates a Stripe Checkout Session or PaymentIntent for purchasing token packages.
+Starts a Stripe PaymentIntent for a token purchase. Always charged in AUD.
 
 ```json
 {
@@ -510,13 +597,9 @@ Initiates a Stripe Checkout Session or PaymentIntent for purchasing token packag
   "properties": {
     "tokens": {
       "type": "integer",
-      "minimum": 5,
-      "maximum": 50000,
-      "description": "Whole integer tokens only"
-    },
-    "currency": {
-      "type": "string",
-      "enum": ["AUD", "USD"]
+      "minimum": 1,
+      "maximum": 10000,
+      "description": "Whole tokens only"
     },
     "purchaseId": {
       "type": "string",
@@ -532,16 +615,20 @@ Initiates a Stripe Checkout Session or PaymentIntent for purchasing token packag
   "title": "ApiTokenPurchaseResponseContract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["purchaseId", "clientSecret", "amountCents", "currency", "tokens"],
+  "required": ["paymentIntentId", "clientSecret", "tokens", "totalAud", "currency", "usdEstimate", "audToUsd"],
   "properties": {
-    "purchaseId": { "type": "string" },
+    "paymentIntentId": { "type": "string", "pattern": "^pi_" },
     "clientSecret": { "type": "string" },
-    "amountCents": { "type": "integer", "minimum": 50 },
-    "currency": { "type": "string", "enum": ["aud", "usd"] },
-    "tokens": { "type": "integer" }
+    "tokens": { "type": "integer", "minimum": 1 },
+    "totalAud": { "type": "integer", "minimum": 1 },
+    "currency": { "type": "string", "const": "AUD" },
+    "usdEstimate": { "type": "number", "minimum": 0.01, "multipleOf": 0.01, "description": "Display only; 2 decimal places maximum, rounded up to the cent" },
+    "audToUsd": { "type": "number", "exclusiveMinimum": 0 }
   }
 }
 ```
+
+Pending purchase record (`wallets/{uid}/purchases/{paymentIntentId}`): `{ uid, email, tokens, amountCents, currency: 'AUD', tokenPriceAud, purchaseId, status, createdAt, updatedAt }`.
 
 ### 5.4 `GET /api/wallet`
 Retrieves a user's ledgered token balance and transaction history.
@@ -579,11 +666,82 @@ Retrieves a user's ledgered token balance and transaction history.
 }
 ```
 
+### 5.5 `GET /api/pricing` and `PUT /api/pricing`
+`GET` is public: the visitor's IP region, display currency, live AUD → USD rate and the superadmin price list. `PUT` requires a Firebase ID token for a verified superadmin email (`SUPERADMIN_EMAILS`) and the full price list (Section 6.6); every value is rounded up to a whole number and range-checked, and the first error is returned with `400`.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApiPricingResponseContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["country", "isAudRegion", "displayCurrency", "baseCurrency", "gstPercent", "audToUsd", "pricing"],
+  "properties": {
+    "country": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "x-vercel-ip-country (DEV_COUNTRY locally)" },
+    "isAudRegion": { "type": "boolean", "description": "true for AU and NZ" },
+    "displayCurrency": { "type": "string", "enum": ["AUD", "USD"] },
+    "baseCurrency": { "type": "string", "const": "AUD" },
+    "gstPercent": { "type": "integer", "const": 10 },
+    "audToUsd": { "type": "number", "exclusiveMinimum": 0 },
+    "fxDate": { "type": ["string", "null"] },
+    "fxSource": { "type": ["string", "null"] },
+    "pricing": { "$ref": "#/definitions/SuperadminPriceListContract" },
+    "pricingUpdatedAt": { "type": ["string", "null"], "format": "date-time" }
+  }
+}
+```
+
+`PUT` responses: `200 { pricing, updatedAt }`, `400 { error, errors[] }`, `401` not signed in, `403` not a superadmin, `503` Firestore not configured.
+
+### 5.6 `GET / POST / PATCH /api/messages` (Admin Page > Messages)
+All methods require `Authorization: Bearer <Firebase ID token>`. Superadmins (verified `SUPERADMIN_EMAILS`) use the shared `superadmin` mailbox; everyone else uses their own. `401` signed out, `503` Firestore not configured.
+
+- `GET ?folder=inbox|sent` → up to 50 newest messages, unread count and the price of a message to another user.
+- `POST` → send. **Messages to the superadmin are free** (`to: 'superadmin'`, or any `SUPERADMIN_EMAILS` address, which is routed to the shared superadmin inbox), and so are the superadmin's own messages. Messages to other users cost `fees.message` tokens (Section 6.6), taken from the sender's wallet in the same transaction that delivers the message. Errors: `400` validation / messaging yourself, `402` not enough tokens, `404` no user with that email, `429` more than 20 messages in 10 minutes.
+- `PATCH { id }` → mark an inbox message read; returns the new unread count.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApiSendMessageRequestContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["to", "subject", "body", "clientMessageId"],
+  "properties": {
+    "to": { "type": "string", "description": "'superadmin' or the recipient's email address" },
+    "subject": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "body": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "clientMessageId": { "type": "string", "pattern": "^[A-Za-z0-9-]{8,64}$", "description": "Reused on retry so a message is delivered and charged once" }
+  }
+}
+```
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApiMessagesListResponseContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mailbox", "isSuperadmin", "folder", "messages", "unread", "messagePriceTokens", "tokenPriceAud"],
+  "properties": {
+    "mailbox": { "type": "string", "enum": ["personal", "superadmin"] },
+    "isSuperadmin": { "type": "boolean" },
+    "folder": { "type": "string", "enum": ["inbox", "sent"] },
+    "messages": { "type": "array", "items": { "$ref": "#/definitions/MessageContract" }, "maxItems": 50 },
+    "unread": { "type": "integer", "minimum": 0 },
+    "messagePriceTokens": { "type": "integer", "minimum": 0, "description": "0 for superadmins; otherwise fees.message" },
+    "tokenPriceAud": { "type": "integer", "minimum": 1 }
+  }
+}
+```
+
+Send response: `{ message, tokensCharged, free, wallet }` (`wallet` = `{ available, held }` after a paid message, otherwise `null`).
+
 ---
 
 ## 6. Superadmin Platform Configuration Contract
 
-Controls global feature flags in Cloud Firestore (`platform_settings/global`).
+Controls global feature flags in Cloud Firestore (`platform_settings/global`). Prices live separately in `platform_settings/pricing` (Section 6.6) and the daily AUD → USD rate in `platform_settings/fx_aud_usd`. `isAudEnabled` / `isUsdEnabled` are legacy: the display currency now always follows the visitor's region (AUD for AU/NZ, USD conversion elsewhere) and every charge is in AUD.
 
 ```json
 {
@@ -677,7 +835,7 @@ Governs live security rule deployment for database `itsasimplejob` under project
 ---
 
 ### 6.4 Token Price Item Display & Currency Hover Contract
-Enforces integer tokens as primary value across all service items, with AUD/USD strictly on hover based on geolocation.
+Whole tokens and whole AUD on every price; USD conversions show 2 decimal places maximum. `formatTokenItemPrice(aud)` shows tokens first with money on hover; `formatPriceWithTokenHover(aud)` shows money first with tokens on hover. Money is `$98 AUD` in AU/NZ and `≈ $68.85 USD` elsewhere (rounded up to the cent); the hover title always states that invoices are in AUD. Each tag carries `data-price-aud`, `data-price-suffix` and `data-price-format` (`token` | `price` | `fiat`) so `refreshPriceTags()` can redraw it when the region, exchange rate or price list changes (`iasjPricingChanged` event).
 
 ```json
 {
@@ -687,33 +845,37 @@ Enforces integer tokens as primary value across all service items, with AUD/USD 
   "additionalProperties": false,
   "required": [
     "tokens",
+    "aud",
     "displayHtml",
-    "hoverCurrency",
-    "hoverAmount",
-    "isAudEnabled",
-    "isUsdEnabled",
+    "displayCurrency",
+    "displayAmount",
     "isTokenSystemEnabled"
   ],
   "properties": {
     "tokens": {
       "type": "integer",
       "minimum": 0,
-      "description": "Strict integer tokens (Math.round, no decimals)"
+      "description": "Whole tokens, rounded up: ceil(aud / tokenPriceAud)"
+    },
+    "aud": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Whole AUD amount (data-price-aud)"
     },
     "displayHtml": {
       "type": "string",
-      "description": "HTML snippet rendering primary token tag and hover fiat reveal"
+      "description": "HTML snippet rendering the primary value and the hover reveal"
     },
-    "hoverCurrency": {
+    "displayCurrency": {
       "type": "string",
-      "enum": ["AUD", "USD"]
+      "enum": ["AUD", "USD"],
+      "description": "AUD for AU/NZ, USD conversion for all other regions"
     },
-    "hoverAmount": {
+    "displayAmount": {
       "type": "string",
-      "pattern": "^\d+\.\d{2}$"
+      "pattern": "^(\\$[0-9]{1,3}(,[0-9]{3})* AUD|≈ \\$[0-9]{1,3}(,[0-9]{3})*\\.[0-9]{2} USD)(/[a-z]+)?$",
+      "description": "AUD in whole dollars; USD conversion with exactly 2 decimals, rounded up to the cent. e.g. '$98 AUD/hr' or '≈ $68.85 USD/hr'"
     },
-    "isAudEnabled": { "type": "boolean" },
-    "isUsdEnabled": { "type": "boolean" },
     "isTokenSystemEnabled": { "type": "boolean" }
   }
 }
@@ -789,6 +951,116 @@ Enforces strict two-step confirmation on all interactive deletion triggers acros
 
 ---
 
+### 6.6 Superadmin Price List Contract (`platform_settings/pricing`)
+The superadmin sets the token amount for every service and product sold. Edited in the **Superadmin Price List** modal (`window.openSuperadminPricing()`, from the Superadmin Mode menu or the courier rate card) and saved with `PUT /api/pricing`. Defaults and field ranges live in `shared/pricing.js` (`DEFAULT_PRICING`, `PRICING_FIELDS`). Every value is a whole number; decimals are rounded up before saving.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperadminPriceListContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tokenPriceAud", "hourlyTokens", "fees", "courier", "tokenPacks"],
+  "properties": {
+    "tokenPriceAud": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 1, "description": "AUD price of 1 token" },
+    "hourlyTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plumbing", "electrical", "handyman", "garden", "painting", "appliance", "courier"],
+      "description": "Tokens per hour for each trade (defaults 98, 110, 75, 68, 72, 90, 55)",
+      "properties": {
+        "plumbing": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "electrical": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "handyman": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "garden": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "painting": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "appliance": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "courier": { "type": "integer", "minimum": 1, "maximum": 5000 }
+      }
+    },
+    "fees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calloutStandard", "calloutUrgent", "calloutCourier", "materialsBuffer", "message"],
+      "properties": {
+        "calloutStandard": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 35 },
+        "calloutUrgent": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 55 },
+        "calloutCourier": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 25 },
+        "materialsBuffer": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 25 },
+        "message": { "type": "integer", "minimum": 0, "maximum": 100, "default": 1, "description": "Tokens to send a message to another user. Never applied to messages to or from the superadmin (always free)" }
+      }
+    },
+    "courier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseLoading", "perKm", "includedKm", "extraKmSurchargePct", "asapSurchargePct"],
+      "properties": {
+        "baseLoading": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 35 },
+        "perKm": { "type": "integer", "minimum": 1, "maximum": 500, "default": 2, "description": "Tokens per km (was $1.20/km, rounded up)" },
+        "includedKm": { "type": "integer", "minimum": 0, "maximum": 5000, "default": 20 },
+        "extraKmSurchargePct": { "type": "integer", "minimum": 0, "maximum": 100, "default": 10 },
+        "asapSurchargePct": { "type": "integer", "minimum": 0, "maximum": 100, "default": 20 }
+      }
+    },
+    "tokenPacks": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 1, "maximum": 10000 },
+      "default": [10, 25, 50, 100],
+      "description": "Token packs offered in the Token Wallet (products sold)"
+    },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string", "format": "email" }
+  }
+}
+```
+
+**Messages to the superadmin are free.** Refund requests (and any other message to the superadmin) are never charged in tokens or AUD; no price list entry may be added for them. Refund requests must be made in writing to the superadmin (Terms of Service section 5).
+
+A provider's own hourly rate (`providers/{id}.hourlyRate`, AUD) overrides `hourlyTokens` once the customer picks that provider; it is converted with `ceil(hourlyRate / tokenPriceAud)`. Superadmin tools are shown with the `.superadmin-only` class by `syncSuperadminControls()`; the server re-checks the role on every `PUT`.
+
+---
+
+### 6.7 Message Contract (`mailboxes/{owner}/inbox|sent/{messageId}`)
+Written only by `/api/messages` (`server/messages.js`, Admin SDK); `firestore.rules` denies all browser access. `owner` is the user's uid or `superadmin` (shared by all superadmins). Each message is stored twice: the sender's `sent` copy (`read: true`) and the recipient's `inbox` copy (`read: false` until opened). `messageId` = `{senderUid}_{clientMessageId}`. A paid message also writes `wallets/{uid}/ledger/message_{messageId}` `{ type: 'message', tokens: -price, availableAfter, ref, createdAt }` in the same transaction. `mailboxes/{uid}` holds the sender's rate-limit window `{ rateWindowStart, rateCount }` (20 messages / 10 minutes; superadmins exempt).
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MessageContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["from", "to", "subject", "body", "createdAt", "tokensCharged", "read"],
+  "definitions": {
+    "party": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uid", "name", "email", "role"],
+      "properties": {
+        "uid": { "type": ["string", "null"], "description": "null for the superadmin" },
+        "name": { "type": "string", "maxLength": 200 },
+        "email": { "type": ["string", "null"], "format": "email", "description": "null for the superadmin (personal superadmin emails are never shown)" },
+        "role": { "type": "string", "enum": ["user", "superadmin"] }
+      }
+    }
+  },
+  "properties": {
+    "from": { "$ref": "#/definitions/party" },
+    "to": { "$ref": "#/definitions/party" },
+    "subject": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "body": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "Plain text; always HTML-escaped when shown" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "tokensCharged": { "type": "integer", "minimum": 0, "description": "0 when to or from the superadmin" },
+    "read": { "type": "boolean" },
+    "readAt": { "type": "string", "format": "date-time" }
+  }
+}
+```
+
+---
+
 ## 8. DOM Automation & Accessibility Testability Contract
 
 All interactive elements (`<button>`, `<input>`, `<select>`, `<textarea>`) across the entire web application are strictly required to expose deterministic automation hooks and accessibility bindings.
@@ -839,3 +1111,9 @@ All interactive elements (`<button>`, `<input>`, `<select>`, `<textarea>`) acros
 - All data contracts must adhere to `additionalProperties: false` to ensure total payload determinism.
 - Australian Privacy Act guidelines must be enforced on any field storing individual identity or contact information.
 
+### Change log
+- **2 November 2026 — AUD default currency & superadmin price list.** Everything is priced, invoiced and charged in AUD; 1 token = A$1 by default; whole numbers only, rounded up. Added `shared/pricing.js`, `js/currency.js`, `js/superadmin-pricing.js`, `GET/PUT /api/pricing` (5.5), the price list (6.6), default region resolution (2.2), the booking pricing object (4.3) and `/terms.html`. Token purchases are always charged in AUD (5.2, 5.3). FX is now AUD → USD (`platform_settings/fx_aud_usd`, env `FX_FALLBACK_AUD_USD`; the old `FX_FALLBACK_USD_AUD` is still read and inverted). Courier `over20kmSurchargePct` became `extraKmSurchargePct` with a configurable `includedKm`.
+
+- **2 November 2026 — USD conversions to the cent.** USD conversions (display only) now show 2 decimal places maximum, rounded up to the next cent with `roundUpToCents()` / `convertAudToUsd()` in `shared/pricing.js` (e.g. `≈ $68.85 USD`, rate note `A$100 ≈ US$70.25`). `usdEstimate` (5.2, 5.3) and courier `totalFiat` (4.2) are now numbers with at most 2 decimals. AUD amounts, tokens and invoices remain whole numbers.
+- **2 November 2026 — Refunds & superadmin messages.** Refund requests must be made in writing by sending a message to the superadmin (support@aifoundation.net.au; Terms of Service section 5, tokens FAQ, Token Wallet). Messages to the superadmin are free: never priced in tokens or AUD (6.6).
+- **2 November 2026 — Messages panel.** Admin Page > Messages (`js/messages-panel.js`, `GET/POST/PATCH /api/messages`, `server/messages.js`): users message each other by email, or the superadmin. Messages to (and from) the superadmin are free; messages to other users cost `fees.message` tokens (default 1, set in the price list, 6.6), charged in the delivery transaction. Contracts 5.6 and 6.7; `mailboxes` is server-only in `firestore.rules`. Refund requests can now be sent to the superadmin from the Messages panel (or by email).

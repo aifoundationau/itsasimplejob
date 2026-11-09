@@ -143,6 +143,9 @@
                   <i class="fa-solid fa-building-user"></i> Franchise
                 </button>
               </div>
+              <button type="button" class="superadmin-role-btn superadmin-only" onclick="closeGoogleUserMenu(); openSuperadminPricing();" style="display:none; width:100%; margin-top:0.5rem; justify-content:center;" data-agent-id="btn-open-price-list" data-testid="btn-open-price-list" aria-label="Open the superadmin price list">
+                <i class="fa-solid fa-tags"></i> Price List (Tokens &amp; AUD)
+              </button>
             </div>
 
             <a href="/customer-admin.html" class="settings-menu-option" id="google-menu-admin-page" onclick="closeGoogleUserMenu();" style="text-decoration:none;">
@@ -152,6 +155,17 @@
                 <div class="settings-option-text">
                   <strong>Admin Page</strong>
                   <p>Calendar, rates, turn on/off dates & pause service</p>
+                </div>
+                <i class="fa-solid fa-chevron-right settings-arrow"></i>
+              </a>
+
+              <a href="/customer-admin.html?view=messages" class="settings-menu-option" id="google-menu-messages" onclick="closeGoogleUserMenu();" style="text-decoration:none;" data-agent-id="menu-messages" data-testid="menu-messages" aria-label="Messages">
+                <div class="settings-option-icon" style="background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">
+                  <i class="fa-solid fa-envelope"></i>
+                </div>
+                <div class="settings-option-text">
+                  <strong>Messages</strong>
+                  <p>Message other users &bull; messages to the superadmin are free</p>
                 </div>
                 <i class="fa-solid fa-chevron-right settings-arrow"></i>
               </a>
@@ -565,36 +579,37 @@
             </strong>
             
             <div class="price-row">
-              <span id="label-labour-hours">Labour (<span id="invoice-est-hours">1.5</span> hrs @ <span id="invoice-hourly-rate"><span class="price-token-hover-tag" title="Equivalent: 67 Tokens/hr"><span class="price-display-amount">$95.00 AUD/hr</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 67 Tokens/hr</span></span></span>)</span>
+              <span id="label-labour-hours">Labour (<span id="invoice-est-hours">2</span> hrs @ <span id="invoice-hourly-rate"><span class="price-token-hover-tag" data-price-format="price" data-price-aud="98" data-price-suffix="/hr" title="Equivalent: 98 Tokens/hr"><span class="price-display-amount">$98 AUD/hr</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 98 Tokens/hr</span></span></span>)</span>
               <span id="price-labour-val">
-                <span class="price-token-hover-tag" title="Equivalent: 100 Tokens"><span class="price-display-amount">$142.50 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 100 Tokens</span></span>
+                <span class="price-token-hover-tag" data-price-format="price" data-price-aud="196" data-price-suffix="" title="Equivalent: 196 Tokens"><span class="price-display-amount">$196 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 196 Tokens</span></span>
               </span>
             </div>
             <div class="price-row">
               <span>Local Callout & Vehicle Transit</span>
               <span id="price-callout-val">
-                <span class="price-token-hover-tag" title="Equivalent: 25 Tokens"><span class="price-display-amount">$35.00 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 25 Tokens</span></span>
+                <span class="price-token-hover-tag" data-price-format="price" data-price-aud="35" data-price-suffix="" title="Equivalent: 35 Tokens"><span class="price-display-amount">$35 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 35 Tokens</span></span>
               </span>
             </div>
             <div class="price-row">
               <span>Standard Consumables / Parts Buffer</span>
               <span id="price-materials-val">
-                <span class="price-token-hover-tag" title="Equivalent: 18 Tokens"><span class="price-display-amount">$25.00 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 18 Tokens</span></span>
+                <span class="price-token-hover-tag" data-price-format="price" data-price-aud="25" data-price-suffix="" title="Equivalent: 25 Tokens"><span class="price-display-amount">$25 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 25 Tokens</span></span>
               </span>
             </div>
             <div class="price-row">
               <span>GST (10% Australian Tax)</span>
               <span id="price-gst-val">
-                <span class="price-token-hover-tag" title="Equivalent: 14 Tokens"><span class="price-display-amount">$20.25 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 14 Tokens</span></span>
+                <span class="price-token-hover-tag" data-price-format="price" data-price-aud="26" data-price-suffix="" title="Equivalent: 26 Tokens"><span class="price-display-amount">$26 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 26 Tokens</span></span>
               </span>
             </div>
 
             <div class="price-row total-row">
               <span>Total Estimated Price</span>
               <span class="final-amount" id="price-total-val">
-                <span class="price-token-hover-tag" title="Equivalent: 157 Tokens"><span class="price-display-amount">$222.75 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 157 Tokens</span></span>
+                <span class="price-token-hover-tag" data-price-format="price" data-price-aud="282" data-price-suffix="" title="Equivalent: 282 Tokens"><span class="price-display-amount">$282 AUD</span><span class="token-hover-badge"><i class="fa-solid fa-coins token-coin-icon"></i> 282 Tokens</span></span>
               </span>
             </div>
+            <div id="price-currency-disclaimer"></div>
           </div>
 
           <!-- Booking Customer Details Form -->
@@ -997,13 +1012,17 @@
             </div>
 
             <!-- Superadmin Courier Surcharge Controls -->
-            <div id="superadmin-courier-config-card" style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.9rem; margin-bottom:1rem; font-size:0.82rem;">
+            <!-- Visible to superadmins only (syncSuperadminControls); the server re-checks the role before saving -->
+            <div id="superadmin-courier-config-card" class="superadmin-only" style="display:none; background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.9rem; margin-bottom:1rem; font-size:0.82rem;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                 <strong style="color:#B45309; display:flex; align-items:center; gap:0.35rem;">
                   <i class="fa-solid fa-crown" style="color:#F59E0B;"></i> Superadmin Rate Controls
                 </strong>
-                <span class="badge-pill-pill" style="background:#F59E0B; color:#fff; font-size:0.68rem; font-weight:700;">Live Rate Override</span>
+                <button type="button" class="btn btn-sm" onclick="openSuperadminPricing()" style="background:#F59E0B; color:#fff; font-size:0.72rem; font-weight:700; padding:0.25rem 0.6rem;" data-agent-id="btn-open-price-list-courier" data-testid="btn-open-price-list-courier" aria-label="Edit the full superadmin price list">
+                  <i class="fa-solid fa-tags"></i> Full Price List
+                </button>
               </div>
+              <p style="font-size:0.72rem; color:#92400E; margin:0 0 0.5rem;">Changes save to the live price list for every visitor.</p>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                 <div>
                   <label style="font-size:0.75rem; color:#92400E; display:block; margin-bottom:0.2rem; font-weight:600;">
@@ -1021,7 +1040,7 @@
                 </div>
                 <div>
                   <label style="font-size:0.75rem; color:#92400E; display:block; margin-bottom:0.2rem; font-weight:600;">
-                    Over 20km Distance Surcharge %
+                    Extra-Distance Surcharge %
                   </label>
                   <select id="sa-over20-pct-select" class="form-control" style="font-size:0.8rem; height:32px; padding:2px 8px;" onchange="onSuperadminCourierSettingsChange()" data-agent-id="sa-over20-pct-select" data-testid="sa-over20-pct-select" aria-label="Sa Over20 Pct Select">
                     <option value="5">+5% per km over 20km</option>
@@ -1058,6 +1077,7 @@
                 <span>Total Delivery Price</span>
                 <span class="final-amount" id="courier-total-fee">--</span>
               </div>
+              <div id="courier-currency-disclaimer"></div>
             </div>
 
             <!-- Interactive Courier Route Map -->
@@ -1398,7 +1418,7 @@
                     <label class="input-label" style="font-size:0.75rem;" for="page-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
                     <div style="display:flex; align-items:center; gap:0.3rem;">
                       <span style="font-weight:700; color:#92400E;">$</span>
-                      <input type="number" id="page-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20" data-agent-id="page-prov-callout-per-km" data-testid="page-prov-callout-per-km" aria-label="Page Prov Callout Per Km">
+                      <input type="number" id="page-prov-callout-per-km" class="form-control" step="1" value="2" min="0" max="20" data-agent-id="page-prov-callout-per-km" data-testid="page-prov-callout-per-km" aria-label="Page Prov Callout Per Km">
                       <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
                     </div>
                   </div>
@@ -1407,7 +1427,7 @@
                     <label class="input-label" style="font-size:0.75rem;" for="page-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
                     <div style="display:flex; align-items:center; gap:0.3rem;">
                       <span style="font-weight:700; color:#92400E;">$</span>
-                      <input type="number" id="page-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20" data-agent-id="page-prov-courier-per-km" data-testid="page-prov-courier-per-km" aria-label="Page Prov Courier Per Km">
+                      <input type="number" id="page-prov-courier-per-km" class="form-control" step="1" value="2" min="0" max="20" data-agent-id="page-prov-courier-per-km" data-testid="page-prov-courier-per-km" aria-label="Page Prov Courier Per Km">
                       <span style="font-size:0.75rem; color:#92400E;">/<span class="unit-span">km</span></span>
                     </div>
                   </div>
@@ -2194,7 +2214,7 @@
                 <li><strong>Hourly Rates:</strong> Clearly stated rate per hour for trade work or on-site diagnostic time.</li>
                 <li><strong>Flat Rates:</strong> Upfront fixed price for defined standard tasks.</li>
                 <li><strong>Base Call-Out Fee:</strong> Standard call-out fee to cover arrival, inspection, and tooling.</li>
-                <li><strong>Distance Charges:</strong> Callout or courier freight rate charged per <strong>km</strong> or <strong>mile</strong> beyond the included free travel zone (e.g. $1.50/km after 10 km).</li>
+                <li><strong>Distance Charges:</strong> Callout or courier freight rate charged per <strong>km</strong> or <strong>mile</strong> beyond the included free travel zone (e.g. $2/km after 10 km). All rates are whole dollars.</li>
               </ul>
             </div>
           </div>
@@ -2228,7 +2248,21 @@
               <i class="fa-solid fa-chevron-down faq-icon"></i>
             </button>
             <div class="faq-answer-content">
-              <p>Customers pay the service provider or franchise <strong>directly</strong>. We do not take the customer's payment. Instead, we charge service providers and franchises a <strong>small fee per transaction</strong>. Every booking still generates an official Australian Tax Invoice docket (e.g. <code>IASJ-XXXXXX</code>) detailing labour, materials, callout fee, distance travel, and 10% GST, and all of it is available in your own admin panel.</p>
+              <p>Customers pay the service provider or franchise <strong>directly</strong>. We do not take the customer's payment. Instead, we charge service providers and franchises a <strong>small fee per transaction</strong>. Every booking still generates an official Australian Tax Invoice docket (e.g. <code>IASJ-XXXXXX</code>) detailing labour, materials, callout fee, distance travel, and 10% GST, and all of it is available in your own admin panel. <strong>All invoices are in Australian Dollars (AUD)</strong>, in whole dollars.</p>
+            </div>
+          </div>
+
+          <!-- FAQ: Tokens & Currency -->
+          <div class="faq-item" id="faq-tokens">
+            <button class="faq-question-btn" onclick="toggleFaq('faq-tokens')" data-agent-id="faq-question-btn-tokens" data-testid="faq-question-btn-tokens" aria-label="What are tokens and what currency do you charge in?">
+              <span><i class="fa-solid fa-coins" style="color:var(--brand-orange); margin-right:0.6rem;"></i> What are tokens, and what currency do you charge in?</span>
+              <i class="fa-solid fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer-content">
+              <p>You exchange money for <strong>tokens</strong>, then use tokens to pay for jobs. One token costs <strong>A$1</strong> unless we tell you otherwise. Tokens give you more flexible payment options: a single payment can be shared between several service providers on the same job, for example a tradie and a courier.</p>
+              <p style="margin-top:0.5rem;">We price, invoice and charge everything in <strong>Australian Dollars (AUD)</strong>, in whole dollars only, with every amount rounded up. Visitors in Australia and New Zealand see AUD prices. Everywhere else we also show an approximate <strong>USD conversion</strong> at today's exchange rate, for information only. You are still invoiced and charged in AUD, and your card provider may apply its own exchange rate and fees. Read the full details in our <a href="/terms.html#tokens">Terms of Service</a>.</p>
+              <p style="margin-top:0.5rem;"><strong>Messages:</strong> you can message other users from the <a href="/customer-admin.html?view=messages">Messages</a> panel on your Admin Page. Messages to the superadmin are always free; a message to another user costs the number of tokens shown before you send it.</p>
+              <p style="margin-top:0.5rem;"><strong>Refunds:</strong> refund requests must be made in writing, by sending a message to the superadmin from the <a href="/customer-admin.html?view=messages">Messages</a> panel on your Admin Page, or by email to <a href="mailto:support@aifoundation.net.au?subject=Refund%20request">support@aifoundation.net.au</a>. Messages to the superadmin are free. See <a href="/terms.html#refunds">Refunds</a> in our Terms of Service.</p>
             </div>
           </div>
 
@@ -2566,7 +2600,7 @@
             <div class="dispatch-job-item" id="sample-job-1">
               <div class="dispatch-job-header">
                 <h5><i class="fa-solid fa-wrench" style="color:var(--primary-navy);"></i> Leaking Mixer Tap & Seal Replacement</h5>
-                <span class="dispatch-earnings">$223.30 AUD</span>
+                <span class="dispatch-earnings">$224 AUD</span>
               </div>
               <p class="dispatch-job-desc">
                 Customer: Jack Thompson • 42 Surf Parade, Broadbeach QLD • 24/7/365 On-Call Dispatch
@@ -2589,7 +2623,7 @@
             <div class="dispatch-job-item" id="sample-job-2">
               <div class="dispatch-job-header">
                 <h5><i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> Urgent Same-Day Courier (Surgical Gear)</h5>
-                <span class="dispatch-earnings">$169.60 AUD</span>
+                <span class="dispatch-earnings">$170 AUD</span>
               </div>
               <p class="dispatch-job-desc">
                 Origin: Southport Clinic • Dest: Brisbane Private Hospital • Direct handoff
@@ -2774,7 +2808,8 @@
           </div>
           <div style="text-align:right;">
             <span style="font-size:0.75rem; color:#4338CA; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Total Due (AUD)</span>
-            <div style="font-weight:900; color:#4338CA; font-size:1.35rem;" id="stripe-modal-amount">$0.00 AUD</div>
+            <div style="font-weight:900; color:#4338CA; font-size:1.35rem;" id="stripe-modal-amount">$0 AUD</div>
+            <div id="stripe-modal-usd-note" style="display:none; font-size:0.72rem; color:#4338CA; font-weight:600;"></div>
           </div>
         </div>
 
@@ -2800,6 +2835,8 @@
             <i class="fa-solid fa-lock" style="color:#059669; font-size:1rem;"></i>
             <span>Card details are entered in Stripe's secure form and sent directly to <strong>Stripe</strong>. The payment is confirmed with Stripe before your docket is marked paid.</span>
           </div>
+
+          <div id="stripe-currency-disclaimer" style="margin-bottom:1rem;"></div>
 
           <button type="submit" class="btn btn-primary" id="btn-stripe-submit" disabled style="width:100%; background:#635BFF; border-color:#635BFF; font-weight:700; padding:0.85rem; font-size:1rem;" data-agent-id="btn-stripe-submit" data-testid="btn-stripe-submit" aria-label="Btn Stripe Submit">
             <i class="fa-solid fa-shield-halved"></i> Authorize & Pay with Stripe
@@ -3289,7 +3326,7 @@
                   <label class="input-label" style="font-size:0.75rem;" for="adv-prov-callout-per-km">Call-out Travel Fee per <span class="unit-span">km</span></label>
                   <div style="display:flex; align-items:center; gap:0.3rem;">
                     <span style="font-weight:700; color:#92400E;">$</span>
-                    <input type="number" id="adv-prov-callout-per-km" class="form-control" step="0.10" value="1.50" min="0" max="20" placeholder="1.50" data-agent-id="adv-prov-callout-per-km" data-testid="adv-prov-callout-per-km" aria-label="1.50">
+                    <input type="number" id="adv-prov-callout-per-km" class="form-control" step="1" value="2" min="0" max="20" placeholder="2" data-agent-id="adv-prov-callout-per-km" data-testid="adv-prov-callout-per-km" aria-label="Callout rate per km (whole dollars)">
                     <span style="font-size:0.75rem; color:#92400E; white-space:nowrap;">/<span class="unit-span">km</span></span>
                   </div>
                 </div>
@@ -3298,7 +3335,7 @@
                   <label class="input-label" style="font-size:0.75rem;" for="adv-prov-courier-per-km">Courier Freight Rate per <span class="unit-span">km</span></label>
                   <div style="display:flex; align-items:center; gap:0.3rem;">
                     <span style="font-weight:700; color:#92400E;">$</span>
-                    <input type="number" id="adv-prov-courier-per-km" class="form-control" step="0.10" value="1.20" min="0" max="20" placeholder="1.20" data-agent-id="adv-prov-courier-per-km" data-testid="adv-prov-courier-per-km" aria-label="1.20">
+                    <input type="number" id="adv-prov-courier-per-km" class="form-control" step="1" value="2" min="0" max="20" placeholder="2" data-agent-id="adv-prov-courier-per-km" data-testid="adv-prov-courier-per-km" aria-label="Courier rate per km (whole dollars)">
                     <span style="font-size:0.75rem; color:#92400E; white-space:nowrap;">/<span class="unit-span">km</span></span>
                   </div>
                 </div>
@@ -3920,7 +3957,7 @@
             </div>
             <div class="input-group" style="margin-bottom:0;">
               <label class="input-label" style="font-size:0.72rem;">Distance Rate ($)</label>
-              <input type="number" id="admin-distance-rate" class="form-control" style="font-size:0.85rem; height:36px;" value="1.50" step="0.1" data-agent-id="admin-distance-rate" data-testid="admin-distance-rate" aria-label="Admin Distance Rate">
+              <input type="number" id="admin-distance-rate" class="form-control" style="font-size:0.85rem; height:36px;" value="2" step="1" data-agent-id="admin-distance-rate" data-testid="admin-distance-rate" aria-label="Admin Distance Rate">
             </div>
             <div class="input-group" style="margin-bottom:0;">
               <label class="input-label" style="font-size:0.72rem;">Distance Unit</label>
@@ -4106,6 +4143,8 @@
             <li><a href="#" onclick="goToFaq('faq-franchise-registration'); return false;"><i class="fa-solid fa-building-user"></i> Franchise Registration Page</a></li>
             <li><a href="#" onclick="goToFaq('faq-franchise-opportunities'); return false;">Franchise Opportunities</a></li>
             <li><a href="#" onclick="goToFaq('faq-docket-lookup'); return false;">Docket &amp; Invoice Lookup</a></li>
+            <li><a href="#" onclick="goToFaq('faq-tokens'); return false;"><i class="fa-solid fa-coins"></i> Tokens &amp; Currency (AUD)</a></li>
+            <li><a href="/terms.html"><i class="fa-solid fa-file-contract"></i> Terms of Service</a></li>
             <li><a href="tel:0495019791"><i class="fa-solid fa-phone"></i> 0495 019 791</a></li>
           </ul>
         </div>
@@ -4114,6 +4153,10 @@
       <div class="footer-bottom-bar">
         <span>&copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584.</span>
         <span>Australia's First Labour & Courier Service Powered by AI • 24/7, 365 Days a Year Nationwide</span>
+      </div>
+      <div class="footer-bottom-bar" style="padding-top:0; font-size:0.75rem;">
+        <span>All prices, invoices and payments are in Australian Dollars (AUD), in whole dollars. Visitors outside Australia and New Zealand see an approximate USD conversion for information only. 1 token = A$1 unless stated otherwise.</span>
+        <span><a href="/terms.html" style="color:inherit; text-decoration:underline;" data-agent-id="link-terms-footer" data-testid="link-terms-footer" aria-label="Terms of Service">Terms of Service</a></span>
       </div>
     </div>
   </footer>
@@ -4210,12 +4253,12 @@
             data-agent-id="select-geo-country" 
             data-testid="select-geo-country" aria-label="Geo Select Country">
             <option value="AU" selected>🇦🇺 Australia (AUD • Metric km • DD/MM/YYYY)</option>
-            <option value="NZ">🇳🇿 New Zealand (NZD • Metric km • DD/MM/YYYY)</option>
+            <option value="NZ">🇳🇿 New Zealand (AUD • Metric km • DD/MM/YYYY)</option>
             <option value="US">🇺🇸 United States (USD • Imperial miles • MM/DD/YYYY)</option>
-            <option value="GB">🇬🇧 United Kingdom (GBP • Miles • DD/MM/YYYY)</option>
-            <option value="CA">🇨🇦 Canada (CAD • Metric km • YYYY-MM-DD)</option>
-            <option value="IE">🇮🇪 Ireland (EUR • Metric km • DD/MM/YYYY)</option>
-            <option value="SG">🇸🇬 Singapore (SGD • Metric km • DD/MM/YYYY)</option>
+            <option value="GB">🇬🇧 United Kingdom (USD • Miles • DD/MM/YYYY)</option>
+            <option value="CA">🇨🇦 Canada (USD • Metric km • YYYY-MM-DD)</option>
+            <option value="IE">🇮🇪 Ireland (USD • Metric km • DD/MM/YYYY)</option>
+            <option value="SG">🇸🇬 Singapore (USD • Metric km • DD/MM/YYYY)</option>
           </select>
         </div>
 
