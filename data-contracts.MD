@@ -1701,3 +1701,21 @@ Defines the authoritative roles stored in the Firestore database (`users/{uid}`,
   }
 }
 ```
+
+### 11.3 SuperAdmin Driver Revocation Contract (`SuperAdminDriverRevocationContract`)
+Defines the state transition and side-effects when SuperAdmin revokes an approved driver's status:
+
+1. **Trigger & Two-Step Verification:**
+   - Initiated via `handleRevokeDriverClick(btn, driverId)` using the `iasjConfirmDelete` standard two-step verification UI.
+   - Arms a 5-second countdown with solid red styling and prompt `"Confirm Revoke?"`.
+2. **State Transitions & Multi-Tenant Updates:**
+   - **`providers/{driverId}`**: Sets `approved: false`, `status: "pending_approval"`, `isActive: false`, `revokedBy: superadminEmail`, `revokedAt: ISO8601`.
+   - **`driver_applications/{appId}`**: Sets `approved: false`, `status: "pending_approval"`, `revokedBy: superadminEmail`, `revokedAt: ISO8601`.
+   - **`users/{uid}`**: Role demoted back to `"supporter"` (`role: "supporter"`, `isDriver: false`, `approved: false`).
+   - **`supporterDB`**: Supporter profile role demoted to `"supporter"`.
+   - **Client Session (`localStorage['iasj_google_user']`)**: If the revoked driver is the active session user, role immediately drops back to `"supporter"`.
+3. **UI Visibility & Exclusion:**
+   - The revoked driver is immediately purged from the live public customer booking map and contractor selection dropdown.
+   - In the SuperAdmin Driver Approval Console, the badge switches to yellow `"Pending SuperAdmin Approval"`, and the action button reverts to `"Approve Driver"`.
+   - If the revoked driver navigates to the Driver Dispatch Console, the `#supporter-not-driver-notice` banner is rendered, preventing unauthorized dispatch.
+

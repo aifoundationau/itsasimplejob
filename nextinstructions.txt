@@ -190,9 +190,21 @@ Created: 2026-11-01
   * SuperAdmin Console (`#superadmin-courier-config-card`) is strictly displayed only when signed in as SuperAdmin.
 - Documented in Section 11 of `data-contracts.MD`. Automated tests and Vite production build verified.
 
+[COMPLETED 2026-11-08] TASK 27: SUPERADMIN DRIVER REVOCATION WITH TWO-STEP CONFIRMATION
+- SuperAdmin Driver Revocation:
+  * In the SuperAdmin Driver Approval Console, SuperAdmin can revoke approved drivers at any time.
+  * Two-Step Verification: Clicking "Revoke Driver" arms a 5-second countdown with solid red styling and prompt "Confirm Revoke?" via `iasjConfirmDelete` before executing.
+  * Multi-Tenant State Transition:
+    - Sets `approved: false`, `status: 'pending_approval'`, `isActive: false` in local `providerDB`, Firestore `providers/{id}`, and `driver_applications/{id}`.
+    - Demotes user role in Firestore `users/{uid}` and local supporterDB back to `'supporter'` (`isDriver: false`, `approved: false`).
+    - If the currently logged-in user is that driver, session state immediately drops back to Supporter with `#supporter-not-driver-notice` active.
+    - Excludes revoked driver from the public customer map and booking directory immediately.
+    - Updates SuperAdmin console row badge to yellow "Pending SuperAdmin Approval" with button flipping to "Approve Driver".
+- Documented in Section 11.3 of `data-contracts.MD`. Automated tests and Vite production build verified.
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST RBAC ROLES & ACCEPT BOOKING IN THE SUPPORTER PORTAL
+CURRENT TASK: TEST SUPERADMIN REVOKING DRIVER STATUS IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, sign in with Google to open the Supporter Portal, test updating your personal details in "1. Register Details", verify the new "Buy Tokens" button in the Supporter Bar, and in "4. Driver Dispatch Console" verify the "Accept Booking" button appears on incoming customer orders.
+1. In your browser at http://localhost:3002, navigate to the Supporter Portal > "4. Driver Dispatch Console" as SuperAdmin, scroll to the "SuperAdmin Driver Approval Console", click "Revoke Driver" on any approved driver, verify the button arms to "Confirm Revoke?", click to confirm, and observe the status switch to "Pending SuperAdmin Approval" and the driver get safely reverted to Supporter.
 
 ================================================================================

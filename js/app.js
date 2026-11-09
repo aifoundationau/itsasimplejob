@@ -2116,6 +2116,25 @@ async function approveDriverBySuperadmin(driverId) {
 }
 window.approveDriverBySuperadmin = approveDriverBySuperadmin;
 
+
+function handleRevokeDriverClick(btn, driverId) {
+  const driver = window.providerDB?.findById(driverId);
+  const driverName = driver ? driver.name : 'Driver';
+  if (btn && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btn, () => {
+      revokeDriverBySuperadmin(driverId);
+    }, {
+      label: 'Confirm Revoke?',
+      timeoutMs: 5000,
+      targetType: 'driver',
+      targetId: driverId
+    });
+  } else {
+    revokeDriverBySuperadmin(driverId);
+  }
+}
+window.handleRevokeDriverClick = handleRevokeDriverClick;
+
 async function revokeDriverBySuperadmin(driverId) {
   const driver = window.providerDB?.revokeDriver(driverId);
   if (!driver) return;
@@ -2153,6 +2172,7 @@ async function revokeDriverBySuperadmin(driverId) {
 
   renderSuperadminDriverApprovals();
   renderDriverAdminDashboard();
+  renderSupporterPanel();
   filterContractors();
   calculateCourierQuote();
   showToast(`⚠️ Driver "${driver.name}" approval has been REVOKED by SuperAdmin. Role reverted to Supporter.`);
@@ -2209,11 +2229,11 @@ function renderSuperadminDriverApprovals() {
               <i class="fa-solid fa-check"></i> Approve Driver
             </button>
           ` : `
-            <button type="button" class="btn btn-outline btn-sm" onclick="revokeDriverBySuperadmin('${d.id}')"
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleRevokeDriverClick(this, '${d.id}')"
               style="color:#DC2626; border-color:#FECACA; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
               data-agent-id="btn-sa-revoke-drv-${d.id}" data-testid="btn-sa-revoke-drv-${d.id}"
               aria-label="Revoke Driver ${escapeAttr(d.name)}">
-              <i class="fa-solid fa-ban"></i> Revoke
+              <i class="fa-solid fa-ban"></i> Revoke Driver
             </button>
           `}
         </div>

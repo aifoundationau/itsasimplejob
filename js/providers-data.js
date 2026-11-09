@@ -523,6 +523,7 @@ class ProviderDatabase {
     if (!p) return null;
     p.approved = false;
     p.status = "pending_approval";
+    p.isActive = false;
     this.save();
     return p;
   }
