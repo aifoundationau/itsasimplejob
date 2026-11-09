@@ -98,6 +98,20 @@ function initApp() {
       }
     });
   } catch (e) {}
+  try {
+    setupOsmAddressAutocomplete('sup-drv-reg-address', (place) => {
+      if (place?.lat && place?.lng) {
+        const latEl = document.getElementById('sup-drv-reg-lat');
+        const lngEl = document.getElementById('sup-drv-reg-lng');
+        if (latEl) latEl.value = String(place.lat);
+        if (lngEl) lngEl.value = String(place.lng);
+        const st = document.getElementById('sup-drv-reg-geo-status');
+        if (st) {
+          st.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Located at <strong>${place.formatted}</strong> (${place.lat.toFixed(4)}, ${place.lng.toFixed(4)})`;
+        }
+      }
+    });
+  } catch (e) {}
 
   try { initSpeechRecognition(); } catch (e) {}
   try { loadGoogleMapsScript(); } catch (e) {}
@@ -2958,6 +2972,8 @@ async function approveDriverBySuperadmin(driverId) {
 
   renderSuperadminDriverApprovals();
   renderDriverAdminDashboard();
+  try { renderSupporterPanel(); } catch (e) {}
+  try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
   filterContractors();
   calculateCourierQuote();
   if (appState.osmMap && window.L) {
@@ -2966,9 +2982,26 @@ async function approveDriverBySuperadmin(driverId) {
   if (appState.osmCourierMap && window.L) {
     try { renderOsmCourierRouteMap(); } catch (e) {}
   }
-  showToast(`✅ Driver "${driver.name}" has been APPROVED by SuperAdmin and is now LIVE ON THE MAP!`);
+  showToast(`✅ Driver "${driver.name}" has been APPROVED by SuperAdmin in the Super Admin Panel and is now LIVE ON THE MAP!`);
 }
 window.approveDriverBySuperadmin = approveDriverBySuperadmin;
+
+async function approveAllPendingDriversBySuperadmin() {
+  const drivers = window.providerDB ? window.providerDB.getAll() : [];
+  const pendingDrivers = drivers.filter(d => typeof isDriverApproved === 'function' ? !isDriverApproved(d) : (d.approved === false || d.status === 'pending_approval'));
+  if (pendingDrivers.length === 0) {
+    showToast('ℹ️ All driver applications are already approved.');
+    return [];
+  }
+  const approvedIds = [];
+  for (const drv of pendingDrivers) {
+    await approveDriverBySuperadmin(drv.id);
+    approvedIds.push(drv.id);
+  }
+  showToast(`✅ Approved all ${approvedIds.length} pending driver application(s) in the Super Admin Panel!`);
+  return approvedIds;
+}
+window.approveAllPendingDriversBySuperadmin = approveAllPendingDriversBySuperadmin;
 
 
 function handleRevokeDriverClick(btn, driverId) {
@@ -3027,6 +3060,7 @@ async function revokeDriverBySuperadmin(driverId) {
   renderSuperadminDriverApprovals();
   renderDriverAdminDashboard();
   renderSupporterPanel();
+  try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
   filterContractors();
   calculateCourierQuote();
   if (appState.osmMap && window.L) {
@@ -3042,15 +3076,29 @@ window.revokeDriverBySuperadmin = revokeDriverBySuperadmin;
 function renderSuperadminDriverApprovals() {
   const container = document.getElementById('superadmin-drivers-approval-list');
   const badgeEl = document.getElementById('superadmin-driver-pending-badge');
+  const approveAllBtn = document.getElementById('btn-sa-approve-all-drivers');
   if (!container) return;
 
-  const drivers = window.providerDB ? window.providerDB.getAll() : [];
-  const pendingCount = drivers.filter(d => typeof isDriverApproved === 'function' ? !isDriverApproved(d) : (d.approved === false || d.status === 'pending_approval')).length;
+  const drivers = window.providerDB ? [...window.providerDB.getAll()] : [];
+  const checkApproved = (d) => typeof isDriverApproved === 'function'
+    ? isDriverApproved(d)
+    : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked');
+  const pendingCount = drivers.filter(d => !checkApproved(d)).length;
+
+  // Sort pending driver applications to the top of the Super Admin Panel approval list
+  drivers.sort((a, b) => {
+    const aApp = checkApproved(a) ? 1 : 0;
+    const bApp = checkApproved(b) ? 1 : 0;
+    return aApp - bApp;
+  });
 
   if (badgeEl) {
     badgeEl.textContent = `${pendingCount} Driver${pendingCount === 1 ? '' : 's'} Awaiting Approval`;
     badgeEl.style.background = pendingCount > 0 ? '#FEF3C7' : '#ECFDF5';
     badgeEl.style.color = pendingCount > 0 ? '#92400E' : '#065F46';
+  }
+  if (approveAllBtn) {
+    approveAllBtn.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
   }
 
   if (drivers.length === 0) {
@@ -3059,7 +3107,7 @@ function renderSuperadminDriverApprovals() {
   }
 
   container.innerHTML = drivers.map(d => {
-    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked');
+    const isApproved = checkApproved(d);
     const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(d) : (d.profileTurnedOn !== false && d.profileActive !== false);
     const isVisibleOnMap = isApproved && isProfileOn;
     return `
@@ -4585,6 +4633,11 @@ const SUPPORTER_COLLAPSE_PANELS = {
     chevronId: 'chevron-panel-buy-tokens',
     bodyId: 'supporter-buy-tokens-subtab'
   },
+  'register-driver': {
+    btnId: 'btn-toggle-panel-register-driver',
+    chevronId: 'chevron-panel-register-driver',
+    bodyId: 'supporter-register-driver-subtab'
+  },
   'superadmin-console': {
     btnId: 'btn-toggle-superadmin-console',
     headerId: 'superadmin-console-header-toggle',
@@ -4617,6 +4670,7 @@ window.collapseAllSupporterPanels = collapseAllSupporterPanels;
 function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   let normalizedKey = panelKey;
   if (panelKey === 'register-details') normalizedKey = 'registration-details';
+  if (panelKey === 'register-as-driver' || panelKey === 'driver-application') normalizedKey = 'register-driver';
   if (panelKey === 'superadmin' || panelKey === 'firebase-admin-account') normalizedKey = 'superadmin-console';
 
   // Enforce that first-time users must register as a Supporter first before opening other panels
@@ -4651,6 +4705,9 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   if (nextOpen) {
     if (normalizedKey === 'registration-details' || normalizedKey === 'buy-tokens') {
       try { renderSupporterPanel(); } catch (e) {}
+    }
+    if (normalizedKey === 'register-driver') {
+      try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
     }
     if (normalizedKey === 'driver-information') {
       try { renderDriverInformationView(); } catch (e) {}
@@ -5393,6 +5450,7 @@ function renderSupporterPanel() {
     if (regSuburb) regSuburb.value = supporter.suburb || supporter.address || '';
     
     try { renderSupporterBookings(); } catch (e) {}
+    try { prefillSupporterDriverRegistrationForm(supporter); } catch (e) {}
     if (isDriverAdminMode) {
       try { renderDriverInformationView(); } catch (e) {}
       try { renderDriverAdminDashboard(); } catch (e) {}
@@ -6146,12 +6204,256 @@ function handleDriverRegistrationSubmit(event) {
 
   document.getElementById('driver-registration-form')?.reset();
   try { updateDriverApplicationGateUI(); } catch (e) {}
+  try { renderSuperadminDriverApprovals(); } catch (e) {}
+  try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
   openDriverAdminPanelFromGoogleMenu();
   toggleSupporterCollapsePanel('driver-information', true);
-  showToast(`🎉 Driver application submitted for ${savedDriver.name}! Awaiting SuperAdmin approval.`);
+  showToast(`🎉 Driver application submitted for ${savedDriver.name}! Super Admin approves all driver applications in the Super Admin Panel.`);
+  return savedDriver;
 }
 window.handleDriverRegistrationSubmit = handleDriverRegistrationSubmit;
 window.handleProviderRegistration = handleDriverRegistrationSubmit;
+
+/**
+ * Supporter Admin Inline 'Register as a Driver' Form (Under Buy Tokens)
+ * All submitted applications are queued for SuperAdmin approval in the Super Admin Panel.
+ */
+function toggleSupporterDriverRegModesUI() {
+  const vBox = document.getElementById('sup-drv-reg-vehicle-rates-box');
+  const bBox = document.getElementById('sup-drv-reg-bicycle-rates-box');
+  const hasVehicle = document.getElementById('sup-drv-reg-has-vehicle')?.checked ?? true;
+  const hasBicycle = document.getElementById('sup-drv-reg-has-bicycle')?.checked ?? false;
+
+  if (!hasVehicle && !hasBicycle) {
+    const bikeBox = document.getElementById('sup-drv-reg-has-bicycle');
+    if (bikeBox) bikeBox.checked = true;
+  }
+
+  if (vBox) vBox.style.display = (document.getElementById('sup-drv-reg-has-vehicle')?.checked) ? 'block' : 'none';
+  if (bBox) bBox.style.display = (document.getElementById('sup-drv-reg-has-bicycle')?.checked) ? 'block' : 'none';
+}
+window.toggleSupporterDriverRegModesUI = toggleSupporterDriverRegModesUI;
+
+function autoGeolocateSupporterDriverForm() {
+  const statusEl = document.getElementById('sup-drv-reg-geo-status');
+  const latInput = document.getElementById('sup-drv-reg-lat');
+  const lngInput = document.getElementById('sup-drv-reg-lng');
+  const addrInput = document.getElementById('sup-drv-reg-address');
+
+  if (statusEl) {
+    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Detecting live driver GPS coordinates...`;
+  }
+
+  const applyCoords = async (lat, lng, fallbackLabel) => {
+    if (latInput) latInput.value = String(lat.toFixed(5));
+    if (lngInput) lngInput.value = String(lng.toFixed(5));
+
+    let resolvedAddr = fallbackLabel;
+    try {
+      const osmAddr = await reverseGeocodeOsm(lat, lng);
+      if (osmAddr) resolvedAddr = osmAddr;
+    } catch (e) {}
+
+    if (addrInput && (!addrInput.value || addrInput.value.includes('GPS'))) {
+      addrInput.value = resolvedAddr;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Live GPS Locked: <strong>${resolvedAddr}</strong> (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    }
+    showToast(`📍 Driver GPS location locked: ${resolvedAddr}`);
+  };
+
+  if (!navigator.geolocation) {
+    applyCoords(-27.9678, 153.4011, '14 Hill Street, Southport QLD 4215');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude, 'Southport QLD 4215 (Live GPS)'),
+    () => applyCoords(-27.9678, 153.4011, '14 Hill Street, Southport QLD 4215'),
+    { enableHighAccuracy: true, timeout: 6000 }
+  );
+}
+window.autoGeolocateSupporterDriverForm = autoGeolocateSupporterDriverForm;
+
+function prefillSupporterDriverRegistrationForm(supporter) {
+  if (!supporter && typeof getCurrentSupporter === 'function') {
+    supporter = getCurrentSupporter();
+  }
+  const emailToMatch = (supporter?.email || document.getElementById('sup-drv-reg-email')?.value || '').toLowerCase().trim();
+  const existingDriver = emailToMatch
+    ? (window.providerDB?.getAll?.() || []).find(d => (d.email || '').toLowerCase().trim() === emailToMatch)
+    : null;
+
+  const statusPill = document.getElementById('supporter-register-driver-status-pill');
+  const notice = document.getElementById('sup-drv-reg-existing-notice');
+  const noticeText = document.getElementById('sup-drv-reg-existing-notice-text');
+  const submitBtn = document.getElementById('btn-submit-supporter-driver-registration');
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+
+  if (existingDriver) {
+    const isApproved = typeof isDriverApproved === 'function'
+      ? isDriverApproved(existingDriver)
+      : (existingDriver.approved !== false && existingDriver.status !== 'pending_approval' && existingDriver.status !== 'revoked');
+
+    if (statusPill) {
+      if (isApproved) {
+        statusPill.style.background = '#DCFCE7';
+        statusPill.style.color = '#15803D';
+        statusPill.style.borderColor = '#86EFAC';
+        statusPill.innerHTML = '<i class="fa-solid fa-circle-check"></i> Approved by SuperAdmin';
+      } else {
+        statusPill.style.background = '#FEF3C7';
+        statusPill.style.color = '#92400E';
+        statusPill.style.borderColor = '#FCD34D';
+        statusPill.innerHTML = '<i class="fa-solid fa-clock"></i> Pending SuperAdmin Approval';
+      }
+    }
+
+    if (notice) {
+      notice.style.display = 'block';
+      notice.style.background = isApproved ? '#ECFDF5' : '#FFFBEB';
+      notice.style.borderColor = isApproved ? '#10B981' : '#F59E0B';
+      notice.style.color = isApproved ? '#065F46' : '#92400E';
+      if (noticeText) {
+        noticeText.innerHTML = isApproved
+          ? `<strong>Driver Application Approved by SuperAdmin:</strong> Registered for <strong>${escapeAttr(existingDriver.email)}</strong>. Your profile is approved in the Super Admin Panel and ready for customer bookings.`
+          : `<strong>Driver Application Submitted — Pending SuperAdmin Approval:</strong> Application for <strong>${escapeAttr(existingDriver.email)}</strong> has been sent to the <strong>Super Admin Panel</strong>. Super Admin approves all driver applications before they appear on customer maps.`;
+      }
+    }
+
+    if (submitBtn) {
+      submitBtn.innerHTML = isApproved
+        ? '<i class="fa-solid fa-floppy-disk"></i> Update Driver Application &amp; Rates ($ AUD)'
+        : '<i class="fa-solid fa-paper-plane"></i> Update Pending Driver Application (Awaiting SuperAdmin Approval)';
+    }
+
+    setVal('sup-drv-reg-name', existingDriver.name || supporter?.name);
+    setVal('sup-drv-reg-gender', existingDriver.gender || 'male');
+    setVal('sup-drv-reg-phone', existingDriver.phone || supporter?.phone);
+    setVal('sup-drv-reg-email', existingDriver.email || supporter?.email);
+    setVal('sup-drv-reg-address', existingDriver.address || existingDriver.baseSuburb || supporter?.suburb);
+    setVal('sup-drv-reg-vehicle', existingDriver.vehicle || '');
+    setVal('sup-drv-reg-licence-num', existingDriver.licenceNumber || '');
+    setVal('sup-drv-reg-licence-state', existingDriver.licenceState || 'QLD');
+    setVal('sup-drv-reg-licence-class', existingDriver.licenceClass || 'C (Car / Van)');
+    setVal('sup-drv-reg-licence-expiry', existingDriver.licenceExpiry || '2029-12-31');
+    setVal('sup-drv-reg-payid-value', existingDriver.payIdValue || existingDriver.payId || '');
+
+    const chkVehicle = document.getElementById('sup-drv-reg-has-vehicle');
+    if (chkVehicle) chkVehicle.checked = existingDriver.hasVehicleCourier !== false;
+    const chkBicycle = document.getElementById('sup-drv-reg-has-bicycle');
+    if (chkBicycle) chkBicycle.checked = !!existingDriver.hasBicycleCourier;
+
+    setVal('sup-drv-reg-per-km', existingDriver.vehiclePerKmRateAud ?? existingDriver.perKmRateAud ?? 2.20);
+    setVal('sup-drv-reg-sameday-fee', existingDriver.vehicleSameDayFeeAud ?? existingDriver.sameDayFeeAud ?? 0);
+    setVal('sup-drv-reg-urgent-fee', existingDriver.vehicleUrgentFeeAud ?? existingDriver.urgentFeeAud ?? 0);
+    setVal('sup-drv-reg-max-weight', existingDriver.vehicleMaxWeightKg ?? existingDriver.maxWeightKg ?? 50);
+    setVal('sup-drv-reg-max-height', existingDriver.vehicleMaxHeightCm ?? existingDriver.maxHeightCm ?? 70);
+    setVal('sup-drv-reg-max-width', existingDriver.vehicleMaxWidthCm ?? existingDriver.maxWidthCm ?? 50);
+    setVal('sup-drv-reg-max-length', existingDriver.vehicleMaxLengthCm ?? existingDriver.maxLengthCm ?? 50);
+
+    setVal('sup-drv-reg-bike-per-km', existingDriver.bicyclePerKmRateAud ?? 1.80);
+    setVal('sup-drv-reg-bike-sameday-fee', existingDriver.bicycleSameDayFeeAud ?? 0);
+    setVal('sup-drv-reg-bike-urgent-fee', existingDriver.bicycleUrgentFeeAud ?? 0);
+    setVal('sup-drv-reg-bike-max-weight', existingDriver.bicycleMaxWeightKg ?? 8);
+    setVal('sup-drv-reg-bike-max-height', existingDriver.bicycleMaxHeightCm ?? 35);
+    setVal('sup-drv-reg-bike-max-width', existingDriver.bicycleMaxWidthCm ?? 30);
+    setVal('sup-drv-reg-bike-max-length', existingDriver.bicycleMaxLengthCm ?? 40);
+
+    if (existingDriver.lat) setVal('sup-drv-reg-lat', existingDriver.lat);
+    if (existingDriver.lng) setVal('sup-drv-reg-lng', existingDriver.lng);
+  } else {
+    if (statusPill) {
+      statusPill.style.background = '#EFF6FF';
+      statusPill.style.color = '#1E40AF';
+      statusPill.style.borderColor = '#BFDBFE';
+      statusPill.innerHTML = '<i class="fa-solid fa-file-signature"></i> Apply Now';
+    }
+    if (notice) notice.style.display = 'none';
+    if (submitBtn) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Driver Application for SuperAdmin Approval';
+    }
+    if (supporter) {
+      const setValIfEmpty = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && !el.value && val) el.value = val;
+      };
+      setValIfEmpty('sup-drv-reg-name', supporter.name);
+      setValIfEmpty('sup-drv-reg-phone', supporter.phone);
+      setValIfEmpty('sup-drv-reg-email', supporter.email);
+      setValIfEmpty('sup-drv-reg-address', supporter.suburb || supporter.address);
+    }
+  }
+  toggleSupporterDriverRegModesUI();
+}
+window.prefillSupporterDriverRegistrationForm = prefillSupporterDriverRegistrationForm;
+
+function handleSupporterDriverRegistrationSubmit(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  // Sync values from #sup-drv-reg-* into #drv-reg-* and submit through the unified driver application pipeline
+  const fieldPairs = [
+    ['sup-drv-reg-name', 'drv-reg-name'],
+    ['sup-drv-reg-business', 'drv-reg-business'],
+    ['sup-drv-reg-gender', 'drv-reg-gender'],
+    ['sup-drv-reg-phone', 'drv-reg-phone'],
+    ['sup-drv-reg-email', 'drv-reg-email'],
+    ['sup-drv-reg-vehicle', 'drv-reg-vehicle'],
+    ['sup-drv-reg-address', 'drv-reg-address'],
+    ['sup-drv-reg-licence-num', 'drv-reg-licence-num'],
+    ['sup-drv-reg-licence-state', 'drv-reg-licence-state'],
+    ['sup-drv-reg-licence-class', 'drv-reg-licence-class'],
+    ['sup-drv-reg-licence-expiry', 'drv-reg-licence-expiry'],
+    ['sup-drv-reg-payid-value', 'drv-reg-payid-value'],
+    ['sup-drv-reg-per-km', 'drv-reg-per-km'],
+    ['sup-drv-reg-sameday-fee', 'drv-reg-sameday-fee'],
+    ['sup-drv-reg-urgent-fee', 'drv-reg-urgent-fee'],
+    ['sup-drv-reg-max-weight', 'drv-reg-max-weight'],
+    ['sup-drv-reg-max-height', 'drv-reg-max-height'],
+    ['sup-drv-reg-max-width', 'drv-reg-max-width'],
+    ['sup-drv-reg-max-length', 'drv-reg-max-length'],
+    ['sup-drv-reg-bike-per-km', 'drv-reg-bike-per-km'],
+    ['sup-drv-reg-bike-sameday-fee', 'drv-reg-bike-sameday-fee'],
+    ['sup-drv-reg-bike-urgent-fee', 'drv-reg-bike-urgent-fee'],
+    ['sup-drv-reg-bike-max-weight', 'drv-reg-bike-max-weight'],
+    ['sup-drv-reg-bike-max-height', 'drv-reg-bike-max-height'],
+    ['sup-drv-reg-bike-max-width', 'drv-reg-bike-max-width'],
+    ['sup-drv-reg-bike-max-length', 'drv-reg-bike-max-length'],
+    ['sup-drv-reg-lat', 'drv-reg-lat'],
+    ['sup-drv-reg-lng', 'drv-reg-lng']
+  ];
+
+  fieldPairs.forEach(([srcId, dstId]) => {
+    const srcEl = document.getElementById(srcId);
+    const dstEl = document.getElementById(dstId);
+    if (srcEl && dstEl) {
+      dstEl.value = srcEl.value;
+    }
+  });
+
+  const supVehChk = document.getElementById('sup-drv-reg-has-vehicle');
+  const drvVehChk = document.getElementById('drv-reg-has-vehicle');
+  if (supVehChk && drvVehChk) drvVehChk.checked = supVehChk.checked;
+
+  const supBikeChk = document.getElementById('sup-drv-reg-has-bicycle');
+  const drvBikeChk = document.getElementById('drv-reg-has-bicycle');
+  if (supBikeChk && drvBikeChk) drvBikeChk.checked = supBikeChk.checked;
+
+  const savedDriver = handleDriverRegistrationSubmit(event);
+  if (savedDriver) {
+    try { renderSuperadminDriverApprovals(); } catch (e) {}
+    try { renderSupporterPanel(); } catch (e) {}
+    try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
+    toggleSupporterCollapsePanel('register-driver', true);
+  }
+  return savedDriver;
+}
+window.handleSupporterDriverRegistrationSubmit = handleSupporterDriverRegistrationSubmit;
 
 /**
  * Driver Admin Dashboard: Render Active Driver Profile, Live GPS, Token Balance & Recorded 9am-4pm Orders

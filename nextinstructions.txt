@@ -638,3 +638,9 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Added Section 8 (`#privacy-policy`: Privacy Policy) and Section 9 (`#ai-policy`: AI Policy ISO/IEC 42001) to `terms.html`.
 - Updated `updateDriverApplicationGateUI()` in `js/app.js` so `#footer-driver-app-link` stays visible in the footer at all times while `#driver-application-modal` enforces the Supporter-first registration gate when opened.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 84: Support Admin — Add "Register as a Driver" Form Under "Buy Tokens" & Super Admin Approves All Driver Applications in the Super Admin Panel:
+- Added the collapsible **Register as a Driver** panel (`#supporter-panel-register-driver`, header `#btn-toggle-panel-register-driver`, status pill `#supporter-register-driver-status-pill`, collapsible body `#supporter-register-driver-subtab`, and full inline form `#supporter-driver-registration-form`) directly under **Buy Tokens** (`#supporter-panel-buy-tokens`) inside `#supporter-collapsed-panels-stack` in `index.html`.
+- Added `prefillSupporterDriverRegistrationForm()`, `toggleSupporterDriverRegModesUI()`, `autoGeolocateSupporterDriverForm()`, and `handleSupporterDriverRegistrationSubmit()` in `js/app.js` so supporters can complete and submit their driver application directly inside Support Admin -> Register as a Driver.
+- Updated `#superadmin-driver-approval-console` in `index.html` and `renderSuperadminDriverApprovals()` + `approveAllPendingDriversBySuperadmin()` in `js/app.js` so all submitted driver applications (`approved: false, status: 'pending_approval'`) are queued at the top of the **Super Admin Panel** where Super Admin approves individual or all pending driver applications before they go live on customer maps.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

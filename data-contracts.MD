@@ -3291,6 +3291,14 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
         ]
       }
     },
+    "supportAdminRegisterAsDriverUnderBuyTokens": {
+      "type": "boolean",
+      "const": true
+    },
+    "superAdminApprovesAllDriverApplicationsInSuperAdminPanel": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

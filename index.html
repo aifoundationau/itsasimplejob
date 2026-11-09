@@ -1550,6 +1550,364 @@
             </div>
           </div>
 
+          <!-- COLLAPSED PANEL 4 (Under Buy Tokens): Register as a Driver Form -->
+          <div id="supporter-panel-register-driver" class="courier-calc-card supporter-collapsible-card"
+            style="padding:0; overflow:hidden; border:1px solid var(--border-light);"
+            data-agent-id="supporter-panel-register-driver" data-testid="supporter-panel-register-driver">
+            <button type="button" id="btn-toggle-panel-register-driver"
+              onclick="toggleSupporterCollapsePanel('register-driver')" aria-expanded="false"
+              aria-controls="supporter-register-driver-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-register-driver" data-testid="btn-toggle-panel-register-driver"
+              aria-label="Toggle Register as a Driver Form Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span
+                  style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-truck-fast"></i>
+                </span>
+                <div>
+                  <strong id="title-panel-register-driver"
+                    style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Register as a Driver</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Complete the Register as a Driver form — Super Admin approves all driver applications in the Super Admin Panel</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span id="supporter-register-driver-status-pill"
+                  style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.65rem; border-radius:999px; border:1px solid #BFDBFE;"
+                  data-agent-id="supporter-register-driver-status-pill" data-testid="supporter-register-driver-status-pill">
+                  <i class="fa-solid fa-file-signature"></i> Apply Now
+                </span>
+                <i id="chevron-panel-register-driver" class="fa-solid fa-chevron-down"
+                  style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+
+            <div id="supporter-register-driver-subtab" class="supporter-collapse-body"
+              style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);"
+              data-agent-id="supporter-register-driver-subtab" data-testid="supporter-register-driver-subtab">
+
+              <!-- SuperAdmin Approval Requirement Banner -->
+              <div id="supporter-driver-app-approval-banner"
+                style="background:#FFFBEB; border:1.5px solid #F59E0B; border-radius:var(--radius-md); padding:0.95rem 1.15rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;"
+                data-agent-id="supporter-driver-app-approval-banner" data-testid="supporter-driver-app-approval-banner">
+                <div style="font-size:0.84rem; color:#92400E; line-height:1.5;">
+                  <strong><i class="fa-solid fa-crown" style="color:#D97706;"></i> Super Admin Approves All Driver Applications in the Super Admin Panel:</strong>
+                  Submit your courier driver details, licence, PayID, and delivery rates below. Your application will be sent directly to the <strong>Super Admin Panel</strong> for approval before your driver profile goes live on customer maps.
+                </div>
+                <span style="font-size:0.72rem; font-weight:800; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:0.22rem 0.6rem; border-radius:999px; white-space:nowrap;">
+                  <i class="fa-solid fa-shield-halved"></i> SuperAdmin Approval Required
+                </span>
+              </div>
+
+              <!-- Existing Driver Application Status Notice (if already submitted) -->
+              <div id="sup-drv-reg-existing-notice" class="alert-banner"
+                style="display:none; margin-bottom:1.25rem; padding:0.95rem 1.25rem; border-radius:8px; font-size:0.86rem; background:#EFF6FF; border:1px solid #3B82F6; color:var(--primary-navy);"
+                data-agent-id="sup-drv-reg-existing-notice" data-testid="sup-drv-reg-existing-notice">
+                <i class="fa-solid fa-circle-info" style="color:#2563EB;"></i>
+                <span id="sup-drv-reg-existing-notice-text">Driver application on file.</span>
+              </div>
+
+              <!-- Inline Register as a Driver Form -->
+              <form id="supporter-driver-registration-form" onsubmit="handleSupporterDriverRegistrationSubmit(event)"
+                data-agent-id="supporter-driver-registration-form" data-testid="supporter-driver-registration-form">
+
+                <!-- 1. Driver Personal, Vehicle & Contact Details -->
+                <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.85rem 0; padding-bottom:0.45rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <i class="fa-solid fa-user-shield" style="color:var(--brand-orange);"></i> 1. Driver Details
+                </h3>
+
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-name">Full Name (Required):</label>
+                    <input type="text" id="sup-drv-reg-name" class="form-control" required placeholder="e.g. Jordan Mitchell"
+                      data-agent-id="sup-drv-reg-name" data-testid="sup-drv-reg-name" aria-label="Driver Full Name">
+                    <input type="hidden" id="sup-drv-reg-business" value="">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-gender">Gender (Map Pin Color):</label>
+                    <select id="sup-drv-reg-gender" class="form-control" required data-agent-id="sup-drv-reg-gender"
+                      data-testid="sup-drv-reg-gender" aria-label="Driver Gender">
+                      <option value="male" selected>Male (Blue Map Pin)</option>
+                      <option value="female">Female (Pink Map Pin)</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-phone">Mobile Phone Number (Required):</label>
+                    <input type="tel" id="sup-drv-reg-phone" class="form-control" required placeholder="e.g. 0412 345 678"
+                      data-agent-id="sup-drv-reg-phone" data-testid="sup-drv-reg-phone" aria-label="Driver Mobile Phone Number">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-email">Email Address (Required):</label>
+                    <input type="email" id="sup-drv-reg-email" class="form-control" required
+                      placeholder="e.g. jordan@mitchellcouriers.com.au" data-agent-id="sup-drv-reg-email"
+                      data-testid="sup-drv-reg-email" aria-label="Driver Email Address">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-vehicle">Vehicle Make, Model &amp; Body Type (Required):</label>
+                    <input type="text" id="sup-drv-reg-vehicle" class="form-control" required
+                      placeholder="e.g. Toyota HiAce LWB Van / Ford Ranger Ute" data-agent-id="sup-drv-reg-vehicle"
+                      data-testid="sup-drv-reg-vehicle" aria-label="Vehicle Make, Model and Body Type">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="input-group osm-autocomplete-wrapper" style="position:relative; width:100%;">
+                    <label class="input-label" for="sup-drv-reg-address">Driver Base Street Address &amp; Suburb (Required):</label>
+                    <div class="input-with-action">
+                      <input type="text" id="sup-drv-reg-address" class="form-control osm-address-input" required
+                        placeholder="e.g. 25 Cavill Avenue, Surfers Paradise QLD 4217" autocomplete="off"
+                        data-agent-id="sup-drv-reg-address" data-testid="sup-drv-reg-address"
+                        aria-label="Driver Base Street Address and Suburb">
+                      <button type="button" class="btn-locate-gps" onclick="autoGeolocateSupporterDriverForm()"
+                        title="Auto-Geolocate My Position" data-agent-id="btn-sup-drv-reg-gps" data-testid="btn-sup-drv-reg-gps"
+                        aria-label="Auto-Geolocate Driver Address">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                      </button>
+                    </div>
+                    <ul id="sup-drv-reg-address-suggestions" class="osm-suggestions-dropdown" role="listbox"
+                      aria-label="Driver Address Suggestions" style="display:none;"
+                      data-agent-id="osm-sup-drv-reg-address-suggestions" data-testid="osm-sup-drv-reg-address-suggestions"></ul>
+                  </div>
+                </div>
+
+                <!-- 2. Driver Licence Details (Mandatory) -->
+                <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 0.85rem 0; padding-bottom:0.45rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> 2. Driver Licence Details (Required — SuperAdmin Only)
+                </h3>
+
+                <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));">
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-num">Driver Licence Number:</label>
+                    <input type="text" id="sup-drv-reg-licence-num" class="form-control" required placeholder="e.g. 492018374"
+                      data-agent-id="sup-drv-reg-licence-num" data-testid="sup-drv-reg-licence-num"
+                      aria-label="Driver Licence Number">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-state">Issuing State / Territory:</label>
+                    <select id="sup-drv-reg-licence-state" class="form-control" required data-agent-id="sup-drv-reg-licence-state"
+                      data-testid="sup-drv-reg-licence-state" aria-label="Licence Issuing State">
+                      <option value="QLD" selected>QLD - Queensland</option>
+                      <option value="NSW">NSW - New South Wales</option>
+                      <option value="VIC">VIC - Victoria</option>
+                      <option value="WA">WA - Western Australia</option>
+                      <option value="SA">SA - South Australia</option>
+                      <option value="TAS">TAS - Tasmania</option>
+                      <option value="ACT">ACT - Australian Capital Territory</option>
+                      <option value="NT">NT - Northern Territory</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-class">Licence Class:</label>
+                    <select id="sup-drv-reg-licence-class" class="form-control" required data-agent-id="sup-drv-reg-licence-class"
+                      data-testid="sup-drv-reg-licence-class" aria-label="Driver Licence Class">
+                      <option value="C (Car / Van)" selected>C — Car / Standard Van</option>
+                      <option value="LR (Light Rigid)">LR — Light Rigid</option>
+                      <option value="MR (Medium Rigid)">MR — Medium Rigid</option>
+                      <option value="HR (Heavy Rigid)">HR — Heavy Rigid</option>
+                      <option value="HC (Heavy Combination)">HC — Heavy Combination</option>
+                      <option value="R (Motorcycle)">R — Motorcycle Courier</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-expiry">Licence Expiry Date:</label>
+                    <input type="date" id="sup-drv-reg-licence-expiry" class="form-control" required value="2029-12-31"
+                      data-agent-id="sup-drv-reg-licence-expiry" data-testid="sup-drv-reg-licence-expiry"
+                      aria-label="Driver Licence Expiry Date">
+                  </div>
+                </div>
+
+                <!-- 3. Direct Customer Payment — PayID Details -->
+                <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 0.85rem 0; padding-bottom:0.45rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> 3. Driver PayID Details (Direct Customer Payment in $ AUD)
+                </h3>
+
+                <div class="form-row">
+                  <div class="input-group" style="width:100%;">
+                    <label class="input-label" for="sup-drv-reg-payid-value">PayID (Mobile Phone, Email, or ABN):</label>
+                    <input type="text" id="sup-drv-reg-payid-value" class="form-control" required
+                      placeholder="e.g. 0412 345 678, pay@driver.com.au, or ABN" data-agent-id="sup-drv-reg-payid-value"
+                      data-testid="sup-drv-reg-payid-value" aria-label="Driver PayID">
+                  </div>
+                </div>
+
+                <!-- 4. Delivery Modes & Custom Rates ($ AUD) -->
+                <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 0.5rem 0; padding-bottom:0.45rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> 4. Delivery Modes &amp; Custom Rates ($ AUD)
+                </h3>
+                <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.85rem;">
+                  Select one or both delivery modes and configure your per-km rate, fees, and maximum package capacity:
+                </p>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:0.85rem; margin-bottom:1.15rem;">
+                  <label style="background:#F8FAFC; border:2px solid #CBD5E1; border-radius:var(--radius-md); padding:0.85rem 1rem; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start;">
+                    <input type="checkbox" id="sup-drv-reg-has-vehicle" checked onchange="toggleSupporterDriverRegModesUI()"
+                      style="margin-top:0.25rem; width:18px; height:18px; accent-color:var(--brand-orange);"
+                      data-agent-id="sup-drv-reg-has-vehicle" data-testid="sup-drv-reg-has-vehicle"
+                      aria-label="Enable Motor Vehicle Courier">
+                    <div>
+                      <strong style="color:var(--primary-navy); font-size:0.92rem; display:block;">
+                        <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Vehicle Courier
+                      </strong>
+                      <span style="font-size:0.76rem; color:var(--text-muted); display:block; margin-top:0.15rem;">
+                        General parcels &amp; freight up to 50kg (Van, Ute, Car).
+                      </span>
+                    </div>
+                  </label>
+
+                  <label style="background:#F0FDF4; border:2px solid #86EFAC; border-radius:var(--radius-md); padding:0.85rem 1rem; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start;">
+                    <input type="checkbox" id="sup-drv-reg-has-bicycle" onchange="toggleSupporterDriverRegModesUI()"
+                      style="margin-top:0.25rem; width:18px; height:18px; accent-color:#059669;"
+                      data-agent-id="sup-drv-reg-has-bicycle" data-testid="sup-drv-reg-has-bicycle"
+                      aria-label="Enable Bicycle Courier Option">
+                    <div>
+                      <strong style="color:#065F46; font-size:0.92rem; display:block;">
+                        <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier
+                      </strong>
+                      <span style="font-size:0.76rem; color:#047857; display:block; margin-top:0.15rem;">
+                        Small items: letters, documents &amp; food deliveries (Max 8kg).
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Vehicle Rates & Capacity Box -->
+                <div id="sup-drv-reg-vehicle-rates-box"
+                  style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:var(--radius-md); padding:1rem; margin-bottom:1.15rem;">
+                  <h4 style="font-size:0.92rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.6rem 0;">
+                    <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Vehicle Courier Rates &amp; Capacity ($ AUD)
+                  </h4>
+                  <div class="form-row driver-rates-grid" style="margin-bottom:0.75rem;">
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-per-km">Rate Per KM ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-per-km" class="form-control" min="0.5" max="50" step="0.1"
+                        value="2.20" data-agent-id="sup-drv-reg-per-km" data-testid="sup-drv-reg-per-km"
+                        aria-label="Vehicle Rate Per KM in AUD">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-sameday-fee">Same-Day Fee ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-sameday-fee" class="form-control" min="0" max="500" step="1"
+                        value="0" data-agent-id="sup-drv-reg-sameday-fee" data-testid="sup-drv-reg-sameday-fee"
+                        aria-label="Vehicle Same Day Fee">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-urgent-fee">Urgent Fee ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-urgent-fee" class="form-control" min="0" max="500" step="1"
+                        value="0" data-agent-id="sup-drv-reg-urgent-fee" data-testid="sup-drv-reg-urgent-fee"
+                        aria-label="Vehicle Urgent Fee">
+                    </div>
+                  </div>
+                  <div class="form-row package-dimensions-grid">
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-max-weight">Max Weight (kg):</label>
+                      <input type="number" id="sup-drv-reg-max-weight" class="form-control" required min="1" max="10000"
+                        step="1" value="50" data-agent-id="sup-drv-reg-max-weight" data-testid="sup-drv-reg-max-weight"
+                        aria-label="Vehicle Max Weight in kg">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-max-height">Max Height (cm):</label>
+                      <input type="number" id="sup-drv-reg-max-height" class="form-control" required min="10" max="500"
+                        step="1" value="70" data-agent-id="sup-drv-reg-max-height" data-testid="sup-drv-reg-max-height"
+                        aria-label="Vehicle Max Height in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-max-width">Max Width (cm):</label>
+                      <input type="number" id="sup-drv-reg-max-width" class="form-control" required min="10" max="500"
+                        step="1" value="50" data-agent-id="sup-drv-reg-max-width" data-testid="sup-drv-reg-max-width"
+                        aria-label="Vehicle Max Width in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-max-length">Max Length (cm):</label>
+                      <input type="number" id="sup-drv-reg-max-length" class="form-control" required min="10" max="1000"
+                        step="1" value="50" data-agent-id="sup-drv-reg-max-length" data-testid="sup-drv-reg-max-length"
+                        aria-label="Vehicle Max Length in cm">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bicycle Rates & Capacity Box -->
+                <div id="sup-drv-reg-bicycle-rates-box"
+                  style="display:none; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-md); padding:1rem; margin-bottom:1.15rem;">
+                  <h4 style="font-size:0.92rem; font-weight:800; color:#065F46; margin:0 0 0.6rem 0;">
+                    <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Rates &amp; Capacity ($ AUD)
+                  </h4>
+                  <div class="form-row driver-rates-grid" style="margin-bottom:0.75rem;">
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-per-km" style="color:#065F46;">Bicycle Rate Per KM ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-bike-per-km" class="form-control" min="0.5" max="50" step="0.1"
+                        value="1.80" data-agent-id="sup-drv-reg-bike-per-km" data-testid="sup-drv-reg-bike-per-km"
+                        aria-label="Bicycle Rate Per KM in AUD">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-sameday-fee" style="color:#065F46;">Same-Day Fee ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-bike-sameday-fee" class="form-control" min="0" max="500" step="1"
+                        value="0" data-agent-id="sup-drv-reg-bike-sameday-fee" data-testid="sup-drv-reg-bike-sameday-fee"
+                        aria-label="Bicycle Same Day Fee">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-urgent-fee" style="color:#065F46;">Urgent Fee ($ AUD):</label>
+                      <input type="number" id="sup-drv-reg-bike-urgent-fee" class="form-control" min="0" max="500" step="1"
+                        value="0" data-agent-id="sup-drv-reg-bike-urgent-fee" data-testid="sup-drv-reg-bike-urgent-fee"
+                        aria-label="Bicycle Urgent Fee">
+                    </div>
+                  </div>
+                  <div class="form-row package-dimensions-grid">
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-max-weight" style="color:#065F46;">Max Weight (kg):</label>
+                      <input type="number" id="sup-drv-reg-bike-max-weight" class="form-control" min="1" max="25" step="1"
+                        value="8" data-agent-id="sup-drv-reg-bike-max-weight" data-testid="sup-drv-reg-bike-max-weight"
+                        aria-label="Bicycle Max Weight in kg">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-max-height" style="color:#065F46;">Max Height (cm):</label>
+                      <input type="number" id="sup-drv-reg-bike-max-height" class="form-control" min="5" max="100" step="1"
+                        value="35" data-agent-id="sup-drv-reg-bike-max-height" data-testid="sup-drv-reg-bike-max-height"
+                        aria-label="Bicycle Max Height in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-max-width" style="color:#065F46;">Max Width (cm):</label>
+                      <input type="number" id="sup-drv-reg-bike-max-width" class="form-control" min="5" max="100" step="1"
+                        value="30" data-agent-id="sup-drv-reg-bike-max-width" data-testid="sup-drv-reg-bike-max-width"
+                        aria-label="Bicycle Max Width in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="sup-drv-reg-bike-max-length" style="color:#065F46;">Max Length (cm):</label>
+                      <input type="number" id="sup-drv-reg-bike-max-length" class="form-control" min="5" max="100" step="1"
+                        value="40" data-agent-id="sup-drv-reg-bike-max-length" data-testid="sup-drv-reg-bike-max-length"
+                        aria-label="Bicycle Max Length in cm">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5. Live Driver Auto-Geolocation -->
+                <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-md); padding:0.9rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+                  <div>
+                    <strong style="color:#1E40AF; font-size:0.88rem;"><i class="fa-solid fa-satellite-dish"></i> Live Driver Auto-Geolocation</strong>
+                    <p style="font-size:0.76rem; color:#1E3A8A; margin:0.15rem 0 0 0;" id="sup-drv-reg-geo-status">
+                      Click "Auto-Geolocate My Position Now" so customers see you ranked closest to their pickup address once approved by SuperAdmin.
+                    </p>
+                    <input type="hidden" id="sup-drv-reg-lat" value="-27.9678">
+                    <input type="hidden" id="sup-drv-reg-lng" value="153.4011">
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="autoGeolocateSupporterDriverForm()"
+                    data-agent-id="btn-sup-drv-reg-geolocate" data-testid="btn-sup-drv-reg-geolocate"
+                    aria-label="Auto Geolocate My Position Now">
+                    <i class="fa-solid fa-location-crosshairs"></i> Auto-Geolocate My Position Now
+                  </button>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg"
+                  style="width:100%; font-weight:800; display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                  id="btn-submit-supporter-driver-registration" data-agent-id="btn-submit-supporter-driver-registration"
+                  data-testid="btn-submit-supporter-driver-registration" aria-label="Submit Driver Application for SuperAdmin Approval">
+                  <i class="fa-solid fa-paper-plane"></i> Submit Driver Application for SuperAdmin Approval
+                </button>
+              </form>
+            </div>
+          </div>
+
         </div> <!-- /#supporter-collapsed-panels-stack -->
 
         <!-- SuperAdmin Panel: Distance Token Costs, Live Driver Approvals & Token Account Vault (Collapsible) -->
@@ -1731,21 +2089,27 @@
               </div>
             </div>
 
-            <!-- Section B: SuperAdmin Approves Drivers Console -->
+            <!-- Section B: SuperAdmin Approves All Driver Applications Console -->
             <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;"
               data-agent-id="superadmin-driver-approval-console" data-testid="superadmin-driver-approval-console">
               <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; flex-wrap:wrap; gap:0.5rem;">
                 <div>
                   <strong style="font-size:0.98rem; color:#92400E;">
-                    <i class="fa-solid fa-id-card-clip"></i> SuperAdmin Driver Approval Console
+                    <i class="fa-solid fa-id-card-clip"></i> SuperAdmin Driver Approval Console — Super Admin Approves All Driver Applications
                   </strong>
                   <div style="font-size:0.78rem; color:#78350F;">
-                    SuperAdmin approves drivers before they appear on the customer booking map and receive orders. All
-                    Add (+), Minus (-), and Reset (0) token actions require two-step confirmation.
+                    Super Admin approves all driver applications submitted from the Register as a Driver form before drivers appear on the customer booking map and receive orders. All Add (+), Minus (-), and Reset (0) token actions require two-step confirmation.
                   </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                  <button type="button" id="btn-sa-approve-all-drivers" class="btn btn-primary btn-xs"
+                    onclick="approveAllPendingDriversBySuperadmin()"
+                    style="display:none; background:#059669; border-color:#059669; color:#ffffff; font-size:0.74rem; font-weight:800; padding:0.28rem 0.65rem; border-radius:999px;"
+                    data-agent-id="btn-sa-approve-all-drivers" data-testid="btn-sa-approve-all-drivers"
+                    aria-label="Approve All Pending Driver Applications">
+                    <i class="fa-solid fa-check-double"></i> Approve All Pending Applications
+                  </button>
                   <span
                     style="font-size:0.72rem; font-weight:800; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:0.22rem 0.55rem; border-radius:999px;"
                     data-agent-id="sa-driver-token-confirm-badge" data-testid="sa-driver-token-confirm-badge">
