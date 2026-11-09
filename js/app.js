@@ -6526,6 +6526,7 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = n
   const amountCents = Math.round(totalIncGstAud * 100);
   return {
     tokens: cleanTokens,
+    tokensReceived: cleanTokens,
     tokenPriceAud,
     currency: 'aud',
     currencyUpper: 'AUD',
@@ -6535,6 +6536,7 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = n
     customerCountry: resolvedCountry,
     isAustralianCustomer,
     taxabilityReason,
+    taxLabel: isAustralianCustomer ? 'Tax (Exclusive 10% GST):' : 'Tax (0% Non-AU — GST Charged to Australians Only):',
     taxRate,
     subtotalExGstAud,
     taxAmountAud,
@@ -6542,7 +6544,8 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = n
     amountCents,
     formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
     formattedTaxAud: isAustralianCustomer ? `+$${taxAmountAud.toFixed(2)} AUD` : `$0.00 AUD (Non-AU)`,
-    formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
+    formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`,
+    receiveSummary: `They receive ${cleanTokens} tokens in their token account`
   };
 }
 window.calculateTokenPurchaseTaxBreakdown = calculateTokenPurchaseTaxBreakdown;
@@ -6568,14 +6571,18 @@ function selectStripeTokenPack(packTokens = 10, customerCountry = null) {
           data-agent-id="btn-buy-pack-${tokens}"
           data-testid="btn-buy-pack-${tokens}"
           aria-pressed="${isSelected ? 'true' : 'false'}"
-          aria-label="Select ${tokens} Tokens ($${packQuote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${packQuote.taxAmountAud.toFixed(2)} AUD GST = ${packQuote.formattedTotalAud} total)">
-          <span style="font-size:0.88rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> ${tokens}</span>
-          <span style="font-size:0.72rem; font-weight:700; color:#475569; margin-top:0.1rem;">Sub: $${packQuote.subtotalExGstAud.toFixed(2)}</span>
-          <span style="font-size:0.74rem; font-weight:900; color:#059669; margin-top:0.05rem;">Total: $${packQuote.totalIncGstAud.toFixed(2)}</span>
+          aria-label="Select ${tokens} Tokens ($${packQuote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${packQuote.taxAmountAud.toFixed(2)} AUD GST = ${packQuote.formattedTotalAud} total • They receive ${tokens} tokens in their token account)">
+          <span style="font-size:0.88rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> ${tokens} Tokens</span>
+          <span style="font-size:0.7rem; font-weight:700; color:#475569; margin-top:0.1rem;">Sub: $${packQuote.subtotalExGstAud.toFixed(2)} AUD</span>
+          <span style="font-size:0.68rem; font-weight:700; color:#D97706; margin-top:0.05rem;">GST: +$${packQuote.taxAmountAud.toFixed(2)} AUD</span>
+          <span style="font-size:0.74rem; font-weight:900; color:#059669; margin-top:0.05rem;">Total: $${packQuote.totalIncGstAud.toFixed(2)} AUD</span>
         </button>
       `;
     }).join('');
   }
+
+  const packHeadingEl = document.getElementById('stripe-token-pack-heading');
+  if (packHeadingEl) packHeadingEl.textContent = `${quote.tokens} Tokens`;
 
   const packLabelEl = document.getElementById('stripe-token-selected-pack-label');
   if (packLabelEl) packLabelEl.textContent = `${quote.tokens} Tokens`;
@@ -6586,7 +6593,7 @@ function selectStripeTokenPack(packTokens = 10, customerCountry = null) {
   const taxLabelEl = document.getElementById('stripe-token-tax-label');
   if (taxLabelEl) {
     taxLabelEl.textContent = quote.isAustralianCustomer
-      ? 'Tax (Exclusive • 10% AU GST — Australians Only):'
+      ? 'Tax (Exclusive 10% GST):'
       : 'Tax (0% Non-AU — GST Charged to Australians Only):';
   }
 
@@ -6595,6 +6602,11 @@ function selectStripeTokenPack(packTokens = 10, customerCountry = null) {
 
   const totalEl = document.getElementById('stripe-token-total-aud');
   if (totalEl) totalEl.textContent = quote.formattedTotalAud;
+
+  const receiveEl = document.getElementById('stripe-token-receive-summary');
+  if (receiveEl) {
+    receiveEl.textContent = quote.receiveSummary || `They receive ${quote.tokens} tokens in their token account`;
+  }
 
   const payBtnLabelEl = document.getElementById('btn-stripe-token-pay-now-label');
   if (payBtnLabelEl) {
@@ -6923,7 +6935,8 @@ function purchaseDriverTokensAud(packTokens, stripeMeta = {}) {
     } catch (e) {}
   }
 
-  const newBal = window.providerDB.addDriverTokens(drv.id, quote.tokens);
+  const tokensToCredit = Math.max(1, Math.round(Number(quote.tokensReceived || quote.tokens || 10)));
+  const newBal = window.providerDB.addDriverTokens(drv.id, tokensToCredit);
   const balEl = document.getElementById('topup-driver-balance');
   if (balEl) balEl.textContent = `${newBal} Tokens`;
   const adminBalEl = document.getElementById('driver-admin-token-balance');
@@ -6933,19 +6946,35 @@ function purchaseDriverTokensAud(packTokens, stripeMeta = {}) {
   const navTokenEl = document.getElementById('nav-driver-token-count');
   if (navTokenEl) navTokenEl.textContent = `${newBal} Tokens`;
 
-  // Also update supporter balance if supporter
-  const currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  // Also update supporter token account balance (create supporter profile if purchasing from supporter wallet)
+  let currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (!currentSup && appState.stripeTokenPopupTarget === 'supporter' && window.supporterDB) {
+    const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+    currentSup = window.supporterDB.addSupporter({
+      name: gUser?.displayName || 'Community Supporter',
+      email: gUser?.email || 'supporter@simplejob.com.au',
+      phone: '',
+      suburb: ''
+    });
+    localStorage.setItem(CURRENT_SUPPORTER_KEY, currentSup.id);
+  }
   if (currentSup && window.supporterDB) {
-    currentSup.tokenBalance = (currentSup.tokenBalance ?? 25) + quote.tokens;
+    currentSup.tokenBalance = Math.max(0, Math.round((currentSup.tokenBalance ?? 25) + tokensToCredit));
     window.supporterDB.save();
     const supBalEl = document.getElementById('supporter-token-balance');
     if (supBalEl) supBalEl.textContent = `${currentSup.tokenBalance} Tokens`;
+    if (appState.stripeTokenPopupTarget === 'supporter' && balEl) {
+      balEl.textContent = `${currentSup.tokenBalance} Tokens`;
+    }
   }
 
+  if (typeof syncAllTokenDisplays === 'function') {
+    try { syncAllTokenDisplays(); } catch (e) {}
+  }
   renderDriverAdminDashboard();
   try { renderDriverInformationView(); } catch (e) {}
   calculateCourierQuote();
-  showToast(`🪙 Stripe Payment Confirmed (AUD Only)! Added +${quote.tokens} Tokens ($${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total).`);
+  showToast(`🪙 Stripe Payment Confirmed (AUD Only)! Added +${tokensToCredit} Tokens to token account ($${quote.subtotalExGstAud.toFixed(2)} AUD subtotal + $${quote.taxAmountAud.toFixed(2)} AUD 10% GST = ${quote.formattedTotalAud} total).`);
   closeDriverTokenTopupModal();
   return quote;
 }

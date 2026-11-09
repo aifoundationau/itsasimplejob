@@ -37,6 +37,41 @@ const STRIPE_CONFIG = {
     50: "https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05",
     100: "https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06"
   },
+  defaultTokenPackQuotes: {
+    10: {
+      tokens: 10,
+      tokensReceived: 10,
+      subtotalExGstAud: 10.00,
+      taxAmountAud: 1.00,
+      totalIncGstAud: 11.00,
+      formattedSubtotalAud: "$10.00 AUD",
+      formattedTaxAud: "+$1.00 AUD",
+      formattedTotalAud: "$11.00 AUD",
+      receiveSummary: "They receive 10 tokens in their token account"
+    },
+    50: {
+      tokens: 50,
+      tokensReceived: 50,
+      subtotalExGstAud: 50.00,
+      taxAmountAud: 5.00,
+      totalIncGstAud: 55.00,
+      formattedSubtotalAud: "$50.00 AUD",
+      formattedTaxAud: "+$5.00 AUD",
+      formattedTotalAud: "$55.00 AUD",
+      receiveSummary: "They receive 50 tokens in their token account"
+    },
+    100: {
+      tokens: 100,
+      tokensReceived: 100,
+      subtotalExGstAud: 100.00,
+      taxAmountAud: 10.00,
+      totalIncGstAud: 110.00,
+      formattedSubtotalAud: "$100.00 AUD",
+      formattedTaxAud: "+$10.00 AUD",
+      formattedTotalAud: "$110.00 AUD",
+      receiveSummary: "They receive 100 tokens in their token account"
+    }
+  },
   isTestMode: STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_'),
   // Serverless functions in /api hold the secret key; the browser only ever sees the publishable key
   apiBase: '/api'
@@ -92,6 +127,7 @@ class StripePaymentService {
 
     return {
       tokens: cleanTokens,
+      tokensReceived: cleanTokens,
       tokenPriceAud: unitPriceAud,
       currency: 'aud',
       currencyUpper: 'AUD',
@@ -102,6 +138,7 @@ class StripePaymentService {
       customerCountry: resolvedCountry,
       isAustralianCustomer,
       taxabilityReason,
+      taxLabel: isAustralianCustomer ? 'Tax (Exclusive 10% GST):' : 'Tax (0% Non-AU — GST Charged to Australians Only):',
       productId: this.config.productId || 'prod_VaqooBzIgPduQC',
       priceId: this.config.tokenPriceIds?.[cleanTokens] || null,
       paymentLinkId: this.config.tokenPaymentLinkIds?.[cleanTokens] || null,
@@ -113,7 +150,8 @@ class StripePaymentService {
       amountCents,
       formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
       formattedTaxAud: isAustralianCustomer ? `+$${taxAmountAud.toFixed(2)} AUD` : `$0.00 AUD (Non-AU)`,
-      formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
+      formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`,
+      receiveSummary: `They receive ${cleanTokens} tokens in their token account`
     };
   }
 
@@ -136,10 +174,15 @@ class StripePaymentService {
       ? Math.round(Number(txData.totalIncGstAud) * 100) / 100
       : Math.round((subtotalAud + taxAud) * 100) / 100;
     const amountCents = Math.round(totalAud * 100);
+    const tokensCount = Number.isFinite(Number(txData.tokens)) && Number(txData.tokens) > 0
+      ? Math.round(Number(txData.tokens))
+      : null;
 
     const record = {
       docketNumber: txData.docketNumber || `TOK-${Date.now()}`,
-      tokens: txData.tokens || null,
+      tokens: tokensCount,
+      tokensReceived: tokensCount,
+      receiveSummary: tokensCount ? `They receive ${tokensCount} tokens in their token account` : null,
       currency: 'aud',
       currencyUpper: 'AUD',
       collectTax: 'automatic',

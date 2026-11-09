@@ -540,3 +540,11 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `#superadmin-courier-config-card` in `index.html` with a clickable header (`#superadmin-console-header-toggle`), toggle button (`#btn-toggle-superadmin-console`), label (`#superadmin-console-toggle-label`), chevron (`#chevron-panel-superadmin-console`), and collapsible body (`#superadmin-console-collapse-body`, collapsed by default).
 - Added `'superadmin-console'` to `SUPPORTER_COLLAPSE_PANELS` and exposed `toggleSuperadminConsoleCollapse()` in `js/app.js`.
 - Verified with `node scratch/verify_superadmin_console_collapsible.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 69: Default Token Packs (10, 50, 100 Tokens) Quote Subtotal, Exclusive 10% GST, Total & Token Account Credit:
+- Updated `#supporter-buy-tokens-subtab` and `#driver-token-topup-modal` (`#stripe-token-quote-breakdown`) in `index.html`, `js/stripe-service.js`, and `js/app.js` so the 3 default token packs display:
+  1. **10 Tokens**: `Quote Subtotal: $10.00 AUD` • `Tax (Exclusive 10% GST): +$1.00 AUD` • `Total: $11.00 AUD` • `They receive 10 tokens in their token account`
+  2. **50 Tokens**: `Quote Subtotal: $50.00 AUD` • `Tax (Exclusive 10% GST): +$5.00 AUD` • `Total: $55.00 AUD` • `They receive 50 tokens in their token account`
+  3. **100 Tokens**: `Quote Subtotal: $100.00 AUD` • `Tax (Exclusive 10% GST): +$10.00 AUD` • `Total: $110.00 AUD` • `They receive 100 tokens in their token account`
+- Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
+- Documented Section 11.39 (`DefaultTokenPacksTaxAndAccountCreditContract`) in `data-contracts.MD`.

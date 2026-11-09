@@ -2989,3 +2989,76 @@ Defines the collapsible accordion structure and state for the **SUPERADMIN CONSO
   }
 }
 ```
+
+### 11.39 Default Token Packs Quote Breakdown & Token Account Credit Contract (`DefaultTokenPacksTaxAndAccountCreditContract`)
+Defines the 3 default token packs (`10 Tokens`, `50 Tokens`, `100 Tokens`) displayed in the **Buy Tokens** panel (`#supporter-buy-tokens-subtab`) and the **Small Stripe Token Checkout Popup** (`#driver-token-topup-modal` / `#stripe-token-quote-breakdown`):
+- **10 Tokens**: `Quote Subtotal: $10.00 AUD` • `Tax (Exclusive 10% GST): +$1.00 AUD` • `Total: $11.00 AUD` • `They receive 10 tokens in their token account`
+- **50 Tokens**: `Quote Subtotal: $50.00 AUD` • `Tax (Exclusive 10% GST): +$5.00 AUD` • `Total: $55.00 AUD` • `They receive 50 tokens in their token account`
+- **100 Tokens**: `Quote Subtotal: $100.00 AUD` • `Tax (Exclusive 10% GST): +$10.00 AUD` • `Total: $110.00 AUD` • `They receive 100 tokens in their token account`
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DefaultTokenPacksTaxAndAccountCreditContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tokens",
+    "tokensReceived",
+    "subtotalExGstAud",
+    "taxAmountAud",
+    "totalIncGstAud",
+    "formattedSubtotalAud",
+    "taxLabel",
+    "formattedTaxAud",
+    "formattedTotalAud",
+    "receiveSummary"
+  ],
+  "properties": {
+    "tokens": {
+      "type": "integer",
+      "enum": [10, 50, 100]
+    },
+    "tokensReceived": {
+      "type": "integer",
+      "enum": [10, 50, 100]
+    },
+    "subtotalExGstAud": {
+      "type": "number",
+      "enum": [10, 50, 100]
+    },
+    "taxAmountAud": {
+      "type": "number",
+      "enum": [0, 1, 5, 10]
+    },
+    "totalIncGstAud": {
+      "type": "number",
+      "enum": [10, 11, 50, 55, 100, 110]
+    },
+    "formattedSubtotalAud": {
+      "type": "string",
+      "enum": ["$10.00 AUD", "$50.00 AUD", "$100.00 AUD"]
+    },
+    "taxLabel": {
+      "type": "string",
+      "const": "Tax (Exclusive 10% GST):"
+    },
+    "formattedTaxAud": {
+      "type": "string",
+      "enum": ["+$1.00 AUD", "+$5.00 AUD", "+$10.00 AUD", "$0.00 AUD (Non-AU)"]
+    },
+    "formattedTotalAud": {
+      "type": "string",
+      "enum": ["$11.00 AUD", "$55.00 AUD", "$110.00 AUD", "$10.00 AUD", "$50.00 AUD", "$100.00 AUD"]
+    },
+    "receiveSummary": {
+      "type": "string",
+      "enum": [
+        "They receive 10 tokens in their token account",
+        "They receive 50 tokens in their token account",
+        "They receive 100 tokens in their token account"
+      ]
+    }
+  }
+}
+```
