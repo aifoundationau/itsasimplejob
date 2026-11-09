@@ -3283,7 +3283,12 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "array",
       "items": {
         "type": "string",
-        "const": "Terms of Service"
+        "enum": [
+          "Privacy Policy",
+          "Terms of Service",
+          "AI Policy (ISO/IEC 42001)",
+          "Register as a Driver"
+        ]
       }
     },
     "supportedMobileBreakpointsPx": {

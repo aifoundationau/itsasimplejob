@@ -317,38 +317,27 @@
 
       <div class="courier-grid">
 
-        <!-- LEFT SIDE: Closest Drivers List (Each Driver Box has a Map Dropdown) -->
-        <div class="courier-calc-card">
-          <div
-            style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
-            <div>
-              <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0;">
-                <i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> Available Drivers (Closest to
-                Pickup)
-              </h3>
-              <p style="font-size:0.78rem; color:var(--text-muted); margin:0.2rem 0 0 0;">
-                Click a driver to select them, or click <strong>Driver Map ▼</strong> inside any driver box to view
-                their live GPS map &amp; route.
-              </p>
+        <!-- 1. FIRST: Customer Booking Form Box (With 'Booking Form' Title & Steps 1, 2 & 3 Collapsed on Start on All Devices) -->
+        <div id="courier-booking-form-column" style="display:flex; flex-direction:column; gap:1.5rem;" data-agent-id="courier-booking-form-column" data-testid="courier-booking-form-column">
+
+          <div class="courier-calc-card" id="courier-booking-form-card" data-agent-id="courier-booking-form-card" data-testid="courier-booking-form-card">
+            <div id="courier-booking-form-header"
+              style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);"
+              data-agent-id="courier-booking-form-header" data-testid="courier-booking-form-header">
+              <div>
+                <h3 id="courier-booking-form-title" style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0;"
+                  data-agent-id="courier-booking-form-title" data-testid="courier-booking-form-title">
+                  <i class="fa-solid fa-clipboard-list" style="color:var(--brand-orange);"></i> Booking Form
+                </h3>
+                <p style="font-size:0.78rem; color:var(--text-muted); margin:0.2rem 0 0 0;">
+                  Click any section below to open and enter your pickup route, package details, and contact details.
+                </p>
+              </div>
             </div>
-            <span id="courier-package-fit-summary"
-              style="font-size:0.75rem; font-weight:800; color:#059669; background:#ECFDF5; padding:0.25rem 0.65rem; border-radius:999px; border:1px solid #A7F3D0;">
-              Matching drivers by GPS proximity &amp; capacity...
-            </span>
-          </div>
 
-          <div id="courier-driver-selection-list" style="display:flex; flex-direction:column; gap:0.9rem;">
-            <!-- Populated dynamically by updateCourierPricingWithSettings() with per-driver map dropdowns -->
-          </div>
-        </div>
-
-        <!-- RIGHT SIDE: Customer Booking Form & SuperAdmin Token Tiers -->
-        <div style="display:flex; flex-direction:column; gap:1.5rem;">
-
-          <div class="courier-calc-card">
             <form id="courier-booking-form" onsubmit="event.preventDefault(); submitCourierBooking();">
 
-              <!-- Step 1: Route & 9am-4pm Pickup Window (Collapsed at start on Android & iPhone; unchanged on Desktop) -->
+              <!-- Step 1: Route & 9am-4pm Pickup Window (Collapsed at start on all devices) -->
               <div id="courier-step-1-section" class="courier-booking-step-group courier-mobile-collapsed" data-step="1"
                 data-agent-id="courier-step-1-section" data-testid="courier-step-1-section">
                 <div id="courier-step-1-header" class="courier-step-header" onclick="toggleCourierBookingStep(1)"
@@ -607,6 +596,31 @@
             </form>
           </div>
 
+        </div>
+
+        <!-- 2. SECOND (AFTER BOOKING FORM): Available Drivers List (Each Driver Box has a Map Dropdown) -->
+        <div class="courier-calc-card" id="courier-available-drivers-card" data-agent-id="courier-available-drivers-card" data-testid="courier-available-drivers-card">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
+            <div>
+              <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                <i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> Available Drivers (Closest to
+                Pickup)
+              </h3>
+              <p style="font-size:0.78rem; color:var(--text-muted); margin:0.2rem 0 0 0;">
+                Click a driver to select them, or click <strong>Driver Map ▼</strong> inside any driver box to view
+                their live GPS map &amp; route.
+              </p>
+            </div>
+            <span id="courier-package-fit-summary"
+              style="font-size:0.75rem; font-weight:800; color:#059669; background:#ECFDF5; padding:0.25rem 0.65rem; border-radius:999px; border:1px solid #A7F3D0;">
+              Matching drivers by GPS proximity &amp; capacity...
+            </span>
+          </div>
+
+          <div id="courier-driver-selection-list" style="display:flex; flex-direction:column; gap:0.9rem;">
+            <!-- Populated dynamically by updateCourierPricingWithSettings() with per-driver map dropdowns -->
+          </div>
         </div>
       </div>
     </section>
@@ -2606,8 +2620,17 @@
       </div>
       <div style="display:flex; gap:1.25rem; font-size:0.84rem; flex-wrap:wrap; align-items:center;"
         data-agent-id="footer-links-row" data-testid="footer-links-row">
-        <a href="/terms.html" style="color:#CBD5E1; text-decoration:none; font-weight:700;"
+        <a href="/terms.html#privacy-policy" id="footer-privacy-link" style="color:#CBD5E1; text-decoration:none; font-weight:700;"
+          data-agent-id="footer-privacy-link" data-testid="footer-privacy-link">Privacy Policy</a>
+        <a href="/terms.html" id="footer-terms-link" style="color:#CBD5E1; text-decoration:none; font-weight:700;"
           data-agent-id="footer-terms-link" data-testid="footer-terms-link">Terms of Service</a>
+        <a href="/terms.html#ai-policy" id="footer-ai-policy-link" style="color:#CBD5E1; text-decoration:none; font-weight:700;"
+          data-agent-id="footer-ai-policy-link" data-testid="footer-ai-policy-link">AI Policy (ISO/IEC 42001)</a>
+        <a href="#driver-application" id="footer-driver-app-link" onclick="scrollToDriverApplication(event); return false;"
+          style="color:var(--brand-orange); text-decoration:none; font-weight:800; display:inline-flex; align-items:center; gap:0.35rem;"
+          data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link">
+          <i class="fa-solid fa-truck-fast"></i> Register as a Driver
+        </a>
       </div>
 
       <!-- Legal & Copyright -->

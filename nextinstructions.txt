@@ -628,3 +628,13 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Reordered `.courier-grid` in `index.html` and updated `.courier-grid` in `css/style.css` so the **Booking Form** box (`#courier-booking-form-card`) appears first on all devices (Android, iPhone, tablet, laptop, desktop), followed by **Available Drivers (Closest to Pickup)** (`#courier-available-drivers-card`) after `'Booking Form'`.
 - Added the **`Booking Form`** title (`#courier-booking-form-title`) at the top of `#courier-booking-form-card`, with all 3 steps (`1. Route & 9:00 AM – 4:00 PM Pickup Window`, `2. Package Content Details, Size (H × W × L) & Weight`, `3. Customer Contact Details (All Required)`) inside the box and collapsed on start across all devices (`css/style.css` and `toggleCourierBookingStep()` in `js/app.js`).
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 83: Add Privacy Policy, Terms of Service, AI Policy (ISO/IEC 42001), and Register as a Driver to Footer:
+- Updated `data-testid="footer-links-row"` in `index.html` and `<footer class="footer">` in `terms.html` to display the 4 required footer links:
+  1. `Privacy Policy` (`/terms.html#privacy-policy`, `#footer-privacy-link`)
+  2. `Terms of Service` (`/terms.html`, `#footer-terms-link`)
+  3. `AI Policy (ISO/IEC 42001)` (`/terms.html#ai-policy`, `#footer-ai-policy-link`)
+  4. `Register as a Driver` (`#driver-application`, `#footer-driver-app-link`)
+- Added Section 8 (`#privacy-policy`: Privacy Policy) and Section 9 (`#ai-policy`: AI Policy ISO/IEC 42001) to `terms.html`.
+- Updated `updateDriverApplicationGateUI()` in `js/app.js` so `#footer-driver-app-link` stays visible in the footer at all times while `#driver-application-modal` enforces the Supporter-first registration gate when opened.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

@@ -4420,19 +4420,30 @@ function updateDriverApplicationGateUI() {
   // The application must NEVER show in the middle of the supporter page
   if (sectionEl) sectionEl.style.display = 'none';
 
+  // Keep 'Register as a Driver' link visible on the bottom footer at all times;
+  // clicking it opens #driver-application-modal which enforces the Supporter-first registration gate.
+  if (footerDriverAppLink && footerDriverAppLink.style.display !== 'inline-flex') {
+    footerDriverAppLink.style.display = 'inline-flex';
+  }
+  if (footerBottomDriverAppLink && footerBottomDriverAppLink.style.display !== 'inline-flex') {
+    footerBottomDriverAppLink.style.display = 'inline-flex';
+  }
+  if (footerBottomBullet && footerBottomBullet.style.display !== 'inline') {
+    footerBottomBullet.style.display = 'inline';
+  }
+
   const isRegistered = isSupporterRegistered();
   const supporter = isRegistered ? getCurrentSupporter() : null;
-  const targetLinkDisplay = (isRegistered && supporter) ? 'inline-flex' : 'none';
-  const targetBulletDisplay = (isRegistered && supporter) ? 'inline' : 'none';
-
-  if (footerDriverAppLink && footerDriverAppLink.style.display !== targetLinkDisplay) {
-    footerDriverAppLink.style.display = targetLinkDisplay;
-  }
-  if (footerBottomDriverAppLink && footerBottomDriverAppLink.style.display !== targetLinkDisplay) {
-    footerBottomDriverAppLink.style.display = targetLinkDisplay;
-  }
-  if (footerBottomBullet && footerBottomBullet.style.display !== targetBulletDisplay) {
-    footerBottomBullet.style.display = targetBulletDisplay;
+  const lockedEl = document.getElementById('driver-app-gate-locked');
+  const unlockedEl = document.getElementById('driver-app-gate-unlocked');
+  if (lockedEl && unlockedEl) {
+    if (isRegistered && supporter) {
+      lockedEl.style.display = 'none';
+      unlockedEl.style.display = 'block';
+    } else {
+      lockedEl.style.display = 'block';
+      unlockedEl.style.display = 'none';
+    }
   }
 }
 window.updateDriverApplicationGateUI = updateDriverApplicationGateUI;
