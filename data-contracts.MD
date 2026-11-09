@@ -2760,3 +2760,78 @@ Defines the payload and state synchronization when a user presses the **Geo: Upd
   }
 }
 ```
+
+### 11.35 Stripe Payment Processor Hosted Checkout Transfer Contract (`StripeProcessorHostedCheckoutTransferContract`)
+Defines the end-to-end payload and browser redirect contract when a user clicks **Pay $XX.XX AUD • Buy XX Tokens** (`#btn-stripe-token-pay-now`, calling `confirmStripeTokenPopupPurchase()`) inside the small Stripe popup (`#driver-token-topup-modal`) or clicks **Pay Online** on an invoice (`openStripePaymentModal()`). The client sends a `POST /api/create-payment-intent` request to `api/create-payment-intent.js`, which creates both a Stripe `PaymentIntent` and a live **Stripe Hosted Checkout Session** (`stripe.checkout.sessions.create`) on Stripe account `acct_1UKnKUI8bClhBF4P` in `aud` with the account's active 10% Exclusive AU GST TaxRate (`txr_1UWRnsI8bClhBF4PWROuyTyt`), returning `checkoutSessionId` (`cs_test_...`) and `checkoutUrl` (`https://checkout.stripe.com/c/pay/cs_test_...`). The browser saves the pending purchase in `localStorage['iasj_pending_stripe_token_purchase']` and transfers directly to `intent.checkoutUrl` via `window.location.assign(intent.checkoutUrl)`. Upon returning from `checkout.stripe.com` with `?stripe_token_success=1&tokens=...&session_id=...`, `handleStripeCheckoutReturnUrl()` credits the purchased tokens, logs the verified transaction, and cleans the URL query string.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StripeProcessorHostedCheckoutTransferContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentIntentId",
+    "clientSecret",
+    "checkoutSessionId",
+    "checkoutUrl",
+    "currency",
+    "collectTax",
+    "taxBehavior",
+    "subtotalExGstAud",
+    "taxAmountAud",
+    "totalIncGstAud",
+    "amount"
+  ],
+  "properties": {
+    "paymentIntentId": {
+      "type": "string",
+      "pattern": "^pi_[A-Za-z0-9_]+$"
+    },
+    "clientSecret": {
+      "type": "string",
+      "minLength": 10
+    },
+    "checkoutSessionId": {
+      "type": "string",
+      "pattern": "^cs_(test|live)_[A-Za-z0-9_]+$"
+    },
+    "checkoutUrl": {
+      "type": "string",
+      "pattern": "^https://checkout\\.stripe\\.com/c/pay/cs_(test|live)_[A-Za-z0-9_]+"
+    },
+    "tokens": {
+      "type": ["integer", "null"],
+      "enum": [10, 50, 100, null]
+    },
+    "currency": {
+      "type": "string",
+      "const": "AUD"
+    },
+    "collectTax": {
+      "type": "string",
+      "const": "automatic"
+    },
+    "taxBehavior": {
+      "type": "string",
+      "const": "exclusive"
+    },
+    "subtotalExGstAud": {
+      "type": "number",
+      "minimum": 1
+    },
+    "taxAmountAud": {
+      "type": "number",
+      "minimum": 0.1
+    },
+    "totalIncGstAud": {
+      "type": "number",
+      "minimum": 1.1
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 1.1
+    }
+  }
+}
+```

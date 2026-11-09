@@ -115,6 +115,7 @@ class StripePaymentService {
       payerEmail: txData.payerEmail || '',
       description: txData.description || `Token Purchase (Subtotal $${subtotalAud.toFixed(2)} AUD + $${taxAud.toFixed(2)} AUD Exclusive GST = $${totalAud.toFixed(2)} AUD)`,
       stripePaymentIntentId: txData.stripePaymentIntentId || `pi_test_${Date.now()}`,
+      checkoutSessionId: txData.checkoutSessionId || null,
       createdAt: new Date().toISOString()
     };
 
@@ -180,6 +181,7 @@ class StripePaymentService {
       method: 'POST',
       body: JSON.stringify({
         docketNumber: paymentData.docketNumber,
+        tokens: paymentData.tokens || null,
         amount: paymentData.totalIncGstAud ?? paymentData.amount,
         subtotalExGstAud: paymentData.subtotalExGstAud,
         taxAmountAud: paymentData.taxAmountAud,
@@ -188,7 +190,8 @@ class StripePaymentService {
         collectTax: 'automatic',
         taxBehavior: 'exclusive',
         customerName: paymentData.customerName || '',
-        description: paymentData.description || ''
+        description: paymentData.description || '',
+        returnUrl: paymentData.returnUrl || (typeof window !== 'undefined' ? window.location.origin : '')
       })
     });
   }

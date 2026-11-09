@@ -139,6 +139,9 @@ function initApp() {
     syncDriverBookingNotificationUI();
     initDriverBookingCrossTabAlertListener();
   } catch (e) {}
+  try {
+    handleStripeCheckoutReturnUrl();
+  } catch (e) {}
 }
 
 if (document.readyState === 'loading') {
@@ -6451,17 +6454,148 @@ function openDriverTokenTopupModal(driverId, initialPackTokens = 10) {
 window.openDriverTokenTopupModal = openDriverTokenTopupModal;
 
 function closeDriverTokenTopupModal() {
+  const statusEl = document.getElementById('stripe-token-transfer-status');
+  if (statusEl) statusEl.style.display = 'none';
+  const payBtn = document.getElementById('btn-stripe-token-pay-now');
+  if (payBtn) payBtn.disabled = false;
   document.getElementById('driver-token-topup-modal')?.classList.remove('active');
 }
 window.closeDriverTokenTopupModal = closeDriverTokenTopupModal;
 
+function handleStripeCheckoutReturnUrl() {
+  if (typeof window === 'undefined' || !window.location?.search) return null;
+  const params = new URLSearchParams(window.location.search);
+  const isSuccess = params.get('stripe_token_success') === '1';
+  const isCancel = params.get('stripe_token_cancel') === '1';
+  if (!isSuccess && !isCancel) return null;
+
+  let pending = null;
+  try {
+    const raw = localStorage.getItem('iasj_pending_stripe_token_purchase');
+    if (raw) pending = JSON.parse(raw);
+    localStorage.removeItem('iasj_pending_stripe_token_purchase');
+  } catch (e) {}
+
+  try {
+    history.replaceState(null, '', window.location.pathname);
+  } catch (e) {}
+
+  if (isCancel) {
+    showToast('ℹ️ Stripe checkout was cancelled. No charge was made.');
+    return { status: 'cancelled' };
+  }
+
+  const tokensFromUrl = Math.max(1, Math.round(Number(params.get('tokens') || pending?.tokens || 10)));
+  if (pending?.driverId) {
+    appState.activeAdminDriverId = pending.driverId;
+  }
+  if (pending?.target) {
+    appState.stripeTokenPopupTarget = pending.target;
+  }
+
+  return purchaseDriverTokensAud(tokensFromUrl, {
+    sessionId: params.get('session_id') || pending?.checkoutSessionId || null,
+    paymentIntentId: pending?.paymentIntentId || null,
+    docketNumber: params.get('docket') || pending?.docketNumber || null
+  });
+}
+window.handleStripeCheckoutReturnUrl = handleStripeCheckoutReturnUrl;
+
 function confirmStripeTokenPopupPurchase() {
   const selectedTokens = appState.selectedStripeTokenPack || 10;
-  return purchaseDriverTokensAud(selectedTokens);
+  const quote = selectStripeTokenPack(selectedTokens);
+
+  // Offline / Headless VM synchronous fallback when fetch is not defined
+  if (typeof fetch !== 'function' || !window.stripePaymentService?.createPaymentIntent) {
+    return purchaseDriverTokensAud(selectedTokens);
+  }
+
+  const payBtn = document.getElementById('btn-stripe-token-pay-now');
+  const payBtnLabelEl = document.getElementById('btn-stripe-token-pay-now-label');
+  const statusEl = document.getElementById('stripe-token-transfer-status');
+
+  if (payBtn) payBtn.disabled = true;
+  if (payBtnLabelEl) {
+    payBtnLabelEl.textContent = `Transferring to Stripe (${quote.formattedTotalAud})...`;
+  }
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Connecting &amp; transferring to Stripe Payment Processor (AUD Only • Subtotal ${quote.formattedSubtotalAud} + ${quote.formattedTaxAud} GST = ${quote.formattedTotalAud})...`;
+  }
+
+  const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+  const currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const isSupporterTarget = appState.stripeTokenPopupTarget === 'supporter';
+  const payerName = isSupporterTarget ? (currentSup?.name || 'Community Supporter') : (drv?.name || 'Courier Driver');
+  const docketNumber = `TOK-${Date.now()}`;
+
+  return window.stripePaymentService.createPaymentIntent({
+    docketNumber,
+    tokens: quote.tokens,
+    subtotalExGstAud: quote.subtotalExGstAud,
+    taxAmountAud: quote.taxAmountAud,
+    totalIncGstAud: quote.totalIncGstAud,
+    amount: quote.totalIncGstAud,
+    customerName: payerName,
+    description: `${quote.tokens} Courier Tokens (Subtotal ${quote.formattedSubtotalAud} + 10% Exclusive GST ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud})`,
+    returnUrl: window.location?.origin || 'http://localhost:3002'
+  }).then((intent) => {
+    if (intent?.checkoutUrl) {
+      appState.lastStripeCheckoutUrl = intent.checkoutUrl;
+      appState.lastStripeCheckoutSessionId = intent.checkoutSessionId || null;
+      try {
+        localStorage.setItem('iasj_pending_stripe_token_purchase', JSON.stringify({
+          docketNumber,
+          tokens: quote.tokens,
+          target: appState.stripeTokenPopupTarget || 'driver',
+          driverId: appState.activeAdminDriverId,
+          checkoutSessionId: intent.checkoutSessionId || null,
+          paymentIntentId: intent.paymentIntentId || null,
+          quote,
+          createdAt: new Date().toISOString()
+        }));
+      } catch (e) {}
+
+      showToast(`💳 Transferring to Stripe Payment Processor (${quote.formattedTotalAud})...`);
+      if (typeof window.location?.assign === 'function') {
+        window.location.assign(intent.checkoutUrl);
+      } else if (window.location) {
+        window.location.href = intent.checkoutUrl;
+      }
+      return {
+        ...quote,
+        docketNumber,
+        checkoutUrl: intent.checkoutUrl,
+        checkoutSessionId: intent.checkoutSessionId,
+        paymentIntentId: intent.paymentIntentId,
+        transferredToStripe: true
+      };
+    }
+
+    // Fallback if server returned PaymentIntent without checkoutUrl
+    if (payBtn) payBtn.disabled = false;
+    if (statusEl) statusEl.style.display = 'none';
+    return purchaseDriverTokensAud(selectedTokens, {
+      paymentIntentId: intent?.paymentIntentId || null,
+      docketNumber
+    });
+  }).catch((err) => {
+    console.warn('Stripe processor transfer error:', err);
+    if (payBtn) payBtn.disabled = false;
+    if (payBtnLabelEl) {
+      payBtnLabelEl.textContent = `Pay ${quote.formattedTotalAud} • Buy ${quote.tokens} Tokens`;
+    }
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = `Could not reach Stripe processor: ${err.message || 'Check connection'}`;
+    }
+    showToast(`⚠️ Stripe transfer error: ${err.message || 'Could not reach Stripe processor.'}`);
+    return null;
+  });
 }
 window.confirmStripeTokenPopupPurchase = confirmStripeTokenPopupPurchase;
 
-function purchaseDriverTokensAud(packTokens) {
+function purchaseDriverTokensAud(packTokens, stripeMeta = {}) {
   const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
   if (!drv) return null;
 
@@ -6471,7 +6605,7 @@ function purchaseDriverTokensAud(packTokens) {
   if (window.stripePaymentService) {
     try {
       window.stripePaymentService.recordStripeTransaction({
-        docketNumber: `TOK-${Date.now()}`,
+        docketNumber: stripeMeta.docketNumber || `TOK-${Date.now()}`,
         tokens: quote.tokens,
         subtotalExGstAud: quote.subtotalExGstAud,
         taxAmountAud: quote.taxAmountAud,
@@ -6484,7 +6618,8 @@ function purchaseDriverTokensAud(packTokens) {
         payerName: drv.name,
         payerEmail: drv.email,
         description: `Stripe Token Purchase: ${quote.tokens} Tokens (Quote Subtotal ${quote.formattedSubtotalAud} + Exclusive 10% GST ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud})`,
-        stripePaymentIntentId: `pi_test_${Date.now()}`
+        stripePaymentIntentId: stripeMeta.paymentIntentId || stripeMeta.sessionId || `pi_test_${Date.now()}`,
+        checkoutSessionId: stripeMeta.sessionId || null
       });
     } catch (e) {}
   }
@@ -6866,6 +7001,33 @@ async function openStripePaymentModal() {
   setStripeFormMessage('');
 
   document.getElementById('stripe-payment-modal')?.classList.add('active');
+
+  if (!elementRoot && stripeService?.createPaymentIntent) {
+    try {
+      showToast('💳 Transferring to Stripe Payment Processor...');
+      const intent = await stripeService.createPaymentIntent({
+        docketNumber: booking.docketNumber,
+        subtotalExGstAud: totals.subtotal,
+        taxAmountAud: totals.gst,
+        totalIncGstAud: totals.total,
+        amount: totals.total,
+        customerName: booking.custName,
+        description: `Payment for docket ${booking.docketNumber} (${booking.categoryName || 'Courier Service'})`,
+        returnUrl: window.location?.origin || 'http://localhost:3002'
+      });
+      if (intent?.checkoutUrl) {
+        if (typeof window.location?.assign === 'function') {
+          window.location.assign(intent.checkoutUrl);
+        } else if (window.location) {
+          window.location.href = intent.checkoutUrl;
+        }
+        return intent;
+      }
+    } catch (err) {
+      showToast(`⚠️ Stripe transfer error: ${err.message}`);
+    }
+    return;
+  }
 
   if (!stripeService?.isAvailable() || !elementRoot) {
     if (elementRoot) elementRoot.innerHTML = '';
