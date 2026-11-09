@@ -591,6 +591,23 @@
                 aria-label="Make a New Courier Booking">
                 <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
               </button>
+              <!-- Supporter Token Wallet & Purchase Button -->
+              <div style="background:rgba(255, 255, 255, 0.12); border:1px solid rgba(255, 255, 255, 0.25); border-radius:var(--radius-sm); padding:0.35rem 0.75rem; display:inline-flex; align-items:center; gap:0.6rem;">
+                <div>
+                  <div style="font-size:0.65rem; font-weight:800; color:#FDE68A; text-transform:uppercase;">
+                    <i class="fa-solid fa-coins"></i> Tokens
+                  </div>
+                  <div id="supporter-token-balance" style="font-size:0.95rem; font-weight:900; color:#ffffff; line-height:1.1;">
+                    25 Tokens
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm" onclick="openDriverTokenTopupModal('supporter')"
+                  style="background:#F59E0B; color:#1E3A8A; font-weight:800; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-size:0.76rem;"
+                  data-agent-id="btn-supporter-buy-tokens" data-testid="btn-supporter-buy-tokens"
+                  aria-label="Supporter Buy Tokens in AUD">
+                  <i class="fa-solid fa-plus"></i> Buy Tokens
+                </button>
+              </div>
               <button type="button" class="btn btn-outline btn-sm" onclick="resetSupporterProfile()"
                 style="color:#ffffff; border-color:rgba(255,255,255,0.4);"
                 data-agent-id="btn-switch-supporter" data-testid="btn-switch-supporter"
@@ -924,6 +941,30 @@
 
       <!-- SUBTAB 3: Driver Dispatch Console -->
       <div id="supporter-dispatch-subtab" class="supporter-subview" style="display:none;">
+
+      <!-- Supporter Role Notice (Shown when a Supporter visits the Dispatch tab before becoming an approved driver) -->
+      <div id="supporter-not-driver-notice" style="display:none; margin-bottom:1.5rem; background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #2563EB; border-radius:var(--radius-md); padding:1.25rem 1.5rem;"
+        data-agent-id="supporter-not-driver-notice" data-testid="supporter-not-driver-notice">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#DBEAFE; color:#1D4ED8; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+          </div>
+          <div>
+            <strong style="font-size:1.05rem; color:#1E3A8A;">Driver Dispatch Console</strong>
+            <span style="font-size:0.75rem; background:#DBEAFE; color:#1E40AF; font-weight:800; padding:0.15rem 0.55rem; border-radius:999px; margin-left:0.5rem;">Approved Driver Role Required</span>
+          </div>
+        </div>
+        <p style="font-size:0.88rem; color:#1E40AF; line-height:1.55; margin:0 0 1rem 0;">
+          You are currently signed in as a <strong>Community Supporter</strong>. To receive customer delivery bookings, accept jobs, set your per-km rates, and auto-geolocate your delivery vehicle, submit your <strong>Driver Application</strong> in Tab 3. Once approved by SuperAdmin, you can accept and manage bookings here!
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="switchSupporterSubTab('supporter-driver-app-subtab')"
+          style="background:#2563EB; border-color:#2563EB; font-weight:800;"
+          data-agent-id="btn-goto-driver-app" data-testid="btn-goto-driver-app"
+          aria-label="Open Driver Application Tab">
+          <i class="fa-solid fa-file-signature"></i> Go to 3. Driver Application
+        </button>
+      </div>
+
       <div id="driver-dispatch-console">
 
       <!-- Driver Approval Status Banner (Awaiting vs Approved) -->

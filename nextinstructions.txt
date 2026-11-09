@@ -179,9 +179,20 @@ Created: 2026-11-01
   * Verified with Firebase tools emulator (0 syntax or compilation errors).
 - Documented in `data-contracts.MD`. All verification tests and Vite production build passed clean.
 
+[COMPLETED 2026-11-08] TASK 26: RBAC ROLES BUILT IN FOR DRIVERS, SUPPORTERS & SUPERADMIN
+- Role-Based Access Control Architecture:
+  * SuperAdmin: Supreme ruler over the entire platform. Sets token price (`tokenPriceAud`), sets Token Cost per Order Driver Receives across all 4 distance tiers, operates the SuperAdmin Driver Approval Console, wipes tokens, and bypasses all validator restrictions.
+  * Driver: Can buy tokens (10, 50, 100 packs in AUD), receive customer bookings in the Driver Dispatch Console, accept bookings (`acceptDriverBooking` action transitioning order status to "Driver Accepted"), and update custom delivery rates ($ AUD Only), vehicle, package limits, PayID, and licence details.
+  * Supporter: Can buy tokens directly from the Supporter Status Bar, make courier bookings (with 9am–4pm pickup windows, package content, weight, dimensions), and update personal profile details (Full Name, Mobile Phone, Street Address, Suburb & Postcode) synced to Firestore `users/{uid}`.
+- Role-Gated UI & Views:
+  * In `#supporter-dispatch-subtab`, supporters see an informative guidance banner (`#supporter-not-driver-notice`) directing them to complete the Driver Application in Tab 3 to become approved.
+  * Approved drivers and SuperAdmins access full dispatch, orders, and acceptance controls.
+  * SuperAdmin Console (`#superadmin-courier-config-card`) is strictly displayed only when signed in as SuperAdmin.
+- Documented in Section 11 of `data-contracts.MD`. Automated tests and Vite production build verified.
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY DRIVER RATES ($ AUD & PAYID) AND DISTANCE TIERS IN BROWSER
+CURRENT TASK: TEST RBAC ROLES & ACCEPT BOOKING IN THE SUPPORTER PORTAL
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the Supporter Portal > "3. Driver Dispatch Console", verify the updated default rates and package limits (Same-Day Fee: $0, Urgent Fee: $0, Max Weight: 50 kg, Dimensions: 70×50×50 cm, PayID in $ AUD), adjust any rate or distance tier, and click Save to confirm the amounts persist cleanly.
+1. In your browser at http://localhost:3002, sign in with Google to open the Supporter Portal, test updating your personal details in "1. Register Details", verify the new "Buy Tokens" button in the Supporter Bar, and in "4. Driver Dispatch Console" verify the "Accept Booking" button appears on incoming customer orders.
 
 ================================================================================

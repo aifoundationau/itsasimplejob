@@ -3020,8 +3020,19 @@ function handleSupporterRegistrationSubmit(event) {
   const drvAddr = document.getElementById('drv-reg-address');
   if (drvAddr) drvAddr.value = suburb;
 
+  // Sync supporter personal details to Firestore users collection
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (gUser && gUser.uid && window.firebaseService?.updateSupporterProfileInFirestore) {
+    window.firebaseService.updateSupporterProfileInFirestore(gUser.uid, {
+      displayName: name,
+      phoneNumber: phone,
+      address: suburb,
+      suburb: suburb
+    }).catch(e => console.warn('Could not sync supporter profile to Firestore:', e));
+  }
+
   renderSupporterPanel();
-  showToast(`🎉 Supporter details registered! You can now access the Driver Application in tab 2.`);
+  showToast(`🎉 Supporter personal details saved!`);
 }
 window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
 
@@ -3037,10 +3048,40 @@ function renderSupporterPanel() {
     if (onboardingCard) onboardingCard.style.display = 'none';
     if (panelWrapper) panelWrapper.style.display = 'block';
     if (nameEl) nameEl.textContent = supporter.name || 'Community Supporter';
+    const activeRole = getActiveUserRole();
     if (detEl) {
       const phoneTxt = supporter.phone ? ` • ${supporter.phone}` : '';
       const suburbTxt = supporter.suburb ? ` • ${supporter.suburb}` : '';
-      detEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10B981;"></i> Active Supporter • ${supporter.email}${phoneTxt}${suburbTxt}`;
+      let rolePill = '<i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> Community Supporter';
+      if (activeRole === 'superadmin') {
+        rolePill = '<i class="fa-solid fa-crown" style="color:#F59E0B;"></i> SuperAdmin (Supreme Ruler)';
+      } else if (activeRole === 'driver') {
+        rolePill = '<i class="fa-solid fa-truck-fast" style="color:#3B82F6;"></i> Approved Courier Driver';
+      }
+      detEl.innerHTML = `${rolePill} • ${supporter.email}${phoneTxt}${suburbTxt}`;
+    }
+
+    // Update Supporter Token Balance pill
+    const supTokenEl = document.getElementById('supporter-token-balance');
+    if (supTokenEl) {
+      supTokenEl.textContent = `${supporter.tokenBalance ?? 25} Tokens`;
+    }
+
+    // Role-based visibility for Driver Dispatch Console
+    const dispatchNotice = document.getElementById('supporter-not-driver-notice');
+    const dispatchConsole = document.getElementById('driver-dispatch-console');
+    if (activeRole === 'supporter') {
+      if (dispatchNotice) dispatchNotice.style.display = 'block';
+      if (dispatchConsole) dispatchConsole.style.display = 'none';
+    } else {
+      if (dispatchNotice) dispatchNotice.style.display = 'none';
+      if (dispatchConsole) dispatchConsole.style.display = 'block';
+    }
+
+    // SuperAdmin console gating
+    const saCard = document.getElementById('superadmin-courier-config-card');
+    if (saCard) {
+      saCard.style.display = (activeRole === 'superadmin') ? 'block' : 'none';
     }
     if (avatarImg && supporter.photoURL) {
       avatarImg.src = supporter.photoURL;
@@ -3523,7 +3564,16 @@ function renderDriverAdminDashboard() {
             </span>
           </div>
 
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
+            ${(!ord.status.includes('Accepted') && !ord.status.includes('Picked Up') && !ord.status.includes('Delivered')) ? `
+              <button type="button" class="btn btn-primary btn-sm" style="background:#2563EB; border-color:#2563EB; font-weight:800;" onclick="acceptDriverBooking('${ord.orderId}')" data-agent-id="btn-order-accept-${ord.orderId}" data-testid="btn-order-accept-${ord.orderId}" aria-label="Accept Booking">
+                <i class="fa-solid fa-handshake"></i> Accept Booking
+              </button>
+            ` : `
+              <span style="font-size:0.75rem; font-weight:800; color:#1E40AF; background:#DBEAFE; padding:0.25rem 0.55rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.25rem;">
+                <i class="fa-solid fa-check"></i> Accepted
+              </span>
+            `}
             <button type="button" class="btn btn-outline btn-sm" onclick="updateDriverOrderStatus('${ord.orderId}', 'Picked Up & En Route')" data-agent-id="btn-order-enroute-${ord.orderId}" data-testid="btn-order-enroute-${ord.orderId}" aria-label="Mark Order Picked Up">
               <i class="fa-solid fa-truck-fast"></i> Picked Up
             </button>
@@ -3640,9 +3690,58 @@ function saveDriverAdminProfile(event) {
 }
 window.saveDriverAdminProfile = saveDriverAdminProfile;
 
+
+/**
+ * Authoritative RBAC Role Helper
+ * Roles: 'superadmin' | 'driver' | 'supporter'
+ */
+function getActiveUserRole() {
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+  if (checkIsSuperadmin(gUser)) return 'superadmin';
+  if (gUser && (gUser.role === 'driver' || gUser.isDriver === true)) return 'driver';
+  if (gUser && gUser.email && window.supporterDB) {
+    const sup = window.supporterDB.findByEmail(gUser.email);
+    if (sup && (sup.role === 'driver' || sup.approved === true)) return 'driver';
+  }
+  return 'supporter';
+}
+window.getActiveUserRole = getActiveUserRole;
+
+function acceptDriverBooking(orderId) {
+  const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+  const order = window.courierOrderDB?.getOrderById(orderId);
+  if (!order) {
+    showToast('⚠️ Order not found.');
+    return;
+  }
+
+  // Update order status to 'Driver Accepted'
+  window.courierOrderDB?.updateOrderStatus(orderId, 'Driver Accepted');
+
+  // Sync to Firestore bookings collection
+  if (window.firebaseService?.updateBookingStatusInFirestore) {
+    window.firebaseService.updateBookingStatusInFirestore(orderId, 'Driver Accepted', {
+      acceptedByDriverId: activeDriver?.id || 'drv-101',
+      acceptedByDriverName: activeDriver?.name || 'Assigned Driver',
+      acceptedAt: new Date().toISOString()
+    }).catch(e => console.warn('Could not update booking status in Firestore:', e));
+  }
+
+  renderDriverAdminDashboard();
+  try { renderSupporterBookings(); } catch (e) {}
+  showToast(`✅ Booking ${orderId} accepted by driver ${activeDriver?.name || 'Driver'}! Drive safely to pickup origin.`);
+}
+window.acceptDriverBooking = acceptDriverBooking;
+
 function updateDriverOrderStatus(orderId, status) {
   window.courierOrderDB?.updateOrderStatus(orderId, status);
+  if (window.firebaseService?.updateBookingStatusInFirestore) {
+    window.firebaseService.updateBookingStatusInFirestore(orderId, status).catch(e => {
+      console.warn('Could not update booking status in Firestore:', e);
+    });
+  }
   renderDriverAdminDashboard();
+  try { renderSupporterBookings(); } catch (e) {}
   showToast(`📦 Order ${orderId} status updated to: ${status}`);
 }
 window.updateDriverOrderStatus = updateDriverOrderStatus;
@@ -3749,6 +3848,15 @@ function purchaseDriverTokensAud(packTokens) {
   if (adminBalEl) adminBalEl.textContent = `${newBal} Tokens`;
   const navTokenEl = document.getElementById('nav-driver-token-count');
   if (navTokenEl) navTokenEl.textContent = `${newBal} Tokens`;
+
+  // Also update supporter balance if supporter
+  const currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (currentSup && window.supporterDB) {
+    currentSup.tokenBalance = (currentSup.tokenBalance ?? 25) + packTokens;
+    window.supporterDB.save();
+    const supBalEl = document.getElementById('supporter-token-balance');
+    if (supBalEl) supBalEl.textContent = `${currentSup.tokenBalance} Tokens`;
+  }
 
   renderDriverAdminDashboard();
   calculateCourierQuote();

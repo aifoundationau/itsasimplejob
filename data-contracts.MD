@@ -1597,26 +1597,30 @@ When community supporters log in, they can view all their past and active courie
 
 ## 11. Role-Based Access Control (RBAC) & Driver Approval Contract
 
-### 11.1 Hardwired Roles & Permissions Schema
-Defines the authoritative roles stored in the Firestore database (`users/{uid}` and `driver_applications/{appId}`):
+### 11.1 Hardwired Roles & Permissions Matrix
+Defines the authoritative roles stored in the Firestore database (`users/{uid}`, `providers/{providerId}`, and `driver_applications/{appId}`) and enforced across both client and server:
 
 - **`superadmin` (Supreme Ruler)**:
-  * Full, unrestricted control over the entire web application and Firestore database.
-  * Authority to approve and revoke driver applications.
-  * Direct ability to set platform pricing and distance token brackets.
-  * Unilateral right to wipe all platform tokens.
-  * Bypasses client-side permission gates across all collections (`allow read, write, delete: if isSuperAdmin();`).
+  * Supreme ruler with 100% unconditional full control and editing powers over the entire web application and Firestore database.
+  * Can do anything across all views, collections, settings, and users without validator blocks (`allow read, write, delete: if isSuperAdmin();`).
+  * Sets token prices (`tokenPriceAud`) dynamically at any time.
+  * Sets price for Token Cost per Order Driver Receives across all distance tiers (0–20km, 21–50km, 51–100km, 101+km).
+  * Manages the SuperAdmin Driver Approval Console: reviews applications, approves drivers (granting role: `driver`), rejects applications, revokes driver privileges, and wipes all platform tokens from the SuperAdmin token vault.
 
-- **`driver` (Approved Courier Driver)**:
-  * Granted strictly when SuperAdmin approves an application.
-  * Unlocks the Driver Dispatch Console, live routing, and order acceptance.
-  * Authorised to purchase token packs (10, 50, 100 @ $1 AUD/token) via Stripe and maintain a token balance.
-  * Manages personal courier rates (per-km, urgent fee, same-day fee) and vehicle dimensions.
+- **`driver` (Approved Courier Contractor)**:
+  * Role activated strictly upon SuperAdmin approval of a driver application.
+  * **Buy Tokens**: Can purchase token packs (10, 50, 100 in $ AUD) via Stripe to maintain balance for customer order deductions.
+  * **Receive Bookings**: Sees incoming courier bookings dispatched or assigned in their Driver Dispatch Console.
+  * **Accept Bookings**: Can accept pending bookings via the `Accept Booking` action (`acceptDriverBooking(orderId)`), transitioning order status to `Driver Accepted` and progressing through transit.
+  * **Update Personal Details**: Updates their custom delivery rates (Rate per KM, same-day fee, urgent fee in $ AUD), vehicle details, package capacities (weight kg, dimensions H×W×L cm), PayID, and licence details.
+  * **Strict Gating**: Cannot modify platform distance tier token deductions, cannot change token prices, and cannot approve other drivers.
 
-- **`supporter` / `customer` (Default Authenticated User)**:
+- **`supporter` (Community Supporter / Customer)**:
   * Default role upon signing in with Google.
-  * Authorised to book couriers, view their personal booking history, and submit a driver application.
-  * Driver applications remain in `status: "pending_approval"` with `approved: false` until SuperAdmin approval.
+  * **Buy Tokens**: Can purchase tokens (10, 50, 100 packs in $ AUD) from the Supporter Status Bar token wallet.
+  * **Make Bookings**: Can create courier bookings on `#courier-tab` with scheduled 9:00 AM – 4:00 PM pickup windows, package content, dimensions, and weight.
+  * **Update Personal Details**: In `1. Register Details` (`#supporter-registration-form`), can update Full Name, Mobile Phone, Street Address, Suburb & Postcode, persisted locally and synced to Firestore `users/{uid}`.
+  * **Apply to Become a Driver**: Can submit a Driver Application in `3. Driver Application`, which enters `status: "pending_approval"` awaiting SuperAdmin approval.
 
 ```json
 {

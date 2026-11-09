@@ -175,6 +175,52 @@ export async function saveBookingToFirestore(booking) {
 /**
  * Customer Profile Registration
  */
+/**
+ * Update Booking Status in Firestore
+ */
+export async function updateBookingStatusInFirestore(docketNumber, status, extraFields = {}) {
+  if (!docketNumber) return false;
+  const payload = {
+    status,
+    ...extraFields,
+    updatedAt: new Date().toISOString()
+  };
+  if (db && isConnected) {
+    try {
+      const docRef = doc(collection(db, 'bookings'), docketNumber);
+      await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
+      console.log(`✅ [Firestore] Booking ${docketNumber} status updated to: ${status}`);
+      return true;
+    } catch (e) {
+      console.warn("⚠️ [Firestore] Could not update booking status:", e.message);
+    }
+  }
+  return false;
+}
+
+/**
+ * Update Supporter Profile in Firestore users collection
+ */
+export async function updateSupporterProfileInFirestore(uid, profileData) {
+  if (!uid) return false;
+  const payload = {
+    ...profileData,
+    businessId: BUSINESS_ID,
+    updatedAt: new Date().toISOString()
+  };
+  if (db && isConnected) {
+    try {
+      const userRef = doc(collection(db, 'users'), uid);
+      await withTimeout(setDoc(userRef, payload, { merge: true }), 3500);
+      console.log(`✅ [Firestore] User profile ${uid} updated in users collection`);
+      return true;
+    } catch (e) {
+      console.warn("⚠️ [Firestore] Could not update user profile in Firestore:", e.message);
+    }
+  }
+  return false;
+}
+
 export async function saveCustomerToFirestore(customer) {
   const crn = customer.customerRefNumber || getOrCreateCRN(customer.phone, customer.name);
   const payload = {
@@ -841,6 +887,8 @@ window.firebaseService = {
   generateRRN,
   saveProviderToFirestore,
   saveBookingToFirestore,
+  updateBookingStatusInFirestore,
+  updateSupporterProfileInFirestore,
   saveCustomerToFirestore,
   saveCandidateToFirestore,
   saveRecruitmentOrderToFirestore,
