@@ -2102,6 +2102,7 @@ async function approveDriverBySuperadmin(driverId) {
     if (supporter) {
       supporter.role = 'driver';
       supporter.approved = true;
+      supporter.isDriver = true;
       supporter.driverId = driver.id;
       window.supporterDB.save();
     }
@@ -2109,13 +2110,17 @@ async function approveDriverBySuperadmin(driverId) {
 
   // If the logged in Google user is this driver, grant them role: 'driver' immediately
   const activeUser = window.firebaseService?.getCurrentGoogleUser();
-  if (activeUser && activeUser.email && activeUser.email.toLowerCase() === (driver.email || '').toLowerCase()) {
+  if (activeUser && activeUser.email && activeUser.email.toLowerCase().trim() === (driver.email || '').toLowerCase().trim()) {
     if (activeUser.role !== 'superadmin') {
       activeUser.role = 'driver';
       activeUser.isDriver = true;
       localStorage.setItem('iasj_google_user', JSON.stringify(activeUser));
+      try { updateGoogleAuthUI(activeUser); } catch (e) {}
     }
   }
+  
+  // Set active admin driver ID so dispatch views immediately show this driver
+  appState.activeAdminDriverId = driver.id;
 
   renderSuperadminDriverApprovals();
   renderDriverAdminDashboard();
@@ -4007,6 +4012,21 @@ function getActiveUserRole() {
   if (gUser && gUser.email && window.supporterDB) {
     const sup = window.supporterDB.findByEmail(gUser.email);
     if (sup && (sup.role === 'driver' || sup.approved === true)) return 'driver';
+  }
+  if (gUser && window.providerDB) {
+    const cleanEmail = (gUser.email || '').toLowerCase().trim();
+    const prov = window.providerDB.getAll().find(p => 
+      ((p.email || '').toLowerCase().trim() === cleanEmail) ||
+      (p.uid && p.uid === gUser.uid)
+    );
+    if (prov && (prov.approved === true || prov.status === 'active' || prov.role === 'driver')) {
+      if (gUser.role !== 'driver') {
+        gUser.role = 'driver';
+        gUser.isDriver = true;
+        try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+      }
+      return 'driver';
+    }
   }
   return 'supporter';
 }
@@ -7342,12 +7362,14 @@ function updateGoogleAuthUI(user) {
     let roleIcon = 'fa-shield-heart';
     let roleColor = 'var(--brand-orange)';
 
-    if (user.role === 'superadmin' || isSa) {
+    const activeRole = getActiveUserRole();
+    if (activeRole === 'superadmin' || isSa) {
       const activeView = sessionStorage.getItem('iasj_superadmin_view_role');
       if (activeView && activeView !== 'superadmin') {
         const viewTitles = {
           customer: 'Customer View',
           provider: 'Driver View',
+          driver: 'Driver View',
           supporter: 'Supporter View',
           franchise_admin: 'Franchise Admin View'
         };
@@ -7357,14 +7379,14 @@ function updateGoogleAuthUI(user) {
       }
       roleIcon = 'fa-crown';
       roleColor = '#F59E0B';
-    } else if (user.role === 'provider') {
-      roleDisplay = 'Driver';
+    } else if (activeRole === 'driver' || user.role === 'driver' || user.isDriver === true || user.role === 'provider') {
+      roleDisplay = 'Approved Courier Driver';
       roleIcon = 'fa-truck-fast';
-      roleColor = 'var(--brand-orange)';
-    } else if (user.role === 'franchise_admin') {
-      roleDisplay = 'Franchise Admin';
-      roleIcon = 'fa-building-user';
-      roleColor = '#7E22CE';
+      roleColor = '#3B82F6';
+    } else {
+      roleDisplay = 'Community Supporter';
+      roleIcon = 'fa-shield-halved';
+      roleColor = '#10B981';
     }
 
     const firstName = (user.displayName || 'Supporter').split(' ')[0];

@@ -549,6 +549,9 @@ class ProviderDatabase {
     if (!p) return null;
     p.approved = true;
     p.status = "active";
+    p.isActive = true;
+    p.role = "driver";
+    p.isDriver = true;
     this.save();
     return p;
   }

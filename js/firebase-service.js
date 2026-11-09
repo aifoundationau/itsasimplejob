@@ -494,6 +494,8 @@ export async function approveDriverInFirestore(driverId, superadminEmail = 'supp
     // 1. Update providers collection
     const provRef = doc(collection(db, 'providers'), driverId);
     await withTimeout(setDoc(provRef, {
+      role: 'driver',
+      isDriver: true,
       approved: true,
       status: 'active',
       isActive: true,
@@ -510,6 +512,8 @@ export async function approveDriverInFirestore(driverId, superadminEmail = 'supp
       if (!appSnap.empty) {
         const appDoc = appSnap.docs[0];
         await withTimeout(setDoc(appDoc.ref, {
+          role: 'driver',
+          isDriver: true,
           approved: true,
           status: 'active',
           approvedBy: superadminEmail,
@@ -791,6 +795,19 @@ export async function signInWithGoogle(role = 'customer') {
         if (actualRole !== 'superadmin' && (remoteData.role === 'driver' || remoteData.isDriver === true)) {
           actualRole = 'driver';
         }
+      }
+      // Check providers collection by email if not already superadmin or driver
+      if (actualRole !== 'superadmin' && actualRole !== 'driver' && user.email) {
+        try {
+          const qProv = query(collection(db, 'providers'), where('email', '==', emailLower), limit(1));
+          const provSnap = await withTimeout(getDocs(qProv), 2000);
+          if (!provSnap.empty) {
+            const pData = provSnap.docs[0].data();
+            if (pData.approved === true || pData.status === 'active' || pData.role === 'driver') {
+              actualRole = 'driver';
+            }
+          }
+        } catch (e) {}
       }
       // Upsert profile into Firestore users collection
       await withTimeout(setDoc(userRef, {

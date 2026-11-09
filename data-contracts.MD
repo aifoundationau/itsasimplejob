@@ -1749,3 +1749,29 @@ Defines the strict database schema, business rules, and UI behavior for courier 
      - `'bicycle'`: Strictly filters to drivers with `hasBicycleCourier === true`. Enforces <= 8kg and <= 35×30×40cm.
      - `'vehicle'`: Strictly filters to drivers with `hasVehicleCourier !== false`.
    - **Order Record (`courierOrderDB.addOrder`):** Records `deliveryMode` (`'vehicle' | 'bicycle'`) and `deliveryModeLabel` alongside the item dimensions and specific custom rates charged.
+
+### 11.5 Driver Approval RBAC Role Promotion Contract (`DriverApprovalRbacRolePromotionContract`)
+Defines the authoritative state transitions, permissions, and multi-tenant persistence when a driver application is approved by SuperAdmin:
+
+1. **Trigger & Authorization:**
+   - Initiated exclusively by SuperAdmin clicking "Approve Driver" in the SuperAdmin Driver Approval Console (`approveDriverBySuperadmin(driverId)`).
+   - Only authenticated users with `isSuperAdmin()` authority can execute this promotion.
+
+2. **Atomic Multi-Tenant State Transitions:**
+   - **`providers/{driverId}`**: Sets `role: "driver"`, `isDriver: true`, `approved: true`, `status: "active"`, `isActive: true`, `approvedBy: superadminEmail`, `approvedAt: ISO8601`, `updatedAt: ISO8601`.
+   - **`driver_applications/{appId}`**: Sets `role: "driver"`, `isDriver: true`, `approved: true`, `status: "active"`, `approvedBy: superadminEmail`, `approvedAt: ISO8601`, `updatedAt: ISO8601`.
+   - **`users/{uid}` in Firestore**: Granted RBAC role: `role: "driver"`, `isDriver: true`, `approved: true`, `driverId: driverId`, `approvedBy: superadminEmail`, `approvedAt: ISO8601`.
+   - **`window.supporterDB`**: Supporter profile role promoted to `"driver"`, `approved: true`, `isDriver: true`, `driverId: driverId`.
+   - **Client Session (`localStorage['iasj_google_user']`)**: If the approved driver is the active session user, role immediately updates to `"driver"`, `isDriver: true`.
+
+3. **Immediate Reactive UI Privileges:**
+   - **Driver Dispatch Console (`#supporter-dispatch-subtab`)**:
+     * Guidance notice (`#supporter-not-driver-notice`) is immediately hidden (`display: none`).
+     * Full Driver Dispatch Console (`#driver-dispatch-console`) is unlocked and displayed.
+     * Driver can accept customer bookings (`acceptDriverBooking(orderId)` transitioning status to `"Driver Accepted"`), manage custom delivery rates in AUD, update live GPS, and buy driver tokens.
+   - **Supporter Profile Bar**:
+     * Role pill dynamically renders: `<i class="fa-solid fa-truck-fast" style="color:#3B82F6;"></i> Approved Courier Driver`.
+   - **Google Profile Chip Dropdown**:
+     * Displays `Active Approved Courier Driver • Logged In`.
+   - **Customer Directory & Map**:
+     * Driver becomes visible as active and available on the live customer booking map and driver selection cards.
