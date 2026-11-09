@@ -18,6 +18,19 @@ const MIN_AMOUNT_AUD = 1;
 const MAX_AMOUNT_AUD = 20000;   // safety ceiling
 const DOCKET_PATTERN = /^[A-Z0-9-]{4,40}$/i;
 
+// Provisioned via Stripe MCP on account acct_1UKnKUI8bClhBF4P (AI Foundation sandbox)
+const STRIPE_MCP_PRODUCT_ID = 'prod_VaqooBzIgPduQC';
+const STRIPE_MCP_TOKEN_PRICE_IDS = {
+  10: 'price_1UZf7RI8bClhBF4PEhIGJoc3',
+  50: 'price_1UZf7VI8bClhBF4PE52HKTjw',
+  100: 'price_1UZf7ZI8bClhBF4PcJWNqJv0'
+};
+const STRIPE_MCP_TOKEN_PAYMENT_LINKS = {
+  10: 'https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04',
+  50: 'https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05',
+  100: 'https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06'
+};
+
 let cachedExclusiveGstTaxRateId = null;
 
 async function getExclusiveAudGstTaxRateId(stripe) {
@@ -193,6 +206,9 @@ export default async function handler(req, res) {
       clientSecret: intent.client_secret,
       checkoutSessionId: checkoutSession.id,
       checkoutUrl: checkoutSession.url,
+      productId: STRIPE_MCP_PRODUCT_ID,
+      priceId: (tokens && STRIPE_MCP_TOKEN_PRICE_IDS[tokens]) || null,
+      paymentLinkUrl: (tokens && STRIPE_MCP_TOKEN_PAYMENT_LINKS[tokens]) || null,
       status: intent.status,
       tokens,
       subtotalExGstAud,

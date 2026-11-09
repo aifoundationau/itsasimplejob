@@ -8,15 +8,33 @@ const STRIPE_PUBLISHABLE_KEY = (typeof window !== 'undefined' && window.ENV?.STR
 
 const STRIPE_CONFIG = {
   accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || "acct_1UKnKUI8bClhBF4P",
-  accountName: "AI Foundation",
+  accountName: "AI Foundation sandbox",
   publishableKey: STRIPE_PUBLISHABLE_KEY,
   currency: "aud",
   currencyLabel: "AUD Only",
   collectTax: "automatic",
   automaticTax: { enabled: true },
   taxBehavior: "exclusive",
+  taxCode: "txcd_10000000",
+  taxRegistrationId: "taxreg_1UXyhEI8bClhBF4PvgDdffXg",
   gstRate: 0.10,
   popupSize: "small",
+  productId: "prod_VaqooBzIgPduQC",
+  tokenPriceIds: {
+    10: "price_1UZf7RI8bClhBF4PEhIGJoc3",
+    50: "price_1UZf7VI8bClhBF4PE52HKTjw",
+    100: "price_1UZf7ZI8bClhBF4PcJWNqJv0"
+  },
+  tokenPaymentLinkIds: {
+    10: "plink_1UZf7xI8bClhBF4PtDTFX69n",
+    50: "plink_1UZf80I8bClhBF4P6FY69grP",
+    100: "plink_1UZf84I8bClhBF4PBAFYJRrc"
+  },
+  tokenPaymentLinks: {
+    10: "https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04",
+    50: "https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05",
+    100: "https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06"
+  },
   isTestMode: STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_'),
   // Serverless functions in /api hold the secret key; the browser only ever sees the publishable key
   apiBase: '/api'
@@ -71,6 +89,11 @@ class StripePaymentService {
       collectTax: 'automatic',
       automaticTax: { enabled: true },
       taxBehavior: 'exclusive',
+      taxCode: this.config.taxCode || 'txcd_10000000',
+      productId: this.config.productId || 'prod_VaqooBzIgPduQC',
+      priceId: this.config.tokenPriceIds?.[cleanTokens] || null,
+      paymentLinkId: this.config.tokenPaymentLinkIds?.[cleanTokens] || null,
+      paymentLinkUrl: this.config.tokenPaymentLinks?.[cleanTokens] || null,
       taxRate,
       subtotalExGstAud,
       taxAmountAud,
@@ -80,6 +103,11 @@ class StripePaymentService {
       formattedTaxAud: `+$${taxAmountAud.toFixed(2)} AUD`,
       formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
     };
+  }
+
+  getTokenPaymentLink(tokens = 10) {
+    const cleanTokens = [10, 50, 100].includes(Number(tokens)) ? Number(tokens) : 10;
+    return this.config.tokenPaymentLinks?.[cleanTokens] || null;
   }
 
   /**

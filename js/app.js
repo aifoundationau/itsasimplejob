@@ -6572,7 +6572,34 @@ function confirmStripeTokenPopupPurchase() {
       };
     }
 
-    // Fallback if server returned PaymentIntent without checkoutUrl
+    // Fallback to Stripe MCP Payment Link if server response omitted checkoutUrl
+    const fallbackLink = intent?.paymentLinkUrl || quote.paymentLinkUrl || window.stripePaymentService?.getTokenPaymentLink?.(selectedTokens);
+    if (fallbackLink) {
+      appState.lastStripeCheckoutUrl = fallbackLink;
+      try {
+        localStorage.setItem('iasj_pending_stripe_token_purchase', JSON.stringify({
+          docketNumber,
+          tokens: quote.tokens,
+          target: appState.stripeTokenPopupTarget || 'driver',
+          driverId: appState.activeAdminDriverId,
+          paymentLinkId: quote.paymentLinkId || null,
+          quote,
+          createdAt: new Date().toISOString()
+        }));
+      } catch (e) {}
+      if (typeof window.location?.assign === 'function') {
+        window.location.assign(fallbackLink);
+      } else if (window.location) {
+        window.location.href = fallbackLink;
+      }
+      return {
+        ...quote,
+        docketNumber,
+        checkoutUrl: fallbackLink,
+        transferredToStripe: true
+      };
+    }
+
     if (payBtn) payBtn.disabled = false;
     if (statusEl) statusEl.style.display = 'none';
     return purchaseDriverTokensAud(selectedTokens, {
@@ -6580,6 +6607,33 @@ function confirmStripeTokenPopupPurchase() {
       docketNumber
     });
   }).catch((err) => {
+    const fallbackLink = quote.paymentLinkUrl || window.stripePaymentService?.getTokenPaymentLink?.(selectedTokens);
+    if (fallbackLink) {
+      appState.lastStripeCheckoutUrl = fallbackLink;
+      try {
+        localStorage.setItem('iasj_pending_stripe_token_purchase', JSON.stringify({
+          docketNumber,
+          tokens: quote.tokens,
+          target: appState.stripeTokenPopupTarget || 'driver',
+          driverId: appState.activeAdminDriverId,
+          paymentLinkId: quote.paymentLinkId || null,
+          quote,
+          createdAt: new Date().toISOString()
+        }));
+      } catch (e) {}
+      showToast(`💳 Transferring to Stripe Payment Link (${quote.formattedTotalAud})...`);
+      if (typeof window.location?.assign === 'function') {
+        window.location.assign(fallbackLink);
+      } else if (window.location) {
+        window.location.href = fallbackLink;
+      }
+      return {
+        ...quote,
+        docketNumber,
+        checkoutUrl: fallbackLink,
+        transferredToStripe: true
+      };
+    }
     console.warn('Stripe processor transfer error:', err);
     if (payBtn) payBtn.disabled = false;
     if (payBtnLabelEl) {
