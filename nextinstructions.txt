@@ -138,9 +138,23 @@ Created: 2026-11-01
   * Verified end-to-end with verify_dual_mode_profile_buttons.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 34: MAP PIN COLOR CODING (PINK FOR FEMALE, BLUE FOR MALE, GREEN FOR CUSTOMER) & DRIVER APPLICATION GENDER FIELD
+- Map Pin Color-Coding:
+  * Customer Address Pin: Rendered as an emerald green pin (#10B981) for the search center on the Closest Drivers Map and the pickup origin on route maps.
+  * Female Courier Driver Pin: Rendered as a vibrant pink pin (#EC4899) on Leaflet OpenStreetMap canvases (e.g. Sarah Jenkins, Tanya Nguyen) with female popup badges and driver card indicators.
+  * Male Courier Driver Pin: Rendered as a vibrant blue pin (#2563EB) on Leaflet OpenStreetMap canvases (e.g. Callum Evans, Marcus Taylor, Liam O'Connor) with male popup badges and driver card indicators.
+  * Map Pin Legend: Added #map-pin-color-legend above the Closest Drivers Map clearly identifying Green for Customer Address, Pink for Female Driver, and Blue for Male Driver.
+- Driver Application Gender Capture:
+  * Added Gender selector (#drv-reg-gender) to the Driver Application form (#driver-registration-form) under Supporter Portal with options: Male (Blue Map Pin) and Female (Pink Map Pin).
+  * Prefills existing driver gender and persists to providerDB and Firestore on submission.
+- Verification & Compliance:
+  * Documented Section 11.9 in data-contracts.MD.
+  * Verified end-to-end with verify_map_pins_and_driver_gender.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST DUAL-MODE MOTOR VEHICLE & BICYCLE BUTTONS IN CUSTOMER PROFILE
+CURRENT TASK: TEST MAP PIN COLORS & DRIVER GENDER IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the "1. Book Courier Delivery" tab or the "2. Closest Drivers Map" tab, locate dual-registered driver "Sarah Jenkins", and click the "Motor Vehicle" and "Bicycle Courier" buttons on her profile card to confirm the rates, fees, capacity, and calculated quote toggle in real time.
+1. In your browser at http://localhost:3002, open the "2. Closest Drivers Map" tab to confirm that the customer's search location pin is Green, female drivers (Sarah Jenkins, Tanya Nguyen) display Pink pins, and male drivers (Callum Evans, Marcus Taylor, Liam O'Connor) display Blue pins, as indicated by the new Pin Legend bar above the map.
 
 ================================================================================

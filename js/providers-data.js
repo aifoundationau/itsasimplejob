@@ -33,6 +33,7 @@ const INITIAL_PROVIDERS = [
     serviceProviderNumber: "DRV-101001",
     businessId: "its-a-simple-job",
     name: "Callum Evans",
+    gender: "male",
     businessName: "Gold Coast Rapid Van Couriers",
     category: "courier",
     tradeTitle: "Express Van Courier Driver",
@@ -86,6 +87,7 @@ const INITIAL_PROVIDERS = [
     serviceProviderNumber: "DRV-101002",
     businessId: "its-a-simple-job",
     name: "Sarah Jenkins",
+    gender: "female",
     businessName: "Broadbeach City Parcel & Document Runner",
     category: "courier",
     tradeTitle: "Fast City Sedan & Parcel Courier",
@@ -151,6 +153,7 @@ const INITIAL_PROVIDERS = [
     serviceProviderNumber: "DRV-101003",
     businessId: "its-a-simple-job",
     name: "Marcus 'Macca' Taylor",
+    gender: "male",
     businessName: "Robina Heavy Ute & Trade Freight",
     category: "courier",
     tradeTitle: "Heavy Ute & Bulky Item Courier",
@@ -204,6 +207,7 @@ const INITIAL_PROVIDERS = [
     serviceProviderNumber: "DRV-101004",
     businessId: "its-a-simple-job",
     name: "Liam O'Connor",
+    gender: "male",
     businessName: "M1 Corridor Sprinter Freight (GC to Brisbane)",
     category: "courier",
     tradeTitle: "Long-Wheelbase Sprinter Courier",
@@ -257,6 +261,7 @@ const INITIAL_PROVIDERS = [
     serviceProviderNumber: "DRV-101005",
     businessId: "its-a-simple-job",
     name: "Tanya Nguyen",
+    gender: "female",
     businessName: "Surfers & Central Coast Direct Courier",
     category: "courier",
     tradeTitle: "Compact Van & Retail Delivery Driver",
@@ -382,8 +387,12 @@ class ProviderDatabase {
   normalizeDriver(p) {
     const hasVehicleCourier = p.hasVehicleCourier !== false;
     const hasBicycleCourier = p.id === 'drv-102' ? (p.hasBicycleCourier !== false) : (p.hasBicycleCourier === true);
+    const femaleNames = ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica', 'claire', 'amy', 'olivia', 'mia', 'zoe'];
+    const inferredGender = femaleNames.some(n => (p.name || '').toLowerCase().includes(n)) ? 'female' : 'male';
+    const gender = p.gender || (p.id === 'drv-102' || p.id === 'drv-105' ? 'female' : inferredGender);
     return {
       ...p,
+      gender,
       category: "courier",
       hasVehicleCourier,
       hasBicycleCourier,

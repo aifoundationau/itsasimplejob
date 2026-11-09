@@ -552,6 +552,19 @@
               <i class="fa-solid fa-location-crosshairs"></i> Auto-Geolocate My Driver Pin
             </button>
           </div>
+          <!-- Map Pin Color Legend: Customer = Green, Female = Pink, Male = Blue -->
+          <div style="display:flex; align-items:center; gap:0.75rem; font-size:0.72rem; font-weight:700; flex-wrap:wrap; padding:0.35rem 0.75rem; background:#F8FAFC; border-bottom:1px solid var(--border-light);" data-testid="map-pin-color-legend">
+            <span style="color:var(--text-muted); font-size:0.68rem; font-weight:800; text-transform:uppercase;">Pin Legend:</span>
+            <span style="color:#065F46; display:inline-flex; align-items:center; gap:4px;">
+              <span style="width:10px; height:10px; background:#10B981; border-radius:50%; display:inline-block; border:1px solid #059669;"></span> Customer Address (Green)
+            </span>
+            <span style="color:#BE185D; display:inline-flex; align-items:center; gap:4px;">
+              <span style="width:10px; height:10px; background:#EC4899; border-radius:50%; display:inline-block; border:1px solid #DB2777;"></span> Female Driver (Pink)
+            </span>
+            <span style="color:#1D4ED8; display:inline-flex; align-items:center; gap:4px;">
+              <span style="width:10px; height:10px; background:#2563EB; border-radius:50%; display:inline-block; border:1px solid #1D4ED8;"></span> Male Driver (Blue)
+            </span>
+          </div>
           <div id="contractor-map"></div>
         </div>
 
@@ -799,6 +812,14 @@
               <input type="text" id="drv-reg-name" class="form-control" required placeholder="e.g. Jordan Mitchell"
                 data-agent-id="drv-reg-name" data-testid="drv-reg-name" aria-label="Driver Name">
               <input type="hidden" id="drv-reg-business" value="">
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="drv-reg-gender">Gender (Map Pin Color):</label>
+              <select id="drv-reg-gender" class="form-control" required data-agent-id="drv-reg-gender"
+                data-testid="drv-reg-gender" aria-label="Driver Gender">
+                <option value="male" selected>Male (Blue Map Pin)</option>
+                <option value="female">Female (Pink Map Pin)</option>
+              </select>
             </div>
             <div class="input-group">
               <label class="input-label" for="drv-reg-phone">Mobile Phone Number (Required)</label>

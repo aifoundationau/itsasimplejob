@@ -1839,3 +1839,34 @@ Defines the customer-facing interface controls and dynamic quoting behavior for 
    - Selecting a mode in the directory or map popup sets `appState.contractorCardModeOverrides[providerId]` and `appState.driverServiceModeOverrides[providerId]`.
    - Clicking "Book Driver" preserves the customer's selected mode, navigating to `#courier-tab` with the chosen driver and delivery mode pre-activated.
 
+### 11.9 Map Pin Color Coding & Driver Gender Contract (`MapPinColorCodingAndDriverGenderContract`)
+Defines the visual pin color taxonomy on OpenStreetMap (Leaflet) canvases and gender declaration across driver onboarding and directories:
+
+1. **Driver Gender Onboarding & Persistence:**
+   - **Form Field (`#drv-reg-gender`):** Dropdown selector in the Driver Application form (`#driver-registration-form`) with options:
+     * `female`: "Female (Pink Map Pin)"
+     * `male`: "Male (Blue Map Pin)"
+   - **Data Schema:** Stored on the driver record as `gender: 'female' | 'male'` across Firestore (`providers/{id}` and `driver_applications/{id}`) and local `providerDB`.
+   - **Heuristic Fallback:** If `gender` is unassigned on legacy records, `normalizeDriver` infers gender from known given names, defaulting to `'male'` if unspecified.
+
+2. **Pin Color Taxonomy & Visual Encodings:**
+   - **Customer Address Pin (Pickup Origin / Search Center):**
+     * **Color:** Emerald Green (`#10B981`, border `#FFFFFF`).
+     * **Icon:** `<i class="fa-solid fa-house-user"></i>` / `<i class="fa-solid fa-box"></i>`.
+     * **Popup Title:** "Customer Address (Search Center)" / "Customer Pickup Address (Green Pin)".
+   - **Female Courier Driver Pin:**
+     * **Color:** Vibrant Pink (`#EC4899`, border `#FFFFFF`, shadow `rgba(0,0,0,0.35)`).
+     * **Icon:** `<i class="fa-solid fa-truck-fast"></i>` or `<i class="fa-solid fa-bicycle"></i>`.
+     * **Popup/Card Badge:** `<i class="fa-solid fa-venus"></i> Female Driver (Pink Pin)` (`#FCE7F3` background, `#BE185D` text).
+   - **Male Courier Driver Pin:**
+     * **Color:** Vibrant Blue (`#2563EB`, border `#FFFFFF`, shadow `rgba(0,0,0,0.35)`).
+     * **Icon:** `<i class="fa-solid fa-truck-fast"></i>` or `<i class="fa-solid fa-bicycle"></i>`.
+     * **Popup/Card Badge:** `<i class="fa-solid fa-mars"></i> Male Driver (Blue Pin)` (`#EFF6FF` background, `#1D4ED8` text).
+
+3. **Map Canvas Legend:**
+   - Surfaced on the "Closest Drivers Map" header bar (`#map-pin-color-legend`) displaying:
+     * Green Pin: Customer Address
+     * Pink Pin: Female Driver
+     * Blue Pin: Male Driver
+
+
