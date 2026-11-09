@@ -2835,3 +2835,35 @@ Defines the end-to-end payload and browser redirect contract when a user clicks 
   }
 }
 ```
+
+### 11.36 Customer-Facing Driver Card Gender Privacy & Pink/Blue Map Pin Contract (`CustomerFacingDriverCardGenderPrivacyContract`)
+Enforces that customer-facing driver cards (`#contractor-cards-container` on Closest Drivers, `#courier-driver-selection-list` on Book Courier, and all Leaflet map popups and pin titles) **never** mention gender (`Male`, `Female`, `fa-venus`, `fa-mars`, `♀`, `♂`), while preserving **Pink (`#EC4899`)** map pins for female drivers and **Blue (`#2563EB`)** map pins for male drivers.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CustomerFacingDriverCardGenderPrivacyContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "driverId",
+    "mentionGenderInCustomerCard",
+    "pinColorHex"
+  ],
+  "properties": {
+    "driverId": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "mentionGenderInCustomerCard": {
+      "type": "boolean",
+      "const": false
+    },
+    "pinColorHex": {
+      "type": "string",
+      "enum": ["#EC4899", "#2563EB"]
+    }
+  }
+}
+```

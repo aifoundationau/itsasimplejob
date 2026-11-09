@@ -500,3 +500,13 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
      - **100 Tokens**: `plink_1UZf84I8bClhBF4PBAFYJRrc` -> `https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06`
 - Wired all Stripe MCP IDs and Payment Links into `STRIPE_CONFIG` in `js/stripe-service.js`, `api/create-payment-intent.js`, and `confirmStripeTokenPopupPurchase()` in `js/app.js`.
 - Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
+
+[COMPLETED 2026-11-09] TASK 64: NEVER MENTION GENDER IN CUSTOMER-FACING DRIVER CARDS — KEEP PINK/BLUE MAP PINS ONLY
+- Removed all gender badges, icons (`fa-venus`, `fa-mars`, `♀`, `♂`), and text (`Female`, `Male`, `Female (Pink Pin)`, `Male (Blue Pin)`) from:
+  1. Closest Drivers customer-facing cards (`renderContractorCards()` in `js/app.js`)
+  2. Book Courier customer-facing driver selection cards (`updateCourierPricingWithSettings()` in `js/app.js`)
+  3. Map popups and pin titles (`updateOsmContractorMarkers()`, `renderOsmCourierRouteMap()`, and `renderInlineDriverBoxMap()` in `js/app.js`)
+  4. Map pin legend (`[data-testid="map-pin-color-legend"]` in `index.html`)
+- Preserved map pin colors: **Pink (`#EC4899`)** for female drivers and **Blue (`#2563EB`)** for male drivers.
+- Verified with `node scratch/verify_no_gender_on_driver_cards.mjs` and `npm run build` (0 errors).
+- Documented Section 11.36 (`CustomerFacingDriverCardGenderPrivacyContract`) in `data-contracts.MD`.

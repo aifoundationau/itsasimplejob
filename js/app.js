@@ -418,13 +418,12 @@ function updateOsmContractorMarkers() {
   matched.forEach(({ provider, dist, pLat, pLng }, idx) => {
     const isClosest = idx === 0;
     const isFemale = (provider.gender === 'female') || (!provider.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (provider.name || '').toLowerCase().includes(n)));
-    const bgPin = isFemale ? '#EC4899' : '#2563EB'; // Pink for female driver, Blue for male driver
-    const pinGenderTitle = isFemale ? 'Female Driver (Pink Pin)' : 'Male Driver (Blue Pin)';
+    const bgPin = isFemale ? '#EC4899' : '#2563EB'; // Pink pin for female, Blue pin for male
     const pinIconName = provider.hasBicycleCourier && !provider.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast';
 
     const markerIcon = L.divIcon({
       className: 'osm-contractor-pin',
-      html: `<div style="background:${bgPin}; color:#fff; width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer; position:relative;" title="${provider.name} (${pinGenderTitle})">
+      html: `<div style="background:${bgPin}; color:#fff; width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer; position:relative;" title="${provider.name}">
               <i class="fa-solid ${pinIconName}" style="transform:rotate(45deg); font-size:13px;"></i>
               ${isClosest ? '<span style="position:absolute; top:-3px; right:-3px; background:#F59E0B; color:#fff; border-radius:50%; width:13px; height:13px; font-size:8px; font-weight:900; display:flex; align-items:center; justify-content:center; transform:rotate(45deg); border:1.5px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.4);" title="Closest Driver">★</span>' : ''}
              </div>`,
@@ -460,9 +459,6 @@ function updateOsmContractorMarkers() {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:0.4rem;">
           <div>
             <strong style="color:#0B192C; font-size:0.95rem;">${provider.name}</strong>
-            <span style="font-size:0.68rem; font-weight:800; padding:1px 6px; border-radius:999px; margin-left:4px; ${isFemale ? 'background:#FCE7F3; color:#BE185D; border:1px solid #FBCFE8;' : 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;'}">
-              <i class="fa-solid ${isFemale ? 'fa-venus' : 'fa-mars'}"></i> ${isFemale ? 'Female' : 'Male'}
-            </span>
           </div>
           <span style="font-size:0.72rem; background:${isClosest ? '#ECFDF5' : '#FFF0EB'}; color:${isClosest ? '#065F46' : '#FF5A1F'}; padding:2px 6px; border-radius:10px; font-weight:800;">
             ${isClosest ? '★ Closest Driver' : `${dist.toFixed(1)} km`}
@@ -583,7 +579,7 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
     const drvPinColor = isFemale ? '#EC4899' : '#2563EB';
     const drvIcon = L.divIcon({
       className: 'osm-driver-pin',
-      html: `<div style="background:${drvPinColor}; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid ${isSelected ? '#FF5A1F' : '#fff'}; box-shadow:${isSelected ? '0 0 10px rgba(255,90,31,0.85)' : '0 2px 6px rgba(0,0,0,0.35)'};" title="${drv.name} (${isFemale ? 'Female Driver (Pink Pin)' : 'Male Driver (Blue Pin)'} • ${distFromPickup.toFixed(1)} km from pickup)">
+      html: `<div style="background:${drvPinColor}; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid ${isSelected ? '#FF5A1F' : '#fff'}; box-shadow:${isSelected ? '0 0 10px rgba(255,90,31,0.85)' : '0 2px 6px rgba(0,0,0,0.35)'};" title="${drv.name} (${distFromPickup.toFixed(1)} km from pickup)">
               <i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast'}" style="font-size:11px;"></i>
              </div>`,
       iconSize: [28, 28],
@@ -591,7 +587,7 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
     });
     L.marker([drv.lat, drv.lng], { icon: drvIcon })
       .addTo(map)
-      .bindPopup(`<strong>🚚 ${drv.name}</strong> <span style="font-size:0.72rem; font-weight:800; color:${drvPinColor};">(${isFemale ? 'Female' : 'Male'})</span><br><span style="font-size:0.75rem;">${distFromPickup.toFixed(1)} km from pickup • $${Number(drv.perKmRateAud || 2.20).toFixed(2)} AUD/km</span>`);
+      .bindPopup(`<strong>🚚 ${drv.name}</strong><br><span style="font-size:0.75rem;">${distFromPickup.toFixed(1)} km from pickup • $${Number(drv.perKmRateAud || 2.20).toFixed(2)} AUD/km</span>`);
   });
 
   // Draw Route Polyline: use real OSRM road geometry if available, otherwise direct dashed line
@@ -1412,9 +1408,6 @@ function renderContractorCards(contractors) {
               <h5 style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.1rem;">
                 ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Driver Licence"></i>
               </h5>
-              <span style="font-size:0.68rem; font-weight:800; padding:0.1rem 0.5rem; border-radius:999px; ${isFemale ? 'background:#FCE7F3; color:#BE185D; border:1px solid #FBCFE8;' : 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;'}" title="${isFemale ? 'Female Driver (Pink Pin)' : 'Male Driver (Blue Pin)'}">
-                <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${isFemale ? '#EC4899' : '#2563EB'}; margin-right:4px;"></span>${isFemale ? 'Female (Pink Pin)' : 'Male (Blue Pin)'}
-              </span>
               ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
               ${isDual ? `<span style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; font-size:0.66rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Dual Mode</span>` : ''}
             </div>
@@ -3126,7 +3119,7 @@ function renderInlineDriverBoxMap(driverId) {
 
   const driverIcon = L.divIcon({
     className: 'osm-custom-pin',
-    html: `<div style="background:${drvPinColor};color:#fff;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);white-space:nowrap;"><i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck'}"></i> ${drv.name.split(' ')[0]} (${isFemale ? '♀ Pink' : '♂ Blue'} $${Number(drv.perKmRateAud).toFixed(2)}/km)</div>`,
+    html: `<div style="background:${drvPinColor};color:#fff;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);white-space:nowrap;"><i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck'}"></i> ${drv.name.split(' ')[0]} ($${Number(drv.perKmRateAud).toFixed(2)}/km)</div>`,
     iconSize: [135, 26],
     iconAnchor: [67, 13]
   });
@@ -3371,9 +3364,6 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <strong style="font-size:0.98rem; color:var(--primary-navy);">${d.name}</strong>
                   ${modeBadge}
-                  <span style="font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px; ${isFemale ? 'background:#FCE7F3; color:#BE185D; border:1px solid #FBCFE8;' : 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;'}" title="${isFemale ? 'Female Driver (Pink Pin)' : 'Male Driver (Blue Pin)'}">
-                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${isFemale ? '#EC4899' : '#2563EB'}; margin-right:3px;"></span>${isFemale ? 'Female' : 'Male'}
-                  </span>
                   ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
                   ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
                 </div>
