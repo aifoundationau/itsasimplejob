@@ -377,3 +377,14 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 1. Refresh http://localhost:3002 in your browser, click your Google Log On profile chip at the top-right, click "Supporter Panel", and verify that it opens the 4 collapsed panels: Registration Details, Register Details, My Bookings History, and Buy Tokens.
 
 ================================================================================
+
+[COMPLETED 2026-11-09] TASK 52: DRIVER LICENCE NUMBER VISIBLE STRICTLY TO SUPERADMIN ONLY (NEVER CUSTOMERS)
+- Customer-Facing Driver Views:
+  * Removed driver licence numbers (`licenceNumber`) from `#courier-driver-selection-list` (`updateCourierPricingWithSettings` in `js/app.js`) on the Book Courier front page, replacing with a safe `Verified Driver (QLD)` badge.
+  * Removed driver licence numbers (`licenceNumber`) from `#contractor-cards-container` (`renderContractorCards` in `js/app.js`) on the Closest Drivers Map tab, replacing with a safe `Verified Driver (QLD)` badge.
+- SuperAdmin-Only Licence Number Gate (`canUserSeeDriverLicenceNumber`):
+  * Added `canUserSeeDriverLicenceNumber()` in `js/app.js` returning `true` strictly when `getActiveUserRole() === 'superadmin'`.
+  * Guarded `#superadmin-drivers-approval-list`, `#driver-info-contact-line`, `#info-drv-licence-group` / `#info-drv-licence-input`, and `#adm-drv-licence-group` / `#adm-drv-licence` so raw driver licence numbers are only displayed to SuperAdmin.
+- Verification & Build:
+  * Verified via `scratch/verify_driver_licence_superadmin_only.mjs` and `npm run build` (0 errors).
+  * Documented Section 11.25 (`DriverLicenceSuperadminOnlyContract`) in `data-contracts.MD`.

@@ -2209,3 +2209,53 @@ Defines the **Supporter Panel** accessed via `#btn-menu-supporter-portal` (**Sup
    - **Panel 4 — Buy Tokens (`#supporter-panel-buy-tokens`):**
      * Header button `#btn-toggle-panel-buy-tokens` toggles `#supporter-buy-tokens-subtab` via `toggleSupporterCollapsePanel('buy-tokens')`.
      * Displays `#supporter-token-balance` and 1-click AUD token packs (`10 Tokens — $10 AUD`, `50 Tokens — $50 AUD`, `100 Tokens — $100 AUD`) via `purchaseSupporterTokenPack(10|50|100)` plus `#btn-supporter-buy-tokens`.
+
+
+---
+
+### 11.25 Driver Licence Number Privacy & SuperAdmin-Only Visibility Contract (`DriverLicenceSuperadminOnlyContract`)
+Enforces strict Australian Privacy Act compliance for driver identification numbers (`licenceNumber` and `licenceDetails`):
+- **Customer-Facing Views (`#courier-driver-selection-list`, `#contractor-cards-container`, and Leaflet Map Popups)**: Customers and visitors NEVER see a driver's licence number. Instead, customer-facing driver cards display a verified status badge (`Verified Driver (QLD)`).
+- **SuperAdmin-Only Access (`canUserSeeDriverLicenceNumber()`)**: Returns `true` strictly when `getActiveUserRole() === 'superadmin'`. Only SuperAdmin can see raw driver licence numbers in `#superadmin-drivers-approval-list`, `#driver-info-contact-line`, `#info-drv-licence-input`, and `#adm-drv-licence`.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverLicenceSuperadminOnlyContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "activeRole",
+    "canSeeLicenceNumber",
+    "customerFacingBadge",
+    "superadminLicenceFieldIds"
+  ],
+  "properties": {
+    "activeRole": {
+      "type": "string",
+      "enum": ["supporter", "driver", "superadmin"]
+    },
+    "canSeeLicenceNumber": {
+      "type": "boolean",
+      "description": "True strictly when activeRole === 'superadmin'; false for all customers, supporters, and non-superadmin users."
+    },
+    "customerFacingBadge": {
+      "type": "string",
+      "pattern": "^Verified Driver \\([A-Z]{2,3}\\)$"
+    },
+    "superadminLicenceFieldIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "superadmin-drivers-approval-list",
+          "adm-drv-licence-group",
+          "adm-drv-licence",
+          "info-drv-licence-group",
+          "info-drv-licence-input"
+        ]
+      }
+    }
+  }
+}
+```

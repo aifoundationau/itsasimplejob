@@ -1468,7 +1468,7 @@ function renderContractorCards(contractors) {
 
       <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.55rem; flex-wrap:wrap; gap:0.5rem;">
         <div style="font-size:0.74rem; color:var(--text-muted);">
-          <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> ${c.licenceState || 'QLD'} Lic #${c.licenceNumber || 'Verified'} (${c.licenceClass || 'C'}) • <strong>PayID:</strong> ${c.payIdValue || c.phone}
+          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <strong style="color:#059669;">Verified Driver (${c.licenceState || 'QLD'})</strong> • <strong>PayID:</strong> ${c.payIdValue || c.phone}
         </div>
         <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="Select ${c.name} for Courier Booking">
           <i class="fa-solid ${isBicycleView ? 'fa-bicycle' : 'fa-truck-fast'}"></i> Book Driver (9am–4pm)
@@ -2730,7 +2730,9 @@ function renderSuperadminDriverApprovals() {
           </div>
 
           <div style="font-size:0.75rem; color:#64748B; margin-top:0.3rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
-            <span><i class="fa-solid fa-id-card"></i> Lic: <strong>${escapeAttr(d.licenceNumber || '482910384')}</strong> (${escapeAttr(d.licenceState || 'QLD')}, ${escapeAttr(d.licenceClass || 'C')})</span>
+            ${canUserSeeDriverLicenceNumber()
+              ? `<span data-agent-id="superadmin-driver-licence-${d.id}" data-testid="superadmin-driver-licence-${d.id}"><i class="fa-solid fa-id-card"></i> Lic: <strong>${escapeAttr(d.licenceNumber || '482910384')}</strong> (${escapeAttr(d.licenceState || 'QLD')}, ${escapeAttr(d.licenceClass || 'C')})</span>`
+              : `<span><i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Verified Licence (SuperAdmin Only)</span>`}
             <span><i class="fa-solid fa-truck"></i> ${escapeAttr(d.vehicle || 'Van')}</span>
             <span><i class="fa-solid fa-location-dot"></i> ${escapeAttr(d.baseSuburb || 'Southport QLD')}</span>
             <span><i class="fa-solid fa-coins" style="color:#D97706;"></i> Balance: <strong>${d.tokenBalance ?? 0} Tokens</strong></span>
@@ -3239,7 +3241,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                 ` : ''}
 
                 <div style="font-size:0.74rem; color:var(--text-muted);">
-                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • Lic: ${d.licenceState || 'QLD'} #${d.licenceNumber || 'DL-9901'} (${d.licenceClass || 'C'})
+                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • <span style="color:#059669; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Verified Driver (${d.licenceState || 'QLD'})</span>
                 </div>
               </div>
             </div>
@@ -3329,6 +3331,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
 
   return appState.lastCalculatedQuote;
 }
+window.updateCourierPricingWithSettings = updateCourierPricingWithSettings;
 
 function copySelectedDriverPayId() {
   const drv = window.providerDB?.findById(appState.selectedCourierDriverId);
@@ -4109,6 +4112,16 @@ function canUserAccessDriverProfile(driver) {
 }
 window.canUserAccessDriverProfile = canUserAccessDriverProfile;
 
+/**
+ * Privacy & Security Gate: Driver Licence Number can ONLY be seen by SuperAdmin.
+ * Customers, supporters, and non-superadmin users never see driver licence numbers.
+ */
+function canUserSeeDriverLicenceNumber() {
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  return activeRole === 'superadmin';
+}
+window.canUserSeeDriverLicenceNumber = canUserSeeDriverLicenceNumber;
+
 function getAccessibleDriverProfilesForCurrentUser() {
   if (!window.providerDB) return [];
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
@@ -4270,7 +4283,10 @@ function renderDriverInformationView() {
 
   const contactEl = document.getElementById('driver-info-contact-line');
   if (contactEl) {
-    contactEl.textContent = `${activeDriver.email || ''} • ${activeDriver.phone || ''} • ${activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber}` : 'Licence on File')}`;
+    const licSummary = canUserSeeDriverLicenceNumber()
+      ? (activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber}` : 'Licence on File'))
+      : 'Licence Verified (SuperAdmin Only)';
+    contactEl.textContent = `${activeDriver.email || ''} • ${activeDriver.phone || ''} • ${licSummary}`;
   }
 
   const payidEl = document.getElementById('driver-info-payid');
@@ -4313,7 +4329,19 @@ function renderDriverInformationView() {
   setVal('info-drv-bike-max-length', activeDriver.bicycleMaxLengthCm ?? 40);
 
   setVal('info-drv-payid-input', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
-  setVal('info-drv-licence-input', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+  const infoLicInput = document.getElementById('info-drv-licence-input');
+  const infoLicGroup = document.getElementById('info-drv-licence-group') || infoLicInput?.closest?.('.input-group');
+  if (canUserSeeDriverLicenceNumber()) {
+    if (infoLicGroup) infoLicGroup.style.display = 'block';
+    if (infoLicInput) infoLicInput.required = true;
+    setVal('info-drv-licence-input', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+  } else {
+    if (infoLicGroup) infoLicGroup.style.display = 'none';
+    if (infoLicInput) {
+      infoLicInput.required = false;
+      infoLicInput.value = '';
+    }
+  }
 
   // Also sync quick info in dispatch console
   const qName = document.getElementById('driver-quick-info-name');
@@ -4388,9 +4416,11 @@ function saveDriverInfoProfile(event) {
     activeDriver.payIdValue = payidVal;
     activeDriver.payId = payidVal;
   }
-  const licVal = document.getElementById('info-drv-licence-input')?.value.trim();
-  if (licVal) {
-    activeDriver.licenceDetails = licVal;
+  if (canUserSeeDriverLicenceNumber()) {
+    const licVal = document.getElementById('info-drv-licence-input')?.value.trim();
+    if (licVal) {
+      activeDriver.licenceDetails = licVal;
+    }
   }
 
   window.providerDB.save();
@@ -5233,7 +5263,19 @@ function renderDriverAdminDashboard() {
   setVal('adm-drv-bike-max-width', activeDriver.bicycleMaxWidthCm ?? 30);
   setVal('adm-drv-bike-max-length', activeDriver.bicycleMaxLengthCm ?? 40);
   setVal('adm-drv-payid-value', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
-  setVal('adm-drv-licence', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+  const admLicInput = document.getElementById('adm-drv-licence');
+  const admLicGroup = document.getElementById('adm-drv-licence-group') || admLicInput?.closest?.('.input-group');
+  if (canUserSeeDriverLicenceNumber()) {
+    if (admLicGroup) admLicGroup.style.display = 'block';
+    if (admLicInput) admLicInput.required = true;
+    setVal('adm-drv-licence', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+  } else {
+    if (admLicGroup) admLicGroup.style.display = 'none';
+    if (admLicInput) {
+      admLicInput.required = false;
+      admLicInput.value = '';
+    }
+  }
 
   // Driver approval & profile map visibility banner
   const approvalBanner = document.getElementById('driver-admin-approval-status-banner');
@@ -5489,7 +5531,9 @@ function saveDriverAdminProfile(event) {
   const maxWidthRaw = document.getElementById('adm-drv-max-width')?.value;
   const maxLengthRaw = document.getElementById('adm-drv-max-length')?.value;
   const payIdValue = document.getElementById('adm-drv-payid-value')?.value?.trim() || activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '';
-  const licenceDetails = document.getElementById('adm-drv-licence')?.value?.trim() || activeDriver.licenceDetails || '';
+  const licenceDetails = canUserSeeDriverLicenceNumber()
+    ? (document.getElementById('adm-drv-licence')?.value?.trim() || activeDriver.licenceDetails || '')
+    : (activeDriver.licenceDetails || '');
 
   const perKmRateAud = perKmRaw !== '' && !isNaN(parseFloat(perKmRaw)) ? Math.max(0.5, parseFloat(perKmRaw)) : 2.20;
   const sameDayFeeAud = sameDayRaw !== '' && !isNaN(parseFloat(sameDayRaw)) ? Math.max(0, parseFloat(sameDayRaw)) : 0;

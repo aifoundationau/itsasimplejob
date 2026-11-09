@@ -1218,9 +1218,10 @@
                 aria-label="Admin Driver PayID Value">
             </div>
 
-            <div class="input-group">
-              <label class="input-label" for="adm-drv-licence">Driver Licence Details (Required)</label>
-              <input type="text" id="adm-drv-licence" class="form-control" required placeholder="e.g. QLD #482910384 (Class C)"
+            <div id="adm-drv-licence-group" class="input-group superadmin-only" style="display:none;"
+              data-agent-id="adm-drv-licence-group" data-testid="adm-drv-licence-group">
+              <label class="input-label" for="adm-drv-licence">Driver Licence Details (SuperAdmin Only)</label>
+              <input type="text" id="adm-drv-licence" class="form-control" placeholder="e.g. QLD #482910384 (Class C)"
                 data-agent-id="adm-drv-licence" data-testid="adm-drv-licence" aria-label="Admin Driver Licence Details">
             </div>
 
@@ -1715,9 +1716,10 @@
                   placeholder="e.g. 0400 123 456 or driver@payid.com.au"
                   data-agent-id="info-drv-payid-input" data-testid="info-drv-payid-input" aria-label="PayID Account">
               </div>
-              <div class="input-group">
-                <label class="input-label" for="info-drv-licence-input">Driver Licence Details:</label>
-                <input type="text" id="info-drv-licence-input" class="form-control" required
+              <div id="info-drv-licence-group" class="input-group superadmin-only" style="display:none;"
+                data-agent-id="info-drv-licence-group" data-testid="info-drv-licence-group">
+                <label class="input-label" for="info-drv-licence-input">Driver Licence Details (SuperAdmin Only):</label>
+                <input type="text" id="info-drv-licence-input" class="form-control"
                   placeholder="e.g. QLD #482910384 (Class C)"
                   data-agent-id="info-drv-licence-input" data-testid="info-drv-licence-input" aria-label="Licence Details">
               </div>
