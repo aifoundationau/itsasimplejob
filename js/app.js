@@ -4203,7 +4203,24 @@ window.openDriverAdminPanelFromGoogleMenu = openDriverAdminPanelFromGoogleMenu;
 
 function purchaseSupporterTokenPack(tokensAmount) {
   const amount = Math.round(Number(tokensAmount) || 0);
-  if (amount <= 0) return;
+  if (amount <= 0) return null;
+
+  const quote = typeof calculateTokenPurchaseTaxBreakdown === 'function'
+    ? calculateTokenPurchaseTaxBreakdown(amount)
+    : {
+        tokens: amount,
+        tokenPriceAud: 1,
+        currency: 'aud',
+        collectTax: 'automatic',
+        taxBehavior: 'exclusive',
+        subtotalExGstAud: amount,
+        taxAmountAud: Math.round(amount * 10) / 100,
+        totalIncGstAud: Math.round((amount + Math.round(amount * 10) / 100) * 100) / 100,
+        formattedSubtotalAud: `$${amount.toFixed(2)} AUD`,
+        formattedTaxAud: `+$${(Math.round(amount * 10) / 100).toFixed(2)} AUD`,
+        formattedTotalAud: `$${(Math.round((amount + Math.round(amount * 10) / 100) * 100) / 100).toFixed(2)} AUD`
+      };
+
   let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   if (!supporter && window.supporterDB) {
     const gUser = window.firebaseService?.getCurrentGoogleUser?.();
@@ -4219,13 +4236,36 @@ function purchaseSupporterTokenPack(tokensAmount) {
     supporter.tokenBalance = Math.max(0, Math.round((supporter.tokenBalance ?? 25) + amount));
     window.supporterDB.save();
   }
+
+  if (window.stripePaymentService?.recordStripeTransaction) {
+    try {
+      window.stripePaymentService.recordStripeTransaction({
+        docketNumber: `TOK-${Date.now()}`,
+        tokens: amount,
+        subtotalExGstAud: quote.subtotalExGstAud,
+        taxAmountAud: quote.taxAmountAud,
+        totalIncGstAud: quote.totalIncGstAud,
+        amount: quote.totalIncGstAud,
+        currency: 'aud',
+        collectTax: 'automatic',
+        tax_behavior: 'exclusive',
+        status: 'succeeded',
+        payerName: supporter?.name || 'Community Supporter',
+        payerEmail: supporter?.email || 'supporter@simplejob.com.au',
+        description: `Stripe Token Purchase: ${amount} Tokens (Subtotal ${quote.formattedSubtotalAud} + Exclusive 10% GST ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud})`,
+        stripePaymentIntentId: `pi_test_${Date.now()}`
+      });
+    } catch (e) {}
+  }
+
   try { renderSupporterPanel(); } catch (e) {}
   if (typeof syncAllTokenDisplays === 'function') {
     try { syncAllTokenDisplays(); } catch (e) {}
   }
   if (typeof showToast === 'function') {
-    showToast(`🪙 Added ${amount} Tokens ($${amount} AUD) to your Supporter Token Wallet!`);
+    showToast(`🪙 Stripe Checkout (AUD Only): Added +${amount} Tokens! Subtotal ${quote.formattedSubtotalAud} + Tax (Exclusive) ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud}.`);
   }
+  return quote;
 }
 window.purchaseSupporterTokenPack = purchaseSupporterTokenPack;
 
@@ -6121,48 +6161,123 @@ function deleteDriverOrder(orderId, btnEl) {
 window.deleteDriverOrder = deleteDriverOrder;
 
 /**
- * Driver Token Wallet Top-Up Modal (AUD Only)
+ * Stripe Token Checkout Tax Breakdown Helper
+ * - Currency: AUD only ('aud')
+ * - Collect Tax: Automatic ({ enabled: true })
+ * - Tax Behavior: Exclusive (10% GST added on top of quoted subtotal)
  */
-function openDriverTokenTopupModal(driverId) {
-  if (driverId) {
-    appState.activeAdminDriverId = driverId;
-  }
-  const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
-  if (!drv) return;
-
+function calculateTokenPurchaseTaxBreakdown(packTokens = 10) {
   const cur = window.iasjCurrency;
-  const pricing = cur?.getPricing?.() || { tokenPriceAud: 1, tokenPacks: [10, 50, 100] };
-  const tokenPriceAud = pricing.tokenPriceAud || 1;
+  const tokenPriceAud = Math.max(1, Math.round(Number(cur?.getPricing?.()?.tokenPriceAud) || 1));
+  if (window.stripePaymentService?.calculateTokenTaxBreakdown) {
+    return window.stripePaymentService.calculateTokenTaxBreakdown(packTokens, tokenPriceAud);
+  }
+  const cleanTokens = Math.max(1, Math.round(Number(packTokens) || 10));
+  const subtotalExGstAud = Math.round(cleanTokens * tokenPriceAud * 100) / 100;
+  const taxRate = 0.10;
+  const taxAmountAud = Math.round(subtotalExGstAud * 10) / 100;
+  const totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100;
+  const amountCents = Math.round(totalIncGstAud * 100);
+  return {
+    tokens: cleanTokens,
+    tokenPriceAud,
+    currency: 'aud',
+    currencyUpper: 'AUD',
+    collectTax: 'automatic',
+    automaticTax: { enabled: true },
+    taxBehavior: 'exclusive',
+    taxRate,
+    subtotalExGstAud,
+    taxAmountAud,
+    totalIncGstAud,
+    amountCents,
+    formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
+    formattedTaxAud: `+$${taxAmountAud.toFixed(2)} AUD`,
+    formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
+  };
+}
+window.calculateTokenPurchaseTaxBreakdown = calculateTokenPurchaseTaxBreakdown;
+
+function selectStripeTokenPack(packTokens = 10) {
   const packs = [10, 50, 100];
-  const tiers = pricing.driverOrderTokens || { tier0to20km: 2, tier21to50km: 5, tier51to100km: 10, tier101PlusKm: 15 };
+  const selectedTokens = packs.includes(Number(packTokens)) ? Number(packTokens) : 10;
+  appState.selectedStripeTokenPack = selectedTokens;
 
-  const nameEl = document.getElementById('topup-driver-name');
-  if (nameEl) nameEl.textContent = `${drv.name} (${drv.businessName})`;
-
-  const balEl = document.getElementById('topup-driver-balance');
-  if (balEl) balEl.textContent = `${drv.tokenBalance ?? 0} Tokens`;
+  const quote = calculateTokenPurchaseTaxBreakdown(selectedTokens);
 
   const gridEl = document.getElementById('driver-token-packs-grid');
   if (gridEl) {
     gridEl.innerHTML = packs.map(tokens => {
-      const costAud = tokens * tokenPriceAud;
+      const packQuote = calculateTokenPurchaseTaxBreakdown(tokens);
+      const isSelected = tokens === selectedTokens;
       return `
         <button
           type="button"
-          class="btn btn-outline"
-          onclick="purchaseDriverTokensAud(${tokens})"
-          style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.1rem 0.65rem; border:2px solid #F59E0B; background:#FFFBEB; color:#92400E; border-radius:var(--radius-md); font-weight:800; cursor:pointer; transition:transform 0.15s ease;"
+          class="btn btn-outline ${isSelected ? 'active' : ''}"
+          onclick="selectStripeTokenPack(${tokens})"
+          style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0.55rem 0.35rem; border:${isSelected ? '2px solid #635BFF' : '1.5px solid #CBD5E1'}; background:${isSelected ? '#EEF2FF' : '#FFFFFF'}; color:${isSelected ? '#312E81' : '#334155'}; border-radius:8px; font-weight:800; cursor:pointer; transition:all 0.15s ease;"
           data-agent-id="btn-buy-pack-${tokens}"
           data-testid="btn-buy-pack-${tokens}"
-          aria-label="Buy ${tokens} Driver Tokens for $${costAud} AUD with Stripe">
-          <span style="font-size:1.25rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> +${tokens} Tokens</span>
-          <span style="font-size:0.95rem; font-weight:800; color:#059669; margin-top:0.35rem;">$${costAud} AUD</span>
-          <span style="font-size:0.72rem; color:var(--text-muted); margin-top:0.15rem;">1 Token = $${tokenPriceAud} AUD</span>
+          aria-pressed="${isSelected ? 'true' : 'false'}"
+          aria-label="Select ${tokens} Tokens (Subtotal ${packQuote.formattedSubtotalAud} + ${packQuote.formattedTaxAud} GST = ${packQuote.formattedTotalAud})">
+          <span style="font-size:0.88rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> ${tokens}</span>
+          <span style="font-size:0.72rem; font-weight:700; color:#475569; margin-top:0.1rem;">Sub: $${packQuote.subtotalExGstAud.toFixed(2)}</span>
+          <span style="font-size:0.74rem; font-weight:900; color:#059669; margin-top:0.05rem;">Total: $${packQuote.totalIncGstAud.toFixed(2)}</span>
         </button>
       `;
     }).join('');
   }
 
+  const packLabelEl = document.getElementById('stripe-token-selected-pack-label');
+  if (packLabelEl) packLabelEl.textContent = `${quote.tokens} Tokens`;
+
+  const subEl = document.getElementById('stripe-token-subtotal-aud');
+  if (subEl) subEl.textContent = quote.formattedSubtotalAud;
+
+  const taxEl = document.getElementById('stripe-token-tax-aud');
+  if (taxEl) taxEl.textContent = quote.formattedTaxAud;
+
+  const totalEl = document.getElementById('stripe-token-total-aud');
+  if (totalEl) totalEl.textContent = quote.formattedTotalAud;
+
+  const payBtnLabelEl = document.getElementById('btn-stripe-token-pay-now-label');
+  if (payBtnLabelEl) {
+    payBtnLabelEl.textContent = `Pay ${quote.formattedTotalAud} • Buy ${quote.tokens} Tokens`;
+  }
+
+  return quote;
+}
+window.selectStripeTokenPack = selectStripeTokenPack;
+
+/**
+ * Small Stripe Token Wallet Top-Up Popup (AUD Only • Collect Tax: Automatic • Exclusive 10% GST)
+ */
+function openDriverTokenTopupModal(driverId, initialPackTokens = 10) {
+  const isSupporterTarget = driverId === 'supporter';
+  appState.stripeTokenPopupTarget = isSupporterTarget ? 'supporter' : 'driver';
+
+  if (driverId && !isSupporterTarget) {
+    appState.activeAdminDriverId = driverId;
+  }
+
+  const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+  const currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+
+  const walletLabelEl = document.getElementById('topup-wallet-label');
+  const nameEl = document.getElementById('topup-driver-name');
+  const balEl = document.getElementById('topup-driver-balance');
+
+  if (isSupporterTarget && currentSup) {
+    if (walletLabelEl) walletLabelEl.textContent = 'Supporter Token Wallet';
+    if (nameEl) nameEl.textContent = `${currentSup.name || 'Community Supporter'}`;
+    if (balEl) balEl.textContent = `${currentSup.tokenBalance ?? 25} Tokens`;
+  } else if (drv) {
+    if (walletLabelEl) walletLabelEl.textContent = 'Selected Driver Wallet';
+    if (nameEl) nameEl.textContent = `${drv.name}${drv.businessName ? ` (${drv.businessName})` : ''}`;
+    if (balEl) balEl.textContent = `${drv.tokenBalance ?? 0} Tokens`;
+  }
+
+  selectStripeTokenPack(initialPackTokens);
   document.getElementById('driver-token-topup-modal')?.classList.add('active');
 }
 window.openDriverTokenTopupModal = openDriverTokenTopupModal;
@@ -6172,51 +6287,65 @@ function closeDriverTokenTopupModal() {
 }
 window.closeDriverTokenTopupModal = closeDriverTokenTopupModal;
 
+function confirmStripeTokenPopupPurchase() {
+  const selectedTokens = appState.selectedStripeTokenPack || 10;
+  return purchaseDriverTokensAud(selectedTokens);
+}
+window.confirmStripeTokenPopupPurchase = confirmStripeTokenPopupPurchase;
+
 function purchaseDriverTokensAud(packTokens) {
   const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
-  if (!drv) return;
+  if (!drv) return null;
 
-  const cur = window.iasjCurrency;
-  const tokenPriceAud = Math.max(1, Math.round(Number(cur?.getPricing?.()?.tokenPriceAud) || 1));
-  const totalAud = packTokens * tokenPriceAud;
+  const quote = selectStripeTokenPack(packTokens);
 
-  // Record Stripe transaction
+  // Record Stripe transaction with AUD Only + Automatic Exclusive Tax breakdown
   if (window.stripePaymentService) {
     try {
       window.stripePaymentService.recordStripeTransaction({
         docketNumber: `TOK-${Date.now()}`,
-        amount: totalAud,
-        currency: 'AUD',
+        tokens: quote.tokens,
+        subtotalExGstAud: quote.subtotalExGstAud,
+        taxAmountAud: quote.taxAmountAud,
+        totalIncGstAud: quote.totalIncGstAud,
+        amount: quote.totalIncGstAud,
+        currency: 'aud',
+        collectTax: 'automatic',
+        tax_behavior: 'exclusive',
         status: 'succeeded',
         payerName: drv.name,
         payerEmail: drv.email,
-        description: `Stripe Token Purchase: ${packTokens} Driver Tokens (1 Token = $${tokenPriceAud} AUD)`,
+        description: `Stripe Token Purchase: ${quote.tokens} Tokens (Quote Subtotal ${quote.formattedSubtotalAud} + Exclusive 10% GST ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud})`,
         stripePaymentIntentId: `pi_test_${Date.now()}`
       });
     } catch (e) {}
   }
 
-  const newBal = window.providerDB.addDriverTokens(drv.id, packTokens);
+  const newBal = window.providerDB.addDriverTokens(drv.id, quote.tokens);
   const balEl = document.getElementById('topup-driver-balance');
   if (balEl) balEl.textContent = `${newBal} Tokens`;
   const adminBalEl = document.getElementById('driver-admin-token-balance');
   if (adminBalEl) adminBalEl.textContent = `${newBal} Tokens`;
+  const infoTokensEl = document.getElementById('driver-info-tokens');
+  if (infoTokensEl) infoTokensEl.textContent = `${newBal} Tokens`;
   const navTokenEl = document.getElementById('nav-driver-token-count');
   if (navTokenEl) navTokenEl.textContent = `${newBal} Tokens`;
 
   // Also update supporter balance if supporter
   const currentSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   if (currentSup && window.supporterDB) {
-    currentSup.tokenBalance = (currentSup.tokenBalance ?? 25) + packTokens;
+    currentSup.tokenBalance = (currentSup.tokenBalance ?? 25) + quote.tokens;
     window.supporterDB.save();
     const supBalEl = document.getElementById('supporter-token-balance');
     if (supBalEl) supBalEl.textContent = `${currentSup.tokenBalance} Tokens`;
   }
 
   renderDriverAdminDashboard();
+  try { renderDriverInformationView(); } catch (e) {}
   calculateCourierQuote();
-  showToast(`🪙 Stripe Payment Confirmed! Added +${packTokens} Tokens ($${totalAud} AUD) to ${drv.name}'s wallet. New Balance: ${newBal} Tokens.`);
+  showToast(`🪙 Stripe Payment Confirmed (AUD Only)! Added +${quote.tokens} Tokens (Subtotal ${quote.formattedSubtotalAud} + Exclusive 10% Tax ${quote.formattedTaxAud} = Total ${quote.formattedTotalAud}).`);
   closeDriverTokenTopupModal();
+  return quote;
 }
 window.purchaseDriverTokensAud = purchaseDriverTokensAud;
 

@@ -37,14 +37,23 @@ export default async function handler(req, res) {
   }
 
   const docketNumber = String(body.docketNumber || '').trim();
-  const rawAmount = Number(body.amount);
-  const amountAud = wholeUp(rawAmount);
-  const amountCents = amountAud * 100;
+  const rawSubtotal = Number(body.subtotalExGstAud);
+  const hasExplicitSubtotal = Number.isFinite(rawSubtotal) && rawSubtotal > 0;
+  const subtotalExGstAud = hasExplicitSubtotal ? Math.round(rawSubtotal * 100) / 100 : wholeUp(Number(body.amount));
+  const taxBehavior = 'exclusive';
+  const collectTax = 'automatic';
+  const taxAmountAud = hasExplicitSubtotal
+    ? Math.round(subtotalExGstAud * 10) / 100
+    : Math.round((Number(body.taxAmountAud) || 0) * 100) / 100;
+  const amountAud = hasExplicitSubtotal
+    ? Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100
+    : wholeUp(Number(body.amount));
+  const amountCents = Math.round(amountAud * 100);
 
   if (!DOCKET_PATTERN.test(docketNumber)) {
     return sendJson(res, 400, { error: 'Invalid docket number.' });
   }
-  if (!Number.isFinite(rawAmount) || amountAud < MIN_AMOUNT_AUD || amountAud > MAX_AMOUNT_AUD) {
+  if (!Number.isFinite(amountAud) || amountAud < MIN_AMOUNT_AUD || amountAud > MAX_AMOUNT_AUD) {
     return sendJson(res, 400, { error: `Amount must be between $${MIN_AMOUNT_AUD} and $${MAX_AMOUNT_AUD.toLocaleString('en-AU')} AUD.` });
   }
 
@@ -55,10 +64,20 @@ export default async function handler(req, res) {
     let intent = await stripe.paymentIntents.create({
       amount: amountCents,
       currency: 'aud',
-      description: `${description} (invoiced in AUD)`.slice(0, 200),
+      description: `${description} (AUD Only • Exclusive 10% GST)`.slice(0, 200),
       // Cards and wallets only, so checkout completes inside the modal without a page redirect
       automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-      metadata: { businessId: BUSINESS_ID, docketNumber, customerName, invoiceCurrency: 'AUD' }
+      metadata: {
+        businessId: BUSINESS_ID,
+        docketNumber,
+        customerName,
+        invoiceCurrency: 'AUD',
+        collectTax,
+        taxBehavior,
+        subtotalExGstAud: String(subtotalExGstAud.toFixed(2)),
+        taxAmountAud: String(taxAmountAud.toFixed(2)),
+        totalIncGstAud: String(amountAud.toFixed(2))
+      }
     }, {
       // Re-opening checkout for the same docket and amount returns the same PaymentIntent
       idempotencyKey: `iasj-pi-${docketNumber}-${amountCents}`
@@ -73,8 +92,13 @@ export default async function handler(req, res) {
       paymentIntentId: intent.id,
       clientSecret: intent.client_secret,
       status: intent.status,
+      subtotalExGstAud,
+      taxAmountAud,
+      totalIncGstAud: intent.amount / 100,
       amount: intent.amount / 100,
-      currency: intent.currency.toUpperCase()
+      currency: 'AUD',
+      collectTax: 'automatic',
+      taxBehavior: 'exclusive'
     });
   } catch (err) {
     return sendStripeError(res, err, 'Could not start the payment');

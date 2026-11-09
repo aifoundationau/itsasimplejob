@@ -2579,3 +2579,83 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.32 Stripe Token Checkout Small Popup & Automatic Exclusive Tax Contract (`StripeTokenPopupExclusiveTaxContract`)
+- **Stripe Settings & Token Checkout Invariants:**
+  1. **Currency:** Strictly Australian Dollars (`currency: "aud"`, `$ AUD Only`).
+  2. **Collect Tax:** `Automatic` (`collectTax: "automatic"`, `automaticTax: { enabled: true }`).
+  3. **Tax Behavior:** `Exclusive` (`taxBehavior: "exclusive"` — 10% Australian GST is added on top of the quoted Ex-GST subtotal).
+  4. **Itemized Quote Calculation (`calculateTokenPurchaseTaxBreakdown`):**
+     - `subtotalExGstAud = Math.round(tokens * tokenPriceAud * 100) / 100` (e.g., `$10.00 AUD`, `$50.00 AUD`, `$100.00 AUD`)
+     - `taxAmountAud = Math.round(subtotalExGstAud * 10) / 100` (e.g., `+$1.00 AUD`, `+$5.00 AUD`, `+$10.00 AUD`)
+     - `totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100` (e.g., `$11.00 AUD`, `$55.00 AUD`, `$110.00 AUD`)
+     - `amountCents = Math.round(totalIncGstAud * 100)`
+  5. **Small Stripe Popup (`#driver-token-topup-modal` -> `#stripe-small-popup-box`):**
+     - Styled as a compact centered popup (`max-width: 380px`) displaying:
+       - **Quote Subtotal:** `#stripe-token-subtotal-aud`
+       - **Tax (Exclusive • Automatic 10% GST):** `#stripe-token-tax-aud`
+       - **Total Payable (AUD):** `#stripe-token-total-aud`
+       - **Confirm & Pay Button:** `#btn-stripe-token-pay-now` (`confirmStripeTokenPopupPurchase()`)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StripeTokenPopupExclusiveTaxContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tokens",
+    "tokenPriceAud",
+    "currency",
+    "collectTax",
+    "taxBehavior",
+    "taxRate",
+    "subtotalExGstAud",
+    "taxAmountAud",
+    "totalIncGstAud",
+    "amountCents"
+  ],
+  "properties": {
+    "tokens": {
+      "type": "integer",
+      "enum": [10, 50, 100]
+    },
+    "tokenPriceAud": {
+      "type": "number",
+      "minimum": 1
+    },
+    "currency": {
+      "type": "string",
+      "const": "aud"
+    },
+    "collectTax": {
+      "type": "string",
+      "const": "automatic"
+    },
+    "taxBehavior": {
+      "type": "string",
+      "const": "exclusive"
+    },
+    "taxRate": {
+      "type": "number",
+      "const": 0.10
+    },
+    "subtotalExGstAud": {
+      "type": "number",
+      "minimum": 1
+    },
+    "taxAmountAud": {
+      "type": "number",
+      "minimum": 0.1
+    },
+    "totalIncGstAud": {
+      "type": "number",
+      "minimum": 1.1
+    },
+    "amountCents": {
+      "type": "integer",
+      "minimum": 110
+    }
+  }
+}
+```

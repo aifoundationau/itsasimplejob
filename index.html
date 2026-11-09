@@ -1184,47 +1184,56 @@
             <div id="supporter-buy-tokens-subtab" class="supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);" data-agent-id="supporter-buy-tokens-subtab" data-testid="supporter-buy-tokens-subtab">
               <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:1rem 1.25rem; margin-bottom:1.15rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
                 <div>
-                  <div style="font-size:0.75rem; font-weight:800; color:#92400E; text-transform:uppercase;">
-                    <i class="fa-solid fa-wallet"></i> Supporter Token Wallet ($ AUD Only)
+                  <div style="font-size:0.75rem; font-weight:800; color:#92400E; text-transform:uppercase; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                    <span><i class="fa-solid fa-wallet"></i> Token Wallet ($ AUD Only)</span>
+                    <span style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.68rem; font-weight:800;">
+                      <i class="fa-brands fa-stripe-s"></i> Collect Tax: Automatic • Tax: Exclusive (10% GST)
+                    </span>
                   </div>
-                  <div style="font-size:0.84rem; color:#78350F; margin-top:0.2rem;">
-                    1 Token = $1 AUD (Whole Australian Dollars Only). Select a token pack below to add tokens immediately:
+                  <div style="font-size:0.84rem; color:#78350F; margin-top:0.25rem;">
+                    1 Token = $1.00 AUD (Quote Subtotal) + 10% Exclusive Tax (Automatic GST) = Total in AUD. Click a pack below to open the small Stripe popup:
                   </div>
                 </div>
-                <button type="button" class="btn btn-sm" onclick="openDriverTokenTopupModal('supporter')"
-                  style="background:#F59E0B; color:#1E3A8A; font-weight:800; border:none; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); font-size:0.8rem;"
+                <button type="button" class="btn btn-sm" onclick="openDriverTokenTopupModal('supporter', 10)"
+                  style="background:#635BFF; color:#FFFFFF; font-weight:800; border:none; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); font-size:0.8rem;"
                   data-agent-id="btn-supporter-buy-tokens" data-testid="btn-supporter-buy-tokens"
                   aria-label="Supporter Buy Tokens in AUD">
-                  <i class="fa-solid fa-plus"></i> Open Token Checkout ($ AUD)
+                  <i class="fa-brands fa-stripe-s"></i> Open Stripe Popup ($ AUD)
                 </button>
               </div>
 
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.85rem;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(195px, 1fr)); gap:0.85rem;">
                 <div style="background:#FFFFFF; border:1.5px solid #FDE68A; border-radius:var(--radius-md); padding:1rem; text-align:center;">
                   <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 10 Tokens</div>
-                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$10 AUD</div>
-                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(10)"
-                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                  <div style="font-size:0.76rem; color:#475569; margin:0.35rem 0 0.15rem 0;">Quote Subtotal: <strong>$10.00 AUD</strong></div>
+                  <div style="font-size:0.74rem; color:#64748B; margin-bottom:0.2rem;">Tax (Exclusive 10% GST): <strong>+$1.00 AUD</strong></div>
+                  <div style="font-size:0.92rem; font-weight:900; color:#059669; margin-bottom:0.65rem;">Total: $11.00 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal('supporter', 10)"
+                    style="width:100%; font-weight:800; background:#635BFF; border-color:#635BFF;"
                     data-agent-id="btn-supporter-pack-10" data-testid="btn-supporter-pack-10" aria-label="Buy 10 Tokens in AUD">
-                    Buy 10 Tokens ($10 AUD)
+                    Buy 10 Tokens ($11.00 AUD)
                   </button>
                 </div>
                 <div style="background:#FFFFFF; border:2px solid #F59E0B; border-radius:var(--radius-md); padding:1rem; text-align:center;">
                   <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 50 Tokens</div>
-                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$50 AUD</div>
-                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(50)"
-                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                  <div style="font-size:0.76rem; color:#475569; margin:0.35rem 0 0.15rem 0;">Quote Subtotal: <strong>$50.00 AUD</strong></div>
+                  <div style="font-size:0.74rem; color:#64748B; margin-bottom:0.2rem;">Tax (Exclusive 10% GST): <strong>+$5.00 AUD</strong></div>
+                  <div style="font-size:0.92rem; font-weight:900; color:#059669; margin-bottom:0.65rem;">Total: $55.00 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal('supporter', 50)"
+                    style="width:100%; font-weight:800; background:#635BFF; border-color:#635BFF;"
                     data-agent-id="btn-supporter-pack-50" data-testid="btn-supporter-pack-50" aria-label="Buy 50 Tokens in AUD">
-                    Buy 50 Tokens ($50 AUD)
+                    Buy 50 Tokens ($55.00 AUD)
                   </button>
                 </div>
                 <div style="background:#FFFFFF; border:1.5px solid #FDE68A; border-radius:var(--radius-md); padding:1rem; text-align:center;">
                   <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> 100 Tokens</div>
-                  <div style="font-size:0.9rem; font-weight:800; color:#059669; margin:0.3rem 0 0.75rem 0;">$100 AUD</div>
-                  <button type="button" class="btn btn-primary btn-sm" onclick="purchaseSupporterTokenPack(100)"
-                    style="width:100%; font-weight:800; background:#D97706; border-color:#D97706;"
+                  <div style="font-size:0.76rem; color:#475569; margin:0.35rem 0 0.15rem 0;">Quote Subtotal: <strong>$100.00 AUD</strong></div>
+                  <div style="font-size:0.74rem; color:#64748B; margin-bottom:0.2rem;">Tax (Exclusive 10% GST): <strong>+$10.00 AUD</strong></div>
+                  <div style="font-size:0.92rem; font-weight:900; color:#059669; margin-bottom:0.65rem;">Total: $110.00 AUD</div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal('supporter', 100)"
+                    style="width:100%; font-weight:800; background:#635BFF; border-color:#635BFF;"
                     data-agent-id="btn-supporter-pack-100" data-testid="btn-supporter-pack-100" aria-label="Buy 100 Tokens in AUD">
-                    Buy 100 Tokens ($100 AUD)
+                    Buy 100 Tokens ($110.00 AUD)
                   </button>
                 </div>
               </div>
@@ -1544,52 +1553,90 @@
   </div>
 
   <!-- =====================================================================
-       MODAL 2: DRIVER TOKEN TOP-UP MODAL (AUD ONLY)
+       MODAL 2: SMALL STRIPE TOKEN CHECKOUT POPUP (AUD ONLY • AUTOMATIC EXCLUSIVE TAX)
        ===================================================================== -->
   <div class="modal-overlay" id="driver-token-topup-modal" role="dialog" aria-modal="true"
-    aria-labelledby="driver-topup-title">
-    <div class="modal-box" style="max-width: 540px;">
-      <div class="modal-header" style="background:#FFFBEB; border-bottom:1px solid #FDE68A; padding:1.1rem 1.35rem;">
+    aria-labelledby="driver-topup-title" data-agent-id="driver-token-topup-modal" data-testid="driver-token-topup-modal">
+    <div class="modal-box stripe-small-popup-box" style="max-width: 380px; width: 92%; border-radius: 14px; padding: 0; overflow: hidden; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);" data-agent-id="stripe-small-popup-box" data-testid="stripe-small-popup-box">
+      <div class="modal-header" style="background:linear-gradient(135deg, #1E1B4B 0%, #312E81 100%); border-bottom:1px solid #4338CA; padding:0.85rem 1.05rem; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <h4 id="driver-topup-title" style="margin:0; font-size:1.15rem; color:#92400E; font-weight:900;">
-            <i class="fa-solid fa-coins" style="color:#F59E0B;"></i> Driver Token Wallet &amp; Top-Up (AUD Only)
+          <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem;">
+            <span id="stripe-popup-tax-settings-badge" style="background:#635BFF; color:#FFFFFF; font-size:0.65rem; font-weight:800; padding:0.15rem 0.45rem; border-radius:999px; letter-spacing:0.02em;" data-agent-id="stripe-popup-tax-settings-badge" data-testid="stripe-popup-tax-settings-badge">
+              <i class="fa-brands fa-stripe-s"></i> AUD Only • Collect Tax: Automatic • Exclusive
+            </span>
+          </div>
+          <h4 id="driver-topup-title" style="margin:0; font-size:0.98rem; color:#FFFFFF; font-weight:900;">
+            <i class="fa-solid fa-coins" style="color:#FBBF24;"></i> Buy Tokens — Stripe Checkout
           </h4>
-          <span style="font-size:0.78rem; color:#B45309;">1 Token = $1 AUD • Available in packs of 10, 50, and 100 Tokens.</span>
         </div>
         <button type="button" class="modal-close-btn" onclick="closeDriverTokenTopupModal()"
+          style="color:#E0E7FF;"
           data-agent-id="btn-close-token-topup" data-testid="btn-close-token-topup"
           aria-label="Close Token Wallet Modal">&times;</button>
       </div>
-      <div class="modal-body" style="padding:1.35rem;">
+      <div class="modal-body" style="padding:0.95rem 1.05rem;">
         <div
-          style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:0.9rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+          style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:8px; padding:0.6rem 0.8rem; margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Selected Driver Wallet</div>
-            <strong id="topup-driver-name" style="font-size:1rem; color:var(--primary-navy);">Callum Evans</strong>
+            <div id="topup-wallet-label" style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Selected Wallet</div>
+            <strong id="topup-driver-name" style="font-size:0.86rem; color:var(--primary-navy);">Callum Evans</strong>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Current Balance</div>
-            <strong id="topup-driver-balance" style="font-size:1.2rem; color:#D97706;">45 Tokens</strong>
+            <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Balance</div>
+            <strong id="topup-driver-balance" style="font-size:0.95rem; color:#D97706;">45 Tokens</strong>
           </div>
         </div>
 
-        <div style="margin-bottom:1rem;">
-          <label class="input-label">Choose Token Pack to Purchase ($ AUD Only):</label>
-          <div id="driver-token-packs-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem;">
+        <div style="margin-bottom:0.8rem;">
+          <label class="input-label" style="font-size:0.75rem; margin-bottom:0.4rem; display:block;">1. Select Token Pack ($1.00 AUD / Token):</label>
+          <div id="driver-token-packs-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.45rem;">
             <!-- Populated dynamically: 10, 50, 100 packs -->
           </div>
         </div>
 
-        <div
-          style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.85rem; font-size:0.78rem; color:#92400E; margin-top:0.5rem;">
-          <i class="fa-solid fa-circle-info"></i> Tokens are deducted automatically when your courier booking is
-          confirmed.
+        <!-- Itemized Stripe Quote Breakdown: Quote Subtotal -> Exclusive Tax (Automatic) -> Total -->
+        <div id="stripe-token-quote-breakdown"
+          style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; padding:0.75rem 0.85rem; margin-bottom:0.8rem;"
+          data-agent-id="stripe-token-quote-breakdown" data-testid="stripe-token-quote-breakdown">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; padding-bottom:0.35rem; border-bottom:1px dashed #CBD5E1;">
+            <span style="font-size:0.7rem; font-weight:800; color:#4338CA; text-transform:uppercase;">
+              <i class="fa-brands fa-stripe-s"></i> Stripe Quote Breakdown (AUD Only)
+            </span>
+            <span style="font-size:0.66rem; font-weight:700; color:#059669; background:#ECFDF5; padding:0.1rem 0.4rem; border-radius:4px; border:1px solid #A7F3D0;">
+              Collect Tax: Automatic
+            </span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#334155; margin-bottom:0.3rem;">
+            <span>Quote Subtotal (<span id="stripe-token-selected-pack-label">10 Tokens</span>):</span>
+            <strong id="stripe-token-subtotal-aud" data-agent-id="stripe-token-subtotal-aud" data-testid="stripe-token-subtotal-aud">$10.00 AUD</strong>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#475569; margin-bottom:0.45rem;">
+            <span>Tax (Exclusive • Automatic 10% GST):</span>
+            <strong id="stripe-token-tax-aud" style="color:#D97706;" data-agent-id="stripe-token-tax-aud" data-testid="stripe-token-tax-aud">+$1.00 AUD</strong>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.92rem; font-weight:900; color:var(--primary-navy); padding-top:0.4rem; border-top:1.5px solid #CBD5E1;">
+            <span>Total Payable (AUD):</span>
+            <strong id="stripe-token-total-aud" style="color:#059669; font-size:1rem;" data-agent-id="stripe-token-total-aud" data-testid="stripe-token-total-aud">$11.00 AUD</strong>
+          </div>
         </div>
+
+        <button type="button" id="btn-stripe-token-pay-now" class="btn btn-primary"
+          onclick="confirmStripeTokenPopupPurchase()"
+          style="width:100%; background:#635BFF; border-color:#635BFF; color:#FFFFFF; font-weight:800; font-size:0.86rem; padding:0.65rem 0.9rem; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:0.45rem;"
+          data-agent-id="btn-stripe-token-pay-now" data-testid="btn-stripe-token-pay-now"
+          aria-label="Pay Total in AUD with Stripe">
+          <i class="fa-solid fa-lock"></i> <span id="btn-stripe-token-pay-now-label">Pay $11.00 AUD • Buy 10 Tokens</span>
+        </button>
       </div>
       <div
-        style="display:flex; justify-content:flex-end; padding:0.85rem 1.35rem; border-top:1px solid var(--border-light);">
+        style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 1.05rem; background:#F8FAFC; border-top:1px solid var(--border-light); font-size:0.7rem; color:var(--text-muted);">
+        <span><i class="fa-solid fa-shield-halved" style="color:#635BFF;"></i> Australian Dollars ($ AUD) Only</span>
         <button type="button" class="btn btn-outline btn-sm" onclick="closeDriverTokenTopupModal()"
-          data-agent-id="btn-done-token-topup" data-testid="btn-done-token-topup" aria-label="Done">Done</button>
+          style="padding:0.25rem 0.65rem; font-size:0.72rem;"
+          data-agent-id="btn-done-token-topup" data-testid="btn-done-token-topup" aria-label="Close">Close</button>
       </div>
     </div>
   </div>

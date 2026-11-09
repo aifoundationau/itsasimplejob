@@ -11,6 +11,12 @@ const STRIPE_CONFIG = {
   accountName: "AI Foundation",
   publishableKey: STRIPE_PUBLISHABLE_KEY,
   currency: "aud",
+  currencyLabel: "AUD Only",
+  collectTax: "automatic",
+  automaticTax: { enabled: true },
+  taxBehavior: "exclusive",
+  gstRate: 0.10,
+  popupSize: "small",
   isTestMode: STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_'),
   // Serverless functions in /api hold the secret key; the browser only ever sees the publishable key
   apiBase: '/api'
@@ -22,7 +28,106 @@ class StripePaymentService {
     this.stripeInstance = null;
     this.elements = null;
     this.paymentElement = null;
+    this.transactions = this.loadTransactions();
     this.initStripe();
+  }
+
+  loadTransactions() {
+    try {
+      const raw = localStorage.getItem('iasj_stripe_transactions');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  saveTransactions() {
+    try {
+      localStorage.setItem('iasj_stripe_transactions', JSON.stringify(this.transactions));
+    } catch (e) {}
+  }
+
+  /**
+   * Deterministic AUD Exclusive GST Breakdown for Token Purchases
+   * Stripe Settings:
+   * - Currency: AUD only ('aud')
+   * - Collect Tax: Automatic ({ enabled: true })
+   * - Tax Behavior: Exclusive (10% GST added on top of quoted subtotal)
+   */
+  calculateTokenTaxBreakdown(tokens, tokenPriceAud = 1) {
+    const cleanTokens = Math.max(1, Math.round(Number(tokens) || 10));
+    const unitPriceAud = Math.max(1, Math.round(Number(tokenPriceAud) || 1));
+    const subtotalExGstAud = Math.round(cleanTokens * unitPriceAud * 100) / 100;
+    const taxRate = this.config.gstRate || 0.10;
+    const taxAmountAud = Math.round(subtotalExGstAud * 10) / 100;
+    const totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100;
+    const amountCents = Math.round(totalIncGstAud * 100);
+
+    return {
+      tokens: cleanTokens,
+      tokenPriceAud: unitPriceAud,
+      currency: 'aud',
+      currencyUpper: 'AUD',
+      collectTax: 'automatic',
+      automaticTax: { enabled: true },
+      taxBehavior: 'exclusive',
+      taxRate,
+      subtotalExGstAud,
+      taxAmountAud,
+      totalIncGstAud,
+      amountCents,
+      formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
+      formattedTaxAud: `+$${taxAmountAud.toFixed(2)} AUD`,
+      formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
+    };
+  }
+
+  /**
+   * Record a Stripe token or invoice transaction with AUD-only & Automatic Exclusive Tax metadata
+   */
+  recordStripeTransaction(txData = {}) {
+    const subtotalAud = Number.isFinite(Number(txData.subtotalExGstAud))
+      ? Math.round(Number(txData.subtotalExGstAud) * 100) / 100
+      : Math.round(Number(txData.amount || 0) * 100) / 100;
+    const taxAud = Number.isFinite(Number(txData.taxAmountAud))
+      ? Math.round(Number(txData.taxAmountAud) * 100) / 100
+      : Math.round(subtotalAud * 10) / 100;
+    const totalAud = Number.isFinite(Number(txData.totalIncGstAud))
+      ? Math.round(Number(txData.totalIncGstAud) * 100) / 100
+      : Math.round((subtotalAud + taxAud) * 100) / 100;
+    const amountCents = Math.round(totalAud * 100);
+
+    const record = {
+      docketNumber: txData.docketNumber || `TOK-${Date.now()}`,
+      tokens: txData.tokens || null,
+      currency: 'aud',
+      currencyUpper: 'AUD',
+      collectTax: 'automatic',
+      automatic_tax: { enabled: true },
+      tax_behavior: 'exclusive',
+      subtotalExGstAud: subtotalAud,
+      taxAmountAud: taxAud,
+      totalIncGstAud: totalAud,
+      amount: totalAud,
+      amountCents,
+      status: txData.status || 'succeeded',
+      payerName: txData.payerName || 'Supporter',
+      payerEmail: txData.payerEmail || '',
+      description: txData.description || `Token Purchase (Subtotal $${subtotalAud.toFixed(2)} AUD + $${taxAud.toFixed(2)} AUD Exclusive GST = $${totalAud.toFixed(2)} AUD)`,
+      stripePaymentIntentId: txData.stripePaymentIntentId || `pi_test_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+
+    this.transactions.unshift(record);
+    this.saveTransactions();
+
+    if (window.firebaseService?.recordStripeTransaction) {
+      try {
+        window.firebaseService.recordStripeTransaction(record);
+      } catch (e) {}
+    }
+
+    return record;
   }
 
   initStripe() {
@@ -67,15 +172,21 @@ class StripePaymentService {
   }
 
   /**
-   * Create (or reuse) a server-side PaymentIntent for a booking docket
-   * @param {Object} paymentData { docketNumber, amount, customerName, description }
+   * Create (or reuse) a server-side PaymentIntent for a booking docket or token purchase
+   * @param {Object} paymentData { docketNumber, amount, subtotalExGstAud, taxAmountAud, totalIncGstAud, customerName, description }
    */
   async createPaymentIntent(paymentData) {
     return this.callApi('create-payment-intent', {
       method: 'POST',
       body: JSON.stringify({
         docketNumber: paymentData.docketNumber,
-        amount: paymentData.amount,
+        amount: paymentData.totalIncGstAud ?? paymentData.amount,
+        subtotalExGstAud: paymentData.subtotalExGstAud,
+        taxAmountAud: paymentData.taxAmountAud,
+        totalIncGstAud: paymentData.totalIncGstAud,
+        currency: 'aud',
+        collectTax: 'automatic',
+        taxBehavior: 'exclusive',
         customerName: paymentData.customerName || '',
         description: paymentData.description || ''
       })

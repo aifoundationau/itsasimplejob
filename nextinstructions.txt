@@ -438,3 +438,13 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Added `renderBookingMessageBoxHtml(ord)`, `handleSendBookingMessage(event, orderId)`, and `openBookingMessagesInHistory(orderId)` in `js/app.js` so that every booking inside the **My Bookings History** block (`#supporter-panel-bookings-history` -> `#supporter-bookings-subtab` -> `#supporter-bookings-list-container`) has a live two-way **Supporter & Driver Messages** box (`#booking-message-box-<orderId>`).
 - Verified with `node scratch/verify_booking_history_messaging.mjs` and `npm run build` (0 errors).
 - Documented Section 11.31 (`BookingHistorySupporterDriverMessagingContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 59: STRIPE SETTINGS (AUD ONLY, COLLECT TAX: AUTOMATIC, EXCLUSIVE TAX, SUBTOTAL -> TAX -> TOTAL, SMALL POPUP)
+- Configured `STRIPE_CONFIG` and `StripePaymentService` in `js/stripe-service.js` and `api/create-payment-intent.js` with `currency: 'aud'` (AUD Only), `collectTax: 'automatic'`, `automaticTax: { enabled: true }`, `taxBehavior: 'exclusive'`, `gstRate: 0.10`, and `popupSize: 'small'`.
+- Added `calculateTokenPurchaseTaxBreakdown(packTokens)`, `selectStripeTokenPack(packTokens)`, and `confirmStripeTokenPopupPurchase()` in `js/app.js` to calculate and display:
+  1. **Quote Subtotal** (`#stripe-token-subtotal-aud`, e.g. `$10.00 AUD`, `$50.00 AUD`, `$100.00 AUD`)
+  2. **Tax (Exclusive • Automatic 10% GST)** (`#stripe-token-tax-aud`, e.g. `+$1.00 AUD`, `+$5.00 AUD`, `+$10.00 AUD`)
+  3. **Total Payable (AUD)** (`#stripe-token-total-aud`, e.g. `$11.00 AUD`, `$55.00 AUD`, `$110.00 AUD`)
+- Redesigned `#driver-token-topup-modal` (`#stripe-small-popup-box`) in `index.html` into a compact, small centered Stripe popup (`max-width: 380px`) and updated the **Buy Tokens** panel (`#supporter-buy-tokens-subtab`) cards to open the small Stripe popup pre-selected to the chosen pack.
+- Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
+- Documented Section 11.32 (`StripeTokenPopupExclusiveTaxContract`) in `data-contracts.MD`.
