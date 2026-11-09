@@ -2182,3 +2182,12 @@ Defines strict profile ownership isolation for Active Driver Profile views and t
      * A driver is shown on customer maps (`updateOsmContractorMarkers`, `drawCourierRouteOnOsmMap`, `filterContractors`, and `updateCourierPricingWithSettings`) **ONLY IF** the driver has their profile turned ON **AND** SuperAdmin has approved the driver.
      * If the driver turns their profile OFF, or if SuperAdmin has not approved / revokes the driver, the driver is immediately hidden from all maps and customer driver selection lists.
 
+
+### 11.23 Supporter Console Google Log In Dropdown Menu Contract (`SupporterConsoleGoogleDropdownContract`)
+Defines the placement and navigation behavior for the Supporter Console (`#driver-admin-tab`):
+1. **Removed from Front Page Navigation & Default View:**
+   - The front page top navigation bar (`.nav-menu`) strictly contains only **Book Courier** (`#tab-btn-courier`), **Closest Drivers** (`#tab-btn-find-contractors`), and **How It Works** (`#tab-btn-how-it-works`).
+   - `#tab-btn-supporter-admin` is removed from `.nav-menu`, and `#footer-supporter-link` remains hidden on the front page (`display: none !important;`).
+   - `initSuperadminViewMode()` passes `shouldNavigateTab = false` to `switchSuperadminViewRole(activeView, false)` so opening or refreshing the web app front page always stays on `#courier-tab` (**Book Short-Haul Courier Pickup**) and never replaces the front page with the Supporter Console.
+2. **Accessed Exclusively via the Dropdown Menu under the Google Log In:**
+   - Inside `#google-user-menu` (the dropdown menu opened by clicking the Google Log In chip `#google-user-chip`), `#btn-menu-supporter-portal` (**Supporter Console**) provides one-click navigation (`closeGoogleUserMenu(); switchTab('driver-admin-tab');`) to the Supporter Console.

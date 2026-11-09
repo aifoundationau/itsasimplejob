@@ -78,7 +78,7 @@
         </div>
       </a>
 
-      <!-- Desktop Nav Buttons -->
+      <!-- Desktop Nav Buttons (Front Page Navigation Only — Supporter Console is in the Google Log In Dropdown Menu) -->
       <div class="nav-menu">
         <button type="button" class="nav-item-btn active" id="tab-btn-courier" onclick="switchTab('courier-tab')"
           data-agent-id="tab-btn-courier" data-testid="tab-btn-courier" aria-label="Book Courier">
@@ -88,11 +88,6 @@
           onclick="switchTab('find-contractors-tab')" data-agent-id="tab-btn-find-contractors"
           data-testid="tab-btn-find-contractors" aria-label="Closest Drivers Map">
           <i class="fa-solid fa-map-location-dot"></i> Closest Drivers
-        </button>
-        <button type="button" class="nav-item-btn supporter-gated-nav" id="tab-btn-supporter-admin" onclick="switchTab('driver-admin-tab')"
-          style="display:none;"
-          data-agent-id="tab-btn-supporter-admin" data-testid="tab-btn-supporter-admin" aria-label="Supporter Portal & Driver Admin">
-          <i class="fa-solid fa-shield-heart"></i> Supporter Portal
         </button>
         <a href="/terms.html#how-it-works" class="nav-item-btn" id="tab-btn-how-it-works"
           data-agent-id="tab-btn-how-it-works" data-testid="tab-btn-how-it-works" aria-label="How It Works (Terms of Service)"
@@ -175,10 +170,11 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:0.45rem;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); switchTab('driver-admin-tab');"
-              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.8rem;"
-              data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal" aria-label="Open Supporter Portal">
-              <i class="fa-solid fa-shield-heart" style="color:var(--brand-orange);"></i> Supporter Portal
+            <button type="button" class="btn btn-primary btn-sm" id="btn-menu-supporter-portal"
+              onclick="closeGoogleUserMenu(); switchTab('driver-admin-tab');"
+              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:var(--brand-orange); border-color:var(--brand-orange); color:#ffffff;"
+              data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal" aria-label="Open Supporter Console">
+              <i class="fa-solid fa-shield-heart"></i> Supporter Console
             </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
               style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
@@ -576,12 +572,12 @@
     </section>
 
     <!-- =====================================================================
-         VIEW 4: SUPPORTER & DRIVER ADMIN CONSOLE (BEHIND SUPPORTER PANEL)
+         VIEW 4: SUPPORTER & DRIVER ADMIN CONSOLE (ACCESSED VIA GOOGLE LOGIN DROPDOWN MENU)
          ===================================================================== -->
     <section class="workspace-view" id="driver-admin-tab">
       <div class="section-header">
         <span class="section-tag">Community Supporter Network • AUD Only</span>
-        <h2 class="section-title">Supporter Portal</h2>
+        <h2 class="section-title">Supporter Console</h2>
         <p class="section-desc">
           Register as a community supporter first. Behind the private supporter panel, verified members can access driver onboarding, dispatch tools, and account settings.
         </p>
@@ -2114,7 +2110,7 @@
       <div style="display:flex; gap:1.25rem; font-size:0.84rem; flex-wrap:wrap; align-items:center;">
         <a href="#" onclick="switchTab('courier-tab'); return false;" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-book-service-link" data-testid="footer-book-service-link">Book Service</a>
         <a href="#" onclick="switchTab('find-contractors-tab'); return false;" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-closest-drivers-link" data-testid="footer-closest-drivers-link">Closest Drivers</a>
-        <a href="#" id="footer-supporter-link" class="supporter-gated-nav" onclick="switchTab('driver-admin-tab'); return false;" style="color:#CBD5E1; text-decoration:none; display:none;" data-agent-id="footer-supporter-portal-link" data-testid="footer-supporter-portal-link">Supporter Portal</a>
+        <a href="#" id="footer-supporter-link" onclick="switchTab('driver-admin-tab'); return false;" style="color:#CBD5E1; text-decoration:none; display:none !important;" data-agent-id="footer-supporter-portal-link" data-testid="footer-supporter-portal-link">Supporter Console</a>
         <a href="/terms.html#how-it-works" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-how-it-works-link" data-testid="footer-how-it-works-link">How It Works</a>
         <a href="/terms.html" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-terms-link" data-testid="footer-terms-link">Terms of Service</a>
         <a href="#driver-application" onclick="openDriverApplicationModal(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:none; align-items:center; gap:0.35rem;" class="supporter-gated-nav" id="footer-driver-app-link" data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link" aria-label="Courier Driver Application">

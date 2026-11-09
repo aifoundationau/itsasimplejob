@@ -357,9 +357,15 @@ Created: 2026-11-01
 - Updated `3. Minus Tokens (-)` in `#superadmin-universal-token-management-card` to strictly display `-5`, `-10` (`#btn-sa-minus-preset-5`, `#btn-sa-minus-preset-10`).
 - Updated `setSaTokenAddInput(val)` and `setSaTokenMinusInput(val)` in `js/app.js` so clicking a preset button sets the input value and immediately executes the token addition/deduction.
 
+[COMPLETED 2026-11-09] TASK 50: MOVE SUPPORTER CONSOLE OFF WEB APP FRONT PAGE INTO GOOGLE LOG IN DROPDOWN MENU
+- Removed `#tab-btn-supporter-admin` from the front page top navigation bar (`.nav-menu`) and kept `#footer-supporter-link` hidden on the front page.
+- Updated `initSuperadminViewMode()` and `switchSuperadminViewRole(role, shouldNavigateTab = false)` in `js/app.js` so initial page loads and front-page Google sign-ins stay on the web app front page (`#courier-tab`) rather than auto-switching to `#driver-admin-tab`.
+- Styled and configured `#btn-menu-supporter-portal` (**Supporter Console**) inside `#google-user-menu` (the dropdown menu under the Google Log In button/chip `#google-user-chip`).
+- Verified with `scratch/verify_supporter_console_in_google_dropdown_only.mjs` and `npm run build` (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY SUPERADMIN PLATFORM VAULT TOKEN PRESETS (+10, +50, +100 & -5, -10) IN BROWSER
+CURRENT TASK: VERIFY SUPPORTER CONSOLE UNDER GOOGLE LOG IN DROPDOWN MENU
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, check the SuperAdmin Platform Vault in the SuperAdmin Universal Token Management card to verify that "2. Add Tokens (+)" has +10, +50, +100 and "3. Minus Tokens (-)" has -5, -10.
+1. Refresh http://localhost:3002 in your browser to confirm the web app opens on the front page without a Supporter Console button in the top navigation bar, and click your Google Log In profile chip at the top-right to open the dropdown menu and select "Supporter Console".
 
 ================================================================================

@@ -3170,20 +3170,18 @@ body:not(.google-logged-in) #nav-google-signin-btn {
   display: inline-flex !important;
 }
 
-/* Supporter Portal is strictly gated behind Google login */
+/* Supporter Console is strictly in the Google Log In dropdown menu, not on the front page nav or footer */
 #tab-btn-supporter-admin,
-#footer-supporter-link,
+#footer-supporter-link {
+  display: none !important;
+}
+
 .supporter-gated-nav {
   display: none !important;
 }
 
-body.google-logged-in #tab-btn-supporter-admin,
 body.google-logged-in .supporter-gated-nav {
   display: inline-flex !important;
-}
-
-body.google-logged-in #footer-supporter-link {
-  display: inline !important;
 }
 
 .google-user-chip {

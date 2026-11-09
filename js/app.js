@@ -162,12 +162,12 @@ function switchTab(tabId, bypassGate = false) {
     tabId = 'courier-tab';
   }
 
-  // Supporter Portal is strictly gated behind Google login
+  // Supporter Console is strictly gated behind Google login and accessed via the Google Log In dropdown menu
   if (tabId === 'driver-admin-tab' && !bypassGate) {
     const isGoogleLoggedIn = !!window.firebaseService?.getCurrentGoogleUser?.() || !!localStorage.getItem('iasj_google_user');
     if (!isGoogleLoggedIn) {
-      showToast('🔒 Supporter Portal is only seen behind Google login. Please sign in with Google to continue.');
-      signUpWithGoogle('supporter');
+      showToast('🔒 Supporter Console is accessed from the Google Log In dropdown menu. Please sign in with Google to continue.');
+      signUpWithGoogle('supporter', true);
       return;
     }
   }
@@ -8639,9 +8639,11 @@ async function signUpWithGoogle(role = 'supporter', bypassGate = false) {
       renderSupporterPanel();
 
       if (role === 'supporter' || role === 'provider' || user.role === 'superadmin' || user.isSuperadmin) {
-        switchTab('driver-admin-tab', true);
-        switchSupporterSubTab('supporter-details-subtab');
-        showToast(`🎉 Logged in with Google! Welcome ${user.displayName || 'Supporter'}. You can now register details or access the Driver Application.`);
+        if (bypassGate) {
+          switchTab('driver-admin-tab', true);
+          switchSupporterSubTab('supporter-details-subtab');
+        }
+        showToast(`🎉 Logged in with Google! Welcome ${user.displayName || 'Supporter'}. Open Supporter Console from the Google Log In dropdown menu.`);
         return user;
       }
 
@@ -8786,10 +8788,13 @@ function updateGoogleAuthUI(user) {
       chip.setAttribute('aria-label', `Logged In with Google Profile Menu: ${user.displayName || 'Supporter'}`);
     }
 
+    // Supporter Console is NOT shown on the front page nav or footer; it is exclusively in the Google Log In dropdown menu (#google-user-menu)
     const supporterTabBtn = document.getElementById('tab-btn-supporter-admin');
-    if (supporterTabBtn) supporterTabBtn.style.display = 'inline-flex';
+    if (supporterTabBtn) supporterTabBtn.style.display = 'none';
     const footerSupporterLink = document.getElementById('footer-supporter-link');
-    if (footerSupporterLink) footerSupporterLink.style.display = 'inline';
+    if (footerSupporterLink) footerSupporterLink.style.display = 'none';
+    const menuSupporterBtn = document.getElementById('btn-menu-supporter-portal');
+    if (menuSupporterBtn) menuSupporterBtn.style.display = 'inline-flex';
     
     const isSa = checkIsSuperadmin(user);
     if (isSa && user.role !== 'superadmin') {
@@ -11356,7 +11361,7 @@ function checkIsSuperadmin(user) {
   return isSuperEmail || user.isSuperadmin === true || user.role === 'superadmin' || localStorage.getItem('iasj_superadmin_mode') === 'true';
 }
 
-function switchSuperadminViewRole(role) {
+function switchSuperadminViewRole(role, shouldNavigateTab = false) {
   const user = window.firebaseService?.getCurrentGoogleUser?.();
   if (!checkIsSuperadmin(user)) return;
 
@@ -11404,15 +11409,15 @@ function switchSuperadminViewRole(role) {
     }
   }
 
-  // Navigate or adapt layout based on simulated role perspective
+  // Update subtab inside Supporter Console; do NOT switch away from the front page unless explicitly requested
   if (role === 'driver') {
-    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
     if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   } else if (role === 'supporter') {
-    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
     if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-details-subtab');
   } else if (role === 'superadmin') {
-    if (typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
     if (typeof switchSupporterSubTab === 'function') switchSupporterSubTab('supporter-dispatch-subtab');
   }
 
@@ -11422,7 +11427,7 @@ function switchSuperadminViewRole(role) {
   try { updateDriverApplicationGateUI(); } catch (e) {}
   try { updateGoogleAuthUI(user); } catch (e) {}
 
-  if (typeof showToast === 'function') {
+  if (shouldNavigateTab && typeof showToast === 'function') {
     showToast(`👑 Viewing site as: ${roleNames[role] || role}`);
   }
 }
@@ -11471,7 +11476,7 @@ function initSuperadminViewMode() {
     switcherSec.style.display = 'block';
     let activeView = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
     if (activeView === 'customer') activeView = 'supporter';
-    switchSuperadminViewRole(activeView);
+    switchSuperadminViewRole(activeView, false);
   } else {
     if (switcherSec) switcherSec.style.display = 'none';
     if (floatingBanner) floatingBanner.style.display = 'none';
