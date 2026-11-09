@@ -4820,6 +4820,143 @@ function renderSupporterPanel() {
 }
 window.renderSupporterPanel = renderSupporterPanel;
 
+function renderBookingMessageBoxHtml(ord) {
+  const messages = Array.isArray(ord.messages) ? ord.messages : [];
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const isDriverPerspective = appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
+  const defaultSenderRole = isDriverPerspective ? 'driver' : 'supporter';
+  const supporterName = ord.customerName || 'Supporter';
+  const driverName = ord.driverName || 'Courier Driver';
+
+  const messagesListHtml = messages.length === 0
+    ? `
+      <div style="text-align:center; padding:0.85rem; color:var(--text-muted); font-size:0.8rem; background:#FFFFFF; border:1px dashed #CBD5E1; border-radius:6px;">
+        <i class="fa-regular fa-comments" style="color:#3B82F6; margin-right:0.35rem;"></i>
+        No messages yet for booking <strong>${ord.orderId}</strong>. Send a message below between Supporter (<strong>${supporterName}</strong>) and Driver (<strong>${driverName}</strong>).
+      </div>
+    `
+    : messages.map(msg => {
+        const isDriverMsg = msg.senderRole === 'driver';
+        const timeStr = msg.createdAt
+          ? new Date(msg.createdAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+          : 'Just now';
+        return `
+          <div class="booking-chat-message ${isDriverMsg ? 'msg-from-driver' : 'msg-from-supporter'}"
+            style="display:flex; flex-direction:column; align-items:${isDriverMsg ? 'flex-end' : 'flex-start'}; margin-bottom:0.55rem;"
+            data-agent-id="booking-msg-item-${msg.id}" data-testid="booking-msg-item-${msg.id}">
+            <div style="max-width:88%; background:${isDriverMsg ? '#EFF6FF' : '#ECFDF5'}; border:1px solid ${isDriverMsg ? '#BFDBFE' : '#A7F3D0'}; color:var(--primary-navy); border-radius:10px; padding:0.55rem 0.8rem;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:0.65rem; font-size:0.7rem; font-weight:800; color:${isDriverMsg ? '#1D4ED8' : '#047857'}; margin-bottom:0.2rem;">
+                <span>
+                  <i class="fa-solid ${isDriverMsg ? 'fa-truck-fast' : 'fa-user-check'}"></i>
+                  ${isDriverMsg ? 'Driver' : 'Supporter'}: ${msg.senderName || (isDriverMsg ? driverName : supporterName)}
+                </span>
+                <span style="color:#64748B; font-weight:600;">${timeStr}</span>
+              </div>
+              <div style="font-size:0.84rem; color:#0F172A; line-height:1.45; word-break:break-word;">${msg.text}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+  return `
+    <!-- Supporter & Driver Direct Message Box inside My Bookings History -->
+    <div id="booking-message-box-${ord.orderId}" class="booking-message-box"
+      style="margin-top:0.95rem; background:#F8FAFC; border:1.5px solid #BFDBFE; border-radius:var(--radius-md); padding:0.95rem 1.05rem;"
+      data-agent-id="booking-message-box-${ord.orderId}" data-testid="booking-message-box-${ord.orderId}">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.65rem; padding-bottom:0.5rem; border-bottom:1px solid #E2E8F0;">
+        <div style="font-size:0.84rem; font-weight:800; color:var(--primary-navy); display:flex; align-items:center; gap:0.45rem;">
+          <i class="fa-solid fa-comments" style="color:#2563EB;"></i>
+          <span>Supporter &amp; Driver Messages (${supporterName} ↔ ${driverName})</span>
+        </div>
+        <span id="booking-msg-count-${ord.orderId}"
+          style="font-size:0.72rem; font-weight:800; background:#DBEAFE; color:#1E40AF; padding:0.18rem 0.55rem; border-radius:999px;"
+          data-agent-id="booking-msg-count-${ord.orderId}" data-testid="booking-msg-count-${ord.orderId}">
+          ${messages.length} Message${messages.length === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      <div id="booking-messages-thread-${ord.orderId}"
+        style="max-height:210px; overflow-y:auto; margin-bottom:0.7rem; padding:0.25rem 0.1rem;"
+        data-agent-id="booking-messages-thread-${ord.orderId}" data-testid="booking-messages-thread-${ord.orderId}">
+        ${messagesListHtml}
+      </div>
+
+      <form id="booking-message-form-${ord.orderId}" onsubmit="handleSendBookingMessage(event, '${ord.orderId}')"
+        style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;"
+        data-agent-id="booking-message-form-${ord.orderId}" data-testid="booking-message-form-${ord.orderId}">
+        <select id="booking-message-sender-${ord.orderId}" class="form-control"
+          style="width:auto; min-width:165px; max-width:210px; padding:0.45rem 0.6rem; font-size:0.78rem; font-weight:800; background:#FFFFFF;"
+          data-agent-id="booking-message-sender-${ord.orderId}" data-testid="booking-message-sender-${ord.orderId}"
+          aria-label="Send Message As Role">
+          <option value="supporter" ${defaultSenderRole === 'supporter' ? 'selected' : ''}>🤝 Supporter (${supporterName})</option>
+          <option value="driver" ${defaultSenderRole === 'driver' ? 'selected' : ''}>🚚 Driver (${driverName})</option>
+        </select>
+        <input type="text" id="booking-message-input-${ord.orderId}" class="form-control" required
+          placeholder="Write a message to ${defaultSenderRole === 'driver' ? supporterName : driverName}..."
+          style="flex:1; min-width:180px; padding:0.48rem 0.75rem; font-size:0.84rem; background:#FFFFFF;"
+          data-agent-id="booking-message-input-${ord.orderId}" data-testid="booking-message-input-${ord.orderId}"
+          aria-label="Message text for booking ${ord.orderId}">
+        <button type="submit" id="btn-send-booking-message-${ord.orderId}" class="btn btn-primary btn-sm"
+          style="font-weight:800; padding:0.48rem 0.95rem; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap;"
+          data-agent-id="btn-send-booking-message-${ord.orderId}" data-testid="btn-send-booking-message-${ord.orderId}"
+          aria-label="Send Booking Message">
+          <i class="fa-solid fa-paper-plane"></i> Send Message
+        </button>
+      </form>
+    </div>
+  `;
+}
+window.renderBookingMessageBoxHtml = renderBookingMessageBoxHtml;
+
+function handleSendBookingMessage(event, orderId) {
+  if (event && event.preventDefault) event.preventDefault();
+  if (!window.courierOrderDB || !orderId) return null;
+
+  const ord = window.courierOrderDB.getOrderById(orderId);
+  if (!ord) return null;
+
+  const inputEl = document.getElementById(`booking-message-input-${orderId}`);
+  const senderSelectEl = document.getElementById(`booking-message-sender-${orderId}`);
+  const rawText = inputEl ? inputEl.value : '';
+  const cleanText = String(rawText || '').replace(/[<>]/g, '').trim();
+  if (!cleanText) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ Please type a message before sending.');
+    }
+    return null;
+  }
+
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const defaultRole = (appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver') ? 'driver' : 'supporter';
+  const senderRole = senderSelectEl?.value === 'driver' ? 'driver' : (senderSelectEl?.value === 'supporter' ? 'supporter' : defaultRole);
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const senderName = senderRole === 'driver'
+    ? (ord.driverName || 'Courier Driver')
+    : (ord.customerName || supporter?.name || 'Supporter');
+
+  const savedMsg = window.courierOrderDB.addOrderMessage(orderId, {
+    senderRole,
+    senderName,
+    text: cleanText
+  });
+
+  if (inputEl) {
+    inputEl.value = '';
+  }
+
+  try { playDriverBookingNotificationSound(); } catch (e) {}
+  try { syncDriverBookingNotificationUI(); } catch (e) {}
+  try { renderSupporterBookings(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+
+  if (typeof showToast === 'function') {
+    const recipientLabel = senderRole === 'driver' ? (ord.customerName || 'Supporter') : (ord.driverName || 'Driver');
+    showToast(`💬 Message sent to ${recipientLabel} on booking ${orderId}!`);
+  }
+  return savedMsg;
+}
+window.handleSendBookingMessage = handleSendBookingMessage;
+
 function renderSupporterBookings() {
   const container = document.getElementById('supporter-bookings-list-container');
   const countBadge = document.getElementById('supporter-bookings-count-badge');
@@ -4827,20 +4964,26 @@ function renderSupporterBookings() {
 
   const supporter = getCurrentSupporter();
   const allOrders = window.courierOrderDB.getAll() || [];
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const isDriverMode = appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
+  const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
 
-  let supporterOrders = [];
-  if (supporter && supporter.email) {
+  let matchingOrders = [];
+  if (isDriverMode && ownedDriver) {
+    matchingOrders = allOrders.filter(o => o.driverId === ownedDriver.id);
+  }
+  if (matchingOrders.length === 0 && supporter && supporter.email) {
     const sEmail = supporter.email.toLowerCase().trim();
     const sPhone = (supporter.phone || '').replace(/\s+/g, '');
-    supporterOrders = allOrders.filter(o => {
+    matchingOrders = allOrders.filter(o => {
       const oEmail = (o.customerEmail || '').toLowerCase().trim();
       const oPhone = (o.customerPhone || '').replace(/\s+/g, '');
       return (sEmail && oEmail === sEmail) || (sPhone && oPhone.length >= 8 && sPhone === oPhone);
     });
   }
 
-  // If no matching orders specifically for this email yet, show all orders so supporter can review existing demo bookings
-  const ordersToDisplay = supporterOrders.length > 0 ? supporterOrders : allOrders;
+  // If no matching orders specifically for this email yet, show all orders so supporter/driver can review and message on bookings
+  const ordersToDisplay = matchingOrders.length > 0 ? matchingOrders : allOrders;
 
   if (countBadge) {
     countBadge.textContent = `${ordersToDisplay.length} Booking${ordersToDisplay.length === 1 ? '' : 's'}`;
@@ -4913,6 +5056,8 @@ function renderSupporterBookings() {
             <div style="margin-top:0.25rem;"><strong>Weight:</strong> ${ord.weightKg || 1} kg • <strong>Size:</strong> ${ord.heightCm || 20}×${ord.widthCm || 20}×${ord.lengthCm || 20} cm</div>
           </div>
         </div>
+
+        ${renderBookingMessageBoxHtml(ord)}
 
         <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.5rem; margin-top:0.85rem; padding-top:0.65rem; border-top:1px solid var(--bg-card-alt);">
           <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
@@ -5676,6 +5821,9 @@ function renderDriverAdminDashboard() {
                 <i class="fa-solid fa-check"></i> Accepted
               </span>
             `}
+            <button type="button" class="btn btn-outline btn-sm" style="color:#1E40AF; border-color:#BFDBFE; background:#EFF6FF; font-weight:800;" onclick="openBookingMessagesInHistory('${ord.orderId}')" data-agent-id="btn-order-messages-${ord.orderId}" data-testid="btn-order-messages-${ord.orderId}" aria-label="Open Booking Messages in My Bookings History">
+              <i class="fa-solid fa-comments"></i> Messages (${Array.isArray(ord.messages) ? ord.messages.length : 0})
+            </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="updateDriverOrderStatus('${ord.orderId}', 'Picked Up & En Route')" data-agent-id="btn-order-enroute-${ord.orderId}" data-testid="btn-order-enroute-${ord.orderId}" aria-label="Mark Order Picked Up">
               <i class="fa-solid fa-truck-fast"></i> Picked Up
             </button>
@@ -5692,6 +5840,20 @@ function renderDriverAdminDashboard() {
   }).join('');
 }
 window.renderDriverAdminDashboard = renderDriverAdminDashboard;
+
+function openBookingMessagesInHistory(orderId) {
+  toggleSupporterCollapsePanel('bookings-history', true);
+  try { renderSupporterBookings(); } catch (e) {}
+  const msgBox = document.getElementById(`booking-message-box-${orderId}`);
+  if (msgBox && typeof msgBox.scrollIntoView === 'function') {
+    try { msgBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  }
+  const msgInput = document.getElementById(`booking-message-input-${orderId}`);
+  if (msgInput && typeof msgInput.focus === 'function') {
+    try { msgInput.focus(); } catch (e) {}
+  }
+}
+window.openBookingMessagesInHistory = openBookingMessagesInHistory;
 
 function onDriverAdminSelectionChange(driverId) {
   const targetDriver = window.providerDB?.findById(driverId);

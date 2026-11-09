@@ -709,11 +709,55 @@ class CourierOrderDatabase {
       status: "Awaiting Customer PayID",
       paymentMethod: "Direct Driver PayID (AUD)",
       unreadByDriver: true,
+      messages: [],
       ...orderData
     };
+    if (!Array.isArray(record.messages)) {
+      record.messages = [];
+    }
     this.orders.unshift(record);
     this.save();
     return record;
+  }
+
+  getOrderMessages(orderId) {
+    const ord = this.getOrderById(orderId);
+    if (!ord) return [];
+    if (!Array.isArray(ord.messages)) {
+      ord.messages = [];
+    }
+    return ord.messages;
+  }
+
+  addOrderMessage(orderId, msgData = {}) {
+    const ord = this.getOrderById(orderId);
+    if (!ord) return null;
+    if (!Array.isArray(ord.messages)) {
+      ord.messages = [];
+    }
+    const cleanText = String(msgData.text || '').replace(/[<>]/g, '').trim();
+    if (!cleanText) return null;
+
+    const senderRole = msgData.senderRole === 'driver' ? 'driver' : 'supporter';
+    const senderName = String(
+      msgData.senderName || (senderRole === 'driver' ? (ord.driverName || 'Courier Driver') : (ord.customerName || 'Supporter'))
+    ).replace(/[<>]/g, '').trim();
+
+    const messageRecord = {
+      id: msgData.id || `MSG-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      orderId: ord.orderId,
+      senderRole,
+      senderName,
+      text: cleanText,
+      createdAt: msgData.createdAt || new Date().toISOString()
+    };
+
+    ord.messages.push(messageRecord);
+    if (senderRole === 'supporter') {
+      ord.unreadByDriver = true;
+    }
+    this.save();
+    return messageRecord;
   }
 
   markOrderReadByDriver(orderId) {

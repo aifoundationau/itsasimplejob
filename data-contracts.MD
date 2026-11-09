@@ -2524,3 +2524,58 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.31 Supporter & Driver Messaging Box inside My Bookings History (`BookingHistorySupporterDriverMessagingContract`)
+- **Direct Two-Way Messaging Inside My Bookings History (`#supporter-bookings-subtab`):**
+  1. Every booking card rendered by `renderSupporterBookings()` inside `#supporter-bookings-list-container` (within the **My Bookings History** panel `#supporter-panel-bookings-history` -> `#supporter-bookings-subtab`) embeds a dedicated **Supporter & Driver Messages** box (`#booking-message-box-<orderId>`, `data-agent-id="booking-message-box-<orderId>"`, `data-testid="booking-message-box-<orderId>"`).
+  2. Each message box displays:
+     - Live message count badge (`#booking-msg-count-<orderId>`)
+     - Scrollable conversation thread (`#booking-messages-thread-<orderId>`) showing Supporter (`senderRole: "supporter"`) and Driver (`senderRole: "driver"`) chat bubbles with sender name, role badge, timestamp, and sanitized text
+     - Role selector (`#booking-message-sender-<orderId>`, automatically defaulting to `'supporter'` in Supporter Panel or `'driver'` in Driver Admin Panel)
+     - Message input (`#booking-message-input-<orderId>`) and Send button (`#btn-send-booking-message-<orderId>`) calling `handleSendBookingMessage(event, orderId)`.
+  3. Drivers can also click **Messages** (`#btn-order-messages-<orderId>`) on their order card in Driver Information (`openBookingMessagesInHistory(orderId)`) to expand **My Bookings History** and focus the booking's message box.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BookingHistorySupporterDriverMessagingContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "orderId",
+    "senderRole",
+    "senderName",
+    "text",
+    "createdAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^MSG-[0-9]+-[a-z0-9]+$"
+    },
+    "orderId": {
+      "type": "string",
+      "pattern": "^ORD-[0-9]+$"
+    },
+    "senderRole": {
+      "type": "string",
+      "enum": ["supporter", "driver"]
+    },
+    "senderName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
+```

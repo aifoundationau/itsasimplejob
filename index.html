@@ -1125,7 +1125,7 @@
                 </span>
                 <div>
                   <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">My Bookings History</strong>
-                  <span style="font-size:0.78rem; color:var(--text-muted);">Review your past and active 9:00 AM – 4:00 PM courier bookings &amp; PayID details</span>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Review your 9:00 AM – 4:00 PM courier bookings, PayID details &amp; message between Supporter and Driver</span>
                 </div>
               </div>
               <div style="display:flex; align-items:center; gap:0.65rem;">
@@ -1133,14 +1133,14 @@
                 <i id="chevron-panel-bookings-history" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
               </div>
             </button>
-            <div id="supporter-bookings-subtab" class="supporter-subview supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);">
+            <div id="supporter-bookings-subtab" class="supporter-subview supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);" data-agent-id="supporter-bookings-subtab" data-testid="supporter-bookings-subtab">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
                 <div>
                   <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
-                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History &amp; Supporter ↔ Driver Messaging
                   </h3>
                   <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                    Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, and PayID payment details.
+                    Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, PayID details, and message directly between the Supporter and Driver inside each booking card below.
                   </p>
                 </div>
                 <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"

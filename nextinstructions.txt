@@ -432,3 +432,9 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Accepting the booking (`acceptDriverBooking(orderId)`) marks `unreadByDriver = false` and clears the Red Message Icon automatically.
 - Verified with `node scratch/verify_driver_booking_sound_and_red_icon.mjs` and `npm run build` (0 errors).
 - Documented Section 11.30 (`DriverBookingSoundAndRedMessageIconContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 58: SUPPORTER & DRIVER MESSAGING BOX INSIDE MY BOOKINGS HISTORY BLOCK
+- Added `messages` array, `getOrderMessages(orderId)`, and `addOrderMessage(orderId, msgData)` to `CourierOrderDatabase` in `js/providers-data.js`.
+- Added `renderBookingMessageBoxHtml(ord)`, `handleSendBookingMessage(event, orderId)`, and `openBookingMessagesInHistory(orderId)` in `js/app.js` so that every booking inside the **My Bookings History** block (`#supporter-panel-bookings-history` -> `#supporter-bookings-subtab` -> `#supporter-bookings-list-container`) has a live two-way **Supporter & Driver Messages** box (`#booking-message-box-<orderId>`).
+- Verified with `node scratch/verify_booking_history_messaging.mjs` and `npm run build` (0 errors).
+- Documented Section 11.31 (`BookingHistorySupporterDriverMessagingContract`) in `data-contracts.MD`.
