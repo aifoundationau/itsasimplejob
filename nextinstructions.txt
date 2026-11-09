@@ -337,9 +337,24 @@ Created: 2026-11-01
   * Verified end-to-end with scratch/verify_driver_app_popup_modal_and_draft.mjs and all 8 regression test suites (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-09] TASK 48: ACTIVE DRIVER PROFILE OWNER & SUPERADMIN RBAC + DUAL-GATE MAP VISIBILITY (PROFILE ON + SUPERADMIN APPROVED)
+- Active Driver Profile Ownership & RBAC Isolation:
+  * Implemented `getOwnedDriverProfile()`, `canUserAccessDriverProfile(driver)`, and `getAccessibleDriverProfilesForCurrentUser()` in `js/app.js`.
+  * A registered driver can ONLY see, geolocate, and edit their own Active Driver Profile (`#driver-admin-select` is locked to their own profile and displays `Your Owned Profile Only`), and only sees their own assigned customer orders.
+  * SuperAdmin can inspect and switch across all registered driver profiles (`SuperAdmin Access (All Profiles)`).
+  * Non-driver supporters and guests cannot see any Active Driver Profile.
+- Dual-Gate Map Visibility (Driver Profile Turned ON + SuperAdmin Approved):
+  * Added `isDriverProfileTurnedOn(driver)`, `isDriverVisibleOnMap(driver)`, and `setDriverProfileTurnedOn(id, isTurnedOn)` in `js/providers-data.js`.
+  * Added **Driver Profile Status (Maps)** ON/OFF toggle (`#btn-toggle-driver-profile-on` in Driver Dispatch Console and `#btn-info-toggle-driver-profile-on` in Driver Information tab) calling `toggleActiveDriverProfileOn()`.
+  * Updated all customer map and driver list filters (`updateOsmContractorMarkers`, `drawCourierRouteOnOsmMap`, `filterContractors`, and `updateCourierPricingWithSettings`) so a driver appears on maps ONLY when `isDriverVisibleOnMap(driver)` is true (Driver Profile is turned ON **AND** SuperAdmin has approved the driver).
+- Verification & Compliance:
+  * Documented Section 11.22 in data-contracts.MD.
+  * Verified end-to-end with `scratch/verify_active_driver_profile_ownership_and_map_toggle.mjs` (34/34 assertions passed) and all regression suites.
+  * Compiled clean bundle with `npm run build` (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY COURIER DRIVER APPLICATION POPUP MODAL & DRAFT SAVE IN BROWSER
+CURRENT TASK: VERIFY ACTIVE DRIVER PROFILE RBAC & PROFILE ON/OFF MAP VISIBILITY IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, navigate to the Supporter Portal and confirm that the Courier Driver Application form no longer appears in the middle of the page when scrolling; then click "Courier Driver Application" at the bottom of the footer to open the popup screen, enter some details, click "Save Application & Come Back Later", and reopen it to verify your saved draft restored.
+1. In your browser at http://localhost:3002, open the Supporter Portal -> Driver Dispatch Console to verify the Active Driver Profile ownership lock and click the "Profile ON (Turn OFF)" button to test toggling map visibility when approved by SuperAdmin.
 
 ================================================================================

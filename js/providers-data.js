@@ -470,6 +470,8 @@ class ProviderDatabase {
       lng: Number(p.lng ?? 153.4011),
       lastGeolocatedAt: p.lastGeolocatedAt || new Date().toISOString(),
       autoGeolocateEnabled: p.autoGeolocateEnabled !== false,
+      profileTurnedOn: p.profileTurnedOn !== false && p.profileActive !== false,
+      profileActive: p.profileTurnedOn !== false && p.profileActive !== false,
       approved: p.approved !== false && p.status !== "pending_approval",
       status: p.status || (p.approved === false ? "pending_approval" : "active"),
       calendarSchedule: p.calendarSchedule || getDefaultCalendarSchedule(true)
@@ -492,8 +494,12 @@ class ProviderDatabase {
     return this.providers.filter(p => isDriverApproved(p));
   }
 
+  getAllVisibleOnMap() {
+    return this.providers.filter(p => isDriverVisibleOnMap(p));
+  }
+
   getActiveDrivers() {
-    return this.providers.filter(p => p.status !== "paused");
+    return this.providers.filter(p => p.status !== "paused" && isDriverProfileTurnedOn(p));
   }
 
   addProvider(newProv) {
@@ -639,6 +645,23 @@ class ProviderDatabase {
     this.save();
     return p;
   }
+
+  setDriverProfileTurnedOn(idOrSpn, isTurnedOn) {
+    const p = this.findById(idOrSpn);
+    if (!p) return null;
+    const nextState = Boolean(isTurnedOn);
+    p.profileTurnedOn = nextState;
+    p.profileActive = nextState;
+    if (nextState && p.status === "paused") {
+      p.status = p.approved !== false ? "active" : "pending_approval";
+      p.pausedReason = "";
+    }
+    this.save();
+    if (window.firebaseService?.saveProviderToFirestore) {
+      try { window.firebaseService.saveProviderToFirestore(p); } catch (e) {}
+    }
+    return p;
+  }
 }
 
 class CourierOrderDatabase {
@@ -781,7 +804,18 @@ function isDriverApproved(driver) {
   return driver.approved === true || (driver.approved !== false && driver.status === 'active' && driver.status !== 'pending_approval' && driver.status !== 'revoked' && driver.isActive !== false);
 }
 
+function isDriverProfileTurnedOn(driver) {
+  if (!driver) return false;
+  return driver.profileTurnedOn !== false && driver.profileActive !== false && driver.status !== 'paused';
+}
+
+function isDriverVisibleOnMap(driver) {
+  return Boolean(isDriverApproved(driver) && isDriverProfileTurnedOn(driver));
+}
+
 window.isDriverApproved = isDriverApproved;
+window.isDriverProfileTurnedOn = isDriverProfileTurnedOn;
+window.isDriverVisibleOnMap = isDriverVisibleOnMap;
 window.INITIAL_PROVIDERS = INITIAL_PROVIDERS;
 window.INITIAL_CANDIDATES = [];
 window.providerDB = new ProviderDatabase();

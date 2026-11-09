@@ -397,9 +397,11 @@ function updateOsmContractorMarkers() {
   const matched = [];
 
   allProviders.forEach(provider => {
-    // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map
-    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked');
-    if (!isApproved) {
+    // Dual Map Visibility Gate: Driver must have their profile turned ON AND be approved by SuperAdmin to be seen on maps
+    const isVisibleOnMap = typeof isDriverVisibleOnMap === 'function'
+      ? isDriverVisibleOnMap(provider)
+      : ((typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked')) && provider.profileTurnedOn !== false && provider.profileActive !== false);
+    if (!isVisibleOnMap) {
       return;
     }
 
@@ -572,8 +574,8 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
     .bindPopup(`<strong style="color:#0B192C;">🏁 Delivery Destination</strong><br><span style="font-size:0.8rem; color:#64748B;">${destText || 'Broadbeach QLD'}</span>`);
 
   // Also plot live Courier Driver pins around the route (Pink = Female, Blue = Male)
-  // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map
-  const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked')) : [];
+  // Dual Map Visibility Gate: Driver must have their profile turned ON AND be approved by SuperAdmin to be seen on maps
+  const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => typeof isDriverVisibleOnMap === 'function' ? isDriverVisibleOnMap(d) : ((typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked')) && d.profileTurnedOn !== false && d.profileActive !== false)) : [];
   allDrivers.forEach(drv => {
     if (!drv.lat || !drv.lng) return;
     const isSelected = drv.id === appState.selectedCourierDriverId;
@@ -1278,10 +1280,12 @@ function filterContractors() {
   }
 
   allProviders.forEach(provider => {
-    // SuperAdmin Driver Approval Console: if a driver is not approved, they CANNOT be shown on the map or in the directory
-    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked');
-    if (!isApproved) {
-      return; // Only SuperAdmin-approved drivers appear in public map directory
+    // Dual Map Visibility Gate: Driver must have their profile turned ON AND be approved by SuperAdmin to be seen on maps or in the directory
+    const isVisibleOnMap = typeof isDriverVisibleOnMap === 'function'
+      ? isDriverVisibleOnMap(provider)
+      : ((typeof isDriverApproved === 'function' ? isDriverApproved(provider) : (provider.approved !== false && provider.status !== 'pending_approval' && provider.status !== 'revoked')) && provider.profileTurnedOn !== false && provider.profileActive !== false);
+    if (!isVisibleOnMap) {
+      return; // Only SuperAdmin-approved drivers with their profile turned ON appear in public map directory
     }
 
     if ((provider.maxWeightKg || 500) < minWeight) {
@@ -2705,14 +2709,19 @@ function renderSuperadminDriverApprovals() {
 
   container.innerHTML = drivers.map(d => {
     const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked');
+    const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(d) : (d.profileTurnedOn !== false && d.profileActive !== false);
+    const isVisibleOnMap = isApproved && isProfileOn;
     return `
-      <div style="background:#FFFBEB; border:1px solid ${isApproved ? '#A7F3D0' : '#FCD34D'}; border-left:4px solid ${isApproved ? '#059669' : '#D97706'}; border-radius:6px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;" data-agent-id="sa-driver-row-${d.id}" data-testid="sa-driver-row-${d.id}">
+      <div style="background:#FFFBEB; border:1px solid ${isVisibleOnMap ? '#A7F3D0' : '#FCD34D'}; border-left:4px solid ${isVisibleOnMap ? '#059669' : '#D97706'}; border-radius:6px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;" data-agent-id="sa-driver-row-${d.id}" data-testid="sa-driver-row-${d.id}">
         <div style="flex:1; min-width:240px;">
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
             <strong style="font-size:0.92rem; color:#1E3A8A;">${escapeAttr(d.name)}</strong>
             <span style="font-size:0.76rem; color:#475569;">(${escapeAttr(d.businessName || 'Express Courier')})</span>
             <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isApproved ? '#ECFDF5' : '#FEF3C7'}; color:${isApproved ? '#065F46' : '#92400E'};">
-              <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin (Shown on Map)' : 'Pending SuperAdmin Approval (Hidden from Map)'}
+              <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin' : 'Pending SuperAdmin Approval'}
+            </span>
+            <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isProfileOn ? '#EFF6FF' : '#F1F5F9'}; color:${isProfileOn ? '#1D4ED8' : '#475569'};">
+              <i class="fa-solid ${isProfileOn ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> Profile ${isProfileOn ? 'ON' : 'OFF'}
             </span>
           </div>
 
@@ -2722,7 +2731,7 @@ function renderSuperadminDriverApprovals() {
             <span><i class="fa-solid fa-location-dot"></i> ${escapeAttr(d.baseSuburb || 'Southport QLD')}</span>
             <span><i class="fa-solid fa-coins" style="color:#D97706;"></i> Balance: <strong>${d.tokenBalance ?? 0} Tokens</strong></span>
             <span><i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> PayID: <strong>${escapeAttr(d.payIdValue || d.phone)}</strong></span>
-            <span>${isApproved ? '<strong style="color:#059669;"><i class="fa-solid fa-map-location-dot"></i> Shown on Map</strong>' : '<strong style="color:#D97706;"><i class="fa-solid fa-eye-slash"></i> Hidden from Map</strong>'}</span>
+            <span>${isVisibleOnMap ? '<strong style="color:#059669;"><i class="fa-solid fa-map-location-dot"></i> Shown on Maps (Profile ON + Approved)</strong>' : `<strong style="color:#D97706;"><i class="fa-solid fa-eye-slash"></i> Hidden from Maps (${!isApproved ? 'Not Approved' : 'Profile Turned OFF'})</strong>`}</span>
           </div>
 
           <div style="font-size:0.73rem; color:#475569; margin-top:0.35rem; display:flex; flex-wrap:wrap; gap:0.5rem;">
@@ -3020,7 +3029,9 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
   appState.lastCourierRoute = { distanceKm, durationMins };
 
   const origCoords = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
-  const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => d.approved !== false && d.status !== 'pending_approval') : [];
+  const allDrivers = window.providerDB
+    ? window.providerDB.getAll().filter(d => typeof isDriverVisibleOnMap === 'function' ? isDriverVisibleOnMap(d) : (d.approved !== false && d.status !== 'pending_approval' && d.profileTurnedOn !== false && d.profileActive !== false))
+    : [];
 
     // Rank drivers by distance to Pickup Origin and check package weight + HxWxL capacity
   const deliveryModePref = document.getElementById('courier-delivery-mode')?.value || 'auto';
@@ -3930,28 +3941,211 @@ function switchSupporterSubTab(subtabId) {
 }
 window.switchSupporterSubTab = switchSupporterSubTab;
 
+/**
+ * Resolve the registered driver profile owned by the currently signed-in user.
+ * Active Driver Profile can ONLY be seen by the registered driver who owns the profile and SuperAdmin.
+ */
+function getOwnedDriverProfile() {
+  if (!window.providerDB) return null;
+  const allDrivers = window.providerDB.getAll();
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.();
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+
+  const userUid = (gUser?.uid || supporter?.googleUid || '').trim();
+  const userEmail = (gUser?.email || supporter?.email || '').toLowerCase().trim();
+  const supporterDriverId = supporter?.driverId || '';
+
+  if (userUid) {
+    const byUid = allDrivers.find(d => d.uid && d.uid === userUid);
+    if (byUid) return byUid;
+  }
+  if (userEmail) {
+    const byEmail = allDrivers.find(d => (d.email || '').toLowerCase().trim() === userEmail);
+    if (byEmail) return byEmail;
+  }
+  if (supporterDriverId) {
+    const byId = window.providerDB.findById(supporterDriverId);
+    if (byId) return byId;
+  }
+
+  // If user is an authorized Driver or SuperAdmin simulating Driver perspective, resolve their bound driver profile
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  if (activeRole === 'driver') {
+    return window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0] || null;
+  }
+
+  return null;
+}
+window.getOwnedDriverProfile = getOwnedDriverProfile;
+
+function canUserAccessDriverProfile(driver) {
+  if (!driver) return false;
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  if (activeRole === 'superadmin') return true;
+  if (activeRole !== 'driver') return false;
+  const owned = getOwnedDriverProfile();
+  return Boolean(owned && owned.id === driver.id);
+}
+window.canUserAccessDriverProfile = canUserAccessDriverProfile;
+
+function getAccessibleDriverProfilesForCurrentUser() {
+  if (!window.providerDB) return [];
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  if (activeRole === 'superadmin') {
+    return window.providerDB.getAll();
+  }
+  if (activeRole === 'driver') {
+    const owned = getOwnedDriverProfile();
+    return owned ? [owned] : [];
+  }
+  return [];
+}
+window.getAccessibleDriverProfilesForCurrentUser = getAccessibleDriverProfilesForCurrentUser;
+
+function syncDriverProfileTurnOnUI(activeDriver) {
+  if (!activeDriver) return;
+  const isApproved = typeof isDriverApproved === 'function'
+    ? isDriverApproved(activeDriver)
+    : (activeDriver.approved !== false && activeDriver.status !== 'pending_approval' && activeDriver.status !== 'revoked');
+  const isProfileOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(activeDriver)
+    : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
+  const isVisibleOnMap = isApproved && isProfileOn;
+
+  const turnOnCard = document.getElementById('driver-profile-turn-on-card');
+  const visBadge = document.getElementById('driver-profile-map-visibility-badge');
+  const toggleBtn = document.getElementById('btn-toggle-driver-profile-on');
+  const infoToggleBtn = document.getElementById('btn-info-toggle-driver-profile-on');
+
+  if (turnOnCard) {
+    turnOnCard.style.background = isVisibleOnMap ? '#F0FDF4' : (isProfileOn ? '#FFFBEB' : '#F8FAFC');
+    turnOnCard.style.borderColor = isVisibleOnMap ? '#BBF7D0' : (isProfileOn ? '#FDE68A' : '#CBD5E1');
+  }
+
+  if (visBadge) {
+    if (isVisibleOnMap) {
+      visBadge.style.color = '#047857';
+      visBadge.innerHTML = '<i class="fa-solid fa-map-location-dot"></i> Profile ON &amp; SuperAdmin Approved • Shown on Maps';
+    } else if (isProfileOn && !isApproved) {
+      visBadge.style.color = '#92400E';
+      visBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Profile ON • Awaiting SuperAdmin Approval for Maps';
+    } else {
+      visBadge.style.color = '#475569';
+      visBadge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Profile Turned OFF • Hidden from Maps';
+    }
+  }
+
+  const applyBtnStyle = (btn) => {
+    if (!btn) return;
+    if (isProfileOn) {
+      btn.style.background = '#059669';
+      btn.style.borderColor = '#059669';
+      btn.style.color = '#FFFFFF';
+      btn.innerHTML = '<i class="fa-solid fa-toggle-on"></i> Profile ON (Turn OFF)';
+    } else {
+      btn.style.background = '#475569';
+      btn.style.borderColor = '#475569';
+      btn.style.color = '#FFFFFF';
+      btn.innerHTML = '<i class="fa-solid fa-toggle-off"></i> Profile OFF (Turn ON)';
+    }
+  };
+  applyBtnStyle(toggleBtn);
+  applyBtnStyle(infoToggleBtn);
+}
+window.syncDriverProfileTurnOnUI = syncDriverProfileTurnOnUI;
+
+function toggleActiveDriverProfileOn(explicitState) {
+  if (!window.providerDB) return;
+  const accessible = getAccessibleDriverProfilesForCurrentUser();
+  if (accessible.length === 0) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: Only the registered driver who owns the profile or SuperAdmin can toggle an Active Driver Profile.');
+    }
+    return;
+  }
+
+  const activeDriver = accessible.find(d => d.id === appState.activeAdminDriverId) || accessible[0];
+  if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: You can only manage your own Active Driver Profile.');
+    }
+    return;
+  }
+
+  const currentlyOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(activeDriver)
+    : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
+  const nextState = typeof explicitState === 'boolean' ? explicitState : !currentlyOn;
+
+  if (typeof window.providerDB.setDriverProfileTurnedOn === 'function') {
+    window.providerDB.setDriverProfileTurnedOn(activeDriver.id, nextState);
+  } else {
+    activeDriver.profileTurnedOn = nextState;
+    activeDriver.profileActive = nextState;
+    window.providerDB.save();
+  }
+
+  renderDriverAdminDashboard();
+  renderDriverInformationView();
+  if (typeof renderSuperadminDriverApprovals === 'function') renderSuperadminDriverApprovals();
+  calculateCourierQuote();
+  filterContractors();
+  if (appState.osmMap && window.L) {
+    try { updateOsmContractorMarkers(); } catch (e) {}
+  }
+  if (appState.osmCourierMap && window.L) {
+    try { renderOsmCourierRouteMap(); } catch (e) {}
+  }
+
+  const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(activeDriver) : (activeDriver.approved !== false);
+  if (nextState && isApproved) {
+    showToast(`🟢 ${activeDriver.name}'s Driver Profile is Turned ON and SuperAdmin Approved — now visible on all maps!`);
+  } else if (nextState && !isApproved) {
+    showToast(`🟡 ${activeDriver.name}'s Driver Profile is Turned ON — will appear on maps once approved by SuperAdmin.`);
+  } else {
+    showToast(`⚪ ${activeDriver.name}'s Driver Profile is Turned OFF — hidden from all customer maps.`);
+  }
+}
+window.toggleActiveDriverProfileOn = toggleActiveDriverProfileOn;
+
 function renderDriverInformationView() {
   if (!window.providerDB) return;
-  const allDrivers = window.providerDB.getAll();
-  const activeDriver = window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0];
+  const accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
+  if (accessibleDrivers.length === 0) {
+    const infoSubtab = document.getElementById('supporter-driver-info-subtab');
+    if (infoSubtab) infoSubtab.style.display = 'none';
+    return;
+  }
+
+  const activeDriver = accessibleDrivers.find(d => d.id === appState.activeAdminDriverId) || accessibleDrivers[0];
   if (!activeDriver) return;
+  appState.activeAdminDriverId = activeDriver.id;
 
   const nameEl = document.getElementById('driver-info-name');
   if (nameEl) nameEl.textContent = `${activeDriver.name || 'Courier Driver'}`;
 
+  const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(activeDriver) : (activeDriver.approved !== false && activeDriver.status !== 'pending_approval');
+  const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(activeDriver) : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
+  const isVisibleOnMap = isApproved && isProfileOn;
+
   const statusBadge = document.getElementById('driver-info-status-badge');
   if (statusBadge) {
-    const isApproved = activeDriver.approved !== false && activeDriver.status !== 'pending_approval';
-    if (isApproved) {
+    if (isVisibleOnMap) {
       statusBadge.style.background = '#DCFCE7';
       statusBadge.style.color = '#15803D';
-      statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Approved Driver • Shown on Map';
+      statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Profile ON &amp; Approved • Shown on Map';
+    } else if (isApproved && !isProfileOn) {
+      statusBadge.style.background = '#F1F5F9';
+      statusBadge.style.color = '#475569';
+      statusBadge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Approved • Profile Turned OFF (Hidden from Map)';
     } else {
       statusBadge.style.background = '#FFFBEB';
       statusBadge.style.color = '#92400E';
-      statusBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Pending SuperAdmin Approval';
+      statusBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Pending SuperAdmin Approval (Hidden from Map)';
     }
   }
+
+  syncDriverProfileTurnOnUI(activeDriver);
 
   const contactEl = document.getElementById('driver-info-contact-line');
   if (contactEl) {
@@ -4027,7 +4221,12 @@ function saveDriverInfoProfile(event) {
   if (event && event.preventDefault) event.preventDefault();
   if (!window.providerDB) return;
   const activeDriver = window.providerDB.findById(appState.activeAdminDriverId);
-  if (!activeDriver) return;
+  if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: Only the registered driver who owns the profile or SuperAdmin can edit this Active Driver Profile.');
+    }
+    return;
+  }
 
   const vChk = document.getElementById('info-drv-has-vehicle');
   const bChk = document.getElementById('info-drv-has-bicycle');
@@ -4811,23 +5010,56 @@ window.handleProviderRegistration = handleDriverRegistrationSubmit;
 function renderDriverAdminDashboard() {
   if (!window.providerDB || !window.courierOrderDB) return;
 
-  const allDrivers = window.providerDB.getAll();
+  const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  const accessibleDrivers = getAccessibleDriverProfilesForCurrentUser();
   const selectEl = document.getElementById('driver-admin-select');
-  if (!appState.activeAdminDriverId && allDrivers[0]) {
-    appState.activeAdminDriverId = allDrivers[0].id;
+  const selectorWrap = document.getElementById('active-driver-profile-selector-wrap');
+  const ownershipBadge = document.getElementById('active-driver-ownership-badge');
+  const dispatchConsole = document.getElementById('driver-dispatch-console');
+  const notDriverNotice = document.getElementById('supporter-not-driver-notice');
+
+  // Strict RBAC Gate: Active Driver Profile can ONLY be seen by the registered driver who owns the profile and SuperAdmin
+  if (accessibleDrivers.length === 0) {
+    if (selectEl) selectEl.innerHTML = '';
+    if (selectorWrap) selectorWrap.style.display = 'none';
+    if (dispatchConsole) dispatchConsole.style.display = 'none';
+    if (notDriverNotice) notDriverNotice.style.display = 'block';
+    return;
   }
 
-  const activeDriver = window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0];
+  if (selectorWrap) selectorWrap.style.display = 'block';
+  if (notDriverNotice) notDriverNotice.style.display = 'none';
+  if (dispatchConsole) dispatchConsole.style.display = 'block';
+
+  let activeDriver = accessibleDrivers.find(d => d.id === appState.activeAdminDriverId) || accessibleDrivers[0];
   if (!activeDriver) return;
   appState.activeAdminDriverId = activeDriver.id;
 
+  if (ownershipBadge) {
+    if (activeRole === 'superadmin') {
+      ownershipBadge.style.background = '#FEF3C7';
+      ownershipBadge.style.color = '#92400E';
+      ownershipBadge.style.borderColor = '#FDE68A';
+      ownershipBadge.innerHTML = '<i class="fa-solid fa-crown"></i> SuperAdmin Access (All Profiles)';
+    } else {
+      ownershipBadge.style.background = '#EFF6FF';
+      ownershipBadge.style.color = '#1E40AF';
+      ownershipBadge.style.borderColor = '#BFDBFE';
+      ownershipBadge.innerHTML = '<i class="fa-solid fa-user-lock"></i> Your Owned Profile Only';
+    }
+  }
+
   if (selectEl) {
-    selectEl.innerHTML = allDrivers.map(d => `
+    selectEl.disabled = (activeRole !== 'superadmin');
+    selectEl.innerHTML = accessibleDrivers.map(d => `
       <option value="${d.id}" ${d.id === activeDriver.id ? 'selected' : ''}>
         ${d.name} — ${d.businessName} ($${Number(d.perKmRateAud).toFixed(2)}/km • ${d.tokenBalance ?? 0} Tokens)
       </option>
     `).join('');
   }
+
+  // Sync Profile Turn ON / OFF Map Visibility UI
+  syncDriverProfileTurnOnUI(activeDriver);
 
   // Update GPS & Token displays (Responsive 2-Line Suburb Only, No Coordinates)
   const gpsTextEl = document.getElementById('driver-admin-gps-text');
@@ -4872,32 +5104,50 @@ function renderDriverAdminDashboard() {
   setVal('adm-drv-payid-value', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
   setVal('adm-drv-licence', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
 
-  // Driver approval banner
+  // Driver approval & profile map visibility banner
   const approvalBanner = document.getElementById('driver-admin-approval-status-banner');
   if (approvalBanner) {
-    const isApproved = activeDriver.approved !== false && activeDriver.status !== 'pending_approval';
+    const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(activeDriver) : (activeDriver.approved !== false && activeDriver.status !== 'pending_approval');
+    const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(activeDriver) : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
+    const isVisibleOnMap = isApproved && isProfileOn;
     approvalBanner.style.display = 'block';
-    if (isApproved) {
+    if (isVisibleOnMap) {
       approvalBanner.className = 'alert alert-success';
       approvalBanner.style.background = '#ECFDF5';
       approvalBanner.style.borderColor = '#A7F3D0';
       approvalBanner.style.color = '#065F46';
-      approvalBanner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Approved Driver Account</strong> — Your driver profile is verified and active to receive courier orders on the live map.`;
+      approvalBanner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Profile ON &amp; SuperAdmin Approved</strong> — Your driver profile is turned on and approved by SuperAdmin, so you are <strong>live and visible on all customer maps</strong>.`;
+    } else if (isApproved && !isProfileOn) {
+      approvalBanner.className = 'alert alert-warning';
+      approvalBanner.style.background = '#F8FAFC';
+      approvalBanner.style.borderColor = '#CBD5E1';
+      approvalBanner.style.color = '#334155';
+      approvalBanner.innerHTML = `<i class="fa-solid fa-eye-slash"></i> <strong>Profile Turned OFF (Hidden from Maps)</strong> — SuperAdmin has approved your account, but your profile is currently turned OFF. Click <strong>Profile OFF (Turn ON)</strong> above to appear on customer maps.`;
     } else {
       approvalBanner.className = 'alert alert-warning';
       approvalBanner.style.background = '#FFFBEB';
       approvalBanner.style.borderColor = '#FCD34D';
       approvalBanner.style.color = '#92400E';
-      approvalBanner.innerHTML = `<i class="fa-solid fa-clock"></i> <strong>Application Pending SuperAdmin Approval</strong> — Your driver licence and PayID details have been submitted. Once approved by the SuperAdmin, your profile will immediately go live to receive customer orders.`;
+      approvalBanner.innerHTML = `<i class="fa-solid fa-clock"></i> <strong>Application Pending SuperAdmin Approval</strong> — Your driver licence and PayID details have been submitted. Once approved by the SuperAdmin (and with your profile turned ON), your profile will immediately appear on customer maps.`;
     }
 
     const qName = document.getElementById('driver-quick-info-name');
     if (qName) qName.textContent = activeDriver.name;
     const qBadge = document.getElementById('driver-quick-info-badge');
     if (qBadge) {
-      qBadge.style.background = isApproved ? '#DCFCE7' : '#FFFBEB';
-      qBadge.style.color = isApproved ? '#15803D' : '#92400E';
-      qBadge.innerHTML = isApproved ? '<i class="fa-solid fa-circle-check"></i> Approved' : '<i class="fa-solid fa-clock"></i> Pending';
+      if (isVisibleOnMap) {
+        qBadge.style.background = '#DCFCE7';
+        qBadge.style.color = '#15803D';
+        qBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Profile ON &amp; Approved (On Map)';
+      } else if (isApproved && !isProfileOn) {
+        qBadge.style.background = '#F1F5F9';
+        qBadge.style.color = '#475569';
+        qBadge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Profile OFF (Hidden from Map)';
+      } else {
+        qBadge.style.background = '#FFFBEB';
+        qBadge.style.color = '#92400E';
+        qBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Pending Approval';
+      }
     }
   }
 
@@ -4909,17 +5159,21 @@ function renderDriverAdminDashboard() {
     renderSuperadminTokenBalance();
   }
 
-  // Render Recorded Customer Orders for this Driver (and show total orders badge)
+  // Render Recorded Customer Orders for this Driver (non-superadmin drivers strictly see ONLY their own orders)
   const allOrders = window.courierOrderDB.getAll();
   const driverOrders = allOrders.filter(o => o.driverId === activeDriver.id);
-  const ordersToDisplay = driverOrders.length > 0 ? driverOrders : allOrders;
+  const ordersToDisplay = activeRole === 'superadmin'
+    ? (driverOrders.length > 0 ? driverOrders : allOrders)
+    : driverOrders;
 
   const pillBadge = document.getElementById('pill-orders-badge');
-  if (pillBadge) pillBadge.textContent = String(allOrders.length);
+  if (pillBadge) pillBadge.textContent = String(activeRole === 'superadmin' ? allOrders.length : driverOrders.length);
 
   const countBadge = document.getElementById('driver-orders-count-badge');
   if (countBadge) {
-    countBadge.textContent = `${driverOrders.length} Order${driverOrders.length === 1 ? '' : 's'} for ${activeDriver.name} (${allOrders.length} Total)`;
+    countBadge.textContent = activeRole === 'superadmin'
+      ? `${driverOrders.length} Order${driverOrders.length === 1 ? '' : 's'} for ${activeDriver.name} (${allOrders.length} Total)`
+      : `${driverOrders.length} Order${driverOrders.length === 1 ? '' : 's'} for ${activeDriver.name}`;
   }
 
   const ordersContainer = document.getElementById('driver-admin-orders-container');
@@ -5016,6 +5270,18 @@ function renderDriverAdminDashboard() {
 window.renderDriverAdminDashboard = renderDriverAdminDashboard;
 
 function onDriverAdminSelectionChange(driverId) {
+  const targetDriver = window.providerDB?.findById(driverId);
+  if (!targetDriver || !canUserAccessDriverProfile(targetDriver)) {
+    const owned = getOwnedDriverProfile();
+    if (owned) {
+      appState.activeAdminDriverId = owned.id;
+    }
+    renderDriverAdminDashboard();
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: Active Driver Profile can only be seen by the registered driver who owns the profile and SuperAdmin.');
+    }
+    return;
+  }
   appState.activeAdminDriverId = driverId;
   appState.selectedCourierDriverId = driverId;
   renderDriverAdminDashboard();
@@ -5025,7 +5291,12 @@ window.onDriverAdminSelectionChange = onDriverAdminSelectionChange;
 
 function triggerDriverAdminGeolocate() {
   const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
-  if (!activeDriver) return;
+  if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: You can only geolocate your own Active Driver Profile.');
+    }
+    return;
+  }
 
   showToast(`📍 Auto-geolocating live GPS position for ${activeDriver.name}...`);
 
@@ -5064,7 +5335,12 @@ window.autoGeolocateActiveDriverQuick = autoGeolocateActiveDriverQuick;
 function saveDriverAdminProfile(event) {
   if (event && event.preventDefault) event.preventDefault();
   const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
-  if (!activeDriver) return;
+  if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Access denied: Only the registered driver who owns the profile or SuperAdmin can edit this Active Driver Profile.');
+    }
+    return;
+  }
 
   const hasVehicle = document.getElementById('adm-drv-has-vehicle')?.checked ?? true;
   const hasBicycle = document.getElementById('adm-drv-has-bicycle')?.checked ?? false;

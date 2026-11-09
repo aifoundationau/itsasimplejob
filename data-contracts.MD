@@ -2160,12 +2160,25 @@ Defines the modal architecture and draft lifecycle for the Courier Driver Applic
    - Scrollable modal body (`max-height: 90vh; overflow-y: auto;`) hosting both Gate 1 (Supporter registration required) and Gate 2 (Unlocked application form).
    - Backdrop click and Escape key automatically save in-progress draft before closing the modal.
 
+### 11.22 Active Driver Profile Ownership RBAC & Dual-Gate Map Visibility Contract (`ActiveDriverProfileOwnershipAndMapVisibilityContract`)
+Defines strict profile ownership isolation for Active Driver Profile views and the dual-condition gate required for a driver to appear on customer maps:
+1. **Active Driver Profile Ownership & RBAC Isolation (`getOwnedDriverProfile`, `canUserAccessDriverProfile`, `getAccessibleDriverProfilesForCurrentUser`):**
+   - **Registered Driver (Profile Owner):**
+     * Can ONLY view, select, geolocate, and edit their own registered driver profile (`getAccessibleDriverProfilesForCurrentUser()` returns `[ownedDriver]`).
+     * `#driver-admin-select` is populated exclusively with their own profile and locked (`disabled = true`), displaying `#active-driver-ownership-badge` (`Your Owned Profile Only`).
+     * Recorded customer orders in `#driver-admin-orders-container` are strictly filtered to `driverOrders` for that driver (`o.driverId === activeDriver.id`), never exposing other drivers' orders.
+   - **SuperAdmin:**
+     * Can view, switch between, and manage all registered driver profiles (`getAccessibleDriverProfilesForCurrentUser()` returns `providerDB.getAll()`, `selectEl.disabled = false`).
+   - **Non-Driver Supporter / Guest:**
+     * `getAccessibleDriverProfilesForCurrentUser()` returns `[]`; `#active-driver-profile-selector-wrap`, `#driver-dispatch-console`, and `#supporter-driver-info-subtab` are strictly hidden.
 
-
-
-
-
-
-
-
+2. **Dual-Gate Map Visibility (`isDriverProfileTurnedOn`, `isDriverApproved`, `isDriverVisibleOnMap`):**
+   - **Condition 1 — Driver Profile Turned ON (`isDriverProfileTurnedOn(driver)`):**
+     * Controlled by the driver (or SuperAdmin) via `#btn-toggle-driver-profile-on` (in Driver Dispatch Console) and `#btn-info-toggle-driver-profile-on` (in Driver Information tab), calling `toggleActiveDriverProfileOn()` / `providerDB.setDriverProfileTurnedOn(driverId, isTurnedOn)`.
+     * Stored on the driver record as `profileTurnedOn: boolean` and `profileActive: boolean` (default `true`).
+   - **Condition 2 — SuperAdmin Approved (`isDriverApproved(driver)`):**
+     * Controlled exclusively by SuperAdmin in the Driver Approval Console via `approveDriverBySuperadmin(driverId)` / `revokeDriverBySuperadmin(driverId)`.
+   - **Combined Map Visibility Rule (`isDriverVisibleOnMap(driver) === isDriverApproved(driver) && isDriverProfileTurnedOn(driver)`):**
+     * A driver is shown on customer maps (`updateOsmContractorMarkers`, `drawCourierRouteOnOsmMap`, `filterContractors`, and `updateCourierPricingWithSettings`) **ONLY IF** the driver has their profile turned ON **AND** SuperAdmin has approved the driver.
+     * If the driver turns their profile OFF, or if SuperAdmin has not approved / revokes the driver, the driver is immediately hidden from all maps and customer driver selection lists.
 

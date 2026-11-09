@@ -822,16 +822,42 @@
         <div
           style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1.25rem; align-items:center;">
 
-          <!-- Select Active Driver -->
-          <div>
-            <label class="input-label" for="driver-admin-select" style="margin-bottom:0.35rem;">
-              <i class="fa-solid fa-id-badge" style="color:var(--brand-orange);"></i> Active Driver Profile
-            </label>
+          <!-- Select Active Driver (Strictly Owner or SuperAdmin Only) -->
+          <div id="active-driver-profile-selector-wrap" data-agent-id="active-driver-profile-selector-wrap" data-testid="active-driver-profile-selector-wrap">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.35rem; flex-wrap:wrap;">
+              <label class="input-label" for="driver-admin-select" style="margin:0;">
+                <i class="fa-solid fa-id-badge" style="color:var(--brand-orange);"></i> Active Driver Profile
+              </label>
+              <span id="active-driver-ownership-badge" style="font-size:0.68rem; font-weight:800; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; padding:0.1rem 0.45rem; border-radius:999px;">
+                <i class="fa-solid fa-user-lock"></i> Owner &amp; SuperAdmin Only
+              </span>
+            </div>
             <select id="driver-admin-select" class="form-control" onchange="onDriverAdminSelectionChange(this.value)"
               data-agent-id="driver-admin-select" data-testid="driver-admin-select"
               aria-label="Select Active Driver Profile">
-              <!-- Populated dynamically -->
+              <!-- Populated dynamically: only owned profile for registered driver, or all profiles for SuperAdmin -->
             </select>
+          </div>
+
+          <!-- Driver Profile Turn ON / OFF for Maps Card -->
+          <div id="driver-profile-turn-on-card"
+            style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-md); padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; min-width:0;"
+            data-agent-id="driver-profile-turn-on-card" data-testid="driver-profile-turn-on-card">
+            <div style="min-width:0; flex:1;">
+              <div style="font-size:0.72rem; font-weight:800; color:#065F46; text-transform:uppercase; letter-spacing:0.02em;">
+                <i class="fa-solid fa-power-off"></i> Driver Profile Status (Maps)
+              </div>
+              <div id="driver-profile-map-visibility-badge" style="font-size:0.82rem; font-weight:800; color:#047857; margin-top:0.15rem;">
+                Profile ON • Visible on Maps
+              </div>
+            </div>
+            <button type="button" id="btn-toggle-driver-profile-on" class="btn btn-primary btn-sm"
+              onclick="toggleActiveDriverProfileOn()"
+              style="background:#059669; border-color:#059669; white-space:nowrap; flex-shrink:0; font-size:0.78rem; font-weight:800; padding:0.4rem 0.75rem;"
+              data-agent-id="btn-toggle-driver-profile-on" data-testid="btn-toggle-driver-profile-on"
+              aria-label="Toggle Driver Profile On or Off for Maps">
+              <i class="fa-solid fa-toggle-on"></i> Profile ON
+            </button>
           </div>
 
           <!-- Auto-Geolocate Anytime Card (Responsive 2-Line Layout, No Coordinates) -->
@@ -1357,6 +1383,13 @@
               </div>
             </div>
             <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+              <button type="button" id="btn-info-toggle-driver-profile-on" class="btn btn-primary btn-sm"
+                onclick="toggleActiveDriverProfileOn()"
+                style="background:#059669; border-color:#059669; display:inline-flex; align-items:center; gap:0.4rem; font-weight:800;"
+                data-agent-id="btn-info-toggle-driver-profile-on" data-testid="btn-info-toggle-driver-profile-on"
+                aria-label="Toggle Driver Profile On or Off for Maps">
+                <i class="fa-solid fa-toggle-on"></i> Profile ON
+              </button>
               <button type="button" class="btn btn-outline btn-sm" onclick="switchSupporterSubTab('supporter-dispatch-subtab')"
                 style="display:inline-flex; align-items:center; gap:0.4rem; font-weight:700;"
                 data-agent-id="btn-info-goto-dispatch" data-testid="btn-info-goto-dispatch" aria-label="Go to Driver Dispatch Console">
