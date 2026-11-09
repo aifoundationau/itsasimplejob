@@ -616,10 +616,10 @@
       <!-- Supporter Panel & Collapsed Panels Stack (Active when logged in with Google) -->
       <div id="supporter-panel-wrapper" style="display:none;">
 
-        <!-- 4 Collapsed Supporter Panels: Registration Details, Register Details, My Bookings History, Buy Tokens -->
+        <!-- 3 Collapsed Supporter Panels: Registration Details, My Bookings History, Buy Tokens -->
         <div id="supporter-collapsed-panels-stack" style="display:flex; flex-direction:column; gap:0.95rem; margin-bottom:1.5rem;" data-agent-id="supporter-collapsed-panels-stack" data-testid="supporter-collapsed-panels-stack">
 
-          <!-- COLLAPSED PANEL 1: Registration Details -->
+          <!-- COLLAPSED PANEL 1: Registration Details (View & Edit Supporter Registration Details) -->
           <div id="supporter-panel-registration-details" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-registration-details" data-testid="supporter-panel-registration-details">
             <button type="button" id="btn-toggle-panel-registration-details"
               onclick="toggleSupporterCollapsePanel('registration-details')"
@@ -632,7 +632,7 @@
                 </span>
                 <div>
                   <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Registration Details</strong>
-                  <span style="font-size:0.78rem; color:var(--text-muted);">View your verified supporter profile, contact details &amp; account status</span>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">View and edit your verified supporter profile, contact details &amp; address</span>
                 </div>
               </div>
               <div style="display:flex; align-items:center; gap:0.65rem;">
@@ -678,7 +678,7 @@
               </div>
 
               <!-- Saved Registration Details Summary Grid -->
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:0.85rem; margin-bottom:1rem;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:0.85rem; margin-bottom:1.25rem;">
                 <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
                   <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Full Name</div>
                   <div id="supporter-reg-detail-name" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Community Supporter</div>
@@ -696,84 +696,54 @@
                   <div id="supporter-reg-detail-suburb" style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Not entered yet</div>
                 </div>
               </div>
-              <div style="display:flex; justify-content:flex-end;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="toggleSupporterCollapsePanel('register-details', true)"
-                  style="font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;"
-                  data-agent-id="btn-goto-register-details" data-testid="btn-goto-register-details" aria-label="Edit Registration Details">
-                  <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Update in Register Details
-                </button>
+
+              <!-- Edit Registration Details Form (Inline inside Registration Details Screen) -->
+              <div id="supporter-details-subtab" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-md); padding:1.25rem;" data-agent-id="supporter-details-subtab" data-testid="supporter-details-subtab">
+                <div style="margin-bottom:1.1rem; padding-bottom:0.75rem; border-bottom:1px solid #E2E8F0;">
+                  <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0;">
+                    <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Edit Registration Details
+                  </h3>
+                  <p style="font-size:0.83rem; color:var(--text-muted); margin:0;">
+                    Edit your full name, email address, mobile phone number, and registered address/suburb below:
+                  </p>
+                </div>
+
+                <form id="supporter-registration-form" onsubmit="handleSupporterRegistrationSubmit(event)">
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-name">Full Name:</label>
+                      <input type="text" id="supporter-reg-name" class="form-control" required placeholder="e.g. Alex Henderson"
+                        data-agent-id="supporter-reg-name" data-testid="supporter-reg-name" aria-label="Supporter Full Name">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-email">Email Address (from Google):</label>
+                      <input type="email" id="supporter-reg-email" class="form-control" required placeholder="support@aifoundation.net.au"
+                        data-agent-id="supporter-reg-email" data-testid="supporter-reg-email" aria-label="Supporter Email Address">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-phone">Mobile Phone:</label>
+                      <input type="tel" id="supporter-reg-phone" class="form-control" required placeholder="e.g. 0422 111 222"
+                        data-agent-id="supporter-reg-phone" data-testid="supporter-reg-phone" aria-label="Supporter Mobile Phone">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-suburb">Full Address, Suburb &amp; Postcode:</label>
+                      <input type="text" id="supporter-reg-suburb" class="form-control" required placeholder="e.g. 12 Marine Parade, Southport QLD 4215"
+                        data-agent-id="supporter-reg-suburb" data-testid="supporter-reg-suburb" aria-label="Full Address, Suburb and Postcode">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%; font-weight:800;"
+                    data-agent-id="btn-submit-supporter-reg" data-testid="btn-submit-supporter-reg"
+                    aria-label="Save Registration Details">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Registration Details
+                  </button>
+                </form>
               </div>
             </div>
           </div>
 
-          <!-- COLLAPSED PANEL 2: Register Details -->
-          <div id="supporter-panel-register-details" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-register-details" data-testid="supporter-panel-register-details">
-            <button type="button" id="btn-toggle-panel-register-details"
-              onclick="toggleSupporterCollapsePanel('register-details')"
-              aria-expanded="false" aria-controls="supporter-details-subtab"
-              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
-              data-agent-id="btn-toggle-panel-register-details" data-testid="btn-toggle-panel-register-details" aria-label="Toggle Register Details Panel">
-              <div style="display:flex; align-items:center; gap:0.75rem;">
-                <span style="width:36px; height:36px; border-radius:50%; background:#FFF7ED; color:var(--brand-orange); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
-                  <i class="fa-solid fa-user-pen"></i>
-                </span>
-                <div>
-                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Register Details</strong>
-                  <span style="font-size:0.78rem; color:var(--text-muted);">Enter or update your full name, email, mobile phone &amp; suburb/postcode</span>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; gap:0.65rem;">
-                <span style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.65rem; border-radius:999px;">
-                  <i class="fa-solid fa-address-card"></i> Form
-                </span>
-                <i id="chevron-panel-register-details" class="fa-solid fa-chevron-down" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
-              </div>
-            </button>
-            <div id="supporter-details-subtab" class="supporter-subview supporter-collapse-body" style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);">
-              <div style="margin-bottom:1.15rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
-                <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0;">
-                  <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Register Your Supporter Details
-                </h3>
-                <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                  Your Google name and email are pre-filled below. Please provide your phone number and suburb/postcode.
-                </p>
-              </div>
-
-              <form id="supporter-registration-form" onsubmit="handleSupporterRegistrationSubmit(event)">
-                <div class="form-row">
-                  <div class="input-group">
-                    <label class="input-label" for="supporter-reg-name">Full Name:</label>
-                    <input type="text" id="supporter-reg-name" class="form-control" required placeholder="e.g. Alex Henderson"
-                      data-agent-id="supporter-reg-name" data-testid="supporter-reg-name" aria-label="Supporter Full Name">
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label" for="supporter-reg-email">Email Address (from Google):</label>
-                    <input type="email" id="supporter-reg-email" class="form-control" required placeholder="support@aifoundation.net.au"
-                      data-agent-id="supporter-reg-email" data-testid="supporter-reg-email" aria-label="Supporter Email Address">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="input-group">
-                    <label class="input-label" for="supporter-reg-phone">Mobile Phone:</label>
-                    <input type="tel" id="supporter-reg-phone" class="form-control" required placeholder="e.g. 0422 111 222"
-                      data-agent-id="supporter-reg-phone" data-testid="supporter-reg-phone" aria-label="Supporter Mobile Phone">
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label" for="supporter-reg-suburb">Full Address, Suburb &amp; Postcode:</label>
-                    <input type="text" id="supporter-reg-suburb" class="form-control" required placeholder="e.g. 12 Marine Parade, Southport QLD 4215"
-                      data-agent-id="supporter-reg-suburb" data-testid="supporter-reg-suburb" aria-label="Full Address, Suburb and Postcode">
-                  </div>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; font-weight:800;"
-                  data-agent-id="btn-submit-supporter-reg" data-testid="btn-submit-supporter-reg"
-                  aria-label="Save Supporter Details">
-                  <i class="fa-solid fa-floppy-disk"></i> Save Supporter Details
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <!-- COLLAPSED PANEL 3: My Bookings History -->
+          <!-- COLLAPSED PANEL 2: My Bookings History -->
           <div id="supporter-panel-bookings-history" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-bookings-history" data-testid="supporter-panel-bookings-history">
             <button type="button" id="btn-toggle-panel-bookings-history"
               onclick="toggleSupporterCollapsePanel('bookings-history')"
@@ -819,7 +789,7 @@
             </div>
           </div>
 
-          <!-- COLLAPSED PANEL 4: Buy Tokens -->
+          <!-- COLLAPSED PANEL 3: Buy Tokens -->
           <div id="supporter-panel-buy-tokens" class="courier-calc-card supporter-collapsible-card" style="padding:0; overflow:hidden; border:1px solid var(--border-light);" data-agent-id="supporter-panel-buy-tokens" data-testid="supporter-panel-buy-tokens">
             <button type="button" id="btn-toggle-panel-buy-tokens"
               onclick="toggleSupporterCollapsePanel('buy-tokens')"
@@ -897,10 +867,10 @@
         <!-- Driver & SuperAdmin Navigation Subtabs (Hidden for Regular Supporters) -->
         <div class="supporter-subnav-bar" style="margin-bottom:1rem;">
           <button type="button" class="supporter-subnav-btn" id="subtab-btn-details"
-            onclick="toggleSupporterCollapsePanel('register-details', true)"
+            onclick="toggleSupporterCollapsePanel('registration-details', true)"
             style="display:none;"
-            data-agent-id="subtab-btn-details" data-testid="subtab-btn-details" aria-label="1. Register Details">
-            <i class="fa-solid fa-address-card"></i> 1. Register Details
+            data-agent-id="subtab-btn-details" data-testid="subtab-btn-details" aria-label="1. Registration Details">
+            <i class="fa-solid fa-address-card"></i> 1. Registration Details
           </button>
           <button type="button" class="supporter-subnav-btn" id="subtab-btn-bookings"
             onclick="toggleSupporterCollapsePanel('bookings-history', true)"

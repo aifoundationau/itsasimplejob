@@ -3914,11 +3914,6 @@ const SUPPORTER_COLLAPSE_PANELS = {
     chevronId: 'chevron-panel-registration-details',
     bodyId: 'supporter-collapse-body-registration-details'
   },
-  'register-details': {
-    btnId: 'btn-toggle-panel-register-details',
-    chevronId: 'chevron-panel-register-details',
-    bodyId: 'supporter-details-subtab'
-  },
   'bookings-history': {
     btnId: 'btn-toggle-panel-bookings-history',
     chevronId: 'chevron-panel-bookings-history',
@@ -3948,7 +3943,8 @@ function collapseAllSupporterPanels() {
 window.collapseAllSupporterPanels = collapseAllSupporterPanels;
 
 function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
-  const cfg = SUPPORTER_COLLAPSE_PANELS[panelKey];
+  const normalizedKey = panelKey === 'register-details' ? 'registration-details' : panelKey;
+  const cfg = SUPPORTER_COLLAPSE_PANELS[normalizedKey];
   if (!cfg) return;
   const bodyEl = document.getElementById(cfg.bodyId);
   const btnEl = document.getElementById(cfg.btnId);
@@ -3966,10 +3962,10 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   }
 
   if (nextOpen) {
-    if (panelKey === 'registration-details' || panelKey === 'register-details' || panelKey === 'buy-tokens') {
+    if (normalizedKey === 'registration-details' || normalizedKey === 'buy-tokens') {
       try { renderSupporterPanel(); } catch (e) {}
     }
-    if (panelKey === 'bookings-history') {
+    if (normalizedKey === 'bookings-history') {
       try { renderSupporterBookings(); } catch (e) {}
     }
   }
@@ -4026,6 +4022,7 @@ function switchSupporterSubTab(subtabId) {
     const subBtns = document.querySelectorAll('.supporter-subnav-btn');
     subBtns.forEach(btn => btn.classList.remove('active'));
     document.getElementById('subtab-btn-details')?.classList.add('active');
+    toggleSupporterCollapsePanel('registration-details', true);
     return;
   }
 
@@ -4446,12 +4443,40 @@ function handleSupporterRegistrationSubmit(event) {
   const suburb = suburbInput?.value.trim();
 
   if (!name || !email || !phone || !suburb) {
-    showToast('⚠️ Please enter your mobile phone and full address, suburb & postcode.');
+    showToast('⚠️ Please enter your full name, email, mobile phone and full address, suburb & postcode.');
     return;
   }
 
-  const supporter = window.supporterDB.addSupporter({ name, email, phone, suburb });
+  // Update active supporter in-place if one is currently selected, or add/update by email
+  let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (supporter && window.supporterDB) {
+    Object.assign(supporter, {
+      name,
+      email,
+      phone,
+      suburb,
+      address: suburb,
+      updatedAt: new Date().toISOString()
+    });
+    window.supporterDB.save();
+  } else {
+    supporter = window.supporterDB.addSupporter({ name, email, phone, suburb, address: suburb });
+  }
   localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+
+  // Sync cached Google user profile in localStorage if present
+  try {
+    const gRaw = localStorage.getItem('iasj_google_user');
+    if (gRaw) {
+      const gParsed = JSON.parse(gRaw);
+      if (gParsed) {
+        gParsed.displayName = name;
+        gParsed.email = email;
+        gParsed.phoneNumber = phone;
+        localStorage.setItem('iasj_google_user', JSON.stringify(gParsed));
+      }
+    }
+  } catch (e) {}
 
   // Sync to driver registration form fields
   const drvName = document.getElementById('drv-reg-name');
@@ -4475,7 +4500,7 @@ function handleSupporterRegistrationSubmit(event) {
   }
 
   renderSupporterPanel();
-  showToast(`🎉 Supporter personal details saved!`);
+  showToast(`🎉 Registration Details updated and saved!`);
 }
 window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
 
@@ -4559,15 +4584,15 @@ function renderSupporterPanel() {
       avatarImg.src = supporter.photoURL;
     }
 
-    // Pre-fill supporter details form fields
+    // Populate editable Registration Details form fields inside the Registration Details screen
     const regName = document.getElementById('supporter-reg-name');
-    if (regName && !regName.value) regName.value = supporter.name || '';
+    if (regName) regName.value = supporter.name || '';
     const regEmail = document.getElementById('supporter-reg-email');
-    if (regEmail && !regEmail.value) regEmail.value = supporter.email || '';
+    if (regEmail) regEmail.value = supporter.email || '';
     const regPhone = document.getElementById('supporter-reg-phone');
-    if (regPhone && !regPhone.value && supporter.phone) regPhone.value = supporter.phone;
+    if (regPhone) regPhone.value = supporter.phone || '';
     const regSuburb = document.getElementById('supporter-reg-suburb');
-    if (regSuburb && !regSuburb.value && (supporter.suburb || supporter.address)) regSuburb.value = supporter.suburb || supporter.address || '';
+    if (regSuburb) regSuburb.value = supporter.suburb || supporter.address || '';
     
     try { renderSupporterBookings(); } catch (e) {}
   } else {

@@ -2259,3 +2259,78 @@ Enforces strict Australian Privacy Act compliance for driver identification numb
   }
 }
 ```
+
+
+---
+
+### 11.26 Unified Supporter Registration Details Screen & Inline Editing Contract (`SupporterRegistrationDetailsInlineEditContract`)
+Consolidates Supporter registration details into a single **Registration Details** collapsible panel (`#supporter-panel-registration-details` -> `#supporter-collapse-body-registration-details`), removing the duplicate `Register Details` panel and enabling supporters to view and edit their **Full Name**, **Email Address**, **Mobile Phone**, and **Full Address, Suburb & Postcode** directly inside the **Registration Details** screen.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterRegistrationDetailsInlineEditContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "panelId",
+    "bodyId",
+    "summaryElementIds",
+    "editableFormId",
+    "editableInputIds",
+    "collapsedPanels"
+  ],
+  "properties": {
+    "panelId": {
+      "type": "string",
+      "const": "supporter-panel-registration-details"
+    },
+    "bodyId": {
+      "type": "string",
+      "const": "supporter-collapse-body-registration-details"
+    },
+    "summaryElementIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "supporter-reg-detail-name",
+          "supporter-reg-detail-email",
+          "supporter-reg-detail-phone",
+          "supporter-reg-detail-suburb"
+        ]
+      }
+    },
+    "editableFormId": {
+      "type": "string",
+      "const": "supporter-registration-form"
+    },
+    "editableInputIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "supporter-reg-name",
+          "supporter-reg-email",
+          "supporter-reg-phone",
+          "supporter-reg-suburb",
+          "btn-submit-supporter-reg"
+        ]
+      }
+    },
+    "collapsedPanels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "registration-details",
+          "bookings-history",
+          "buy-tokens"
+        ]
+      },
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}
+```

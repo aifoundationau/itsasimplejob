@@ -388,3 +388,10 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Verification & Build:
   * Verified via `scratch/verify_driver_licence_superadmin_only.mjs` and `npm run build` (0 errors).
   * Documented Section 11.25 (`DriverLicenceSuperadminOnlyContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 53: CONSOLIDATE SUPPORTER REGISTRATION DETAILS & ENABLE INLINE EDITING
+- Removed duplicate "Register Details" collapsible panel (`#supporter-panel-register-details`) from `#supporter-collapsed-panels-stack` in `index.html`.
+- Kept "Registration Details" (`#supporter-panel-registration-details` -> `#supporter-collapse-body-registration-details`) and embedded the editable `#supporter-registration-form` (`#supporter-reg-name`, `#supporter-reg-email`, `#supporter-reg-phone`, `#supporter-reg-suburb`, `#btn-submit-supporter-reg`) directly inside the Registration Details screen.
+- Updated `handleSupporterRegistrationSubmit()` and `renderSupporterPanel()` in `js/app.js` so editing and saving Registration Details inside the Registration Details screen immediately updates the supporter's profile in `window.supporterDB`, `localStorage`, and all summary cards.
+- Verified with `node scratch/verify_supporter_console_in_google_dropdown_only.mjs` and `npm run build` (0 errors).
+- Documented Section 11.26 (`SupporterRegistrationDetailsInlineEditContract`) in `data-contracts.MD`.
