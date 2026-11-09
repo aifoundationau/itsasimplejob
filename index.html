@@ -183,6 +183,20 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:0.45rem;">
+            <!-- Current Geo Location Indicator & Geo Update Button (Updates User Location on All Maps) -->
+            <div id="google-menu-location-status"
+              style="font-size:0.73rem; color:#065F46; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.35rem 0.55rem; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+              data-agent-id="google-menu-location-status" data-testid="google-menu-location-status">
+              <i class="fa-solid fa-location-dot" style="color:#10B981; flex-shrink:0;"></i>
+              <span id="google-menu-location-text" style="overflow:hidden; text-overflow:ellipsis; font-weight:700;">10 Smith Street, Southport QLD</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-menu-update-geo-location"
+              onclick="updateUserLocationFromGoogleMenu(this);"
+              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#ECFDF5; border-color:#10B981; color:#065F46;"
+              data-agent-id="btn-menu-update-geo-location" data-testid="btn-menu-update-geo-location"
+              aria-label="Geo Button: Update My Location on All Maps">
+              <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> Geo: Update My Location
+            </button>
             <button type="button" class="btn btn-primary btn-sm" id="btn-menu-supporter-portal"
               onclick="openSupporterPanelFromGoogleMenu();"
               style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:var(--brand-orange); border-color:var(--brand-orange); color:#ffffff;"

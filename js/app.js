@@ -9637,8 +9637,194 @@ function handleGoogleSignOut() {
   showToast('Signed out of Google account.');
 }
 
+function syncGoogleMenuLocationDisplay() {
+  const locTextEl = document.getElementById('google-menu-location-text');
+  if (!locTextEl) return;
+  const label = appState.userLocationName || (typeof geoTimeState !== 'undefined' && geoTimeState.suburb) || '10 Smith Street, Southport QLD 4215';
+  locTextEl.textContent = label;
+  locTextEl.title = label;
+}
+window.syncGoogleMenuLocationDisplay = syncGoogleMenuLocationDisplay;
+
+async function applyUserGeoLocationToAllMaps(lat, lng, resolvedAddress = '') {
+  const safeLat = Number.isFinite(Number(lat)) ? Number(lat) : -27.9635;
+  const safeLng = Number.isFinite(Number(lng)) ? Number(lng) : 153.4064;
+
+  let addressText = resolvedAddress ? String(resolvedAddress).trim() : '';
+  if (!addressText) {
+    try {
+      const osmAddr = await reverseGeocodeOsm(safeLat, safeLng);
+      if (osmAddr) addressText = osmAddr;
+    } catch (e) {}
+  }
+
+  if (!addressText || addressText.includes(safeLat.toFixed(4))) {
+    addressText = appState.userLocationName || '10 Smith Street, Southport QLD 4215';
+  }
+
+  const suburbParts = addressText.split(',').map(s => s.trim()).filter(Boolean);
+  const suburbShort = suburbParts.length > 1 ? suburbParts.slice(0, 2).join(', ') : addressText;
+
+  // 1. Update global user & courier origin coordinates
+  appState.userCoords = { lat: safeLat, lng: safeLng };
+  appState.userLocationName = addressText;
+  appState.courierOriginCoords = { lat: safeLat, lng: safeLng };
+
+  // 2. Sync address & search inputs across tabs
+  ['courier-origin', 'courier-cust-address', 'contractor-search-location'].forEach(inputId => {
+    const el = document.getElementById(inputId);
+    if (el) {
+      el.value = addressText;
+    }
+  });
+  const supSuburbEl = document.getElementById('supporter-reg-suburb');
+  if (supSuburbEl) {
+    supSuburbEl.value = suburbShort;
+  }
+
+  // 3. Sync Geo & Time footer bar state
+  if (typeof geoTimeState !== 'undefined') {
+    geoTimeState.coords = { lat: safeLat, lng: safeLng };
+    geoTimeState.suburb = suburbShort;
+    try {
+      localStorage.setItem('iasj_regional_settings', JSON.stringify(geoTimeState));
+    } catch (e) {}
+    try { updateGeoTimeBar(); } catch (e) {}
+  }
+
+  // 4. Sync active Supporter & Owned Driver profile locations if applicable
+  try {
+    const currentUser = window.firebaseService?.getCurrentGoogleUser?.() || (() => {
+      try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch (e) { return null; }
+    })();
+    if (currentUser?.email && window.supporterDB) {
+      const sup = window.supporterDB.findByEmail(currentUser.email);
+      if (sup) {
+        sup.suburb = suburbShort;
+        sup.lat = safeLat;
+        sup.lng = safeLng;
+        window.supporterDB.save();
+      }
+    }
+    const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+    if (ownedDriver && window.providerDB?.updateDriverLocation) {
+      window.providerDB.updateDriverLocation(ownedDriver.id, safeLat, safeLng, suburbShort);
+    }
+  } catch (e) {}
+
+  // 5. Update Closest Drivers Directory Map (#contractor-map / appState.osmMap)
+  try {
+    if (appState.osmMap) {
+      appState.osmMap.setView([safeLat, safeLng], 13);
+      if (appState.osmUserMarker) {
+        appState.osmUserMarker.setLatLng([safeLat, safeLng]);
+        if (typeof appState.osmUserMarker.setPopupContent === 'function') {
+          appState.osmUserMarker.setPopupContent(`<strong style="color:#065F46;"><i class="fa-solid fa-location-dot" style="color:#10B981;"></i> Customer Address (Search Center)</strong><br><span style="font-size:0.8rem; color:#64748B;">${addressText}</span>`);
+        }
+      }
+      if (appState.osmRadiusCircle && typeof appState.osmRadiusCircle.setLatLng === 'function') {
+        appState.osmRadiusCircle.setLatLng([safeLat, safeLng]);
+      }
+      if (typeof updateOsmRadiusCircle === 'function') updateOsmRadiusCircle(true);
+      if (typeof updateOsmContractorMarkers === 'function') updateOsmContractorMarkers();
+    } else if (typeof renderOsmContractorMap === 'function') {
+      renderOsmContractorMap();
+    }
+    if (appState.contractorMap?.panTo) {
+      appState.contractorMap.panTo(appState.userCoords);
+      if (typeof appState.contractorMap.setZoom === 'function') appState.contractorMap.setZoom(13);
+    }
+    if (typeof filterContractors === 'function') filterContractors();
+  } catch (e) {}
+
+  // 6. Update Book Courier Route Map (#courier-route-map / appState.osmCourierMap) & Quotes
+  try {
+    const destText = document.getElementById('courier-dest')?.value || 'Broadbeach QLD 4218';
+    if (typeof renderOsmCourierRouteMap === 'function') {
+      renderOsmCourierRouteMap(appState.courierOriginCoords, appState.courierDestCoords, null, addressText, destText);
+    }
+    if (typeof calculateCourierQuote === 'function') {
+      calculateCourierQuote();
+    }
+  } catch (e) {}
+
+  // 7. Refresh Google dropdown location indicator & portal views
+  syncGoogleMenuLocationDisplay();
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { renderDriverInformationView(); } catch (e) {}
+
+  return {
+    lat: safeLat,
+    lng: safeLng,
+    address: addressText,
+    suburb: suburbShort,
+    mapsUpdated: ['courier-route-map', 'contractor-map']
+  };
+}
+window.applyUserGeoLocationToAllMaps = applyUserGeoLocationToAllMaps;
+
+async function updateUserLocationFromGoogleMenu(btnOrCoords = null) {
+  const btn = (btnOrCoords && btnOrCoords.tagName)
+    ? btnOrCoords
+    : document.getElementById('btn-menu-update-geo-location');
+
+  const restoreBtn = () => {
+    if (btn) {
+      btn.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> Geo: Update My Location`;
+      btn.disabled = false;
+    }
+  };
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:#059669;"></i> Updating All Maps...`;
+  }
+
+  // Allow direct coordinates object for deterministic programmatic/test calls
+  if (btnOrCoords && typeof btnOrCoords === 'object' && !btnOrCoords.tagName && Number.isFinite(Number(btnOrCoords.lat)) && Number.isFinite(Number(btnOrCoords.lng))) {
+    const result = await applyUserGeoLocationToAllMaps(btnOrCoords.lat, btnOrCoords.lng, btnOrCoords.address || '');
+    restoreBtn();
+    showToast(`📍 Location updated on all maps: ${result.suburb}`);
+    return result;
+  }
+
+  showToast('📍 Accessing GPS to update your location on all maps...');
+
+  if (!navigator.geolocation || typeof navigator.geolocation.getCurrentPosition !== 'function') {
+    const fallbackLat = appState.userCoords?.lat ?? -27.9635;
+    const fallbackLng = appState.userCoords?.lng ?? 153.4064;
+    const result = await applyUserGeoLocationToAllMaps(fallbackLat, fallbackLng, appState.userLocationName || '10 Smith Street, Southport QLD 4215');
+    restoreBtn();
+    showToast(`📍 Location updated on all maps: ${result.suburb}`);
+    return result;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const result = await applyUserGeoLocationToAllMaps(pos.coords.latitude, pos.coords.longitude);
+        restoreBtn();
+        showToast(`📍 Location updated on all maps: ${result.suburb}`);
+        resolve(result);
+      },
+      async () => {
+        const fallbackLat = appState.userCoords?.lat ?? -27.9635;
+        const fallbackLng = appState.userCoords?.lng ?? 153.4064;
+        const result = await applyUserGeoLocationToAllMaps(fallbackLat, fallbackLng, appState.userLocationName || '10 Smith Street, Southport QLD 4215');
+        restoreBtn();
+        showToast(`📍 Location updated on all maps: ${result.suburb}`);
+        resolve(result);
+      },
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
+  });
+}
+window.updateUserLocationFromGoogleMenu = updateUserLocationFromGoogleMenu;
+
 function toggleGoogleUserMenu(event) {
   event?.stopPropagation();
+  syncGoogleMenuLocationDisplay();
   const menu = document.getElementById('google-user-menu');
   if (menu) {
     const isVisible = menu.style.display === 'block' || menu.classList.contains('show');
@@ -9699,6 +9885,7 @@ function updateGoogleAuthUI(user) {
     if (menuSupporterBtn) menuSupporterBtn.style.display = 'inline-flex';
     const menuDriverAdminBtn = document.getElementById('btn-menu-driver-admin-panel');
     if (menuDriverAdminBtn) menuDriverAdminBtn.style.display = 'inline-flex';
+    try { syncGoogleMenuLocationDisplay(); } catch (e) {}
     
     const isSa = checkIsSuperadmin(user);
     if (isSa && user.role !== 'superadmin') {

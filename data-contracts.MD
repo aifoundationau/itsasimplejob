@@ -2711,3 +2711,52 @@ Enforces mandatory two-step confirmation (`confirmSuperadminTokenAction` + `iasj
   }
 }
 ```
+
+### 11.34 Google Dropdown Menu Geo Location Update Across All Maps Contract (`GoogleMenuGeoUpdateAllMapsContract`)
+Defines the payload and state synchronization when a user presses the **Geo: Update My Location** button (`#btn-menu-update-geo-location`) inside the Google user dropdown menu (`#google-user-menu`). Pressing the Geo button acquires the user's GPS coordinates (`navigator.geolocation.getCurrentPosition`), reverse-geocodes the street/suburb via OpenStreetMap Nominatim (`reverseGeocodeOsm`), updates `#google-menu-location-text`, and synchronizes the user's location across **all maps** (`#courier-route-map` and `#contractor-map`), address inputs (`#courier-origin`, `#courier-cust-address`, `#contractor-search-location`, `#supporter-reg-suburb`), the bottom Geo & Time bar (`geoTimeState`), and the user's active Supporter / Owned Driver profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GoogleMenuGeoUpdateAllMapsContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lat",
+    "lng",
+    "address",
+    "suburb",
+    "mapsUpdated"
+  ],
+  "properties": {
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "lng": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "address": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 240
+    },
+    "suburb": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 140
+    },
+    "mapsUpdated": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "enum": ["courier-route-map", "contractor-map"]
+      }
+    }
+  }
+}
+```

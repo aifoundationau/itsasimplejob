@@ -461,3 +461,15 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
      - `Refresh to 0 Tokens` (`#btn-sa-refresh-tokens-zero`): 1st click arms `Confirm Reset to 0 Tokens? ✕`; 2nd click confirms and resets tokens to 0.
 - Verified with `node scratch/verify_superadmin_token_confirmations.mjs`, `node scratch/verify_superadmin_token_management.mjs`, and `npm run build` (0 errors).
 - Documented Section 11.33 (`SuperadminTokenConfirmationContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 61: GOOGLE DROPDOWN MENU GEO BUTTON — UPDATE USER LOCATION ON ALL MAPS
+- Added `#google-menu-location-status` (`#google-menu-location-text`) and the **Geo: Update My Location** button (`#btn-menu-update-geo-location`, `onclick="updateUserLocationFromGoogleMenu(this);"`) inside the Google user dropdown menu (`#google-user-menu`) in `index.html`.
+- Implemented `updateUserLocationFromGoogleMenu(btnOrCoords)`, `applyUserGeoLocationToAllMaps(lat, lng, resolvedAddress)`, and `syncGoogleMenuLocationDisplay()` in `js/app.js`:
+  1. Acquires GPS coordinates (`navigator.geolocation.getCurrentPosition`) and reverse-geocodes the street/suburb via OpenStreetMap (`reverseGeocodeOsm`).
+  2. Updates `appState.userCoords`, `appState.userLocationName`, and `appState.courierOriginCoords`.
+  3. Updates **all maps** simultaneously:
+     - **Book Courier Route Map (`#courier-route-map` / `appState.osmCourierMap`)**: Moves the green Pickup Origin pin, recalculates the road route polyline, and refreshes driver distances/quotes (`calculateCourierQuote()`).
+     - **Closest Drivers Map (`#contractor-map` / `appState.osmMap`)**: Re-centers the map (`setView`), moves the green Customer Search Center marker (`osmUserMarker.setLatLng`), moves the search radius radar circle (`osmRadiusCircle.setLatLng`), and refreshes all driver markers and cards (`filterContractors()`).
+  4. Synchronizes `#google-menu-location-text`, `#courier-origin`, `#courier-cust-address`, `#contractor-search-location`, `#supporter-reg-suburb`, `geoTimeState`, and the user's active Supporter / Owned Driver profile coordinates.
+- Verified with `node scratch/verify_google_menu_geo_button.mjs` and `npm run build` (0 errors).
+- Documented Section 11.34 (`GoogleMenuGeoUpdateAllMapsContract`) in `data-contracts.MD`.
