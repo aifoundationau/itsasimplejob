@@ -593,3 +593,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Added `@media screen and (max-width: 960px)` rules in `css/style.css` so all 3 steps are collapsed at start on Android and iPhone (`.courier-booking-step-group.courier-mobile-collapsed .courier-step-body { display: none !important; }`) and `@media screen and (min-width: 961px)` rules so Desktop/Laptop remains 100% unchanged and expanded.
 - Implemented `toggleCourierBookingStep(stepNum, forceExpand)` and `initMobileCourierStepsCollapsed()` in `js/app.js`.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 76: Remove "How It Works" from Navbar on Android & iPhone (Unchanged on Desktop):
+- Hid `#pill-how-it-works` and `#tab-btn-how-it-works` (`display: none !important;`) inside the mobile/tablet media queries (`<= 960px` and `<= 640px`) in `css/style.css` and updated `.tab-nav-bar` to a 2-column grid (`grid-template-columns: repeat(2, minmax(0, 1fr)) !important;`) so only `1. Book Courier` and `2. Closest Drivers Map` appear in the mobile navigation bar while Desktop/Laptop (`> 960px`) remains 100% unchanged.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

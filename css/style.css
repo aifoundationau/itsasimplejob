@@ -4042,7 +4042,12 @@ textarea:focus-visible {
     white-space: nowrap;
   }
 
-  /* Zero-scrollbar responsive grid for main navigation items on Android & iPhone */
+  /* Zero-scrollbar responsive 2-column grid for main navigation items on Android & iPhone (How It Works hidden on mobile) */
+  #pill-how-it-works,
+  #tab-btn-how-it-works {
+    display: none !important;
+  }
+
   .app-section-tabs {
     padding: 0.55rem 0;
     overflow: hidden;
@@ -4050,7 +4055,7 @@ textarea:focus-visible {
 
   .tab-nav-bar {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.45rem !important;
     overflow: visible !important;
     overflow-x: hidden !important;
@@ -6265,15 +6270,20 @@ body {
     min-height: 34px !important;
   }
 
-  /* 3-column zero-scrollbar navigation bar for 1. Book Courier, 2. Closest Drivers Map, 3. How It Works */
+  /* 2-column zero-scrollbar navigation bar on Android & iPhone (How It Works removed on mobile) */
+  #pill-how-it-works,
+  #tab-btn-how-it-works {
+    display: none !important;
+  }
+
   .app-section-tabs {
     padding: 0.45rem 0 !important;
   }
 
   .tab-nav-bar {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 0.35rem !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
     padding-bottom: 0 !important;
@@ -6282,19 +6292,19 @@ body {
   }
 
   .tab-nav-btn {
-    display: flex !important;
-    flex-direction: column !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 0.2rem !important;
-    padding: 0.45rem 0.25rem !important;
-    font-size: clamp(0.68rem, 2.6vw, 0.78rem) !important;
-    line-height: 1.15 !important;
+    gap: 0.35rem !important;
+    padding: 0.5rem 0.4rem !important;
+    font-size: clamp(0.74rem, 3.1vw, 0.84rem) !important;
+    line-height: 1.2 !important;
     white-space: normal !important;
     text-align: center !important;
     min-width: 0 !important;
     width: 100% !important;
-    min-height: 46px !important;
+    min-height: 44px !important;
     border-radius: 10px !important;
   }
 
