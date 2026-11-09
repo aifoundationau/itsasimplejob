@@ -123,12 +123,12 @@
           <span id="nav-driver-token-count">45 Tokens</span>
         </button>
 
-        <!-- Google Sign In Button (Logged Out State) -->
+        <!-- Google Register / Login Button (Logged Out / First-Time State) -->
         <button type="button" class="btn btn-outline btn-sm" id="nav-google-signin-btn"
           onclick="signUpWithGoogle('supporter')"
           style="font-weight:700; display:inline-flex; align-items:center; gap:0.35rem;"
-          data-agent-id="nav-google-signin-btn" data-testid="nav-google-signin-btn" aria-label="Sign In with Google">
-          <span id="nav-auth-label">Sign In</span>
+          data-agent-id="nav-google-signin-btn" data-testid="nav-google-signin-btn" aria-label="Register / Login with Google">
+          <span id="nav-auth-label">Register / Login</span>
         </button>
 
         <!-- Google Logged-In User Chip (Visible when Logged In) -->
@@ -700,15 +700,15 @@
           Community Supporter Gateway
         </span>
         <h3 style="font-size:1.45rem; font-weight:900; color:var(--primary-navy); margin:0.35rem 0 0.65rem 0;">
-          Become a Supporter with Google
+          Register as a Supporter First
         </h3>
         <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.6; max-width:540px; margin:0 auto 1.5rem;">
-          To become a supporter, simply use the <strong>Sign In</strong> button at the top-right of the page. Once signed in, you can register your profile details in a separate tab, and access the <strong>Courier Driver Application</strong> in the bottom footer.
+          First-time users must register as a <strong>Community Supporter</strong> first. Use the <strong>Register / Login</strong> button at the top-right of the page to register your supporter details and unlock the <strong>Courier Driver Application</strong> in the bottom footer.
         </p>
 
         <div style="margin:0 auto; display:inline-flex; align-items:center; gap:0.6rem; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:999px; padding:0.65rem 1.25rem; font-size:0.88rem; color:#1E40AF; font-weight:700;">
           <i class="fa-brands fa-google" style="color:#EA4335;"></i>
-          <span>Use the single <strong>Sign In</strong> button at the top-right to log in with Google</span>
+          <span>Use the <strong>Register / Login</strong> button at the top-right to register as a Supporter first</span>
         </div>
 
         <div style="margin-top:1.75rem; padding-top:1.25rem; border-top:1px dashed var(--border-light); display:flex; justify-content:center; gap:0.85rem; align-items:center; flex-wrap:wrap;">
@@ -807,6 +807,9 @@
 
               <!-- Edit Registration Details Form (Inline inside Registration Details Screen) -->
               <div id="supporter-details-subtab" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-md); padding:1.25rem;" data-agent-id="supporter-details-subtab" data-testid="supporter-details-subtab">
+                <div id="supporter-first-time-banner" style="display:none; margin-bottom:1.1rem; padding:0.9rem 1.1rem; border-radius:8px; background:#FFFBEB; border:1px solid #F59E0B; color:#92400E; font-size:0.86rem; font-weight:700;" data-agent-id="supporter-first-time-banner" data-testid="supporter-first-time-banner">
+                  <i class="fa-solid fa-shield-heart" style="color:#D97706;"></i> <strong>First-Time User — You Must Register as a Supporter First:</strong> Please enter your mobile phone number and address/suburb below and click <strong>Register as Supporter &amp; Save Details</strong> to complete your supporter registration.
+                </div>
                 <div style="margin-bottom:1.1rem; padding-bottom:0.75rem; border-bottom:1px solid #E2E8F0;">
                   <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0;">
                     <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Edit Registration Details
@@ -1836,8 +1839,8 @@
             <button type="button" class="btn btn-primary btn-lg" onclick="closeDriverApplicationModal(); signUpWithGoogle('supporter');"
               style="font-weight:800; display:inline-flex; align-items:center; gap:0.6rem; padding:0.85rem 1.75rem;"
               data-agent-id="btn-gate-google-signup" data-testid="btn-gate-google-signup"
-              aria-label="Sign In with Google to Register as Supporter">
-              <i class="fa-brands fa-google"></i> Sign In with Google to Unlock Application
+              aria-label="Register / Login with Google to Register as Supporter First">
+              <i class="fa-brands fa-google"></i> Register / Login with Google (Register as Supporter First)
             </button>
             <button type="button" class="btn btn-outline btn-lg" onclick="closeDriverApplicationModal(); switchTab('driver-admin-tab');"
               style="font-weight:800; display:inline-flex; align-items:center; gap:0.6rem; padding:0.85rem 1.5rem;"

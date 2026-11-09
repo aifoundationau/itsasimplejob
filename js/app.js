@@ -4207,20 +4207,38 @@ class SupporterDatabase {
   }
 
   addSupporter(data) {
+    const hasCompleteDetails = Boolean(
+      data.registrationCompleted === true ||
+      (data.phone && String(data.phone).trim() && (data.suburb || data.address) && String(data.suburb || data.address).trim())
+    );
     const existing = this.findByEmail(data.email);
     if (existing) {
-      Object.assign(existing, data, { updatedAt: new Date().toISOString() });
+      const nextCompleted = typeof data.registrationCompleted === 'boolean'
+        ? data.registrationCompleted
+        : Boolean(existing.registrationCompleted || hasCompleteDetails);
+      Object.assign(existing, data, {
+        registrationCompleted: nextCompleted,
+        isVerified: nextCompleted,
+        updatedAt: new Date().toISOString()
+      });
       this.save();
       return existing;
     }
+    const isCompleted = typeof data.registrationCompleted === 'boolean'
+      ? data.registrationCompleted
+      : hasCompleteDetails;
     const newSupporter = {
       id: 'supporter_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       name: data.name,
       email: data.email,
-      phone: data.phone,
-      suburb: data.suburb,
+      phone: data.phone || '',
+      suburb: data.suburb || data.address || '',
+      address: data.address || data.suburb || '',
+      photoURL: data.photoURL || '',
+      googleUid: data.googleUid || '',
       role: 'supporter',
-      isVerified: true,
+      registrationCompleted: isCompleted,
+      isVerified: isCompleted,
       createdAt: new Date().toISOString()
     };
     this.supporters.push(newSupporter);
@@ -4250,7 +4268,8 @@ function getCurrentSupporter() {
             phone: gUser.phoneNumber || '',
             suburb: '',
             photoURL: gUser.photoURL || '',
-            googleUid: gUser.uid || ''
+            googleUid: gUser.uid || '',
+            registrationCompleted: Boolean(checkIsSuperadmin(gUser))
           });
         }
         localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
@@ -4369,9 +4388,26 @@ function scrollToDriverApplication(event) {
 }
 window.scrollToDriverApplication = scrollToDriverApplication;
 
+function isSupporterRegistrationComplete(supporterObj = null) {
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.() || (() => {
+    try { return JSON.parse(localStorage.getItem('iasj_google_user') || 'null'); } catch (e) { return null; }
+  })();
+  if (gUser && checkIsSuperadmin(gUser)) return true;
+  const supporter = supporterObj || (typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null);
+  if (!supporter) return false;
+  if (supporter.registrationCompleted === true) return true;
+  if (supporter.registrationCompleted === false) return false;
+  return Boolean(
+    supporter.name && String(supporter.name).trim() &&
+    supporter.email && String(supporter.email).trim() &&
+    supporter.phone && String(supporter.phone).trim() &&
+    (supporter.suburb || supporter.address) && String(supporter.suburb || supporter.address).trim()
+  );
+}
+window.isSupporterRegistrationComplete = isSupporterRegistrationComplete;
+
 function isSupporterRegistered() {
-  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
-  return !!(supporter && (supporter.email || supporter.name));
+  return isSupporterRegistrationComplete();
 }
 window.isSupporterRegistered = isSupporterRegistered;
 
@@ -4571,6 +4607,15 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   let normalizedKey = panelKey;
   if (panelKey === 'register-details') normalizedKey = 'registration-details';
   if (panelKey === 'superadmin' || panelKey === 'firebase-admin-account') normalizedKey = 'superadmin-console';
+
+  // Enforce that first-time users must register as a Supporter first before opening other panels
+  if (normalizedKey !== 'registration-details' && normalizedKey !== 'superadmin-console' && !isSupporterRegistrationComplete()) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ First-time users must register as a Community Supporter first. Please complete and save your Registration Details below.');
+    }
+    return toggleSupporterCollapsePanel('registration-details', true);
+  }
+
   const cfg = SUPPORTER_COLLAPSE_PANELS[normalizedKey];
   if (!cfg) return;
   const bodyEl = document.getElementById(cfg.bodyId);
@@ -4625,12 +4670,24 @@ function openSupporterPanelFromGoogleMenu() {
   appState.activePortalPanelMode = 'supporter';
   switchTab('driver-admin-tab');
   collapseAllSupporterPanels();
+  if (!isSupporterRegistrationComplete()) {
+    toggleSupporterCollapsePanel('registration-details', true);
+  }
   try { renderSupporterPanel(); } catch (e) {}
 }
 window.openSupporterPanelFromGoogleMenu = openSupporterPanelFromGoogleMenu;
 
 function openDriverAdminPanelFromGoogleMenu() {
   closeGoogleUserMenu();
+  if (!isSupporterRegistrationComplete()) {
+    appState.activePortalPanelMode = 'supporter';
+    switchTab('driver-admin-tab');
+    collapseAllSupporterPanels();
+    toggleSupporterCollapsePanel('registration-details', true);
+    try { renderSupporterPanel(); } catch (e) {}
+    showToast('⚠️ First-time users must register as a Community Supporter first before accessing Driver Admin.');
+    return;
+  }
   appState.activePortalPanelMode = 'driver-admin';
   switchTab('driver-admin-tab');
   collapseAllSupporterPanels();
@@ -5136,11 +5193,21 @@ function handleSupporterRegistrationSubmit(event) {
       phone,
       suburb,
       address: suburb,
+      registrationCompleted: true,
+      isVerified: true,
       updatedAt: new Date().toISOString()
     });
     window.supporterDB.save();
   } else {
-    supporter = window.supporterDB.addSupporter({ name, email, phone, suburb, address: suburb });
+    supporter = window.supporterDB.addSupporter({
+      name,
+      email,
+      phone,
+      suburb,
+      address: suburb,
+      registrationCompleted: true,
+      isVerified: true
+    });
   }
   localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
 
@@ -5180,7 +5247,11 @@ function handleSupporterRegistrationSubmit(event) {
   }
 
   renderSupporterPanel();
-  showToast(`🎉 Registration Details updated and saved!`);
+  try {
+    const activeUser = window.firebaseService?.getCurrentGoogleUser?.() || JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
+    if (activeUser) updateGoogleAuthUI(activeUser);
+  } catch (e) {}
+  showToast(`🎉 Registered as a Community Supporter! Your Registration Details are saved.`);
 }
 window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
 
@@ -5193,6 +5264,30 @@ function renderSupporterPanel() {
   const avatarImg = document.getElementById('supporter-avatar-img');
 
   if (supporter) {
+    const isRegComplete = isSupporterRegistrationComplete(supporter);
+    const firstTimeBanner = document.getElementById('supporter-first-time-banner');
+    if (firstTimeBanner) {
+      firstTimeBanner.style.display = isRegComplete ? 'none' : 'block';
+    }
+    const statusPill = document.getElementById('supporter-reg-details-status-pill');
+    if (statusPill) {
+      if (isRegComplete) {
+        statusPill.style.background = '#DCFCE7';
+        statusPill.style.color = '#15803D';
+        statusPill.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verified';
+      } else {
+        statusPill.style.background = '#FEF3C7';
+        statusPill.style.color = '#92400E';
+        statusPill.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Register as Supporter First';
+      }
+    }
+    const submitBtn = document.getElementById('btn-submit-supporter-reg');
+    if (submitBtn) {
+      submitBtn.innerHTML = isRegComplete
+        ? '<i class="fa-solid fa-floppy-disk"></i> Save Registration Details'
+        : '<i class="fa-solid fa-user-check"></i> Register as Supporter &amp; Save Details';
+    }
+
     if (onboardingCard) onboardingCard.style.display = 'none';
     if (panelWrapper) panelWrapper.style.display = 'block';
     if (nameEl) nameEl.textContent = supporter.name || 'Community Supporter';
@@ -10150,11 +10245,12 @@ async function signUpWithGoogle(role = 'supporter', bypassGate = false) {
 
       // Commit to localStorage immediately to avoid race conditions with view updates
       localStorage.setItem('iasj_google_user', JSON.stringify(user));
-      updateGoogleAuthUI(user);
       closeRegisterSelectionPanel();
 
-      // Automatically register user as a Community Supporter upon Google login
+      // Check if user is already a registered Community Supporter or a first-time user
+      const isSaUser = checkIsSuperadmin(user);
       let supporter = window.supporterDB.findByEmail(user.email);
+      const isFirstTimeSupporter = !isSaUser && (!supporter || !isSupporterRegistrationComplete(supporter));
       if (!supporter) {
         supporter = window.supporterDB.addSupporter({
           name: user.displayName || 'Google Supporter',
@@ -10162,16 +10258,29 @@ async function signUpWithGoogle(role = 'supporter', bypassGate = false) {
           phone: user.phoneNumber || '',
           suburb: '',
           photoURL: user.photoURL || '',
-          googleUid: user.uid || ''
+          googleUid: user.uid || '',
+          registrationCompleted: Boolean(isSaUser)
         });
       }
       localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+      updateGoogleAuthUI(user);
       renderSupporterPanel();
 
       if (role === 'supporter' || role === 'provider' || user.role === 'superadmin' || user.isSuperadmin) {
-        if (bypassGate) {
+        if (isFirstTimeSupporter || bypassGate) {
+          appState.activePortalPanelMode = 'supporter';
           switchTab('driver-admin-tab', true);
-          switchSupporterSubTab('supporter-details-subtab');
+          collapseAllSupporterPanels();
+          toggleSupporterCollapsePanel('registration-details', true);
+          renderSupporterPanel();
+          setTimeout(() => {
+            const phoneEl = document.getElementById('supporter-reg-phone');
+            if (phoneEl && !phoneEl.value) phoneEl.focus();
+          }, 150);
+          if (isFirstTimeSupporter) {
+            showToast(`👋 Welcome ${user.displayName || 'to It\'s A Simple Job'}! First-time users must register as a Community Supporter first — please complete your details below.`);
+            return user;
+          }
         }
         showToast(`🎉 Logged in with Google! Welcome ${user.displayName || 'Supporter'}. Open Supporter Console from the Google Log In dropdown menu.`);
         return user;
@@ -10554,10 +10663,12 @@ function updateGoogleAuthUI(user) {
     }
 
     const firstName = (user.displayName || 'Supporter').split(' ')[0];
+    const isSupporterComplete = isSupporterRegistrationComplete();
+    const navStatusSuffix = (isSa || isSupporterComplete) ? 'Logged In' : 'Register as Supporter';
     if (navText) {
-      navText.textContent = `${firstName} (Logged In)`;
+      navText.textContent = `${firstName} (${navStatusSuffix})`;
     } else if (navName) {
-      navName.innerHTML = `<span>${firstName} (Logged In)</span>`;
+      navName.innerHTML = `<span>${firstName} (${navStatusSuffix})</span>`;
     }
     if (navAvatar) navAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
 
@@ -10565,7 +10676,9 @@ function updateGoogleAuthUI(user) {
     if (menuName) menuName.textContent = user.displayName || 'Google Supporter';
     if (menuEmail) menuEmail.textContent = user.email || '';
     if (menuRoleBadge) {
-      menuRoleBadge.innerHTML = `Active ${roleDisplay} • Logged In`;
+      menuRoleBadge.innerHTML = (isSa || isSupporterComplete)
+        ? `Active ${roleDisplay} • Logged In`
+        : `First-Time User • Register as Supporter First`;
     }
 
     const btnSwitchProvider = document.getElementById('google-menu-switch-to-provider');
@@ -10604,7 +10717,14 @@ function updateGoogleAuthUI(user) {
     const altBtn = document.getElementById('btn-google-signin-nav');
     if (altBtn) altBtn.style.display = 'inline-flex';
     const navBtn = document.getElementById('nav-google-signin-btn');
-    if (navBtn) navBtn.style.display = 'inline-flex';
+    if (navBtn) {
+      navBtn.style.display = 'inline-flex';
+      navBtn.setAttribute('aria-label', 'Register / Login with Google');
+    }
+    const navAuthLabel = document.getElementById('nav-auth-label');
+    if (navAuthLabel) {
+      navAuthLabel.textContent = 'Register / Login';
+    }
 
     if (chip) chip.style.display = 'none';
     if (menu) {

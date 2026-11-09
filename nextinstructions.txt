@@ -618,3 +618,8 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-09] Task 80: Hide Duplicate Section Tabs Bar Below Top Navbar on Desktop & Laptop (`> 960px`):
 - Since the desktop/laptop top navbar (`.nav-menu`) already displays `Book Courier` (`#tab-btn-courier`) and `Closest Drivers` (`#tab-btn-find-contractors`), hid the duplicate `.app-section-tabs` bar below on desktop/laptop (`> 960px`: `display: none !important`) while keeping `.app-section-tabs` (`display: block !important`) active on mobile and tablets (`<= 960px`).
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 81: Google Button Says "Register / Login" & First-Time Users Must Register as Supporter First:
+- Updated `#nav-google-signin-btn` (`#nav-auth-label`) in `index.html` and `updateGoogleAuthUI()` in `js/app.js` to display `Register / Login`.
+- Added `isSupporterRegistrationComplete()` and `#supporter-first-time-banner` so that when a first-time user signs in with Google via `signUpWithGoogle()`, they are immediately routed to the Supporter Panel -> Registration Details form (`#supporter-details-subtab`) and must complete and save their Community Supporter registration first (`handleSupporterRegistrationSubmit`) before accessing other panels or applying as a driver.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
