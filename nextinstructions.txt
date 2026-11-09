@@ -126,9 +126,21 @@ Created: 2026-11-01
   * Verified end-to-end with verify_search_radius_map.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 33: DUAL-MODE MOTOR VEHICLE & BICYCLE BUTTONS IN CUSTOMER-FACING DRIVER PROFILES
+- Customer-Facing Dual Mode Toggle Controls:
+  * For drivers registered as both motor vehicle and bicycle courier (`hasVehicleCourier !== false && hasBicycleCourier === true`, such as Sarah Jenkins `drv-102`), rendered responsive toggle buttons `[🚗 Motor Vehicle ($X.XX/km)]` and `[🚲 Bicycle Courier ($Y.YY/km)]` across customer touchpoints.
+  * 1. Courier Booking Tab (#courier-driver-selection-list): Clicking either mode dynamically recalculates that driver's quote with their mode-specific $/km rate, same-day fee, urgent fee, and checks package capacity against bicycle limits (8kg max, 35×30×40cm) or vehicle limits (50kg max).
+  * 2. Live Driver Directory (#contractor-cards-container): Toggling the buttons switches displayed $/km rate, same-day fee, urgent fee, max weight, and max dimensions in real time.
+  * 3. OpenStreetMap Leaflet Popups (updateOsmContractorMarkers): Popup markers display vehicle and bicycle buttons for dual-mode drivers, updating displayed rates and capacity specifications.
+  * Booking continuity: Clicking "Book Driver" from directory cards or map popups preserves the selected mode in the booking view.
+- Verification & Compliance:
+  * Documented Section 11.8 in data-contracts.MD.
+  * Verified end-to-end with verify_dual_mode_profile_buttons.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST DYNAMIC SEARCH RADIUS CIRCLE ON MAP IN BROWSER
+CURRENT TASK: TEST DUAL-MODE MOTOR VEHICLE & BICYCLE BUTTONS IN CUSTOMER PROFILE
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, click the "2. Closest Drivers Map" tab, drag the "Search Radius" slider between 5 km and 150 km, and verify that the orange dashed radar circle visibly expands and contracts in real time on the map with the map smoothly fitting the new search boundary.
+1. In your browser at http://localhost:3002, navigate to the "1. Book Courier Delivery" tab or the "2. Closest Drivers Map" tab, locate dual-registered driver "Sarah Jenkins", and click the "Motor Vehicle" and "Bicycle Courier" buttons on her profile card to confirm the rates, fees, capacity, and calculated quote toggle in real time.
 
 ================================================================================

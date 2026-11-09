@@ -1812,3 +1812,30 @@ Defines the real-time visual synchronization between the search radius input con
 
 3. **Center Point Dynamic Relocation:**
    - When the user selects a new pickup address/suburb (`onContractorLocationSelected(place)`) or clicks "Locate with GPS" (`locateCustomer(...)`), the search center marker and the radius circle automatically relocate (`setLatLng([lat, lng])`) with immediate bounds recalculation.
+
+### 11.8 Dual-Mode Customer-Facing Driver Profile Contract (`DualModeCustomerFacingDriverProfileContract`)
+Defines the customer-facing interface controls and dynamic quoting behavior for drivers who register for both standard motor vehicle courier and bicycle courier services:
+
+1. **Eligibility Criteria:**
+   - Evaluated on each driver record: `driver.hasVehicleCourier !== false && driver.hasBicycleCourier === true`.
+   - Single-mode drivers (vehicle-only or bicycle-only) display their respective mode badge and rate without toggle buttons.
+   - Dual-registered drivers display interactive toggle buttons in their profiles across all customer touchpoints.
+
+2. **Customer Touchpoints & UI Integration:**
+   - **Courier Tab Driver Cards (`#courier-driver-selection-list`):**
+     * Contains `[🚗 Motor Vehicle ($X.XX/km)]` (`data-agent-id="btn-courier-mode-vehicle-${d.id}"`, `data-testid="btn-courier-mode-vehicle-${d.id}"`) and `[🚲 Bicycle Courier ($Y.YY/km)]` (`data-agent-id="btn-courier-mode-bicycle-${d.id}"`, `data-testid="btn-courier-mode-bicycle-${d.id}"`).
+     * Clicking triggers `selectCourierDriverMode(driverId, mode, event)`.
+     * Active button receives solid fill (`btn-primary`); inactive button receives outline styling (`btn-outline`).
+     * Dynamically switches calculated booking total, breakdown (per-km, same-day, urgent), and package capacity badge (8kg small item limit for bicycle vs vehicle capacity).
+   - **Live Driver Directory Cards (`#contractor-cards-container`):**
+     * Displays `[🚗 Motor Vehicle ($X.XX/km)]` and `[🚲 Bicycle Courier ($Y.YY/km)]` (`data-agent-id="btn-contractor-mode-vehicle-${c.id}"`, `data-testid="btn-contractor-mode-bicycle-${c.id}"`).
+     * Clicking triggers `toggleContractorCardMode(providerId, mode, event)`.
+     * Card values update in real time: Rate $/km, Same-Day Fee, Urgent Fee, Max Weight, and Max Dimensions.
+   - **OpenStreetMap Leaflet Popups (`updateOsmContractorMarkers`):**
+     * Displays interactive `[🚗 Vehicle]` and `[🚲 Bicycle]` buttons inside the popup bubble.
+     * Clicking updates displayed rates, limits, and the booking button icon/action.
+
+3. **Booking Hand-off & State Persistence:**
+   - Selecting a mode in the directory or map popup sets `appState.contractorCardModeOverrides[providerId]` and `appState.driverServiceModeOverrides[providerId]`.
+   - Clicking "Book Driver" preserves the customer's selected mode, navigating to `#courier-tab` with the chosen driver and delivery mode pre-activated.
+

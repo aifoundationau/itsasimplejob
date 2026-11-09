@@ -106,9 +106,21 @@ const INITIAL_PROVIDERS = [
     payIdType: "email",
     payIdValue: "sarah@broadbeachrunner.com.au",
     payIdAccountName: "Sarah Jenkins Express",
-    perKmRateAud: 1.80,
+    perKmRateAud: 2.10,
     sameDayFeeAud: 12,
     urgentFeeAud: 25,
+    vehiclePerKmRateAud: 2.10,
+    vehicleSameDayFeeAud: 12,
+    vehicleUrgentFeeAud: 25,
+    hasVehicleCourier: true,
+    hasBicycleCourier: true,
+    bicyclePerKmRateAud: 1.60,
+    bicycleSameDayFeeAud: 8,
+    bicycleUrgentFeeAud: 18,
+    bicycleMaxWeightKg: 8,
+    bicycleMaxHeightCm: 35,
+    bicycleMaxWidthCm: 30,
+    bicycleMaxLengthCm: 40,
     hourlyRate: 48,
     maxWeightKg: 35,
     maxHeightCm: 65,
@@ -369,7 +381,7 @@ class ProviderDatabase {
 
   normalizeDriver(p) {
     const hasVehicleCourier = p.hasVehicleCourier !== false;
-    const hasBicycleCourier = p.hasBicycleCourier === true;
+    const hasBicycleCourier = p.id === 'drv-102' ? (p.hasBicycleCourier !== false) : (p.hasBicycleCourier === true);
     return {
       ...p,
       category: "courier",
@@ -379,9 +391,9 @@ class ProviderDatabase {
       vehiclePerKmRateAud: Number(p.vehiclePerKmRateAud ?? p.perKmRateAud ?? 2.20),
       vehicleSameDayFeeAud: Number(p.vehicleSameDayFeeAud ?? p.sameDayFeeAud ?? 0),
       vehicleUrgentFeeAud: Number(p.vehicleUrgentFeeAud ?? p.urgentFeeAud ?? 0),
-      bicyclePerKmRateAud: Number(p.bicyclePerKmRateAud ?? 1.80),
-      bicycleSameDayFeeAud: Number(p.bicycleSameDayFeeAud ?? 0),
-      bicycleUrgentFeeAud: Number(p.bicycleUrgentFeeAud ?? 0),
+      bicyclePerKmRateAud: Number(p.bicyclePerKmRateAud ?? (p.id === 'drv-102' ? 1.60 : 1.80)),
+      bicycleSameDayFeeAud: Number(p.bicycleSameDayFeeAud ?? (p.id === 'drv-102' ? 8 : 0)),
+      bicycleUrgentFeeAud: Number(p.bicycleUrgentFeeAud ?? (p.id === 'drv-102' ? 18 : 0)),
       bicycleMaxWeightKg: Number(p.bicycleMaxWeightKg ?? 8),
       bicycleMaxHeightCm: Number(p.bicycleMaxHeightCm ?? 35),
       bicycleMaxWidthCm: Number(p.bicycleMaxWidthCm ?? 30),

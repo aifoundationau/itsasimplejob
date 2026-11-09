@@ -33,6 +33,8 @@ const appState = {
   courierOriginCoords: { lat: -27.9635, lng: 153.4064 },
   courierDestCoords: { lat: -28.0280, lng: 153.4312 },
   searchRadiusKm: 50,
+  driverServiceModeOverrides: {},
+  contractorCardModeOverrides: {},
   contractorMarkers: [],
   userMarker: null,
   contractorInfoWindow: null,
@@ -410,9 +412,30 @@ function updateOsmContractorMarkers() {
       popupAnchor: [0, -32]
     });
 
-    const perKmStr = `$${Number(provider.perKmRateAud || 2.20).toFixed(2)} AUD/km`;
+    const hasVeh = provider.hasVehicleCourier !== false;
+    const hasBic = !!provider.hasBicycleCourier;
+    const isDual = hasVeh && hasBic;
+    const popupMode = appState.contractorCardModeOverrides?.[provider.id] || (hasVeh ? 'vehicle' : 'bicycle');
+    const isBicyclePopup = popupMode === 'bicycle' && hasBic;
+
+    const perKmVal = isBicyclePopup
+      ? Number(provider.bicyclePerKmRateAud ?? 1.80).toFixed(2)
+      : Number(provider.vehiclePerKmRateAud ?? provider.perKmRateAud ?? 2.20).toFixed(2);
+    const sameDayVal = isBicyclePopup
+      ? Number(provider.bicycleSameDayFeeAud ?? 0).toFixed(0)
+      : Number(provider.vehicleSameDayFeeAud ?? provider.sameDayFeeAud ?? 18).toFixed(0);
+    const urgentVal = isBicyclePopup
+      ? Number(provider.bicycleUrgentFeeAud ?? 0).toFixed(0)
+      : Number(provider.vehicleUrgentFeeAud ?? provider.urgentFeeAud ?? 35).toFixed(0);
+    const weightVal = isBicyclePopup
+      ? `${provider.bicycleMaxWeightKg || 8}kg (Small/Letters/Food)`
+      : `${provider.maxWeightKg || 500}kg`;
+    const dimsVal = isBicyclePopup
+      ? `${provider.bicycleMaxHeightCm || 35}×${provider.bicycleMaxWidthCm || 30}×${provider.bicycleMaxLengthCm || 40}cm`
+      : `${provider.maxHeightCm || 150}×${provider.maxWidthCm || 130}×${provider.maxLengthCm || 250}cm`;
+
     const popupHtml = `
-      <div style="min-width:230px; font-family:'Plus Jakarta Sans', sans-serif; padding:4px;">
+      <div style="min-width:240px; font-family:'Plus Jakarta Sans', sans-serif; padding:4px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <strong style="color:#0B192C; font-size:0.95rem;">${provider.name}</strong>
           <span style="font-size:0.72rem; background:${isClosest ? '#ECFDF5' : '#FFF0EB'}; color:${isClosest ? '#065F46' : '#FF5A1F'}; padding:2px 6px; border-radius:10px; font-weight:800;">
@@ -422,13 +445,23 @@ function updateOsmContractorMarkers() {
         <div style="font-size:0.76rem; color:#64748B; margin-bottom:5px;">
           <i class="fa-solid fa-location-dot" style="color:#FF5A1F;"></i> ${provider.baseSuburb || provider.suburb || 'Gold Coast'} • <strong>${dist.toFixed(1)} km from pickup</strong>
         </div>
-        <div style="font-size:0.76rem; color:#0B192C; margin-bottom:5px;">
-          <strong>Rate:</strong> ${perKmStr} • Same-Day: +$${provider.sameDayFeeAud ?? 18} • Urgent: +$${provider.urgentFeeAud ?? 35}<br>
-          <strong>Max Capacity:</strong> ${provider.maxWeightKg || 500}kg (${provider.maxHeightCm || 150}×${provider.maxWidthCm || 130}×${provider.maxLengthCm || 250}cm)<br>
+        ${isDual ? `
+          <div style="display:flex; gap:4px; margin:4px 0 6px 0;">
+            <button type="button" class="btn btn-xs" style="font-size:0.68rem; padding:2px 6px; font-weight:800; border-radius:4px; ${!isBicyclePopup ? 'background:#0B192C; color:#fff; border:1px solid #0B192C;' : 'background:#F1F5F9; color:#0B192C; border:1px solid #CBD5E1;'}" onclick="toggleContractorCardMode('${provider.id}', 'vehicle', event)">
+              <i class="fa-solid fa-truck"></i> Vehicle ($${Number(provider.vehiclePerKmRateAud ?? provider.perKmRateAud ?? 2.20).toFixed(2)})
+            </button>
+            <button type="button" class="btn btn-xs" style="font-size:0.68rem; padding:2px 6px; font-weight:800; border-radius:4px; ${isBicyclePopup ? 'background:#0284C7; color:#fff; border:1px solid #0284C7;' : 'background:#F1F5F9; color:#0284C7; border:1px solid #0284C7;'}" onclick="toggleContractorCardMode('${provider.id}', 'bicycle', event)">
+              <i class="fa-solid fa-bicycle"></i> Bicycle ($${Number(provider.bicyclePerKmRateAud ?? 1.80).toFixed(2)})
+            </button>
+          </div>
+        ` : ''}
+        <div style="font-size:0.76rem; color:#0B192C; margin-bottom:5px; line-height:1.45;">
+          <strong>Rate:</strong> $${perKmVal} AUD/km • Same-Day: +$${sameDayVal} • Urgent: +$${urgentVal}<br>
+          <strong>Max Capacity:</strong> ${weightVal} (${dimsVal})<br>
           <strong>PayID:</strong> ${provider.payIdValue || provider.phone}
         </div>
         <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700;">
-          <i class="fa-solid fa-truck-fast"></i> Select Driver (9am–4pm Pickup)
+          <i class="fa-solid ${isBicyclePopup ? 'fa-bicycle' : 'fa-truck-fast'}"></i> Select Driver (9am–4pm Pickup)
         </button>
       </div>
     `;
@@ -1310,13 +1343,31 @@ function renderContractorCards(contractors) {
 
   container.innerHTML = contractors.map((c, idx) => {
     const isClosest = idx === 0;
-    const perKmRate = Number(c.perKmRateAud || 2.20).toFixed(2);
-    const sameDayFee = Number(c.sameDayFeeAud ?? 18).toFixed(0);
-    const urgentFee = Number(c.urgentFeeAud ?? 35).toFixed(0);
-    const maxWeight = c.maxWeightKg || 500;
-    const maxH = c.maxHeightCm || 150;
-    const maxW = c.maxWidthCm || 130;
-    const maxL = c.maxLengthCm || 250;
+    const hasVeh = c.hasVehicleCourier !== false;
+    const hasBic = !!c.hasBicycleCourier;
+    const isDual = hasVeh && hasBic;
+
+    const cardMode = appState.contractorCardModeOverrides?.[c.id] || (hasVeh ? 'vehicle' : 'bicycle');
+    const isBicycleView = cardMode === 'bicycle' && hasBic;
+
+    const perKmRate = isBicycleView
+      ? Number(c.bicyclePerKmRateAud ?? 1.80).toFixed(2)
+      : Number(c.vehiclePerKmRateAud ?? c.perKmRateAud ?? 2.20).toFixed(2);
+    const sameDayFee = isBicycleView
+      ? Number(c.bicycleSameDayFeeAud ?? 0).toFixed(0)
+      : Number(c.vehicleSameDayFeeAud ?? c.sameDayFeeAud ?? 18).toFixed(0);
+    const urgentFee = isBicycleView
+      ? Number(c.bicycleUrgentFeeAud ?? 0).toFixed(0)
+      : Number(c.vehicleUrgentFeeAud ?? c.urgentFeeAud ?? 35).toFixed(0);
+    const maxWeight = isBicycleView
+      ? `${c.bicycleMaxWeightKg || 8} kg (Small/Letters/Food Only)`
+      : `${c.maxWeightKg || 500} kg`;
+    const maxDims = isBicycleView
+      ? `${c.bicycleMaxHeightCm || 35}×${c.bicycleMaxWidthCm || 30}×${c.bicycleMaxLengthCm || 40} cm`
+      : `${c.maxHeightCm || 150}×${c.maxWidthCm || 130}×${c.maxLengthCm || 250} cm`;
+    const displayVehicleTitle = isBicycleView
+      ? 'Bicycle Courier (Letters & Food Only)'
+      : (c.vehicle || c.tradeTitle || 'Courier Driver');
 
     return `
     <div class="contractor-search-card" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})" data-agent-id="map-driver-card-${c.id}" data-testid="map-driver-card-${c.id}">
@@ -1328,8 +1379,9 @@ function renderContractorCards(contractors) {
                 ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Driver Licence"></i>
               </h5>
               ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
+              ${isDual ? `<span style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; font-size:0.66rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Dual Mode</span>` : ''}
             </div>
-            <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${c.vehicle || c.tradeTitle || 'Courier Driver'}</div>
+            <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${displayVehicleTitle}</div>
             <div style="font-size:0.73rem; color:var(--text-muted);">
               <i class="fa-solid fa-location-dot" style="color:#10B981;"></i> ${c.baseSuburb || c.address || 'Gold Coast QLD'}
             </div>
@@ -1341,11 +1393,39 @@ function renderContractorCards(contractors) {
         </div>
       </div>
 
+      ${isDual ? `
+        <div style="display:flex; align-items:center; gap:0.4rem; margin:0.45rem 0 0.2rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
+          <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Service:</span>
+          <button
+            type="button"
+            class="btn btn-xs ${!isBicycleView ? 'btn-primary' : 'btn-outline'}"
+            style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${!isBicycleView ? 'background:#0B192C; color:#fff; border-color:#0B192C;' : 'background:#fff; color:#0B192C; border-color:#CBD5E1;'}"
+            onclick="toggleContractorCardMode('${c.id}', 'vehicle', event)"
+            data-agent-id="btn-contractor-mode-vehicle-${c.id}"
+            data-testid="btn-contractor-mode-vehicle-${c.id}"
+            aria-pressed="${!isBicycleView ? 'true' : 'false'}"
+            aria-label="View Motor Vehicle rates for ${escapeAttr(c.name)}">
+            <i class="fa-solid fa-truck"></i> Motor Vehicle ($${Number(c.vehiclePerKmRateAud ?? c.perKmRateAud ?? 2.20).toFixed(2)}/km)
+          </button>
+          <button
+            type="button"
+            class="btn btn-xs ${isBicycleView ? 'btn-primary' : 'btn-outline'}"
+            style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${isBicycleView ? 'background:#0284C7; color:#fff; border-color:#0284C7;' : 'background:#fff; color:#0284C7; border-color:#0284C7;'}"
+            onclick="toggleContractorCardMode('${c.id}', 'bicycle', event)"
+            data-agent-id="btn-contractor-mode-bicycle-${c.id}"
+            data-testid="btn-contractor-mode-bicycle-${c.id}"
+            aria-pressed="${isBicycleView ? 'true' : 'false'}"
+            aria-label="View Bicycle Courier rates for ${escapeAttr(c.name)}">
+            <i class="fa-solid fa-bicycle"></i> Bicycle Courier ($${Number(c.bicyclePerKmRateAud ?? 1.80).toFixed(2)}/km)
+          </button>
+        </div>
+      ` : ''}
+
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.45rem; background:#F8FAFC; border:1px solid var(--border-light); border-radius:6px; padding:0.55rem 0.7rem; margin:0.6rem 0; font-size:0.76rem; color:var(--primary-navy);">
         <div><strong>Same-Day Fee:</strong> +$${sameDayFee} AUD</div>
         <div><strong>Urgent Fee:</strong> +$${urgentFee} AUD</div>
-        <div><strong>Max Weight:</strong> ${maxWeight} kg</div>
-        <div><strong>Max H×W×L:</strong> ${maxH}×${maxW}×${maxL} cm</div>
+        <div><strong>Max Weight:</strong> ${maxWeight}</div>
+        <div><strong>Max H×W×L:</strong> ${maxDims}</div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.55rem; flex-wrap:wrap; gap:0.5rem;">
@@ -1353,12 +1433,31 @@ function renderContractorCards(contractors) {
           <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> ${c.licenceState || 'QLD'} Lic #${c.licenceNumber || 'Verified'} (${c.licenceClass || 'C'}) • <strong>PayID:</strong> ${c.payIdValue || c.phone}
         </div>
         <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="Select ${c.name} for Courier Booking">
-          <i class="fa-solid fa-truck-fast"></i> Book Driver (9am–4pm)
+          <i class="fa-solid ${isBicycleView ? 'fa-bicycle' : 'fa-truck-fast'}"></i> Book Driver (9am–4pm)
         </button>
       </div>
     </div>
   `}).join('');
 }
+
+function toggleContractorCardMode(providerId, mode, event) {
+  if (event) {
+    if (event.stopPropagation) event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  if (!appState.contractorCardModeOverrides) appState.contractorCardModeOverrides = {};
+  appState.contractorCardModeOverrides[providerId] = mode;
+
+  if (!appState.driverServiceModeOverrides) appState.driverServiceModeOverrides = {};
+  appState.driverServiceModeOverrides[providerId] = mode;
+
+  filterContractors();
+
+  const drv = window.providerDB?.findById(providerId);
+  const drvName = drv?.name || 'Driver';
+  showToast(`Viewing ${drvName} in ${mode === 'bicycle' ? '🚲 Bicycle Courier' : '🚗 Motor Vehicle'} mode!`);
+}
+window.toggleContractorCardMode = toggleContractorCardMode;
 
 function panToContractor(providerId, lat, lng) {
   if (appState.osmMap && lat && lng) {
@@ -1377,9 +1476,18 @@ function bookProviderDirectly(providerId) {
   if (!provider) return;
 
   appState.selectedCourierDriverId = provider.id;
+  const cardMode = appState.contractorCardModeOverrides?.[providerId];
+  if (cardMode) {
+    if (!appState.driverServiceModeOverrides) appState.driverServiceModeOverrides = {};
+    appState.driverServiceModeOverrides[providerId] = cardMode;
+  }
   switchTab('courier-tab');
   calculateCourierQuote();
-  showToast(`🚚 Selected ${provider.name} ($${Number(provider.perKmRateAud || 2.20).toFixed(2)} AUD/km) for your 9am–4pm courier pickup!`);
+  const activeMode = appState.driverServiceModeOverrides?.[providerId] || 'vehicle';
+  const modeRate = activeMode === 'bicycle'
+    ? (provider.bicyclePerKmRateAud || 1.80)
+    : (provider.vehiclePerKmRateAud || provider.perKmRateAud || 2.20);
+  showToast(`🚚 Selected ${provider.name} (${activeMode === 'bicycle' ? '🚲 Bicycle' : '🚗 Vehicle'} $${Number(modeRate).toFixed(2)} AUD/km) for your 9am–4pm courier pickup!`);
 }
 
 /**
@@ -2401,6 +2509,28 @@ function selectCourierDriverForBooking(driverId) {
 }
 window.selectCourierDriverForBooking = selectCourierDriverForBooking;
 
+function selectCourierDriverMode(driverId, mode, event) {
+  if (event) {
+    if (event.stopPropagation) event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  if (!appState.driverServiceModeOverrides) appState.driverServiceModeOverrides = {};
+  appState.driverServiceModeOverrides[driverId] = mode;
+  appState.selectedCourierDriverId = driverId;
+
+  if (!appState.contractorCardModeOverrides) appState.contractorCardModeOverrides = {};
+  appState.contractorCardModeOverrides[driverId] = mode;
+
+  const dist = appState.lastCourierRoute?.distanceKm || 8.5;
+  const mins = appState.lastCourierRoute?.durationMins || 15;
+  updateCourierPricingWithSettings(dist, mins);
+
+  const drv = window.providerDB?.findById(driverId);
+  const drvName = drv?.name || 'Driver';
+  showToast(`Switched ${drvName} to ${mode === 'bicycle' ? '🚲 Bicycle Courier' : '🚗 Motor Vehicle'} mode!`);
+}
+window.selectCourierDriverMode = selectCourierDriverMode;
+
 // Track per-driver Leaflet map instances inside the Left-Side Driver Box Dropdowns
 const driverBoxLeafletMaps = {};
 
@@ -2544,7 +2674,12 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     const hasBic = !!drv.hasBicycleCourier;
 
     let effectiveMode = 'vehicle';
-    if (deliveryModePref === 'bicycle') {
+    const overrideMode = appState.driverServiceModeOverrides?.[drv.id];
+    if (overrideMode === 'bicycle' && hasBic) {
+      effectiveMode = 'bicycle';
+    } else if (overrideMode === 'vehicle' && hasVeh) {
+      effectiveMode = 'vehicle';
+    } else if (deliveryModePref === 'bicycle') {
       effectiveMode = 'bicycle';
     } else if (deliveryModePref === 'vehicle') {
       effectiveMode = 'vehicle';
@@ -2660,6 +2795,9 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       const isClosest = idx === 0 && item.fitsPackage;
       const isMapOpen = appState.expandedDriverMapId === d.id;
       const mode = item.effectiveMode;
+      const hasVeh = d.hasVehicleCourier !== false;
+      const hasBic = !!d.hasBicycleCourier;
+      const isDual = hasVeh && hasBic;
 
       const modeBadge = mode === 'bicycle'
         ? '<span style="background:#0284C7; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-bicycle"></i> BICYCLE COURIER</span>'
@@ -2684,6 +2822,35 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                   ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
                 </div>
                 <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${mode === 'bicycle' ? 'Bicycle / E-Bike / Cargo Bike' : (d.vehicle || d.tradeTitle || 'Courier Vehicle')}</div>
+
+                ${isDual ? `
+                  <div style="display:flex; align-items:center; gap:0.4rem; margin:0.35rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
+                    <span style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">Mode:</span>
+                    <button
+                      type="button"
+                      class="btn btn-xs ${mode === 'vehicle' ? 'btn-primary' : 'btn-outline'}"
+                      style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${mode === 'vehicle' ? 'background:#0B192C; color:#fff; border-color:#0B192C;' : 'background:#fff; color:#0B192C; border-color:#CBD5E1;'}"
+                      onclick="selectCourierDriverMode('${d.id}', 'vehicle', event)"
+                      data-agent-id="btn-courier-mode-vehicle-${d.id}"
+                      data-testid="btn-courier-mode-vehicle-${d.id}"
+                      aria-pressed="${mode === 'vehicle' ? 'true' : 'false'}"
+                      aria-label="Switch ${escapeAttr(d.name)} to Motor Vehicle mode">
+                      <i class="fa-solid fa-truck"></i> Motor Vehicle ($${Number(d.vehiclePerKmRateAud ?? d.perKmRateAud ?? 2.20).toFixed(2)}/km)
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs ${mode === 'bicycle' ? 'btn-primary' : 'btn-outline'}"
+                      style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${mode === 'bicycle' ? 'background:#0284C7; color:#fff; border-color:#0284C7;' : 'background:#fff; color:#0284C7; border-color:#0284C7;'}"
+                      onclick="selectCourierDriverMode('${d.id}', 'bicycle', event)"
+                      data-agent-id="btn-courier-mode-bicycle-${d.id}"
+                      data-testid="btn-courier-mode-bicycle-${d.id}"
+                      aria-pressed="${mode === 'bicycle' ? 'true' : 'false'}"
+                      aria-label="Switch ${escapeAttr(d.name)} to Bicycle Courier mode">
+                      <i class="fa-solid fa-bicycle"></i> Bicycle Courier ($${Number(d.bicyclePerKmRateAud ?? 1.80).toFixed(2)}/km)
+                    </button>
+                  </div>
+                ` : ''}
+
                 <div style="font-size:0.74rem; color:var(--text-muted);">
                   <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • Lic: ${d.licenceState || 'QLD'} #${d.licenceNumber || 'DL-9901'} (${d.licenceClass || 'C'})
                 </div>
@@ -10176,6 +10343,9 @@ window.saveGeoTimeSettings = saveGeoTimeSettings;
 window.handleCountrySelectChange = handleCountrySelectChange;
 window.reDetectGpsLocation = reDetectGpsLocation;
 window.geoTimeState = geoTimeState;
+
+window.selectCourierDriverMode = selectCourierDriverMode;
+window.toggleContractorCardMode = toggleContractorCardMode;
 
 window.checkIsSuperadmin = checkIsSuperadmin;
 window.switchSuperadminViewRole = switchSuperadminViewRole;
