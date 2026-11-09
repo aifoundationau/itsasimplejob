@@ -330,202 +330,245 @@
           <div class="courier-calc-card">
             <form id="courier-booking-form" onsubmit="event.preventDefault(); submitCourierBooking();">
 
-              <!-- Step 1: Route & 9am-4pm Pickup Window -->
-              <div
-                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:2px solid var(--bg-card-alt);">
-                <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
-                  <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> 1. Route &amp; 9:00 AM – 4:00 PM
-                  Pickup Window
-                </h3>
-              </div>
-
-              <!-- 1. Pickup Origin Address (Full Line) -->
-              <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
-                <label class="input-label" for="courier-origin" style="font-weight:700;">
-                  <i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> Pickup Origin Address
-                </label>
-                <div class="input-with-action">
-                  <input type="text" id="courier-origin" class="form-control osm-address-input"
-                    value="10 Smith Street, Southport QLD 4215" placeholder="Enter pickup street address & suburb..."
-                    required autocomplete="off" onchange="calculateCourierQuote()"
-                    data-agent-id="input-courier-origin" data-testid="input-courier-origin"
-                    aria-label="Pickup Origin Address">
-                  <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')"
-                    title="Use Current GPS for Pickup" data-agent-id="btn-gps-courier-origin"
-                    data-testid="btn-gps-courier-origin" aria-label="Use Current GPS for Pickup">
-                    <i class="fa-solid fa-location-crosshairs"></i>
-                  </button>
-                </div>
-                <ul id="courier-origin-suggestions" class="osm-suggestions-dropdown" role="listbox"
-                  aria-label="Pickup suggestions" style="display:none;" data-agent-id="osm-courier-origin-suggestions"
-                  data-testid="osm-courier-origin-suggestions"></ul>
-              </div>
-
-              <!-- 2. Delivery Destination Address (Full Line) -->
-              <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
-                <label class="input-label" for="courier-dest" style="font-weight:700;">
-                  <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination Address
-                </label>
-                <div class="input-with-action">
-                  <input type="text" id="courier-dest" class="form-control osm-address-input"
-                    value="42 Surf Parade, Broadbeach QLD 4218"
-                    placeholder="Enter delivery destination address & suburb..." required autocomplete="off"
-                    onchange="calculateCourierQuote()" data-agent-id="input-courier-dest"
-                    data-testid="input-courier-dest" aria-label="Delivery Destination Address">
-                  <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-dest')"
-                    title="Use Current GPS for Destination" data-agent-id="btn-gps-courier-dest"
-                    data-testid="btn-gps-courier-dest" aria-label="Use Current GPS for Destination">
-                    <i class="fa-solid fa-location-crosshairs"></i>
-                  </button>
-                </div>
-                <ul id="courier-dest-suggestions" class="osm-suggestions-dropdown" role="listbox"
-                  aria-label="Destination suggestions" style="display:none;"
-                  data-agent-id="osm-courier-dest-suggestions" data-testid="osm-courier-dest-suggestions"></ul>
-              </div>
-
-              <!-- Pickup Date, Pickup Time (9am-4pm), and Speed Tier -->
-              <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));">
-                <div class="input-group">
-                  <label class="input-label" for="courier-pickup-date">
-                    <i class="fa-regular fa-calendar" style="color:var(--brand-orange);"></i> Pickup Date
-                  </label>
-                  <input type="date" id="courier-pickup-date" class="form-control" required
-                    onchange="calculateCourierQuote()" data-agent-id="courier-pickup-date"
-                    data-testid="courier-pickup-date" aria-label="Pickup Date">
+              <!-- Step 1: Route & 9am-4pm Pickup Window (Collapsed at start on Android & iPhone; unchanged on Desktop) -->
+              <div id="courier-step-1-section" class="courier-booking-step-group courier-mobile-collapsed"
+                data-step="1" data-agent-id="courier-step-1-section" data-testid="courier-step-1-section">
+                <div id="courier-step-1-header" class="courier-step-header"
+                  onclick="toggleCourierBookingStep(1)" role="button" tabindex="0"
+                  aria-expanded="false" aria-controls="courier-step-1-body"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCourierBookingStep(1);}"
+                  data-agent-id="courier-step-1-header" data-testid="courier-step-1-header"
+                  style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> 1. Route &amp; 9:00 AM – 4:00 PM
+                    Pickup Window
+                  </h3>
+                  <span class="courier-step-mobile-toggle" id="courier-step-1-toggle-indicator" aria-hidden="true">
+                    <span class="courier-step-toggle-text" id="courier-step-1-toggle-text">Tap to Open</span>
+                    <i class="fa-solid fa-chevron-down" id="courier-step-1-chevron"></i>
+                  </span>
                 </div>
 
-                <div class="input-group">
-                  <label class="input-label" for="courier-pickup-time">
-                    <i class="fa-regular fa-clock" style="color:var(--brand-orange);"></i> Pickup Time (9am – 4pm)
-                  </label>
-                  <select id="courier-pickup-time" class="form-control" required onchange="calculateCourierQuote()"
-                    data-agent-id="courier-pickup-time" data-testid="courier-pickup-time"
-                    aria-label="Pickup Time between 9am and 4pm">
-                    <option value="09:00 AM">09:00 AM</option>
-                    <option value="09:30 AM">09:30 AM</option>
-                    <option value="10:00 AM">10:00 AM</option>
-                    <option value="10:30 AM" selected>10:30 AM</option>
-                    <option value="11:00 AM">11:00 AM</option>
-                    <option value="11:30 AM">11:30 AM</option>
-                    <option value="12:00 PM">12:00 PM</option>
-                    <option value="12:30 PM">12:30 PM</option>
-                    <option value="01:00 PM">01:00 PM</option>
-                    <option value="01:30 PM">01:30 PM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="02:30 PM">02:30 PM</option>
-                    <option value="03:00 PM">03:00 PM</option>
-                    <option value="03:30 PM">03:30 PM</option>
-                    <option value="04:00 PM">04:00 PM</option>
-                  </select>
-                </div>
+                <div id="courier-step-1-body" class="courier-step-body" data-agent-id="courier-step-1-body" data-testid="courier-step-1-body">
+                  <!-- 1. Pickup Origin Address (Full Line) -->
+                  <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
+                    <label class="input-label" for="courier-origin" style="font-weight:700;">
+                      <i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> Pickup Origin Address
+                    </label>
+                    <div class="input-with-action">
+                      <input type="text" id="courier-origin" class="form-control osm-address-input"
+                        value="10 Smith Street, Southport QLD 4215" placeholder="Enter pickup street address & suburb..."
+                        required autocomplete="off" onchange="calculateCourierQuote()"
+                        data-agent-id="input-courier-origin" data-testid="input-courier-origin"
+                        aria-label="Pickup Origin Address">
+                      <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-origin')"
+                        title="Use Current GPS for Pickup" data-agent-id="btn-gps-courier-origin"
+                        data-testid="btn-gps-courier-origin" aria-label="Use Current GPS for Pickup">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                      </button>
+                    </div>
+                    <ul id="courier-origin-suggestions" class="osm-suggestions-dropdown" role="listbox"
+                      aria-label="Pickup suggestions" style="display:none;" data-agent-id="osm-courier-origin-suggestions"
+                      data-testid="osm-courier-origin-suggestions"></ul>
+                  </div>
 
-                <div class="input-group">
-                  <label class="input-label" for="courier-urgency">
-                    <i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> Dispatch Speed
-                  </label>
-                  <select id="courier-urgency" class="form-control" onchange="calculateCourierQuote()"
-                    data-agent-id="courier-urgency" data-testid="courier-urgency" aria-label="Service Speed Option">
-                    <option value="standard">Standard Run (Per-Km Rate Only)</option>
-                    <option value="same_day" selected>Same-Day Run (+Driver Same-Day Fee)</option>
-                    <option value="urgent">⚡ Urgent Priority (+Driver Urgent Fee)</option>
-                  </select>
-                </div>
-              </div>
+                  <!-- 2. Delivery Destination Address (Full Line) -->
+                  <div class="input-group osm-autocomplete-wrapper" style="position: relative; margin-bottom: 1.15rem; width: 100%;">
+                    <label class="input-label" for="courier-dest" style="font-weight:700;">
+                      <i class="fa-solid fa-location-dot" style="color:var(--accent-red);"></i> Delivery Destination Address
+                    </label>
+                    <div class="input-with-action">
+                      <input type="text" id="courier-dest" class="form-control osm-address-input"
+                        value="42 Surf Parade, Broadbeach QLD 4218"
+                        placeholder="Enter delivery destination address & suburb..." required autocomplete="off"
+                        onchange="calculateCourierQuote()" data-agent-id="input-courier-dest"
+                        data-testid="input-courier-dest" aria-label="Delivery Destination Address">
+                      <button type="button" class="btn-locate-gps" onclick="locateCustomer('courier-dest')"
+                        title="Use Current GPS for Destination" data-agent-id="btn-gps-courier-dest"
+                        data-testid="btn-gps-courier-dest" aria-label="Use Current GPS for Destination">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                      </button>
+                    </div>
+                    <ul id="courier-dest-suggestions" class="osm-suggestions-dropdown" role="listbox"
+                      aria-label="Destination suggestions" style="display:none;"
+                      data-agent-id="osm-courier-dest-suggestions" data-testid="osm-courier-dest-suggestions"></ul>
+                  </div>
 
-              <!-- Step 2: Package Content, Weight & Dimensions (H x W x L) -->
-              <h3
-                style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin: 1.15rem 0 0.9rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-                <i class="fa-solid fa-box" style="color:var(--brand-orange);"></i> 2. Package Content Details, Size (H ×
-                W × L) &amp; Weight
-              </h3>
+                  <!-- Pickup Date, Pickup Time (9am-4pm), and Speed Tier -->
+                  <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));">
+                    <div class="input-group">
+                      <label class="input-label" for="courier-pickup-date">
+                        <i class="fa-regular fa-calendar" style="color:var(--brand-orange);"></i> Pickup Date
+                      </label>
+                      <input type="date" id="courier-pickup-date" class="form-control" required
+                        onchange="calculateCourierQuote()" data-agent-id="courier-pickup-date"
+                        data-testid="courier-pickup-date" aria-label="Pickup Date">
+                    </div>
 
-              <div class="input-group">
-                <label class="input-label" for="courier-desc">Package Content Details (Required)</label>
-                <input type="text" id="courier-desc" class="form-control" required
-                  placeholder="Describe package contents (e.g. 2 sealed cartons of industrial parts, keep upright)"
-                  value="2 sealed cartons of industrial electronics (keep upright)" oninput="calculateCourierQuote()"
-                  data-agent-id="courier-desc" data-testid="courier-desc" aria-label="Package Content Details">
-              </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-pickup-time">
+                        <i class="fa-regular fa-clock" style="color:var(--brand-orange);"></i> Pickup Time (9am – 4pm)
+                      </label>
+                      <select id="courier-pickup-time" class="form-control" required onchange="calculateCourierQuote()"
+                        data-agent-id="courier-pickup-time" data-testid="courier-pickup-time"
+                        aria-label="Pickup Time between 9am and 4pm">
+                        <option value="09:00 AM">09:00 AM</option>
+                        <option value="09:30 AM">09:30 AM</option>
+                        <option value="10:00 AM">10:00 AM</option>
+                        <option value="10:30 AM" selected>10:30 AM</option>
+                        <option value="11:00 AM">11:00 AM</option>
+                        <option value="11:30 AM">11:30 AM</option>
+                        <option value="12:00 PM">12:00 PM</option>
+                        <option value="12:30 PM">12:30 PM</option>
+                        <option value="01:00 PM">01:00 PM</option>
+                        <option value="01:30 PM">01:30 PM</option>
+                        <option value="02:00 PM">02:00 PM</option>
+                        <option value="02:30 PM">02:30 PM</option>
+                        <option value="03:00 PM">03:00 PM</option>
+                        <option value="03:30 PM">03:30 PM</option>
+                        <option value="04:00 PM">04:00 PM</option>
+                      </select>
+                    </div>
 
-              <div class="input-group" style="margin-bottom:0.85rem;">
-                <label class="input-label" for="courier-delivery-mode">
-                  <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> Courier Mode Preference
-                </label>
-                <select id="courier-delivery-mode" class="form-control" onchange="calculateCourierQuote()"
-                  data-agent-id="courier-delivery-mode" data-testid="courier-delivery-mode"
-                  aria-label="Courier Mode Preference">
-                  <option value="auto" selected>Auto-Match (Vehicle or Bicycle based on item)</option>
-                  <option value="bicycle">🚲 Bicycle Courier (Letters, Documents &amp; Food Deliveries Only — Max 8kg)</option>
-                  <option value="vehicle">🚗 Motor Vehicle Courier (General Parcels &amp; Freight — up to 50kg)</option>
-                </select>
-              </div>
-
-              <div class="form-row package-dimensions-grid">
-                <div class="input-group">
-                  <label class="input-label" for="courier-weight">Weight (kg)</label>
-                  <input type="number" id="courier-weight" class="form-control" value="14" min="0.5" max="5000"
-                    step="0.5" required oninput="calculateCourierQuote()" data-agent-id="courier-weight"
-                    data-testid="courier-weight" aria-label="Package Weight in kg">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="courier-height">Height (cm)</label>
-                  <input type="number" id="courier-height" class="form-control" value="45" min="1" max="400" step="1"
-                    required oninput="calculateCourierQuote()" data-agent-id="courier-height"
-                    data-testid="courier-height" aria-label="Package Height in cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="courier-width">Width (cm)</label>
-                  <input type="number" id="courier-width" class="form-control" value="40" min="1" max="400" step="1"
-                    required oninput="calculateCourierQuote()" data-agent-id="courier-width" data-testid="courier-width"
-                    aria-label="Package Width in cm">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="courier-length">Length (cm)</label>
-                  <input type="number" id="courier-length" class="form-control" value="60" min="1" max="600" step="1"
-                    required oninput="calculateCourierQuote()" data-agent-id="courier-length"
-                    data-testid="courier-length" aria-label="Package Length in cm">
-                </div>
-              </div>
-              <div id="courier-weight-warning"
-                style="display:none; color:var(--accent-red); font-size:0.78rem; margin-top:-0.25rem; margin-bottom:0.75rem; font-weight:700;">
-              </div>
-
-              <!-- Step 3: Customer Contact Details (All Mandatory) -->
-              <h3
-                style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin: 1.15rem 0 0.85rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-                <i class="fa-solid fa-user-check" style="color:var(--brand-orange);"></i> 3. Customer Contact Details
-                (All Required)
-              </h3>
-
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="courier-cust-name">Your Full Name</label>
-                  <input type="text" id="courier-cust-name" class="form-control" required
-                    placeholder="e.g. Jack Thompson" value="Jack Thompson" data-agent-id="courier-cust-name"
-                    data-testid="courier-cust-name" aria-label="Customer Full Name">
-                </div>
-                <div class="input-group">
-                  <label class="input-label" for="courier-cust-phone">Phone Number</label>
-                  <input type="tel" id="courier-cust-phone" class="form-control" required
-                    placeholder="e.g. 0412 889 123" value="0412 889 123" data-agent-id="courier-cust-phone"
-                    data-testid="courier-cust-phone" aria-label="Customer Phone Number">
+                    <div class="input-group">
+                      <label class="input-label" for="courier-urgency">
+                        <i class="fa-solid fa-bolt" style="color:var(--brand-orange);"></i> Dispatch Speed
+                      </label>
+                      <select id="courier-urgency" class="form-control" onchange="calculateCourierQuote()"
+                        data-agent-id="courier-urgency" data-testid="courier-urgency" aria-label="Service Speed Option">
+                        <option value="standard">Standard Run (Per-Km Rate Only)</option>
+                        <option value="same_day" selected>Same-Day Run (+Driver Same-Day Fee)</option>
+                        <option value="urgent">⚡ Urgent Priority (+Driver Urgent Fee)</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="input-group">
-                  <label class="input-label" for="courier-cust-email">Email Address</label>
-                  <input type="email" id="courier-cust-email" class="form-control" required
-                    placeholder="e.g. jack.thompson@example.com.au" value="jack.thompson@example.com.au"
-                    data-agent-id="courier-cust-email" data-testid="courier-cust-email"
-                    aria-label="Customer Email Address">
+              <!-- Step 2: Package Content, Weight & Dimensions (H x W x L) (Collapsed at start on Android & iPhone; unchanged on Desktop) -->
+              <div id="courier-step-2-section" class="courier-booking-step-group courier-mobile-collapsed"
+                data-step="2" data-agent-id="courier-step-2-section" data-testid="courier-step-2-section">
+                <div id="courier-step-2-header" class="courier-step-header"
+                  onclick="toggleCourierBookingStep(2)" role="button" tabindex="0"
+                  aria-expanded="false" aria-controls="courier-step-2-body"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCourierBookingStep(2);}"
+                  data-agent-id="courier-step-2-header" data-testid="courier-step-2-header"
+                  style="display:flex; justify-content:space-between; align-items:center; margin: 1.15rem 0 0.9rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    <i class="fa-solid fa-box" style="color:var(--brand-orange);"></i> 2. Package Content Details, Size (H ×
+                    W × L) &amp; Weight
+                  </h3>
+                  <span class="courier-step-mobile-toggle" id="courier-step-2-toggle-indicator" aria-hidden="true">
+                    <span class="courier-step-toggle-text" id="courier-step-2-toggle-text">Tap to Open</span>
+                    <i class="fa-solid fa-chevron-down" id="courier-step-2-chevron"></i>
+                  </span>
                 </div>
-                <div class="input-group">
-                  <label class="input-label" for="courier-cust-address">Customer Street Address</label>
-                  <input type="text" id="courier-cust-address" class="form-control" required
-                    placeholder="Your street address & suburb..." value="10 Smith Street, Southport QLD 4215"
-                    data-agent-id="courier-cust-address" data-testid="courier-cust-address"
-                    aria-label="Customer Street Address">
+
+                <div id="courier-step-2-body" class="courier-step-body" data-agent-id="courier-step-2-body" data-testid="courier-step-2-body">
+                  <div class="input-group">
+                    <label class="input-label" for="courier-desc">Package Content Details (Required)</label>
+                    <input type="text" id="courier-desc" class="form-control" required
+                      placeholder="Describe package contents (e.g. 2 sealed cartons of industrial parts, keep upright)"
+                      value="2 sealed cartons of industrial electronics (keep upright)" oninput="calculateCourierQuote()"
+                      data-agent-id="courier-desc" data-testid="courier-desc" aria-label="Package Content Details">
+                  </div>
+
+                  <div class="input-group" style="margin-bottom:0.85rem;">
+                    <label class="input-label" for="courier-delivery-mode">
+                      <i class="fa-solid fa-route" style="color:var(--brand-orange);"></i> Courier Mode Preference
+                    </label>
+                    <select id="courier-delivery-mode" class="form-control" onchange="calculateCourierQuote()"
+                      data-agent-id="courier-delivery-mode" data-testid="courier-delivery-mode"
+                      aria-label="Courier Mode Preference">
+                      <option value="auto" selected>Auto-Match (Vehicle or Bicycle based on item)</option>
+                      <option value="bicycle">🚲 Bicycle Courier (Letters, Documents &amp; Food Deliveries Only — Max 8kg)</option>
+                      <option value="vehicle">🚗 Motor Vehicle Courier (General Parcels &amp; Freight — up to 50kg)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-row package-dimensions-grid">
+                    <div class="input-group">
+                      <label class="input-label" for="courier-weight">Weight (kg)</label>
+                      <input type="number" id="courier-weight" class="form-control" value="14" min="0.5" max="5000"
+                        step="0.5" required oninput="calculateCourierQuote()" data-agent-id="courier-weight"
+                        data-testid="courier-weight" aria-label="Package Weight in kg">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-height">Height (cm)</label>
+                      <input type="number" id="courier-height" class="form-control" value="45" min="1" max="400" step="1"
+                        required oninput="calculateCourierQuote()" data-agent-id="courier-height"
+                        data-testid="courier-height" aria-label="Package Height in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-width">Width (cm)</label>
+                      <input type="number" id="courier-width" class="form-control" value="40" min="1" max="400" step="1"
+                        required oninput="calculateCourierQuote()" data-agent-id="courier-width" data-testid="courier-width"
+                        aria-label="Package Width in cm">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-length">Length (cm)</label>
+                      <input type="number" id="courier-length" class="form-control" value="60" min="1" max="600" step="1"
+                        required oninput="calculateCourierQuote()" data-agent-id="courier-length"
+                        data-testid="courier-length" aria-label="Package Length in cm">
+                    </div>
+                  </div>
+                  <div id="courier-weight-warning"
+                    style="display:none; color:var(--accent-red); font-size:0.78rem; margin-top:-0.25rem; margin-bottom:0.75rem; font-weight:700;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3: Customer Contact Details (All Mandatory) (Collapsed at start on Android & iPhone; unchanged on Desktop) -->
+              <div id="courier-step-3-section" class="courier-booking-step-group courier-mobile-collapsed"
+                data-step="3" data-agent-id="courier-step-3-section" data-testid="courier-step-3-section">
+                <div id="courier-step-3-header" class="courier-step-header"
+                  onclick="toggleCourierBookingStep(3)" role="button" tabindex="0"
+                  aria-expanded="false" aria-controls="courier-step-3-body"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCourierBookingStep(3);}"
+                  data-agent-id="courier-step-3-header" data-testid="courier-step-3-header"
+                  style="display:flex; justify-content:space-between; align-items:center; margin: 1.15rem 0 0.85rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    <i class="fa-solid fa-user-check" style="color:var(--brand-orange);"></i> 3. Customer Contact Details
+                    (All Required)
+                  </h3>
+                  <span class="courier-step-mobile-toggle" id="courier-step-3-toggle-indicator" aria-hidden="true">
+                    <span class="courier-step-toggle-text" id="courier-step-3-toggle-text">Tap to Open</span>
+                    <i class="fa-solid fa-chevron-down" id="courier-step-3-chevron"></i>
+                  </span>
+                </div>
+
+                <div id="courier-step-3-body" class="courier-step-body" data-agent-id="courier-step-3-body" data-testid="courier-step-3-body">
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label class="input-label" for="courier-cust-name">Your Full Name</label>
+                      <input type="text" id="courier-cust-name" class="form-control" required
+                        placeholder="e.g. Jack Thompson" value="Jack Thompson" data-agent-id="courier-cust-name"
+                        data-testid="courier-cust-name" aria-label="Customer Full Name">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-cust-phone">Phone Number</label>
+                      <input type="tel" id="courier-cust-phone" class="form-control" required
+                        placeholder="e.g. 0412 889 123" value="0412 889 123" data-agent-id="courier-cust-phone"
+                        data-testid="courier-cust-phone" aria-label="Customer Phone Number">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label class="input-label" for="courier-cust-email">Email Address</label>
+                      <input type="email" id="courier-cust-email" class="form-control" required
+                        placeholder="e.g. jack.thompson@example.com.au" value="jack.thompson@example.com.au"
+                        data-agent-id="courier-cust-email" data-testid="courier-cust-email"
+                        aria-label="Customer Email Address">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="courier-cust-address">Customer Street Address</label>
+                      <input type="text" id="courier-cust-address" class="form-control" required
+                        placeholder="Your street address & suburb..." value="10 Smith Street, Southport QLD 4215"
+                        data-agent-id="courier-cust-address" data-testid="courier-cust-address"
+                        aria-label="Customer Street Address">
+                    </div>
+                  </div>
                 </div>
               </div>
 

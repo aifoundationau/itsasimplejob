@@ -13316,7 +13316,58 @@ function syncMobileResponsiveViewport() {
   return { isMobileViewport: true, width, desktopUnchanged: true };
 }
 
+function toggleCourierBookingStep(stepNum, forceExpand) {
+  const num = Number(stepNum);
+  if (![1, 2, 3].includes(num)) return false;
+
+  // On desktop (> 960px), do not collapse form sections when clicked unless forceExpand is explicitly provided
+  const isMobileViewport = typeof window === 'undefined' || Number(window.innerWidth || 1280) <= 960;
+  if (!isMobileViewport && typeof forceExpand !== 'boolean') {
+    return true;
+  }
+
+  const section = document.getElementById(`courier-step-${num}-section`);
+  const header = document.getElementById(`courier-step-${num}-header`);
+  const toggleText = document.getElementById(`courier-step-${num}-toggle-text`);
+  const chevron = document.getElementById(`courier-step-${num}-chevron`);
+  if (!section) return false;
+
+  const isCurrentlyCollapsed = section.classList.contains('courier-mobile-collapsed');
+  const shouldExpand = typeof forceExpand === 'boolean' ? forceExpand : isCurrentlyCollapsed;
+
+  if (shouldExpand) {
+    section.classList.remove('courier-mobile-collapsed');
+    if (header) header.setAttribute('aria-expanded', 'true');
+    if (toggleText) toggleText.textContent = 'Hide';
+    if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+  } else {
+    section.classList.add('courier-mobile-collapsed');
+    if (header) header.setAttribute('aria-expanded', 'false');
+    if (toggleText) toggleText.textContent = 'Tap to Open';
+    if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+  }
+
+  return shouldExpand;
+}
+
+function initMobileCourierStepsCollapsed() {
+  [1, 2, 3].forEach((num) => {
+    const section = document.getElementById(`courier-step-${num}-section`);
+    const header = document.getElementById(`courier-step-${num}-header`);
+    const toggleText = document.getElementById(`courier-step-${num}-toggle-text`);
+    const chevron = document.getElementById(`courier-step-${num}-chevron`);
+    if (section) section.classList.add('courier-mobile-collapsed');
+    if (header) header.setAttribute('aria-expanded', 'false');
+    if (toggleText) toggleText.textContent = 'Tap to Open';
+    if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+  });
+}
+
+window.toggleCourierBookingStep = toggleCourierBookingStep;
+window.initMobileCourierStepsCollapsed = initMobileCourierStepsCollapsed;
 window.syncMobileResponsiveViewport = syncMobileResponsiveViewport;
+
+try { initMobileCourierStepsCollapsed(); } catch (e) {}
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('orientationchange', () => {
