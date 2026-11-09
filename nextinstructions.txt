@@ -528,3 +528,10 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
   1. Seeded `cachedExclusiveGstTaxRateId = 'txr_1UWRnsI8bClhBF4PWROuyTyt'` and parallelized `stripe.paymentIntents.create` + `stripe.checkout.sessions.create` via `Promise.all` in `api/create-payment-intent.js`.
   2. Added `prefetchStripeTokenCheckoutSession(packTokens)` in `js/app.js` so the Stripe Checkout Session is pre-warmed as soon as the user opens the small Stripe popup (`openDriverTokenTopupModal`) or switches token packs (`selectStripeTokenPack`), allowing `confirmStripeTokenPopupPurchase()` to redirect immediately.
 - Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
+
+
+[2026-11-09] Task 67: Read Stripe Rules — GST Is Only Charged for Australians (AU Only):
+- Reviewed `stripe-aud-gst-invoicing` and `stripe-invoicing` skills and verified via Stripe MCP (`PostTaxCalculations`) on account `acct_1UKnKUI8bClhBF4P` (with AU Tax Registration `taxreg_1UXyhEI8bClhBF4PvgDdffXg`) that 10% Exclusive GST (`taxability_reason: "standard_rated"`) applies strictly when `country === "AU"`, and `0%` (`$0.00 AUD`, `taxability_reason: "not_collecting"`) applies when `country !== "AU"`.
+- Updated `api/create-payment-intent.js` to use `automatic_tax: { enabled: true }` (with the Stripe MCP Price IDs `price_1UZf7RI8bClhBF4PEhIGJoc3`, `price_1UZf7VI8bClhBF4PE52HKTjw`, `price_1UZf7ZI8bClhBF4PcJWNqJv0` and `tax_behavior: 'exclusive'` instead of a hardcoded `tax_rates` array) and calculate 10% GST strictly when `customerCountry === 'AU'` (`0%` GST when `customerCountry !== 'AU'`).
+- Updated `js/stripe-service.js` (`calculateTokenTaxBreakdown`), `js/app.js` (`calculateTokenPurchaseTaxBreakdown`, `selectStripeTokenPack`, `confirmStripeTokenPopupPurchase`), and `index.html` (`#stripe-token-tax-label`) so 10% Exclusive AU GST is only charged to Australians (`AU`) and `$0.00 AUD (Non-AU)` is shown for non-Australians.
+- Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).

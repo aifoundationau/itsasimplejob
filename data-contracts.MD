@@ -2584,16 +2584,19 @@ Consolidates Supporter registration details into a single **Registration Details
 - **Stripe Settings & Token Checkout Invariants:**
   1. **Currency:** Strictly Australian Dollars (`currency: "aud"`, `$ AUD Only`).
   2. **Collect Tax:** `Automatic` (`collectTax: "automatic"`, `automaticTax: { enabled: true }`).
-  3. **Tax Behavior:** `Exclusive` (`taxBehavior: "exclusive"` — 10% Australian GST is added on top of the quoted Ex-GST subtotal).
-  4. **Itemized Quote Calculation (`calculateTokenPurchaseTaxBreakdown`):**
+  3. **Tax Behavior:** `Exclusive` (`taxBehavior: "exclusive"` — 10% Australian GST is added on top of the quoted Ex-GST subtotal **strictly for Australian customers (`customerCountry === 'AU'`)**; non-Australian customers (`customerCountry !== 'AU'`) are charged `0%` (`$0.00 AUD`) GST with `taxabilityReason: "not_collecting"`).
+  4. **Itemized Quote Calculation (`calculateTokenPurchaseTaxBreakdown(tokens, customTokenPriceAud, customCountryCode)`):**
+     - `isAustralianCustomer = (customerCountry === 'AU')`
+     - `taxRate = isAustralianCustomer ? 0.10 : 0`
+     - `taxabilityReason = isAustralianCustomer ? "standard_rated" : "not_collecting"`
      - `subtotalExGstAud = Math.round(tokens * tokenPriceAud * 100) / 100` (e.g., `$10.00 AUD`, `$50.00 AUD`, `$100.00 AUD`)
-     - `taxAmountAud = Math.round(subtotalExGstAud * 10) / 100` (e.g., `+$1.00 AUD`, `+$5.00 AUD`, `+$10.00 AUD`)
-     - `totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100` (e.g., `$11.00 AUD`, `$55.00 AUD`, `$110.00 AUD`)
+     - `taxAmountAud = isAustralianCustomer ? Math.round(subtotalExGstAud * 10) / 100 : 0` (`+$1.00 AUD` / `+$5.00 AUD` / `+$10.00 AUD` for AU; `$0.00 AUD (Non-AU)` for non-AU)
+     - `totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100` (`$11.00 AUD` / `$55.00 AUD` / `$110.00 AUD` for AU; `$10.00 AUD` / `$50.00 AUD` / `$100.00 AUD` for non-AU)
      - `amountCents = Math.round(totalIncGstAud * 100)`
   5. **Small Stripe Popup (`#driver-token-topup-modal` -> `#stripe-small-popup-box`):**
      - Styled as a compact centered popup (`max-width: 380px`) displaying:
        - **Quote Subtotal:** `#stripe-token-subtotal-aud`
-       - **Tax (Exclusive • Automatic 10% GST):** `#stripe-token-tax-aud`
+       - **Tax (Exclusive • Automatic 10% AU GST Only):** `#stripe-token-tax-label`, `#stripe-token-tax-aud`
        - **Total Payable (AUD):** `#stripe-token-total-aud`
        - **Confirm & Pay Button:** `#btn-stripe-token-pay-now` (`confirmStripeTokenPopupPurchase()`)
 
@@ -2609,6 +2612,9 @@ Consolidates Supporter registration details into a single **Registration Details
     "currency",
     "collectTax",
     "taxBehavior",
+    "customerCountry",
+    "isAustralianCustomer",
+    "taxabilityReason",
     "taxRate",
     "subtotalExGstAud",
     "taxAmountAud",
@@ -2636,9 +2642,20 @@ Consolidates Supporter registration details into a single **Registration Details
       "type": "string",
       "const": "exclusive"
     },
+    "customerCountry": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "isAustralianCustomer": {
+      "type": "boolean"
+    },
+    "taxabilityReason": {
+      "type": "string",
+      "enum": ["standard_rated", "not_collecting"]
+    },
     "taxRate": {
       "type": "number",
-      "const": 0.10
+      "enum": [0, 0.10]
     },
     "subtotalExGstAud": {
       "type": "number",
@@ -2646,15 +2663,15 @@ Consolidates Supporter registration details into a single **Registration Details
     },
     "taxAmountAud": {
       "type": "number",
-      "minimum": 0.1
+      "minimum": 0
     },
     "totalIncGstAud": {
       "type": "number",
-      "minimum": 1.1
+      "minimum": 1
     },
     "amountCents": {
       "type": "integer",
-      "minimum": 110
+      "minimum": 100
     }
   }
 }
@@ -2762,7 +2779,7 @@ Defines the payload and state synchronization when a user presses the **Geo: Upd
 ```
 
 ### 11.35 Stripe Payment Processor Hosted Checkout Transfer Contract (`StripeProcessorHostedCheckoutTransferContract`)
-Defines the end-to-end payload and browser redirect contract when a user clicks **Pay $XX.XX AUD • Buy XX Tokens** (`#btn-stripe-token-pay-now`, calling `confirmStripeTokenPopupPurchase()`) inside the small Stripe popup (`#driver-token-topup-modal`) or clicks **Pay Online** on an invoice (`openStripePaymentModal()`). Provisioned via the official **Stripe MCP** on account `acct_1UKnKUI8bClhBF4P` (`AI Foundation sandbox`) with active AU Tax Registration `taxreg_1UXyhEI8bClhBF4PvgDdffXg`, `defaults.tax_behavior = "exclusive"`, `defaults.tax_code = "txcd_10000000"`, Product `prod_VaqooBzIgPduQC` (**Simple Job Platform Tokens**), AUD Exclusive Prices (`price_1UZf7RI8bClhBF4PEhIGJoc3` for 10, `price_1UZf7VI8bClhBF4PE52HKTjw` for 50, `price_1UZf7ZI8bClhBF4PcJWNqJv0` for 100), and Payment Links (`https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04`, `https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05`, `https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06`). The client sends a `POST /api/create-payment-intent` request to `api/create-payment-intent.js`, which creates a Stripe `PaymentIntent` and a live **Stripe Hosted Checkout Session** (`checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_..."`), with automatic fallback to the Stripe MCP Payment Links (`https://buy.stripe.com/test_...`). Upon returning from Stripe Checkout with `?stripe_token_success=1&tokens=...&session_id=...`, `handleStripeCheckoutReturnUrl()` credits the purchased tokens, logs the verified transaction, and cleans the URL query string.
+Defines the end-to-end payload and browser redirect contract when a user clicks **Pay $XX.XX AUD • Buy XX Tokens** (`#btn-stripe-token-pay-now`, calling `confirmStripeTokenPopupPurchase()`) inside the small Stripe popup (`#driver-token-topup-modal`) or clicks **Pay Online** on an invoice (`openStripePaymentModal()`). Provisioned via the official **Stripe MCP** on account `acct_1UKnKUI8bClhBF4P` (`AI Foundation sandbox`) with active AU Tax Registration `taxreg_1UXyhEI8bClhBF4PvgDdffXg`, `defaults.tax_behavior = "exclusive"`, `defaults.tax_code = "txcd_10000000"`, Product `prod_VaqooBzIgPduQC` (**Simple Job Platform Tokens**), AUD Exclusive Prices (`price_1UZf7RI8bClhBF4PEhIGJoc3` for 10, `price_1UZf7VI8bClhBF4PE52HKTjw` for 50, `price_1UZf7ZI8bClhBF4PcJWNqJv0` for 100), and Payment Links (`https://buy.stripe.com/test_8x2fZh388eVvc7KfA51wY04`, `https://buy.stripe.com/test_6oU5kD388eVvc7K1Jf1wY05`, `https://buy.stripe.com/test_14A6oH388fZzgo0drX1wY06`). Uses `automatic_tax: { enabled: true }` so 10% Exclusive GST (`taxabilityReason: "standard_rated"`) is **only** charged when `customerCountry === "AU"`, and `$0.00 AUD` (`0%`, `taxabilityReason: "not_collecting"`) is charged when `customerCountry !== "AU"`. The client sends a `POST /api/create-payment-intent` request to `api/create-payment-intent.js`, which creates a Stripe `PaymentIntent` and a live **Stripe Hosted Checkout Session** (`checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_..."`), with automatic fallback to the Stripe MCP Payment Links (`https://buy.stripe.com/test_...`). Upon returning from Stripe Checkout with `?stripe_token_success=1&tokens=...&session_id=...`, `handleStripeCheckoutReturnUrl()` credits the purchased tokens, logs the verified transaction, and cleans the URL query string.
 
 ```json
 {
@@ -2778,6 +2795,10 @@ Defines the end-to-end payload and browser redirect contract when a user clicks 
     "currency",
     "collectTax",
     "taxBehavior",
+    "customerCountry",
+    "isAustralianCustomer",
+    "taxabilityReason",
+    "taxRate",
     "subtotalExGstAud",
     "taxAmountAud",
     "totalIncGstAud",
@@ -2816,21 +2837,36 @@ Defines the end-to-end payload and browser redirect contract when a user clicks 
       "type": "string",
       "const": "exclusive"
     },
+    "customerCountry": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "isAustralianCustomer": {
+      "type": "boolean"
+    },
+    "taxabilityReason": {
+      "type": "string",
+      "enum": ["standard_rated", "not_collecting"]
+    },
+    "taxRate": {
+      "type": "number",
+      "enum": [0, 0.10]
+    },
     "subtotalExGstAud": {
       "type": "number",
       "minimum": 1
     },
     "taxAmountAud": {
       "type": "number",
-      "minimum": 0.1
+      "minimum": 0
     },
     "totalIncGstAud": {
       "type": "number",
-      "minimum": 1.1
+      "minimum": 1
     },
     "amount": {
       "type": "number",
-      "minimum": 1.1
+      "minimum": 1
     }
   }
 }

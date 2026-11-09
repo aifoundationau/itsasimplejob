@@ -17,6 +17,8 @@ const STRIPE_CONFIG = {
   taxBehavior: "exclusive",
   taxCode: "txcd_10000000",
   taxRegistrationId: "taxreg_1UXyhEI8bClhBF4PvgDdffXg",
+  gstAppliesToCountry: "AU",
+  gstRule: "GST is only charged for Australians (country === AU)",
   gstRate: 0.10,
   popupSize: "small",
   productId: "prod_VaqooBzIgPduQC",
@@ -70,14 +72,21 @@ class StripePaymentService {
    * Stripe Settings:
    * - Currency: AUD only ('aud')
    * - Collect Tax: Automatic ({ enabled: true })
-   * - Tax Behavior: Exclusive (10% GST added on top of quoted subtotal)
+   * - Tax Behavior: Exclusive (10% GST added on top of quoted subtotal ONLY for Australians: country === 'AU')
    */
-  calculateTokenTaxBreakdown(tokens, tokenPriceAud = 1) {
+  calculateTokenTaxBreakdown(tokens, tokenPriceAud = 1, customerCountry = null) {
     const cleanTokens = Math.max(1, Math.round(Number(tokens) || 10));
     const unitPriceAud = Math.max(1, Math.round(Number(tokenPriceAud) || 1));
     const subtotalExGstAud = Math.round(cleanTokens * unitPriceAud * 100) / 100;
-    const taxRate = this.config.gstRate || 0.10;
-    const taxAmountAud = Math.round(subtotalExGstAud * 10) / 100;
+    const resolvedCountry = String(
+      customerCountry ||
+      (typeof window !== 'undefined' && (window.iasjCurrency?.state?.country || window.geoTimeState?.countryCode)) ||
+      'AU'
+    ).trim().toUpperCase();
+    const isAustralianCustomer = resolvedCountry === 'AU';
+    const taxRate = isAustralianCustomer ? (this.config.gstRate || 0.10) : 0;
+    const taxabilityReason = isAustralianCustomer ? 'standard_rated' : 'not_collecting';
+    const taxAmountAud = isAustralianCustomer ? Math.round(subtotalExGstAud * 10) / 100 : 0;
     const totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100;
     const amountCents = Math.round(totalIncGstAud * 100);
 
@@ -90,6 +99,9 @@ class StripePaymentService {
       automaticTax: { enabled: true },
       taxBehavior: 'exclusive',
       taxCode: this.config.taxCode || 'txcd_10000000',
+      customerCountry: resolvedCountry,
+      isAustralianCustomer,
+      taxabilityReason,
       productId: this.config.productId || 'prod_VaqooBzIgPduQC',
       priceId: this.config.tokenPriceIds?.[cleanTokens] || null,
       paymentLinkId: this.config.tokenPaymentLinkIds?.[cleanTokens] || null,
@@ -100,7 +112,7 @@ class StripePaymentService {
       totalIncGstAud,
       amountCents,
       formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
-      formattedTaxAud: `+$${taxAmountAud.toFixed(2)} AUD`,
+      formattedTaxAud: isAustralianCustomer ? `+$${taxAmountAud.toFixed(2)} AUD` : `$0.00 AUD (Non-AU)`,
       formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
     };
   }
@@ -217,6 +229,7 @@ class StripePaymentService {
         currency: 'aud',
         collectTax: 'automatic',
         taxBehavior: 'exclusive',
+        customerCountry: paymentData.customerCountry || (typeof window !== 'undefined' && window.iasjCurrency?.state?.country) || 'AU',
         customerName: paymentData.customerName || '',
         description: paymentData.description || '',
         returnUrl: paymentData.returnUrl || (typeof window !== 'undefined' ? window.location.origin : '')

@@ -78,14 +78,27 @@ export default async function handler(req, res) {
     ? Math.round(Number(body.tokens))
     : null;
   const docketNumber = String(body.docketNumber || (tokens ? `TOK-${tokens}-${Date.now()}` : '')).trim();
+  const customerCountry = String(
+    body.customerCountry ||
+    req.headers?.['x-vercel-ip-country'] ||
+    req.headers?.['cf-ipcountry'] ||
+    process.env.DEV_COUNTRY ||
+    'AU'
+  ).trim().toUpperCase();
+  const isAustralianCustomer = customerCountry === 'AU';
   const rawSubtotal = Number(body.subtotalExGstAud);
   const hasExplicitSubtotal = Number.isFinite(rawSubtotal) && rawSubtotal > 0;
   const subtotalExGstAud = hasExplicitSubtotal ? Math.round(rawSubtotal * 100) / 100 : wholeUp(Number(body.amount));
   const taxBehavior = 'exclusive';
   const collectTax = 'automatic';
-  const taxAmountAud = hasExplicitSubtotal
-    ? Math.round(subtotalExGstAud * 10) / 100
-    : Math.round((Number(body.taxAmountAud) || 0) * 100) / 100;
+  // Stripe Tax rule: 10% Exclusive Australian GST is ONLY charged for Australians (country === 'AU')
+  const taxRate = isAustralianCustomer ? 0.10 : 0;
+  const taxabilityReason = isAustralianCustomer ? 'standard_rated' : 'not_collecting';
+  const taxAmountAud = isAustralianCustomer
+    ? (hasExplicitSubtotal
+        ? Math.round(subtotalExGstAud * 10) / 100
+        : Math.round((Number(body.taxAmountAud) || 0) * 100) / 100)
+    : 0;
   const amountAud = hasExplicitSubtotal
     ? Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100
     : wholeUp(Number(body.amount));
@@ -107,26 +120,13 @@ export default async function handler(req, res) {
   ).replace(/\/+$/, '');
 
   try {
-    const gstTaxRateId = await getExclusiveAudGstTaxRateId(stripe);
     const subtotalCents = Math.round(subtotalExGstAud * 100);
-    const taxCents = Math.round(taxAmountAud * 100);
+    const mcpPriceId = tokens && STRIPE_MCP_TOKEN_PRICE_IDS[tokens];
 
-    const lineItems = gstTaxRateId
-      ? [
-          {
-            price_data: {
-              currency: 'aud',
-              unit_amount: subtotalCents,
-              tax_behavior: 'exclusive',
-              product_data: {
-                name: tokens ? `${tokens} Courier Tokens ($1.00 AUD / Token)` : description,
-                description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD subtotal + $${taxAmountAud.toFixed(2)} AUD 10% GST = $${amountAud.toFixed(2)} AUD total`
-              }
-            },
-            quantity: 1,
-            tax_rates: [gstTaxRateId]
-          }
-        ]
+    // Use Stripe Tax (automatic_tax: { enabled: true }) with tax_behavior: 'exclusive'
+    // so Stripe automatically charges 10% GST ONLY to Australians (AU) and $0.00 GST to non-AU customers.
+    const lineItems = mcpPriceId
+      ? [{ price: mcpPriceId, quantity: 1 }]
       : [
           {
             price_data: {
@@ -134,22 +134,13 @@ export default async function handler(req, res) {
               unit_amount: subtotalCents,
               tax_behavior: 'exclusive',
               product_data: {
-                name: tokens ? `${tokens} Courier Tokens (Quote Subtotal)` : description
+                name: tokens ? `${tokens} Courier Tokens ($1.00 AUD / Token)` : description,
+                tax_code: 'txcd_10000000',
+                description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD ex-GST subtotal (10% GST applies to Australian customers only)`
               }
             },
             quantity: 1
-          },
-          ...(taxCents > 0 ? [{
-            price_data: {
-              currency: 'aud',
-              unit_amount: taxCents,
-              tax_behavior: 'exclusive',
-              product_data: {
-                name: 'Tax (Exclusive • Automatic 10% GST)'
-              }
-            },
-            quantity: 1
-          }] : [])
+          }
         ];
 
     const sharedMetadata = {
@@ -157,6 +148,9 @@ export default async function handler(req, res) {
       docketNumber,
       ...(tokens ? { tokens: String(tokens) } : {}),
       customerName,
+      customerCountry,
+      isAustralianCustomer: String(isAustralianCustomer),
+      taxabilityReason,
       invoiceCurrency: 'AUD',
       collectTax,
       taxBehavior,
@@ -169,15 +163,16 @@ export default async function handler(req, res) {
       stripe.paymentIntents.create({
         amount: amountCents,
         currency: 'aud',
-        description: `${description} (AUD only • 10% exclusive GST)`.slice(0, 200),
+        description: `${description} (AUD only • ${isAustralianCustomer ? '10% exclusive AU GST' : '0% GST non-AU'})`.slice(0, 200),
         automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
         metadata: sharedMetadata
       }, {
-        idempotencyKey: `iasj-pi-${docketNumber}-${amountCents}`
+        idempotencyKey: `iasj-pi-${docketNumber}-${customerCountry}-${amountCents}`
       }),
       stripe.checkout.sessions.create({
         mode: 'payment',
         currency: 'aud',
+        automatic_tax: { enabled: true },
         line_items: lineItems,
         success_url: `${reqOrigin}/?stripe_token_success=1&tokens=${encodeURIComponent(tokens || 10)}&docket=${encodeURIComponent(docketNumber)}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${reqOrigin}/?stripe_token_cancel=1&tokens=${encodeURIComponent(tokens || 10)}`,
@@ -196,10 +191,14 @@ export default async function handler(req, res) {
       checkoutSessionId: checkoutSession.id,
       checkoutUrl: checkoutSession.url,
       productId: STRIPE_MCP_PRODUCT_ID,
-      priceId: (tokens && STRIPE_MCP_TOKEN_PRICE_IDS[tokens]) || null,
+      priceId: mcpPriceId || null,
       paymentLinkUrl: (tokens && STRIPE_MCP_TOKEN_PAYMENT_LINKS[tokens]) || null,
       status: intent.status,
       tokens,
+      customerCountry,
+      isAustralianCustomer,
+      taxRate,
+      taxabilityReason,
       subtotalExGstAud,
       taxAmountAud,
       totalIncGstAud: intent.amount / 100,

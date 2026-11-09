@@ -6474,16 +6474,24 @@ window.deleteDriverOrder = deleteDriverOrder;
  * - Collect Tax: Automatic ({ enabled: true })
  * - Tax Behavior: Exclusive (10% GST added on top of quoted subtotal)
  */
-function calculateTokenPurchaseTaxBreakdown(packTokens = 10) {
+function calculateTokenPurchaseTaxBreakdown(packTokens = 10, customerCountry = null) {
   const cur = window.iasjCurrency;
   const tokenPriceAud = Math.max(1, Math.round(Number(cur?.getPricing?.()?.tokenPriceAud) || 1));
+  const resolvedCountry = String(
+    customerCountry ||
+    cur?.state?.country ||
+    geoTimeState?.countryCode ||
+    'AU'
+  ).trim().toUpperCase();
   if (window.stripePaymentService?.calculateTokenTaxBreakdown) {
-    return window.stripePaymentService.calculateTokenTaxBreakdown(packTokens, tokenPriceAud);
+    return window.stripePaymentService.calculateTokenTaxBreakdown(packTokens, tokenPriceAud, resolvedCountry);
   }
   const cleanTokens = Math.max(1, Math.round(Number(packTokens) || 10));
   const subtotalExGstAud = Math.round(cleanTokens * tokenPriceAud * 100) / 100;
-  const taxRate = 0.10;
-  const taxAmountAud = Math.round(subtotalExGstAud * 10) / 100;
+  const isAustralianCustomer = resolvedCountry === 'AU';
+  const taxRate = isAustralianCustomer ? 0.10 : 0;
+  const taxabilityReason = isAustralianCustomer ? 'standard_rated' : 'not_collecting';
+  const taxAmountAud = isAustralianCustomer ? Math.round(subtotalExGstAud * 10) / 100 : 0;
   const totalIncGstAud = Math.round((subtotalExGstAud + taxAmountAud) * 100) / 100;
   const amountCents = Math.round(totalIncGstAud * 100);
   return {
@@ -6494,29 +6502,32 @@ function calculateTokenPurchaseTaxBreakdown(packTokens = 10) {
     collectTax: 'automatic',
     automaticTax: { enabled: true },
     taxBehavior: 'exclusive',
+    customerCountry: resolvedCountry,
+    isAustralianCustomer,
+    taxabilityReason,
     taxRate,
     subtotalExGstAud,
     taxAmountAud,
     totalIncGstAud,
     amountCents,
     formattedSubtotalAud: `$${subtotalExGstAud.toFixed(2)} AUD`,
-    formattedTaxAud: `+$${taxAmountAud.toFixed(2)} AUD`,
+    formattedTaxAud: isAustralianCustomer ? `+$${taxAmountAud.toFixed(2)} AUD` : `$0.00 AUD (Non-AU)`,
     formattedTotalAud: `$${totalIncGstAud.toFixed(2)} AUD`
   };
 }
 window.calculateTokenPurchaseTaxBreakdown = calculateTokenPurchaseTaxBreakdown;
 
-function selectStripeTokenPack(packTokens = 10) {
+function selectStripeTokenPack(packTokens = 10, customerCountry = null) {
   const packs = [10, 50, 100];
   const selectedTokens = packs.includes(Number(packTokens)) ? Number(packTokens) : 10;
   appState.selectedStripeTokenPack = selectedTokens;
 
-  const quote = calculateTokenPurchaseTaxBreakdown(selectedTokens);
+  const quote = calculateTokenPurchaseTaxBreakdown(selectedTokens, customerCountry);
 
   const gridEl = document.getElementById('driver-token-packs-grid');
   if (gridEl) {
     gridEl.innerHTML = packs.map(tokens => {
-      const packQuote = calculateTokenPurchaseTaxBreakdown(tokens);
+      const packQuote = calculateTokenPurchaseTaxBreakdown(tokens, customerCountry);
       const isSelected = tokens === selectedTokens;
       return `
         <button
@@ -6541,6 +6552,13 @@ function selectStripeTokenPack(packTokens = 10) {
 
   const subEl = document.getElementById('stripe-token-subtotal-aud');
   if (subEl) subEl.textContent = quote.formattedSubtotalAud;
+
+  const taxLabelEl = document.getElementById('stripe-token-tax-label');
+  if (taxLabelEl) {
+    taxLabelEl.textContent = quote.isAustralianCustomer
+      ? 'Tax (Exclusive • 10% AU GST — Australians Only):'
+      : 'Tax (0% Non-AU — GST Charged to Australians Only):';
+  }
 
   const taxEl = document.getElementById('stripe-token-tax-aud');
   if (taxEl) taxEl.textContent = quote.formattedTaxAud;
