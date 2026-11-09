@@ -2439,13 +2439,14 @@ function handleSuperadminRefreshTokenZero(btn) {
 }
 window.handleSuperadminRefreshTokenZero = handleSuperadminRefreshTokenZero;
 
-function handleSuperadminAddTokens() {
+function handleSuperadminAddTokens(explicitAmount) {
   const accounts = getSuperadminManageableAccounts();
   const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
   if (!acc) return;
 
   const inputEl = document.getElementById('sa-token-add-amount');
-  const amount = Math.max(1, Math.round(Number(inputEl?.value) || 25));
+  const rawVal = explicitAmount !== undefined ? explicitAmount : inputEl?.value;
+  const amount = Math.max(1, Math.round(Number(rawVal) || 10));
 
   let newBal = 0;
   if (acc.id === 'superadmin_vault') {
@@ -2475,13 +2476,14 @@ function handleSuperadminAddTokens() {
 }
 window.handleSuperadminAddTokens = handleSuperadminAddTokens;
 
-function handleSuperadminMinusTokens() {
+function handleSuperadminMinusTokens(explicitAmount) {
   const accounts = getSuperadminManageableAccounts();
   const acc = accounts.find(a => a.id === selectedSaTokenTargetId);
   if (!acc) return;
 
   const inputEl = document.getElementById('sa-token-minus-amount');
-  const amount = Math.max(1, Math.round(Number(inputEl?.value) || 10));
+  const rawVal = explicitAmount !== undefined ? explicitAmount : inputEl?.value;
+  const amount = Math.max(1, Math.round(Number(rawVal) || 5));
 
   let newBal = 0;
   if (acc.id === 'superadmin_vault') {
@@ -2554,12 +2556,14 @@ window.quickRefreshDriverTokensZero = quickRefreshDriverTokensZero;
 function setSaTokenAddInput(val) {
   const input = document.getElementById('sa-token-add-amount');
   if (input) input.value = String(val);
+  handleSuperadminAddTokens(val);
 }
 window.setSaTokenAddInput = setSaTokenAddInput;
 
 function setSaTokenMinusInput(val) {
   const input = document.getElementById('sa-token-minus-amount');
   if (input) input.value = String(val);
+  handleSuperadminMinusTokens(val);
 }
 window.setSaTokenMinusInput = setSaTokenMinusInput;
 

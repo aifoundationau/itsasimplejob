@@ -2099,11 +2099,11 @@ Defines the strict contracts and interfaces for universal token balance manageme
      * Zero-out action is protected by the `iasjConfirmDelete` two-step confirmation protocol to prevent accidental balance wipe.
    - **Add Tokens (`handleSuperadminAddTokens()`):**
      * Credits a positive integer number of tokens (`Math.max(1, Math.round(Number(amount)))`) to the selected account's balance.
-     * Quick preset chips provided: `+5`, `+10`, `+25`, `+50`, `+100`.
+     * Quick preset chips provided: `+10`, `+50`, `+100` (`#btn-sa-add-preset-10`, `#btn-sa-add-preset-50`, `#btn-sa-add-preset-100`).
    - **Minus Tokens (`handleSuperadminMinusTokens()`):**
      * Deducts a positive integer number of tokens from the selected account's balance.
      * Enforces strict lower bound of `0` (`Math.max(0, balance - amount)`). Never produces negative token balances.
-     * Quick preset chips provided: `-5`, `-10`, `-15`, `-25`, `-50`.
+     * Quick preset chips provided: `-5`, `-10` (`#btn-sa-minus-preset-5`, `#btn-sa-minus-preset-10`).
 
 3. **Inline Driver Approval Console Quick Controls:**
    - In each driver row rendered inside `#superadmin-driver-approvals-list`, SuperAdmin is provided:

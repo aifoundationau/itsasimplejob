@@ -352,9 +352,14 @@ Created: 2026-11-01
   * Verified end-to-end with `scratch/verify_active_driver_profile_ownership_and_map_toggle.mjs` (34/34 assertions passed) and all regression suites.
   * Compiled clean bundle with `npm run build` (0 errors).
 
+[COMPLETED 2026-11-09] TASK 49: SUPERADMIN PLATFORM VAULT TOKEN PRESETS (+10, +50, +100 AND -5, -10)
+- Updated `2. Add Tokens (+)` in `#superadmin-universal-token-management-card` to strictly display `+10`, `+50`, `+100` (`#btn-sa-add-preset-10`, `#btn-sa-add-preset-50`, `#btn-sa-add-preset-100`).
+- Updated `3. Minus Tokens (-)` in `#superadmin-universal-token-management-card` to strictly display `-5`, `-10` (`#btn-sa-minus-preset-5`, `#btn-sa-minus-preset-10`).
+- Updated `setSaTokenAddInput(val)` and `setSaTokenMinusInput(val)` in `js/app.js` so clicking a preset button sets the input value and immediately executes the token addition/deduction.
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY ACTIVE DRIVER PROFILE RBAC & PROFILE ON/OFF MAP VISIBILITY IN BROWSER
+CURRENT TASK: VERIFY SUPERADMIN PLATFORM VAULT TOKEN PRESETS (+10, +50, +100 & -5, -10) IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, open the Supporter Portal -> Driver Dispatch Console to verify the Active Driver Profile ownership lock and click the "Profile ON (Turn OFF)" button to test toggling map visibility when approved by SuperAdmin.
+1. In your browser at http://localhost:3002, check the SuperAdmin Platform Vault in the SuperAdmin Universal Token Management card to verify that "2. Add Tokens (+)" has +10, +50, +100 and "3. Minus Tokens (-)" has -5, -10.
 
 ================================================================================

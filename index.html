@@ -1270,7 +1270,7 @@
                 Credit tokens to this user's balance:
               </p>
               <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-                <input type="number" id="sa-token-add-amount" class="form-control" min="1" max="100000" step="1" value="25"
+                <input type="number" id="sa-token-add-amount" class="form-control" min="1" max="100000" step="1" value="10"
                   style="padding:0.4rem; font-weight:700;" placeholder="Amount"
                   data-agent-id="sa-token-add-amount" data-testid="sa-token-add-amount" aria-label="Tokens to Add">
                 <button type="button" class="btn btn-primary btn-sm" onclick="handleSuperadminAddTokens()"
@@ -1279,12 +1279,10 @@
                   <i class="fa-solid fa-plus"></i> Add
                 </button>
               </div>
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(5)">+5</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(10)">+10</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(25)">+25</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(50)">+50</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(100)">+100</button>
+              <div id="sa-token-add-presets-row" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(10)" data-agent-id="btn-sa-add-preset-10" data-testid="btn-sa-add-preset-10" aria-label="Add 10 Tokens">+10</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(50)" data-agent-id="btn-sa-add-preset-50" data-testid="btn-sa-add-preset-50" aria-label="Add 50 Tokens">+50</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenAddInput(100)" data-agent-id="btn-sa-add-preset-100" data-testid="btn-sa-add-preset-100" aria-label="Add 100 Tokens">+100</button>
               </div>
             </div>
 
@@ -1297,7 +1295,7 @@
                 Deduct tokens from this balance (floored at 0):
               </p>
               <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-                <input type="number" id="sa-token-minus-amount" class="form-control" min="1" max="100000" step="1" value="10"
+                <input type="number" id="sa-token-minus-amount" class="form-control" min="1" max="100000" step="1" value="5"
                   style="padding:0.4rem; font-weight:700;" placeholder="Amount"
                   data-agent-id="sa-token-minus-amount" data-testid="sa-token-minus-amount" aria-label="Tokens to Minus">
                 <button type="button" class="btn btn-outline btn-sm" onclick="handleSuperadminMinusTokens()"
@@ -1306,12 +1304,9 @@
                   <i class="fa-solid fa-minus"></i> Minus
                 </button>
               </div>
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(5)">-5</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(10)">-10</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(15)">-15</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(25)">-25</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(50)">-50</button>
+              <div id="sa-token-minus-presets-row" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(5)" data-agent-id="btn-sa-minus-preset-5" data-testid="btn-sa-minus-preset-5" aria-label="Minus 5 Tokens">-5</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="setSaTokenMinusInput(10)" data-agent-id="btn-sa-minus-preset-10" data-testid="btn-sa-minus-preset-10" aria-label="Minus 10 Tokens">-10</button>
               </div>
             </div>
 
