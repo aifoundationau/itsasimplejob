@@ -1834,6 +1834,19 @@ textarea {
   animation: fadeIn 0.2s ease;
 }
 
+#driver-application-modal {
+  z-index: 10050;
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+#driver-application-modal .modal-box {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
 .modal-box {
   background: #fff;
   border-radius: var(--radius-lg);

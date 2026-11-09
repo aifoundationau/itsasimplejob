@@ -406,3 +406,14 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Removed **Driver Dispatch Console** navigation buttons (`#subtab-btn-dispatch` and `#btn-info-goto-dispatch`) and kept `#supporter-dispatch-subtab` / `#driver-dispatch-console` permanently hidden while placing `#superadmin-courier-config-card` directly inside `#supporter-panel-wrapper`.
 - Verified with `node scratch/verify_supporter_console_in_google_dropdown_only.mjs`, `node scratch/verify_active_driver_profile_ownership_and_map_toggle.mjs`, `node scratch/verify_driver_licence_superadmin_only.mjs`, and `npm run build` (0 errors).
 - Documented Section 11.27 (`DriverAdminPanelCollapsedPanelsContract`) in `data-contracts.MD`.
+
+[COMPLETED 2026-11-09] TASK 55: FIX COURIER DRIVER APPLICATION JUMPING OPEN & FLICKERING
+- Eliminated Automatic Modal Opening on URL Hash / HMR Reload:
+  * Removed `history.pushState(null, '', '#driver-application')` from `openDriverApplicationModal()` in `js/app.js` and changed `#footer-driver-app-link` `href="#driver-application"` to `href="#"` in `index.html`.
+  * Removed the `setTimeout(() => scrollToDriverApplication(), 350)` auto-open trigger on `#driver-application` / `#driver-application-bottom-section` / `#register` hashes in `initApp()`, and added `history.replaceState(null, '', window.location.pathname + window.location.search)` in `initApp()`, `openDriverApplicationModal()`, and `closeDriverApplicationModal()` to strip any stale `#driver-application` hash from the browser URL bar.
+  * Ensured `closeDriverApplicationModal()` runs on startup in `initApp()` and guarded `openDriverApplicationModal()` against redundant re-execution when already open.
+- Eliminated Modal & Form Flickering:
+  * Set `#driver-application-modal` to `z-index: 10050` (above `#geo-time-footer-bar` at `9990`) and applied `animation: none !important; transition: none !important; transform: none !important;` on `#driver-application-modal` and `#driver-application-modal .modal-box` in `css/style.css`.
+  * Prevented `saveDriverApplicationDraft(false)` (background auto-save while typing) and duplicate `#drv-reg-email` `blur`/`change` listeners from shifting layout or overwriting form inputs mid-typing.
+- Verified with `node scratch/verify_driver_application_no_auto_open_or_flicker.mjs` and `npm run build` (0 errors).
+- Documented Section 11.28 (`DriverApplicationModalStabilityContract`) in `data-contracts.MD`.

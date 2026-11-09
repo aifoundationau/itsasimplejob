@@ -2387,3 +2387,53 @@ Consolidates Supporter registration details into a single **Registration Details
   }
 }
 ```
+
+### 11.28 Courier Driver Application Modal Stability & Anti-Flicker Contract (`DriverApplicationModalStabilityContract`)
+- **Strict User-Initiated Opening & Zero Hash Pollution:**
+  1. `#driver-application-modal` (`data-agent-id="driver-application-modal"`, `data-testid="driver-application-modal"`) NEVER auto-opens on page load, HMR reload, or `#driver-application` / `#driver-application-bottom-section` / `#register` URL hashes.
+  2. Any stale `#driver-application`, `#driver-application-bottom-section`, or `#register` hash in `window.location.hash` is stripped via `history.replaceState(null, '', window.location.pathname + window.location.search)` during `initApp()`, `openDriverApplicationModal()`, and `closeDriverApplicationModal()`.
+  3. `#footer-driver-app-link` uses `href="#"` and `openDriverApplicationModal()` never pushes `#driver-application` to `window.history`.
+  4. `#driver-application-modal` and `#driver-application-modal .modal-box` enforce `z-index: 10050`, `animation: none !important`, `transition: none !important`, and `transform: none !important`, and background auto-save (`saveDriverApplicationDraft(false)`) does not toggle `#drv-app-draft-banner` mid-typing, preventing layout shift and GPU compositor flickering.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverApplicationModalStabilityContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "modalElementId",
+    "footerTriggerId",
+    "autoOpenOnHashDisabled",
+    "pushStateHashDisabled",
+    "cssAnimationsDisabled",
+    "zIndex"
+  ],
+  "properties": {
+    "modalElementId": {
+      "type": "string",
+      "const": "driver-application-modal"
+    },
+    "footerTriggerId": {
+      "type": "string",
+      "const": "footer-driver-app-link"
+    },
+    "autoOpenOnHashDisabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "pushStateHashDisabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "cssAnimationsDisabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "zIndex": {
+      "type": "integer",
+      "const": 10050
+    }
+  }
+}
+```

@@ -69,15 +69,7 @@ function initApp() {
   } catch (e) {}
   try { setupOsmAddressAutocomplete('courier-cust-address'); } catch (e) {}
   try { setupOsmAddressAutocomplete('supporter-reg-suburb'); } catch (e) {}
-  const drvEmailInput = document.getElementById('drv-reg-email');
-  if (drvEmailInput) {
-    drvEmailInput.addEventListener('change', () => {
-      try { prefillDriverRegistrationForm(); } catch (e) {}
-    });
-    drvEmailInput.addEventListener('blur', () => {
-      try { prefillDriverRegistrationForm(); } catch (e) {}
-    });
-  }
+  try { closeDriverApplicationModal(); } catch (e) {}
   try { setupOsmAddressAutocomplete('contractor-search-location', (place) => onContractorLocationSelected(place)); } catch (e) {}
   try {
     setupOsmAddressAutocomplete('drv-reg-address', (place) => {
@@ -125,18 +117,17 @@ function initApp() {
     window.firebaseService.seedProvidersIfEmpty(window.INITIAL_PROVIDERS);
   }
 
-  // Handle URL search params or hash for navigation
+  // Handle URL search params or hash for navigation (never auto-open Courier Driver Application modal on load/HMR)
   try {
+    if (window.location.hash === '#register' || window.location.hash === '#driver-application' || window.location.hash === '#driver-application-bottom-section') {
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch (e) {}
+    }
     const urlParams = new URLSearchParams(window.location.search);
     const requestedTab = urlParams.get('tab');
     if (requestedTab && typeof switchTab === 'function') {
       switchTab(requestedTab);
-    } else if (window.location.hash === '#register' || window.location.hash === '#driver-application' || window.location.hash === '#driver-application-bottom-section') {
-      setTimeout(() => {
-        if (typeof scrollToDriverApplication === 'function') {
-          scrollToDriverApplication();
-        }
-      }, 350);
     } else if (window.location.hash === '#driver-admin') {
       switchTab('driver-admin-tab');
     }
@@ -3675,6 +3666,11 @@ function openDriverApplicationModal(event) {
   const modal = document.getElementById('driver-application-modal');
   if (!modal) return;
 
+  // Prevent redundant re-opening/flickering if already open
+  if (modal.classList.contains('active') && modal.style.display === 'flex') {
+    return;
+  }
+
   const isRegistered = isSupporterRegistered();
   const supporter = isRegistered ? getCurrentSupporter() : null;
 
@@ -3724,9 +3720,12 @@ function openDriverApplicationModal(event) {
     });
   }
 
-  try {
-    history.pushState(null, '', '#driver-application');
-  } catch (e) {}
+  // Ensure URL hash is clean so page reloads or HMR never auto-reopen the modal
+  if (window.location.hash === '#driver-application' || window.location.hash === '#driver-application-bottom-section' || window.location.hash === '#register') {
+    try {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch (e) {}
+  }
 }
 window.openDriverApplicationModal = openDriverApplicationModal;
 
@@ -3735,6 +3734,11 @@ function closeDriverApplicationModal() {
   if (modal) {
     modal.style.display = 'none';
     modal.classList.remove('active');
+  }
+  if (window.location.hash === '#driver-application' || window.location.hash === '#driver-application-bottom-section' || window.location.hash === '#register') {
+    try {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch (e) {}
   }
 }
 window.closeDriverApplicationModal = closeDriverApplicationModal;
@@ -3774,16 +3778,17 @@ function updateDriverApplicationGateUI() {
 
   const isRegistered = isSupporterRegistered();
   const supporter = isRegistered ? getCurrentSupporter() : null;
+  const targetLinkDisplay = (isRegistered && supporter) ? 'inline-flex' : 'none';
+  const targetBulletDisplay = (isRegistered && supporter) ? 'inline' : 'none';
 
-  if (isRegistered && supporter) {
-    if (footerDriverAppLink) footerDriverAppLink.style.display = 'inline-flex';
-    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'inline-flex';
-    if (footerBottomBullet) footerBottomBullet.style.display = 'inline';
-  } else {
-    // Visitor is not a supporter: completely hide footer links
-    if (footerDriverAppLink) footerDriverAppLink.style.display = 'none';
-    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'none';
-    if (footerBottomBullet) footerBottomBullet.style.display = 'none';
+  if (footerDriverAppLink && footerDriverAppLink.style.display !== targetLinkDisplay) {
+    footerDriverAppLink.style.display = targetLinkDisplay;
+  }
+  if (footerBottomDriverAppLink && footerBottomDriverAppLink.style.display !== targetLinkDisplay) {
+    footerBottomDriverAppLink.style.display = targetLinkDisplay;
+  }
+  if (footerBottomBullet && footerBottomBullet.style.display !== targetBulletDisplay) {
+    footerBottomBullet.style.display = targetBulletDisplay;
   }
 }
 window.updateDriverApplicationGateUI = updateDriverApplicationGateUI;
@@ -3839,13 +3844,9 @@ function saveDriverApplicationDraft(notify = true) {
   }
 
   const statusPill = document.getElementById('driver-app-draft-status');
-  if (statusPill) {
+  if (statusPill && statusPill.style.display !== 'inline-flex') {
     statusPill.style.display = 'inline-flex';
     statusPill.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Draft Saved';
-  }
-  const draftBanner = document.getElementById('drv-app-draft-banner');
-  if (draftBanner) {
-    draftBanner.style.display = 'flex';
   }
 
   if (notify) {
