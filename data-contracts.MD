@@ -2008,6 +2008,29 @@ Enforces the mandatory architectural rule that Motor Vehicle Courier and Bicycle
    - Contractor cards and Leaflet map popups provide instant toggle buttons (`[🚗 Motor Vehicle]` and `[🚲 Bicycle Courier]`), dynamically switching displayed rates, fees, max weight, and max dimensions to reflect the chosen service.
    - SuperAdmin Driver Approval Console displays both service profiles side-by-side with complete rate and dimension breakdowns.
 
+### 11.15 Footer Driver Application Placement Contract (`FooterDriverApplicationPlacementContract`)
+Defines the mandatory layout and navigation contract ensuring the Courier Driver Application is accessible directly from the bottom of the footer adjacent to Terms of Service:
+
+1. **Footer Layout & Peer Placement:**
+   - In `<footer class="site-footer">`:
+     * Main Navigation Links Row: Placed immediately after `Terms of Service`:
+       `<a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link"><i class="fa-solid fa-truck-fast"></i> Courier Driver Application</a>`.
+     * Bottom Sub-Footer Legal Row: Positioned next to the copyright and legal notice:
+       `<a href="/terms.html">Terms of Service</a> • <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" data-agent-id="footer-bottom-driver-app-link" data-testid="footer-bottom-driver-app-link"><i class="fa-solid fa-truck-fast"></i> Courier Driver Application</a>`.
+   - In `terms.html` footer:
+     * Added direct reciprocal link next to `Terms of Service`:
+       `<a href="/terms.html">Terms of Service</a> • <a href="/#driver-application-bottom-section"><i class="fa-solid fa-truck-fast"></i> Courier Driver Application</a>`.
+
+2. **Smooth Scroll & Navigation Synchronization:**
+   - `scrollToDriverApplication(event)`:
+     * Prevents default jump and smoothly scrolls the viewport to `#driver-application-bottom-section`.
+     * Updates the browser URL hash to `#driver-application-bottom-section` without triggering page reload.
+   - `initApp()` router handles deep-links containing `#register`, `#driver-application`, or `#driver-application-bottom-section` by auto-scrolling directly to the application card upon page readiness.
+
+3. **DOM Automation & Accessibility:**
+   - Attributes: `data-agent-id="footer-driver-app-link"`, `data-testid="footer-driver-app-link"`, `aria-label="Courier Driver Application"`.
+
+
 
 
 

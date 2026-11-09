@@ -1691,15 +1691,29 @@
           Settlement in AUD Only.
         </p>
       </div>
-      <div style="display:flex; gap:1.25rem; font-size:0.84rem;">
-        <a href="#" onclick="switchTab('courier-tab'); return false;" style="color:#CBD5E1; text-decoration:none;">Book
-          Service</a>
-        <a href="#" onclick="switchTab('find-contractors-tab'); return false;"
-          style="color:#CBD5E1; text-decoration:none;">Closest Drivers</a>
-        <a href="#" id="footer-supporter-link" class="supporter-gated-nav" onclick="switchTab('driver-admin-tab'); return false;"
-          style="color:#CBD5E1; text-decoration:none; display:none;">Supporter Portal</a>
-        <a href="/terms.html#how-it-works" style="color:#CBD5E1; text-decoration:none;">How It Works</a>
-        <a href="/terms.html" style="color:#CBD5E1; text-decoration:none;">Terms of Service</a>
+      <div style="display:flex; gap:1.25rem; font-size:0.84rem; flex-wrap:wrap; align-items:center;">
+        <a href="#" onclick="switchTab('courier-tab'); return false;" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-book-service-link" data-testid="footer-book-service-link">Book Service</a>
+        <a href="#" onclick="switchTab('find-contractors-tab'); return false;" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-closest-drivers-link" data-testid="footer-closest-drivers-link">Closest Drivers</a>
+        <a href="#" id="footer-supporter-link" class="supporter-gated-nav" onclick="switchTab('driver-admin-tab'); return false;" style="color:#CBD5E1; text-decoration:none; display:none;" data-agent-id="footer-supporter-portal-link" data-testid="footer-supporter-portal-link">Supporter Portal</a>
+        <a href="/terms.html#how-it-works" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-how-it-works-link" data-testid="footer-how-it-works-link">How It Works</a>
+        <a href="/terms.html" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-terms-link" data-testid="footer-terms-link">Terms of Service</a>
+        <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:0.35rem;" data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link" aria-label="Courier Driver Application">
+          <i class="fa-solid fa-truck-fast"></i> Courier Driver Application
+        </a>
+      </div>
+
+      <!-- Bottom Sub-Footer Bar (Next to Terms of Service) -->
+      <div style="width:100%; border-top:1px solid rgba(255,255,255,0.1); margin-top:1.5rem; padding-top:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; font-size:0.78rem; color:#94A3B8;">
+        <div>
+          &copy; 2026 AI Foundation Australia. All rights reserved. ABN 36 339 516 584. All prices in Australian Dollars ($ AUD).
+        </div>
+        <div style="display:flex; gap:0.85rem; align-items:center; flex-wrap:wrap;">
+          <a href="/terms.html" style="color:#94A3B8; text-decoration:underline;" data-agent-id="footer-bottom-terms-link" data-testid="footer-bottom-terms-link">Terms of Service</a>
+          <span style="color:#64748B;">•</span>
+          <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem;" data-agent-id="footer-bottom-driver-app-link" data-testid="footer-bottom-driver-app-link" aria-label="Courier Driver Application">
+            <i class="fa-solid fa-truck-fast"></i> Courier Driver Application
+          </a>
+        </div>
       </div>
     </div>
   </footer>

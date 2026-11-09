@@ -130,8 +130,12 @@ function initApp() {
     const requestedTab = urlParams.get('tab');
     if (requestedTab && typeof switchTab === 'function') {
       switchTab(requestedTab);
-    } else if (window.location.hash === '#register') {
-      switchTab('provider-application-tab');
+    } else if (window.location.hash === '#register' || window.location.hash === '#driver-application' || window.location.hash === '#driver-application-bottom-section') {
+      setTimeout(() => {
+        if (typeof scrollToDriverApplication === 'function') {
+          scrollToDriverApplication();
+        }
+      }, 350);
     } else if (window.location.hash === '#driver-admin') {
       switchTab('driver-admin-tab');
     }
@@ -3335,10 +3339,17 @@ function getCurrentSupporter() {
 }
 window.getCurrentSupporter = getCurrentSupporter;
 
-function scrollToDriverApplication() {
+function scrollToDriverApplication(event) {
+  if (event) {
+    if (event.preventDefault) event.preventDefault();
+    if (event.stopPropagation) event.stopPropagation();
+  }
   const section = document.getElementById('driver-application-bottom-section');
   if (section) {
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      history.pushState(null, '', '#driver-application-bottom-section');
+    } catch (e) {}
   }
 }
 window.scrollToDriverApplication = scrollToDriverApplication;

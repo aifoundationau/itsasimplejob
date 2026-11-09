@@ -224,9 +224,21 @@ Created: 2026-11-01
   * Verified end-to-end with verify_separate_vehicle_bicycle_services.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 40: COURIER DRIVER APPLICATION IN FOOTER NEXT TO TERMS OF SERVICE
+- Footer Placement & Linking:
+  * Added Courier Driver Application link in the primary footer links row of index.html right next to Terms of Service.
+  * Added Courier Driver Application link in the bottom sub-footer copyright & legal row of index.html adjacent to Terms of Service.
+  * Added reciprocal Courier Driver Application link in the footer of terms.html right next to Terms of Service.
+  * Bound with smooth-scroll action scrollToDriverApplication() and hash navigation (#driver-application-bottom-section).
+  * Added DOM automation bindings: data-agent-id="footer-driver-app-link", data-testid="footer-driver-app-link", and aria-label="Courier Driver Application".
+- Verification & Compliance:
+  * Documented Section 11.15 in data-contracts.MD.
+  * Verified end-to-end with verify_footer_driver_app.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST SEPARATE VEHICLE AND BICYCLE SERVICES IN BROWSER
+CURRENT TASK: TEST COURIER DRIVER APPLICATION LINK IN FOOTER IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, scroll down to the Driver Application form (or open the Driver Settings in the Supporter Portal), check both "Motor Vehicle Courier" and "Bicycle Courier Option", and verify that each service displays its own separate Rates ($ AUD/km, fees) and its own separate Maximum Weight and Dimensions (Height, Width, Length cm).
+1. In your browser at http://localhost:3002, scroll to the bottom of the page to the footer, verify that "Courier Driver Application" is placed right next to "Terms of Service", and click it to verify that it smoothly scrolls directly to the Courier Driver Application form.
 
 ================================================================================
