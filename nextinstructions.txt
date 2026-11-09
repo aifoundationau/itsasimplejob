@@ -100,40 +100,35 @@ Created: 2026-11-01
 
 [COMPLETED 2026-11-08] TASK 30: DRIVER APPLICATION APPROVAL GRANTS RBAC ROLE AS DRIVER
 - Multi-Tenant RBAC Promotion upon Approval:
-  * Approving a driver application immediately hardwires and grants the RBAC role: 'driver' (and isDriver: true) across Firestore collections: `providers/{id}`, `driver_applications/{id}`, and `users/{uid}`.
+  * Approving a driver application immediately hardwires and grants the RBAC role: 'driver' across Firestore collections: `providers/{id}`, `driver_applications/{id}`, and `users/{uid}`.
   * Local providerDB sets `approved: true`, `status: "active"`, `isActive: true`, and `role: "driver"`.
   * Local supporterDB updates supporter profile to `role: "driver"`, `approved: true`, `driverId: id`.
-  * Active session user (`iasj_google_user`) immediately elevates to `role: "driver"`, updating navbar user chip and menu to "Approved Courier Driver".
-  * Realtime Dispatch Privileges: The Driver Dispatch Console (`#supporter-dispatch-subtab`) unlocks immediately, hiding `#supporter-not-driver-notice` and granting booking acceptance and dispatch tools.
+  * Active session user immediately elevates to `role: "driver"`, updating navbar user chip and menu to "Approved Courier Driver".
+  * Realtime Dispatch Privileges: The Driver Dispatch Console unlocks immediately, hiding `#supporter-not-driver-notice` and granting booking acceptance and dispatch tools.
 - Verification & Compliance:
   * Documented Section 11.5 in data-contracts.MD.
   * Verified end-to-end with verify_driver_approval_rbac.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
 [COMPLETED 2026-11-08] TASK 31: SUPERADMIN ALL-ROLES PERSPECTIVE SWITCHING (SUPERADMIN, DRIVER, SUPPORTER, CUSTOMER)
-- Universal Role Perspective Switching for SuperAdmin:
-  * SuperAdmin can preview and experience the complete web app from all 4 roles:
-    1. 👑 SuperAdmin (Supreme Ruler - All Access)
-    2. 🚚 Driver (Approved Courier Driver)
-    3. 🤝 Supporter (Community Supporter)
-    4. 🛒 Customer (Public Booking View)
-  * Role Switcher Controls Added to 3 Strategic UI Locations:
-    - In the SuperAdmin Courier Config Card (#superadmin-role-switcher-section)
-    - In the Google Profile User Menu dropdown (#google-menu-superadmin-switcher)
-    - In the persistent Floating View Banner (#superadmin-viewing-banner) with an in-banner dropdown (#sa-banner-role-select) and 1-click "Return to Superadmin" button (#btn-reset-superadmin-view).
-  * Realtime Reactive UI Adaptation:
-    - getActiveUserRole() dynamically respects the active simulated perspective.
-    - When viewing as Driver: Dispatch console unlocks and SuperAdmin config cards hide.
-    - When viewing as Supporter: Dispatch console hides with guidance notice and SuperAdmin controls hide.
-    - When viewing as Customer: Navigates to public booking page and closes private panels.
+- Universal Role Perspective Switching for SuperAdmin across SuperAdmin, Driver, Supporter, Customer.
+- Controls available in SuperAdmin Console, Google Profile dropdown, and persistent Floating Banner with in-banner select and 1-click Return to SuperAdmin button.
+- Documented Section 11.6 in data-contracts.MD. Verified with verify_superadmin_view_roles.mjs and clean build.
+
+[COMPLETED 2026-11-08] TASK 32: DYNAMIC SEARCH RADIUS RADAR CIRCLE ON CLOSEST DRIVERS MAP
+- Interactive Leaflet Search Radius Overlay:
+  * Created `updateOsmRadiusCircle(immediateFit)` which renders and updates an `L.circle` with brand orange dashed border (`color: '#FF5A1F'`, `dashArray: '6, 6'`) and translucent fill (`fillColor: '#FF5A1F'`, `fillOpacity: 0.08`) around the search center.
+  * Real-Time Slider Response: Dragging the `#contractor-search-radius` slider immediately updates the circle's radius (`setRadius(radiusMeters)` with 0 lag) and recalculates filtered drivers and badges.
+  * Smooth Bounds Adaptation: Releasing the slider or settling for 180ms automatically fits the Leaflet map bounds (`fitBounds`) to keep the whole search circumference and drivers in view.
+  * Center Point Synchronization: Selecting an address or using GPS auto-relocates the circle center (`setLatLng([lat, lng])`) with immediate visual re-centering.
 - Verification & Compliance:
-  * Documented Section 11.6 in data-contracts.MD.
-  * Automated tests verified clean via verify_superadmin_view_roles.mjs.
-  * Production bundle built clean with npm run build (0 errors).
+  * Documented Section 11.7 in data-contracts.MD.
+  * Verified end-to-end with verify_search_radius_map.mjs (all assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
 
 --------------------------------------------------------------------------------
-CURRENT TASK: TEST SUPERADMIN ROLE PERSPECTIVE SWITCHER IN BROWSER
+CURRENT TASK: TEST DYNAMIC SEARCH RADIUS CIRCLE ON MAP IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, sign in with your SuperAdmin Google account, click your profile avatar in the top-right navbar to open the menu, click "🚚 Driver" under "VIEW SITE AS ROLE", verify the persistent floating banner appears at the top and the dispatch console renders as a Driver, then click "Return to Superadmin" in the floating banner to restore full SuperAdmin access.
+1. In your browser at http://localhost:3002, click the "2. Closest Drivers Map" tab, drag the "Search Radius" slider between 5 km and 150 km, and verify that the orange dashed radar circle visibly expands and contracts in real time on the map with the map smoothly fitting the new search boundary.
 
 ================================================================================

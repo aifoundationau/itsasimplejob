@@ -252,6 +252,7 @@ function onContractorLocationSelected(place) {
         appState.osmUserMarker.setLatLng([lat, lng]);
         appState.osmUserMarker.setPopupContent(`<strong style="color:#0B192C;">📍 Your Search Center</strong><br><span style="font-size:0.8rem; color:#64748B;">${appState.userLocationName}</span>`);
       }
+      updateOsmRadiusCircle(true);
       updateOsmContractorMarkers();
     } else if (appState.contractorMap && window.google?.maps) {
       appState.contractorMap.panTo(appState.userCoords);
@@ -274,6 +275,9 @@ function renderOsmContractorMap() {
   if (appState.osmMap) {
     try { appState.osmMap.remove(); } catch(e) {}
     appState.osmMap = null;
+    appState.osmRadiusCircle = null;
+    appState.osmUserMarker = null;
+    appState.osmContractorMarkers = [];
   }
   container.innerHTML = '';
 
@@ -315,9 +319,53 @@ function renderOsmContractorMap() {
     .addTo(map)
     .bindPopup(`<strong style="color:#0B192C;">📍 Your Search Center</strong><br><span style="font-size:0.8rem; color:#64748B;">${appState.userLocationName || 'Broadbeach QLD'}</span>`);
 
+  updateOsmRadiusCircle(true);
   updateOsmContractorMarkers();
 }
 window.renderOsmContractorMap = renderOsmContractorMap;
+
+let radiusFitBoundsTimeout = null;
+
+function updateOsmRadiusCircle(immediateFit = false) {
+  if (!appState.osmMap || !window.L) return;
+
+  const userLat = appState.userCoords?.lat || -27.9635;
+  const userLng = appState.userCoords?.lng || 153.4064;
+  const radiusKm = appState.searchRadiusKm || 50;
+  const radiusMeters = radiusKm * 1000;
+
+  if (appState.osmRadiusCircle) {
+    appState.osmRadiusCircle.setLatLng([userLat, userLng]);
+    appState.osmRadiusCircle.setRadius(radiusMeters);
+  } else {
+    appState.osmRadiusCircle = L.circle([userLat, userLng], {
+      radius: radiusMeters,
+      color: '#FF5A1F',
+      weight: 2,
+      opacity: 0.85,
+      dashArray: '6, 6',
+      fillColor: '#FF5A1F',
+      fillOpacity: 0.08
+    }).addTo(appState.osmMap);
+  }
+
+  const doFit = () => {
+    try {
+      if (appState.osmMap && appState.osmRadiusCircle) {
+        const bounds = appState.osmRadiusCircle.getBounds();
+        appState.osmMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      }
+    } catch (e) {}
+  };
+
+  clearTimeout(radiusFitBoundsTimeout);
+  if (immediateFit) {
+    doFit();
+  } else {
+    radiusFitBoundsTimeout = setTimeout(doFit, 180);
+  }
+}
+window.updateOsmRadiusCircle = updateOsmRadiusCircle;
 
 function updateOsmContractorMarkers() {
   if (!appState.osmMap || !window.L) return;
@@ -1129,10 +1177,17 @@ async function locateCustomer(targetInputId) {
   );
 }
 
-function updateRadiusDisplay(value) {
-  appState.searchRadiusKm = parseInt(value, 10);
+function updateRadiusDisplay(value, immediateFit = false) {
+  const radius = parseInt(value, 10) || 50;
+  appState.searchRadiusKm = radius;
   const pill = document.getElementById('radius-val-display');
-  if (pill) pill.textContent = `${value} km`;
+  if (pill) pill.textContent = `${radius} km`;
+  const summaryText = document.getElementById('contractor-filter-summary');
+  if (summaryText) summaryText.textContent = `Within ${radius} km • Sorted by GPS distance`;
+  if (appState.osmMap && window.L) {
+    updateOsmRadiusCircle(immediateFit);
+    updateOsmContractorMarkers();
+  }
   filterContractors();
 }
 

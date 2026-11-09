@@ -517,7 +517,7 @@
               Search Radius: <strong id="radius-val-display" style="color:var(--brand-orange);">50 km</strong>
             </label>
             <input type="range" id="contractor-search-radius" min="5" max="200" value="50" class="form-control"
-              style="padding:0;" oninput="updateRadiusDisplay(this.value)" data-agent-id="contractor-search-radius"
+              style="padding:0; cursor:pointer;" oninput="updateRadiusDisplay(this.value, false)" onchange="updateRadiusDisplay(this.value, true)" data-agent-id="contractor-search-radius"
               data-testid="contractor-search-radius" aria-label="Search Radius in km">
           </div>
 

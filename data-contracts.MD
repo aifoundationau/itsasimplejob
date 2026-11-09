@@ -1794,3 +1794,21 @@ Defines the state persistence, session simulation, and UI adaptation enabling Su
    - When previewing as Driver, Supporter, or Customer, the persistent floating banner (`#superadmin-viewing-banner`) remains fixed at the top of the viewport.
    - Displays the active perspective, an in-banner perspective selector dropdown (`#sa-banner-role-select`), and a 1-click `"Return to Superadmin"` button (`#btn-reset-superadmin-view`).
    - Also accessible via the Google Profile Menu dropdown (`#google-menu-superadmin-switcher`) and the SuperAdmin Console card (`#superadmin-role-switcher-section`).
+
+### 11.7 Live Map Search Radius Radar Contract (`LiveMapSearchRadiusRadarContract`)
+Defines the real-time visual synchronization between the search radius input controls and the Leaflet OpenStreetMap canvas in the "Drivers Closest to Your Pickup Address" directory:
+
+1. **Visual Radius Overlay (`L.circle`):**
+   - **Styling:** Rendered centered at the search location (`userCoords.lat`, `userCoords.lng`) with brand orange dashed border (`color: '#FF5A1F'`, `dashArray: '6, 6'`, `weight: 2`, `opacity: 0.85`) and translucent radar fill (`fillColor: '#FF5A1F'`, `fillOpacity: 0.08`).
+   - **Radius Scaling:** Strictly computed as `searchRadiusKm * 1000` meters (5,000m to 200,000m range).
+
+2. **Real-Time Reactive Dragging & Debounced Viewport Fitting:**
+   - **Continuous Dragging (`oninput="updateRadiusDisplay(this.value, false)"`):**
+     * Immediately adjusts `osmRadiusCircle.setRadius(radiusMeters)` on the map with 0 latency.
+     * Updates radius badge `#radius-val-display` and `#contractor-filter-summary`.
+     * Filters active drivers within the radius and updates `#contractor-cards-container` and driver count badge.
+   - **Smooth Bounds Fit (`onchange="updateRadiusDisplay(this.value, true)"` / 180ms debounce):**
+     * Smoothly fits the Leaflet map bounds (`map.fitBounds(circle.getBounds(), { padding: [30, 30], maxZoom: 14 })`) so the full search circumference and all drivers inside remain clearly in view.
+
+3. **Center Point Dynamic Relocation:**
+   - When the user selects a new pickup address/suburb (`onContractorLocationSelected(place)`) or clicks "Locate with GPS" (`locateCustomer(...)`), the search center marker and the radius circle automatically relocate (`setLatLng([lat, lng])`) with immediate bounds recalculation.
