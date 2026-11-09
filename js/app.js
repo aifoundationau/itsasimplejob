@@ -13471,12 +13471,6 @@ function toggleCourierBookingStep(stepNum, forceExpand) {
   const num = Number(stepNum);
   if (![1, 2, 3].includes(num)) return false;
 
-  // On desktop (> 960px), do not collapse form sections when clicked unless forceExpand is explicitly provided
-  const isMobileViewport = typeof window === 'undefined' || Number(window.innerWidth || 1280) <= 960;
-  if (!isMobileViewport && typeof forceExpand !== 'boolean') {
-    return true;
-  }
-
   const section = document.getElementById(`courier-step-${num}-section`);
   const header = document.getElementById(`courier-step-${num}-header`);
   const toggleText = document.getElementById(`courier-step-${num}-toggle-text`);

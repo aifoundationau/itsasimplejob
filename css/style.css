@@ -1371,11 +1371,11 @@ textarea {
   border-color: var(--brand-orange);
 }
 
-/* Courier Dedicated View */
+/* Courier Dedicated View — Booking Form Box First, Available Drivers After Booking Form on All Devices */
 .courier-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
 
 @media (max-width: 960px) {
@@ -5997,6 +5997,60 @@ body {
   flex-shrink: 0;
 }
 
+/* Booking Form Steps 1, 2 & 3 Collapsed on Start Across All Devices (Desktop, Laptop, Tablet, Android & iPhone) */
+.courier-booking-step-group {
+  margin-bottom: 0.75rem;
+}
+
+.courier-step-header {
+  cursor: pointer !important;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 10px;
+  padding: 0.75rem 0.95rem !important;
+  margin: 0 0 0.5rem 0 !important;
+  gap: 0.6rem;
+  user-select: none;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.courier-booking-step-group:not(.courier-mobile-collapsed) .courier-step-header {
+  background: #FFF7ED;
+  border-color: #FDBA74 !important;
+  margin-bottom: 0.85rem !important;
+}
+
+.courier-step-header h3 {
+  font-size: 1rem !important;
+  line-height: 1.28 !important;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.courier-step-mobile-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--brand-orange);
+  background: #FFFFFF;
+  border: 1px solid #FED7AA;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.courier-booking-step-group.courier-mobile-collapsed .courier-step-body {
+  display: none !important;
+}
+
+.courier-booking-step-group:not(.courier-mobile-collapsed) .courier-step-body {
+  display: block !important;
+  padding: 0.35rem 0.2rem 0.6rem;
+}
+
 /* ==========================================================================
    ANDROID & IPHONE ULTRA-RESPONSIVE WEB APP LAYER (MOBILE, TABLET & TOUCH ONLY)
    Strictly scoped to mobile/tablet/touch media queries so Desktop & Laptop
@@ -6060,21 +6114,15 @@ body {
   }
 }
 
-/* 1b. Desktop / Laptop Preservation (> 960px): Hide Duplicate Section Tabs Bar Below Top Navbar, Courier Form Steps & Driver Cards Always Expanded, Mobile Toggles Hidden */
+/* 1b. Desktop / Laptop Preservation (> 960px): Hide Duplicate Section Tabs Bar Below Top Navbar, Driver Cards Always Expanded on Desktop */
 @media screen and (min-width: 961px) {
   .app-section-tabs,
-  .courier-step-mobile-toggle,
   .driver-card-mobile-toggle {
     display: none !important;
   }
 
-  .courier-booking-step-group .courier-step-body,
   .driver-collapsible-card .driver-card-collapsible-body {
     display: block !important;
-  }
-
-  .courier-step-header {
-    cursor: default !important;
   }
 }
 

@@ -3239,6 +3239,18 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "bookingFormBoxFirstBeforeAvailableDriversOnAllDevices": {
+      "type": "boolean",
+      "const": true
+    },
+    "bookingFormTitle": {
+      "type": "string",
+      "const": "Booking Form"
+    },
+    "allDevicesBookingStepsCollapsedAtStart": {
+      "type": "boolean",
+      "const": true
+    },
     "mobileAvailableDriverCardsCollapsedAtStart": {
       "type": "boolean",
       "const": true
