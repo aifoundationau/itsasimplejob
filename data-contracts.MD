@@ -3299,6 +3299,18 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "allDriversCanChooseUsername": {
+      "type": "boolean",
+      "const": true
+    },
+    "driverUsernamePattern": {
+      "type": "string",
+      "const": "^@[a-z0-9._-]{2,24}$"
+    },
+    "topNavbarPreferredDriverSearchBarEnabled": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

@@ -52,6 +52,28 @@ function isSampleProfile(item) {
   return false;
 }
 
+function normalizeDriverUsername(rawUsername, fallbackName = "", fallbackId = "") {
+  const cleanRaw = String(rawUsername || "")
+    .trim()
+    .replace(/^@+/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]/g, "");
+  if (cleanRaw.length >= 2) {
+    return `@${cleanRaw.slice(0, 32)}`;
+  }
+  const cleanName = String(fallbackName || "")
+    .toLowerCase()
+    .replace(/['"`]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+  if (cleanName.length >= 2) {
+    return `@${cleanName.slice(0, 28)}`;
+  }
+  const cleanId = String(fallbackId || "driver")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  return `@${cleanId || "driver"}`;
+}
+
 const INITIAL_PROVIDERS = [
   {
     id: "drv-101",
@@ -63,6 +85,7 @@ const INITIAL_PROVIDERS = [
     canBeBooked: false,
     sampleRegistryFile: "sampleprofiles.txt",
     name: "Callum Evans",
+    username: "@callumevans",
     gender: "male",
     businessName: "Gold Coast Rapid Van Couriers",
     category: "courier",
@@ -138,6 +161,7 @@ const INITIAL_PROVIDERS = [
     canBeBooked: false,
     sampleRegistryFile: "sampleprofiles.txt",
     name: "Sarah Jenkins",
+    username: "@sarahjenkins",
     gender: "female",
     businessName: "Broadbeach City Parcel & Document Runner",
     category: "courier",
@@ -213,6 +237,7 @@ const INITIAL_PROVIDERS = [
     canBeBooked: false,
     sampleRegistryFile: "sampleprofiles.txt",
     name: "Marcus 'Macca' Taylor",
+    username: "@maccataylor",
     gender: "male",
     businessName: "Robina Heavy Ute & Trade Freight",
     category: "courier",
@@ -272,6 +297,7 @@ const INITIAL_PROVIDERS = [
     canBeBooked: false,
     sampleRegistryFile: "sampleprofiles.txt",
     name: "Liam O'Connor",
+    username: "@liamoconnor",
     gender: "male",
     businessName: "M1 Corridor Sprinter Freight (GC to Brisbane)",
     category: "courier",
@@ -331,6 +357,7 @@ const INITIAL_PROVIDERS = [
     canBeBooked: false,
     sampleRegistryFile: "sampleprofiles.txt",
     name: "Tanya Nguyen",
+    username: "@tanyanguyen",
     gender: "female",
     businessName: "Surfers & Central Coast Direct Courier",
     category: "courier",
@@ -485,8 +512,11 @@ class ProviderDatabase {
       ? false
       : (Boolean(p.isSample) || SAMPLE_DRIVER_IDS.includes(p.id) || SAMPLE_PROVIDER_SPNS.includes(p.serviceProviderNumber));
 
+    const username = normalizeDriverUsername(p.username, p.name, p.id);
+
     return {
       ...p,
+      username,
       isSample,
       sampleTag: isSample ? (p.sampleTag || "SAMPLE ONLY") : "",
       samplePurpose: isSample ? (p.samplePurpose || "For sample purposes only — cannot be booked") : "",
@@ -620,7 +650,44 @@ class ProviderDatabase {
 
   findById(id) {
     if (!id) return this.providers[0] || null;
-    return this.providers.find(p => p.id === id || p.serviceProviderNumber === id);
+    const clean = String(id).trim();
+    const cleanLower = clean.toLowerCase();
+    return this.providers.find(p =>
+      p.id === clean ||
+      p.serviceProviderNumber === clean ||
+      (p.username && p.username.toLowerCase() === cleanLower) ||
+      (p.username && p.username.toLowerCase() === `@${cleanLower.replace(/^@+/, '')}`)
+    );
+  }
+
+  findByUsername(username) {
+    if (!username) return null;
+    const target = normalizeDriverUsername(username).toLowerCase();
+    return this.providers.find(p => (p.username || '').toLowerCase() === target) || null;
+  }
+
+  searchDrivers(query = '', onlyVisible = true) {
+    const pool = onlyVisible ? this.getAllVisibleOnMap() : this.getAll();
+    const raw = String(query || '').trim().toLowerCase();
+    if (!raw) return pool;
+    const cleanHandle = raw.replace(/^@+/, '');
+    return pool.filter(p => {
+      const uname = String(p.username || '').toLowerCase();
+      const unameBare = uname.replace(/^@+/, '');
+      const name = String(p.name || '').toLowerCase();
+      const biz = String(p.businessName || '').toLowerCase();
+      const suburb = String(p.baseSuburb || p.address || '').toLowerCase();
+      const spn = String(p.serviceProviderNumber || '').toLowerCase();
+      return (
+        uname.includes(raw) ||
+        (cleanHandle && unameBare.includes(cleanHandle)) ||
+        name.includes(raw) ||
+        (cleanHandle && name.includes(cleanHandle)) ||
+        biz.includes(raw) ||
+        suburb.includes(raw) ||
+        spn.includes(raw)
+      );
+    });
   }
 
   updateProvider(idOrSpn, updates) {
@@ -1018,4 +1085,5 @@ window.ProviderDatabase = ProviderDatabase;
 window.CourierOrderDatabase = CourierOrderDatabase;
 window.SuperadminDatabase = SuperadminDatabase;
 window.CandidateDatabase = CandidateDatabase;
+window.normalizeDriverUsername = normalizeDriverUsername;
 window.getDefaultCalendarSchedule = getDefaultCalendarSchedule;

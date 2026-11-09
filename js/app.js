@@ -33,6 +33,7 @@ const appState = {
   courierOriginCoords: { lat: -27.9635, lng: 153.4064 },
   courierDestCoords: { lat: -28.0280, lng: 153.4312 },
   searchRadiusKm: 50,
+  navbarDriverSearchQuery: '',
   driverServiceModeOverrides: {},
   contractorCardModeOverrides: {},
   contractorMarkers: [],
@@ -1340,16 +1341,30 @@ function filterContractors() {
   // Sort closest drivers first
   matched.sort((a, b) => a.distNum - b.distNum);
 
+  const navSearchQ = String(appState.navbarDriverSearchQuery || '').trim().toLowerCase();
+  const navSearchClean = navSearchQ.replace(/^@+/, '');
+  const filteredMatched = navSearchQ
+    ? matched.filter(p => {
+        const uname = String(p.username || window.normalizeDriverUsername?.('', p.name, p.id) || '').toLowerCase();
+        const unameBare = uname.replace(/^@+/, '');
+        const name = String(p.name || '').toLowerCase();
+        const suburb = String(p.baseSuburb || p.address || '').toLowerCase();
+        return uname.includes(navSearchQ) || (navSearchClean && unameBare.includes(navSearchClean)) || name.includes(navSearchQ) || (navSearchClean && name.includes(navSearchClean)) || suburb.includes(navSearchQ);
+      })
+    : matched;
+
   const counterText = document.getElementById('map-counter-text');
   if (counterText) {
-    counterText.textContent = `Showing ${matched.length} Active Courier Driver${matched.length === 1 ? '' : 's'} (Closest First)`;
+    counterText.textContent = `Showing ${filteredMatched.length} Active Courier Driver${filteredMatched.length === 1 ? '' : 's'} (Closest First)`;
   }
   const summaryText = document.getElementById('contractor-filter-summary');
   if (summaryText) {
-    summaryText.textContent = `Within ${radius} km • Sorted by GPS distance`;
+    summaryText.textContent = navSearchQ
+      ? `Filtered by "${appState.navbarDriverSearchQuery}" • Within ${radius} km`
+      : `Within ${radius} km • Sorted by GPS distance`;
   }
 
-  renderContractorCards(matched);
+  renderContractorCards(filteredMatched);
 }
 
 /**
@@ -1438,6 +1453,7 @@ function renderContractorCards(contractors) {
 
     const isSample = checkSampleProfileOrData(c);
     const isMobileExpanded = !!(appState.expandedMobileDriverCards && appState.expandedMobileDriverCards[c.id]);
+    const drvUsername = c.username || (typeof window.normalizeDriverUsername === 'function' ? window.normalizeDriverUsername('', c.name, c.id) : `@${String(c.name || 'driver').toLowerCase().replace(/[^a-z0-9]/g, '')}`);
     const symbolBadges = `
       ${hasVeh ? `<span class="driver-mode-symbol-badge" style="background:${!isBicycleView ? '#0B192C' : '#E2E8F0'}; color:${!isBicycleView ? '#FFFFFF' : '#475569'}; width:24px; height:24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; flex-shrink:0;" data-agent-id="map-symbol-vehicle-${c.id}" data-testid="map-symbol-vehicle-${c.id}" aria-label="Vehicle Symbol"><i class="fa-solid fa-truck"></i></span>` : ''}
       ${hasBic ? `<span class="driver-mode-symbol-badge" style="background:${isBicycleView ? '#0284C7' : '#E0F2FE'}; color:${isBicycleView ? '#FFFFFF' : '#0369A1'}; width:24px; height:24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; flex-shrink:0;" data-agent-id="map-symbol-bicycle-${c.id}" data-testid="map-symbol-bicycle-${c.id}" aria-label="Bicycle Symbol"><i class="fa-solid fa-bicycle"></i></span>` : ''}
@@ -1451,6 +1467,7 @@ function renderContractorCards(contractors) {
               <h5 style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.1rem;">
                 ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Driver Licence"></i>
               </h5>
+              <span class="driver-username-pill" data-agent-id="map-driver-username-${c.id}" data-testid="map-driver-username-${c.id}">${escapeAttr(drvUsername)}</span>
               ${symbolBadges}
               ${isSample ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:0.1rem 0.45rem; border-radius:999px;" data-agent-id="map-sample-badge-${c.id}" data-testid="map-sample-badge-${c.id}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY</span>` : ''}
               ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
@@ -3115,6 +3132,7 @@ function renderSuperadminDriverApprovals() {
         <div style="flex:1; min-width:240px;">
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
             <strong style="font-size:0.92rem; color:#1E3A8A;">${escapeAttr(d.name)}</strong>
+            <span class="driver-username-pill" data-agent-id="sa-driver-username-${d.id}" data-testid="sa-driver-username-${d.id}">${escapeAttr(d.username || window.normalizeDriverUsername?.('', d.name, d.id) || '@driver')}</span>
             <span style="font-size:0.76rem; color:#475569;">(${escapeAttr(d.businessName || 'Express Courier')})</span>
             <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isApproved ? '#ECFDF5' : '#FEF3C7'}; color:${isApproved ? '#065F46' : '#92400E'};">
               <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin' : 'Pending SuperAdmin Approval'}
@@ -3537,13 +3555,33 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
   });
 
   // Sort: live bookable drivers that fit the package first, then sample drivers, then closest to pickup origin
+  const navSearchQ = String(appState.navbarDriverSearchQuery || '').trim().toLowerCase();
+  const navSearchClean = navSearchQ.replace(/^@+/, '');
+  const matchesDriverSearch = (drv) => {
+    if (!navSearchQ) return true;
+    const uname = String(drv.username || window.normalizeDriverUsername?.('', drv.name, drv.id) || '').toLowerCase();
+    const unameBare = uname.replace(/^@+/, '');
+    const name = String(drv.name || '').toLowerCase();
+    const suburb = String(drv.baseSuburb || drv.address || '').toLowerCase();
+    return uname.includes(navSearchQ) || (navSearchClean && unameBare.includes(navSearchClean)) || name.includes(navSearchQ) || (navSearchClean && name.includes(navSearchClean)) || suburb.includes(navSearchQ);
+  };
+
   rankedDrivers.sort((a, b) => {
+    if (navSearchQ) {
+      const aMatch = matchesDriverSearch(a.driver) ? 0 : 1;
+      const bMatch = matchesDriverSearch(b.driver) ? 0 : 1;
+      if (aMatch !== bMatch) return aMatch - bMatch;
+    }
     if (a.fitsPackage !== b.fitsPackage) return a.fitsPackage ? -1 : 1;
     const aSample = checkSampleProfileOrData(a.driver);
     const bSample = checkSampleProfileOrData(b.driver);
     if (aSample !== bSample) return aSample ? 1 : -1;
     return a.distToPickupKm - b.distToPickupKm;
   });
+
+  const driversForList = navSearchQ
+    ? rankedDrivers.filter(r => matchesDriverSearch(r.driver))
+    : rankedDrivers;
 
   const eligibleCount = rankedDrivers.filter(r => r.fitsPackage).length;
   const fitSummaryEl = document.getElementById('courier-package-fit-summary');
@@ -3576,7 +3614,8 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
   // Render driver selection cards on the Left Side (#courier-driver-selection-list) with per-driver Map Dropdown
   const listEl = document.getElementById('courier-driver-selection-list');
   if (listEl) {
-    listEl.innerHTML = rankedDrivers.map((item, idx) => {
+    const listItemsToRender = driversForList.length > 0 ? driversForList : rankedDrivers;
+    listEl.innerHTML = listItemsToRender.map((item, idx) => {
       const d = item.driver;
       const q = item.quote;
       const isSelected = d.id === appState.selectedCourierDriverId;
@@ -3590,6 +3629,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
 
       const isSampleDriver = checkSampleProfileOrData(d);
       const isMobileExpanded = !!(appState.expandedMobileDriverCards && appState.expandedMobileDriverCards[d.id]);
+      const drvUsername = d.username || (typeof window.normalizeDriverUsername === 'function' ? window.normalizeDriverUsername('', d.name, d.id) : `@${String(d.name || 'driver').toLowerCase().replace(/[^a-z0-9]/g, '')}`);
       const modeBadge = `
         ${hasVeh ? `<span class="driver-mode-symbol-badge" style="background:${mode === 'vehicle' ? '#0B192C' : '#E2E8F0'}; color:${mode === 'vehicle' ? '#FFFFFF' : '#475569'}; width:24px; height:24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; flex-shrink:0;" data-agent-id="driver-symbol-vehicle-${d.id}" data-testid="driver-symbol-vehicle-${d.id}" aria-label="Vehicle Symbol"><i class="fa-solid fa-truck"></i></span>` : ''}
         ${hasBic ? `<span class="driver-mode-symbol-badge" style="background:${mode === 'bicycle' ? '#0284C7' : '#E0F2FE'}; color:${mode === 'bicycle' ? '#FFFFFF' : '#0369A1'}; width:24px; height:24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; flex-shrink:0;" data-agent-id="driver-symbol-bicycle-${d.id}" data-testid="driver-symbol-bicycle-${d.id}" aria-label="Bicycle Symbol"><i class="fa-solid fa-bicycle"></i></span>` : ''}
@@ -3606,16 +3646,18 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
           style="cursor:pointer; border:2px solid ${isSelected ? 'var(--brand-orange)' : 'var(--border-light)'}; background:${isSelected ? '#FFFDF9' : '#FFFFFF'}; border-radius:var(--radius-md); padding:0.95rem 1rem; transition:all 0.15s ease; opacity:${item.fitsPackage ? '1' : '0.68'};"
           data-agent-id="select-driver-card-${d.id}"
           data-testid="select-driver-card-${d.id}"
+          data-driver-username="${escapeAttr(drvUsername)}"
           data-is-sample="${isSampleDriver ? 'true' : 'false'}"
           data-can-be-booked="${isSampleDriver ? 'false' : 'true'}"
           role="button"
           tabindex="0"
-          aria-label="Select Driver ${escapeAttr(d.name)}">
+          aria-label="Select Driver ${escapeAttr(d.name)} (${escapeAttr(drvUsername)})">
           <div class="driver-card-summary-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
             <div style="display:flex; gap:0.5rem; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <strong style="font-size:0.98rem; color:var(--primary-navy);">${d.name}</strong>
+                  <span class="driver-username-pill" data-agent-id="driver-username-${d.id}" data-testid="driver-username-${d.id}">${escapeAttr(drvUsername)}</span>
                   ${modeBadge}
                   ${isSampleDriver ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:0.12rem 0.45rem; border-radius:999px;" data-agent-id="sample-profile-badge-${d.id}" data-testid="sample-profile-badge-${d.id}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
                   ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
@@ -5060,6 +5102,12 @@ function renderDriverInformationView() {
   const nameEl = document.getElementById('driver-info-name');
   if (nameEl) nameEl.textContent = `${activeDriver.name || 'Courier Driver'}`;
 
+  const normalizedUsername = typeof window.normalizeDriverUsername === 'function'
+    ? window.normalizeDriverUsername(activeDriver.username, activeDriver.name, activeDriver.id)
+    : (activeDriver.username || '@driver');
+  const usernameBadgeEl = document.getElementById('driver-info-username-badge');
+  if (usernameBadgeEl) usernameBadgeEl.textContent = normalizedUsername;
+
   const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(activeDriver) : (activeDriver.approved !== false && activeDriver.status !== 'pending_approval');
   const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(activeDriver) : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
   const isVisibleOnMap = isApproved && isProfileOn;
@@ -5130,6 +5178,7 @@ function renderDriverInformationView() {
   setVal('info-drv-bike-max-width', activeDriver.bicycleMaxWidthCm ?? 30);
   setVal('info-drv-bike-max-length', activeDriver.bicycleMaxLengthCm ?? 40);
 
+  setVal('info-drv-username-input', normalizedUsername);
   setVal('info-drv-payid-input', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
   const infoLicInput = document.getElementById('info-drv-licence-input');
   const infoLicGroup = document.getElementById('info-drv-licence-group') || infoLicInput?.closest?.('.input-group');
@@ -5212,6 +5261,11 @@ function saveDriverInfoProfile(event) {
   activeDriver.bicycleMaxHeightCm = getNum('info-drv-bike-max-height', 35);
   activeDriver.bicycleMaxWidthCm = getNum('info-drv-bike-max-width', 30);
   activeDriver.bicycleMaxLengthCm = getNum('info-drv-bike-max-length', 40);
+
+  const rawUsername = document.getElementById('info-drv-username-input')?.value.trim();
+  activeDriver.username = typeof window.normalizeDriverUsername === 'function'
+    ? window.normalizeDriverUsername(rawUsername || activeDriver.username, activeDriver.name, activeDriver.id)
+    : (rawUsername ? (rawUsername.startsWith('@') ? rawUsername.toLowerCase() : `@${rawUsername.toLowerCase()}`) : (activeDriver.username || '@driver'));
 
   const payidVal = document.getElementById('info-drv-payid-input')?.value.trim();
   if (payidVal) {
@@ -5898,6 +5952,9 @@ function prefillDriverRegistrationForm(supporter) {
     };
 
     setVal('drv-reg-name', existingDriver.name || supporter?.name);
+    setVal('drv-reg-username', typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(existingDriver.username, existingDriver.name || supporter?.name, existingDriver.id)
+      : (existingDriver.username || ''));
     setVal('drv-reg-gender', existingDriver.gender || 'male');
     setVal('drv-reg-phone', existingDriver.phone || supporter?.phone);
     setVal('drv-reg-email', existingDriver.email || supporter?.email);
@@ -5946,6 +6003,9 @@ function prefillDriverRegistrationForm(supporter) {
         if (el && val !== undefined && val !== null) el.value = val;
       };
       setVal('drv-reg-name', draft.name || supporter?.name);
+      setVal('drv-reg-username', draft.username || (typeof window.normalizeDriverUsername === 'function' && (draft.name || supporter?.name)
+        ? window.normalizeDriverUsername('', draft.name || supporter?.name)
+        : ''));
       setVal('drv-reg-gender', draft.gender || 'male');
       setVal('drv-reg-phone', draft.phone || supporter?.phone);
       setVal('drv-reg-email', draft.email || supporter?.email);
@@ -5996,6 +6056,9 @@ function prefillDriverRegistrationForm(supporter) {
         if (el && !el.value && val) el.value = val;
       };
       setValIfEmpty('drv-reg-name', supporter.name);
+      if (supporter.name && typeof window.normalizeDriverUsername === 'function') {
+        setValIfEmpty('drv-reg-username', window.normalizeDriverUsername('', supporter.name));
+      }
       setValIfEmpty('drv-reg-gender', supporter.gender || 'male');
       setValIfEmpty('drv-reg-phone', supporter.phone);
       setValIfEmpty('drv-reg-email', supporter.email);
@@ -6011,6 +6074,10 @@ function handleDriverRegistrationSubmit(event) {
   if (event && event.preventDefault) event.preventDefault();
 
   const name = document.getElementById('drv-reg-name')?.value.trim();
+  const rawUsername = document.getElementById('drv-reg-username')?.value.trim();
+  const username = typeof window.normalizeDriverUsername === 'function'
+    ? window.normalizeDriverUsername(rawUsername, name)
+    : (rawUsername ? (rawUsername.startsWith('@') ? rawUsername.toLowerCase() : `@${rawUsername.toLowerCase()}`) : '@driver');
   const gender = document.getElementById('drv-reg-gender')?.value || 'male';
   const businessName = document.getElementById('drv-reg-business')?.value.trim() || `${name} Express Couriers`;
   const phone = document.getElementById('drv-reg-phone')?.value.trim();
@@ -6079,6 +6146,7 @@ function handleDriverRegistrationSubmit(event) {
   if (existingDriver) {
     savedDriver = window.providerDB.updateProvider(existingDriver.id, {
       name,
+      username,
       gender,
       businessName,
       tradeTitle,
@@ -6125,6 +6193,7 @@ function handleDriverRegistrationSubmit(event) {
     savedDriver = window.providerDB.addProvider({
       uid: userUid,
       name,
+      username,
       gender,
       businessName,
       tradeTitle,
@@ -6333,6 +6402,9 @@ function prefillSupporterDriverRegistrationForm(supporter) {
     }
 
     setVal('sup-drv-reg-name', existingDriver.name || supporter?.name);
+    setVal('sup-drv-reg-username', typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(existingDriver.username, existingDriver.name || supporter?.name, existingDriver.id)
+      : (existingDriver.username || ''));
     setVal('sup-drv-reg-gender', existingDriver.gender || 'male');
     setVal('sup-drv-reg-phone', existingDriver.phone || supporter?.phone);
     setVal('sup-drv-reg-email', existingDriver.email || supporter?.email);
@@ -6384,6 +6456,9 @@ function prefillSupporterDriverRegistrationForm(supporter) {
         if (el && !el.value && val) el.value = val;
       };
       setValIfEmpty('sup-drv-reg-name', supporter.name);
+      if (supporter.name && typeof window.normalizeDriverUsername === 'function') {
+        setValIfEmpty('sup-drv-reg-username', window.normalizeDriverUsername('', supporter.name));
+      }
       setValIfEmpty('sup-drv-reg-phone', supporter.phone);
       setValIfEmpty('sup-drv-reg-email', supporter.email);
       setValIfEmpty('sup-drv-reg-address', supporter.suburb || supporter.address);
@@ -6399,6 +6474,7 @@ function handleSupporterDriverRegistrationSubmit(event) {
   // Sync values from #sup-drv-reg-* into #drv-reg-* and submit through the unified driver application pipeline
   const fieldPairs = [
     ['sup-drv-reg-name', 'drv-reg-name'],
+    ['sup-drv-reg-username', 'drv-reg-username'],
     ['sup-drv-reg-business', 'drv-reg-business'],
     ['sup-drv-reg-gender', 'drv-reg-gender'],
     ['sup-drv-reg-phone', 'drv-reg-phone'],
@@ -6454,6 +6530,188 @@ function handleSupporterDriverRegistrationSubmit(event) {
   return savedDriver;
 }
 window.handleSupporterDriverRegistrationSubmit = handleSupporterDriverRegistrationSubmit;
+
+/**
+ * Format Driver @username input fields live with a leading '@'
+ */
+function formatDriverUsernameInput(inputEl) {
+  if (!inputEl) return;
+  const raw = String(inputEl.value || '').trim();
+  if (!raw) return;
+  const stripped = raw.replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 24);
+  inputEl.value = stripped ? `@${stripped}` : '@';
+}
+window.formatDriverUsernameInput = formatDriverUsernameInput;
+
+/**
+ * Top Navbar Preferred Driver Search Bar (@username, name, suburb)
+ */
+function renderNavbarDriverSearchResults(rawQuery) {
+  const resultsEl = document.getElementById('navbar-driver-search-results');
+  const clearBtn = document.getElementById('navbar-driver-search-clear');
+  const q = String(rawQuery ?? appState.navbarDriverSearchQuery ?? '').trim();
+
+  if (clearBtn) {
+    clearBtn.style.display = q ? 'inline-flex' : 'none';
+  }
+  if (!resultsEl || !window.providerDB) return;
+
+  const qLower = q.toLowerCase();
+  const qBare = qLower.replace(/^@+/, '');
+
+  const allDrivers = window.providerDB.getAll().filter(d => isDriverVisibleOnCustomerMap(d));
+  const matches = !q
+    ? allDrivers.slice(0, 6)
+    : allDrivers.filter(d => {
+        const handle = (d.username || '').toLowerCase();
+        const handleBare = handle.replace(/^@+/, '');
+        const name = (d.name || '').toLowerCase();
+        const suburb = (d.baseSuburb || d.address || '').toLowerCase();
+        return (
+          handle.includes(qLower) ||
+          (qBare && handleBare.includes(qBare)) ||
+          name.includes(qLower) ||
+          (qBare && name.includes(qBare)) ||
+          suburb.includes(qLower)
+        );
+      });
+
+  if (matches.length === 0) {
+    resultsEl.innerHTML = `
+      <div style="padding:10px 12px; font-size:0.78rem; color:#64748B; text-align:center;" data-testid="navbar-driver-search-empty">
+        No drivers found matching <strong>${escapeAttr(q)}</strong>. Try searching by <strong>@username</strong> or name.
+      </div>
+    `;
+    resultsEl.style.display = 'block';
+    return;
+  }
+
+  resultsEl.innerHTML = matches.map(d => {
+    const handle = typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(d.username, d.name, d.id)
+      : (d.username || '@driver');
+    const isSelected = appState.selectedCourierDriverId === d.id;
+    const rateNum = Number(d.vehiclePerKmRateAud ?? d.perKmRateAud ?? 2.20);
+    const hasVeh = d.hasVehicleCourier !== false;
+    const hasBike = d.hasBicycleCourier === true;
+    return `
+      <div class="navbar-driver-search-item" role="option" aria-selected="${isSelected ? 'true' : 'false'}" data-agent-id="navbar-search-result-${d.id}" data-testid="navbar-search-result-${d.id}" onclick="selectPreferredDriverFromNavbarSearch('${d.id}')">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+          <img src="${d.photo}" alt="${escapeAttr(d.name)}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:2px solid ${isSelected ? '#2563EB' : '#CBD5E1'}; flex-shrink:0;">
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+              <strong style="font-size:0.8rem; color:#0F172A;">${escapeAttr(d.name)}</strong>
+              <span class="driver-username-pill" data-testid="navbar-result-username-${d.id}">${escapeAttr(handle)}</span>
+              <span style="display:inline-flex; align-items:center; gap:3px;">
+                ${hasVeh ? `<span style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; width:20px; height:20px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.66rem;" aria-label="Vehicle"><i class="fa-solid fa-truck"></i></span>` : ''}
+                ${hasBike ? `<span style="background:#F0FDF4; color:#15803D; border:1px solid #BBF7D0; width:20px; height:20px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:0.66rem;" aria-label="Bicycle"><i class="fa-solid fa-bicycle"></i></span>` : ''}
+              </span>
+            </div>
+            <div style="font-size:0.7rem; color:#64748B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <i class="fa-solid fa-location-dot" style="color:#0284C7;"></i> ${escapeAttr(d.baseSuburb || 'Southport QLD')} • ⭐ ${d.rating || '4.9'}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:0.76rem; font-weight:800; color:#059669;">$${rateNum.toFixed(2)}/km</div>
+          <span style="font-size:0.66rem; font-weight:800; color:${isSelected ? '#1D4ED8' : '#2563EB'};">${isSelected ? '✓ Selected' : 'Select'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+  resultsEl.style.display = 'block';
+}
+window.renderNavbarDriverSearchResults = renderNavbarDriverSearchResults;
+
+function handleNavbarDriverSearchInput(rawValue) {
+  appState.navbarDriverSearchQuery = String(rawValue || '').trim();
+  renderNavbarDriverSearchResults(appState.navbarDriverSearchQuery);
+  calculateCourierQuote();
+  filterContractors();
+}
+window.handleNavbarDriverSearchInput = handleNavbarDriverSearchInput;
+
+function handleNavbarDriverSearchFocus() {
+  renderNavbarDriverSearchResults(appState.navbarDriverSearchQuery || '');
+}
+window.handleNavbarDriverSearchFocus = handleNavbarDriverSearchFocus;
+
+function handleNavbarDriverSearchKeydown(event) {
+  if (!event) return;
+  if (event.key === 'Escape') {
+    const resultsEl = document.getElementById('navbar-driver-search-results');
+    if (resultsEl) resultsEl.style.display = 'none';
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const q = String(appState.navbarDriverSearchQuery || '').trim();
+    if (!q || !window.providerDB) return;
+    const matches = window.providerDB.searchDrivers(q).filter(d => isDriverVisibleOnCustomerMap(d));
+    if (matches.length > 0) {
+      selectPreferredDriverFromNavbarSearch(matches[0].id);
+    }
+  }
+}
+window.handleNavbarDriverSearchKeydown = handleNavbarDriverSearchKeydown;
+
+function selectPreferredDriverFromNavbarSearch(driverId) {
+  if (!driverId || !window.providerDB) return;
+  const driver = window.providerDB.findById(driverId);
+  if (!driver) return;
+
+  const handle = typeof window.normalizeDriverUsername === 'function'
+    ? window.normalizeDriverUsername(driver.username, driver.name, driver.id)
+    : (driver.username || '@driver');
+
+  const inputEl = document.getElementById('navbar-driver-search-input');
+  if (inputEl) {
+    inputEl.value = handle;
+  }
+  const clearBtn = document.getElementById('navbar-driver-search-clear');
+  if (clearBtn) {
+    clearBtn.style.display = 'inline-flex';
+  }
+  appState.navbarDriverSearchQuery = '';
+
+  const resultsEl = document.getElementById('navbar-driver-search-results');
+  if (resultsEl) {
+    resultsEl.style.display = 'none';
+  }
+
+  selectCourierDriverForOrder(driver.id);
+  filterContractors();
+
+  const availSection = document.getElementById('courier-available-drivers-box') || document.getElementById('courier-calculator-section');
+  if (availSection && typeof availSection.scrollIntoView === 'function') {
+    availSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  showToast(`✅ Preferred driver selected: ${driver.name} (${handle})`);
+}
+window.selectPreferredDriverFromNavbarSearch = selectPreferredDriverFromNavbarSearch;
+
+function clearNavbarDriverSearch() {
+  appState.navbarDriverSearchQuery = '';
+  const inputEl = document.getElementById('navbar-driver-search-input');
+  if (inputEl) inputEl.value = '';
+  const clearBtn = document.getElementById('navbar-driver-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const resultsEl = document.getElementById('navbar-driver-search-results');
+  if (resultsEl) resultsEl.style.display = 'none';
+  calculateCourierQuote();
+  filterContractors();
+}
+window.clearNavbarDriverSearch = clearNavbarDriverSearch;
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (evt) => {
+    const wrapper = document.getElementById('navbar-driver-search-wrapper');
+    const resultsEl = document.getElementById('navbar-driver-search-results');
+    if (wrapper && resultsEl && !wrapper.contains(evt.target)) {
+      resultsEl.style.display = 'none';
+    }
+  });
+}
 
 /**
  * Driver Admin Dashboard: Render Active Driver Profile, Live GPS, Token Balance & Recorded 9am-4pm Orders

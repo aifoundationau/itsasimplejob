@@ -99,6 +99,28 @@
         </button>
       </div>
 
+      <!-- Top Navbar Preferred Driver Search Bar (@username or Driver Name) -->
+      <div class="navbar-driver-search-wrapper" id="navbar-driver-search-wrapper"
+        data-agent-id="navbar-driver-search-wrapper" data-testid="navbar-driver-search-wrapper">
+        <div class="navbar-driver-search-box">
+          <i class="fa-solid fa-magnifying-glass navbar-driver-search-icon" aria-hidden="true"></i>
+          <input type="search" id="navbar-driver-search-input" class="navbar-driver-search-input"
+            placeholder="Search preferred driver (@username or name)..." autocomplete="off"
+            oninput="handleNavbarDriverSearchInput(this.value)" onfocus="handleNavbarDriverSearchFocus()"
+            onkeydown="handleNavbarDriverSearchKeydown(event)" data-agent-id="navbar-driver-search-input"
+            data-testid="navbar-driver-search-input" aria-label="Search for your preferred driver by @username or name">
+          <button type="button" id="navbar-driver-search-clear" class="navbar-driver-search-clear"
+            style="display:none;" onclick="clearNavbarDriverSearch()"
+            data-agent-id="navbar-driver-search-clear" data-testid="navbar-driver-search-clear"
+            aria-label="Clear preferred driver search">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="navbar-driver-search-results" class="navbar-driver-search-results" style="display:none;"
+          role="listbox" data-agent-id="navbar-driver-search-results" data-testid="navbar-driver-search-results"
+          aria-label="Preferred Driver Search Results"></div>
+      </div>
+
       <!-- Right Action Buttons -->
       <div class="nav-actions" style="position:relative;">
         <!-- Driver Incoming Booking Red Message Alert Icon (Front Page Top Navbar) -->
@@ -1076,6 +1098,11 @@
                           style="font-size:1.25rem; font-weight:800; color:var(--primary-navy); margin:0;">
                           Driver Information
                         </h3>
+                        <span id="driver-info-username-badge"
+                          style="font-size:0.8rem; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-weight:800; padding:0.18rem 0.6rem; border-radius:999px;"
+                          data-agent-id="driver-info-username-badge" data-testid="driver-info-username-badge">
+                          @callumevans
+                        </span>
                         <span id="driver-info-status-badge"
                           style="font-size:0.75rem; background:#DCFCE7; color:#15803D; font-weight:800; padding:0.2rem 0.65rem; border-radius:999px;">
                           <i class="fa-solid fa-circle-check"></i> Approved Driver • Shown on Map
@@ -1300,8 +1327,15 @@
                     </div>
                   </div>
 
-                  <!-- PayID & Licence Details -->
+                  <!-- Username, PayID & Licence Details -->
                   <div class="form-row" style="margin-bottom:1rem;">
+                    <div class="input-group">
+                      <label class="input-label" for="info-drv-username-input">Driver Username (@username):</label>
+                      <input type="text" id="info-drv-username-input" class="form-control" required
+                        placeholder="e.g. @callumevans" oninput="formatDriverUsernameInput(this)"
+                        data-agent-id="info-drv-username-input" data-testid="info-drv-username-input"
+                        aria-label="Driver Username (@username)">
+                    </div>
                     <div class="input-group">
                       <label class="input-label" for="info-drv-payid-input">PayID Direct Settlement Account (Mobile /
                         ABN / Email):</label>
@@ -1622,6 +1656,12 @@
                     <input type="text" id="sup-drv-reg-name" class="form-control" required placeholder="e.g. Jordan Mitchell"
                       data-agent-id="sup-drv-reg-name" data-testid="sup-drv-reg-name" aria-label="Driver Full Name">
                     <input type="hidden" id="sup-drv-reg-business" value="">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-username">Choose Username (@username):</label>
+                    <input type="text" id="sup-drv-reg-username" class="form-control" required placeholder="e.g. @jordanmitchell"
+                      oninput="formatDriverUsernameInput(this)" data-agent-id="sup-drv-reg-username"
+                      data-testid="sup-drv-reg-username" aria-label="Choose Driver Username (@username)">
                   </div>
                   <div class="input-group">
                     <label class="input-label" for="sup-drv-reg-gender">Gender (Map Pin Color):</label>
@@ -2632,6 +2672,12 @@
                 <input type="text" id="drv-reg-name" class="form-control" required placeholder="e.g. Jordan Mitchell"
                   data-agent-id="drv-reg-name" data-testid="drv-reg-name" aria-label="Driver Name">
                 <input type="hidden" id="drv-reg-business" value="">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-username">Choose Username (@username):</label>
+                <input type="text" id="drv-reg-username" class="form-control" required placeholder="e.g. @jordanmitchell"
+                  oninput="formatDriverUsernameInput(this)" data-agent-id="drv-reg-username"
+                  data-testid="drv-reg-username" aria-label="Choose Driver Username (@username)">
               </div>
               <div class="input-group">
                 <label class="input-label" for="drv-reg-gender">Gender (Map Pin Color):</label>
