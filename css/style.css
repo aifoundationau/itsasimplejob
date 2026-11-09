@@ -6028,13 +6028,15 @@ body {
   }
 }
 
-/* 1b. Desktop / Laptop Preservation (> 960px): Courier Form Steps Always Expanded, Mobile Toggle Hidden */
+/* 1b. Desktop / Laptop Preservation (> 960px): Courier Form Steps & Driver Cards Always Expanded, Mobile Toggles Hidden */
 @media screen and (min-width: 961px) {
-  .courier-step-mobile-toggle {
+  .courier-step-mobile-toggle,
+  .driver-card-mobile-toggle {
     display: none !important;
   }
 
-  .courier-booking-step-group .courier-step-body {
+  .courier-booking-step-group .courier-step-body,
+  .driver-collapsible-card .driver-card-collapsible-body {
     display: block !important;
   }
 
@@ -6045,6 +6047,35 @@ body {
 
 /* 2. Tablet & Mobile Safe-Area & Fluid Viewport Foundation (<= 960px) */
 @media screen and (max-width: 960px) {
+  /* Available Driver Cards Collapsed at Start on Android & iPhone */
+  .driver-card-mobile-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--brand-orange);
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-radius: 999px;
+    padding: 0.18rem 0.5rem;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .driver-collapsible-card.driver-card-mobile-collapsed {
+    padding: 0.7rem 0.85rem !important;
+  }
+
+  .driver-collapsible-card.driver-card-mobile-collapsed .driver-card-collapsible-body,
+  .driver-collapsible-card.driver-card-mobile-collapsed .driver-card-mobile-hide-when-collapsed {
+    display: none !important;
+  }
+
+  .driver-collapsible-card:not(.driver-card-mobile-collapsed) .driver-card-collapsible-body {
+    display: block !important;
+  }
+
   /* Courier Booking Form Steps 1, 2 & 3 Collapsed at Start on Android & iPhone */
   .courier-booking-step-group {
     margin-bottom: 0.75rem;

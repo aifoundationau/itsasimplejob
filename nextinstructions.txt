@@ -603,3 +603,9 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Removed `#tab-btn-how-it-works`, `#pill-how-it-works`, and `#footer-how-it-works-link` from `index.html` so "How It Works" is removed from the web app entirely.
 - Simplified the bottom footer (`<footer class="site-footer">` in `index.html` and `<footer class="footer">` in `terms.html`) so only **Terms of Service** (`/terms.html`) appears in the bottom footer links row.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 78: Collapse Each Available Driver Card at Start on Android & iPhone (Unchanged on Desktop):
+- Updated `renderContractorCards()` (`#contractor-cards-container`) and `updateCourierPricingWithSettings()` (`#courier-driver-selection-list`) in `js/app.js` so each available driver card renders with `driver-collapsible-card driver-card-mobile-collapsed` at start, a compact header showing driver name, status badge, distance, and price/rate, a mobile toggle pill (`.driver-card-mobile-toggle`: `Tap to Open ▼` / `Hide ▲`), and a collapsible body (`.driver-card-collapsible-body`).
+- Added `@media screen and (max-width: 960px)` rules in `css/style.css` to hide `.driver-card-collapsible-body` when `.driver-card-mobile-collapsed` is active on Android and iPhone, and `@media screen and (min-width: 961px)` rules so Desktop/Laptop driver cards remain 100% expanded and unchanged.
+- Implemented `toggleMobileDriverCard(driverId, forceExpand)` and `initMobileDriverCardsCollapsed()` in `js/app.js`.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

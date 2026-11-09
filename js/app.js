@@ -1421,9 +1421,10 @@ function renderContractorCards(contractors) {
       : (c.vehicle || c.tradeTitle || 'Courier Driver');
 
     const isSample = checkSampleProfileOrData(c);
+    const isMobileExpanded = !!(appState.expandedMobileDriverCards && appState.expandedMobileDriverCards[c.id]);
     return `
-    <div class="contractor-search-card" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})" data-agent-id="map-driver-card-${c.id}" data-testid="map-driver-card-${c.id}">
-      <div class="card-top-row">
+    <div class="contractor-search-card driver-collapsible-card ${isMobileExpanded ? '' : 'driver-card-mobile-collapsed'}" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})" data-agent-id="map-driver-card-${c.id}" data-testid="map-driver-card-${c.id}">
+      <div class="card-top-row driver-card-summary-header">
         <div class="card-tradie-profile">
           <div>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
@@ -1432,62 +1433,68 @@ function renderContractorCards(contractors) {
               </h5>
               ${isSample ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.66rem; font-weight:900; padding:0.1rem 0.45rem; border-radius:999px;" data-agent-id="map-sample-badge-${c.id}" data-testid="map-sample-badge-${c.id}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY</span>` : ''}
               ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
-              ${isDual ? `<span style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; font-size:0.66rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Dual Mode</span>` : ''}
+              ${isDual ? `<span class="driver-card-mobile-hide-when-collapsed" style="background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; font-size:0.66rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Dual Mode</span>` : ''}
             </div>
-            <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${displayVehicleTitle}</div>
+            <div class="driver-card-mobile-hide-when-collapsed" style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${displayVehicleTitle}</div>
             <div style="font-size:0.73rem; color:var(--text-muted);">
-              <i class="fa-solid fa-location-dot" style="color:#10B981;"></i> ${c.baseSuburb || c.address || 'Gold Coast QLD'}
+              <i class="fa-solid fa-location-dot" style="color:#10B981;"></i> ${c.baseSuburb || c.address || 'Gold Coast QLD'} • <strong>${c.distanceKm} km away</strong>
             </div>
           </div>
         </div>
-        <div style="text-align:right;">
+        <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem;">
           <div style="font-size:1.05rem; font-weight:900; color:var(--primary-navy);">$${perKmRate} AUD/km</div>
-          <span class="card-dist-badge"><i class="fa-solid fa-location-arrow"></i> ${c.distanceKm} km away</span>
+          <span class="card-dist-badge driver-card-mobile-hide-when-collapsed"><i class="fa-solid fa-location-arrow"></i> ${c.distanceKm} km away</span>
+          <span class="driver-card-mobile-toggle" onclick="event.stopPropagation(); toggleMobileDriverCard('${c.id}')" data-agent-id="btn-mobile-toggle-map-driver-${c.id}" data-testid="btn-mobile-toggle-map-driver-${c.id}" aria-expanded="${isMobileExpanded ? 'true' : 'false'}">
+            <span class="driver-card-toggle-text">${isMobileExpanded ? 'Hide' : 'Tap to Open'}</span>
+            <i class="fa-solid ${isMobileExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+          </span>
         </div>
       </div>
 
-      ${isDual ? `
-        <div style="display:flex; align-items:center; gap:0.4rem; margin:0.45rem 0 0.2rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
-          <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Service:</span>
-          <button
-            type="button"
-            class="btn btn-xs ${!isBicycleView ? 'btn-primary' : 'btn-outline'}"
-            style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${!isBicycleView ? 'background:#0B192C; color:#fff; border-color:#0B192C;' : 'background:#fff; color:#0B192C; border-color:#CBD5E1;'}"
-            onclick="toggleContractorCardMode('${c.id}', 'vehicle', event)"
-            data-agent-id="btn-contractor-mode-vehicle-${c.id}"
-            data-testid="btn-contractor-mode-vehicle-${c.id}"
-            aria-pressed="${!isBicycleView ? 'true' : 'false'}"
-            aria-label="View Motor Vehicle rates for ${escapeAttr(c.name)}">
-            <i class="fa-solid fa-truck"></i> Motor Vehicle ($${Number(c.vehiclePerKmRateAud ?? c.perKmRateAud ?? 2.20).toFixed(2)}/km)
-          </button>
-          <button
-            type="button"
-            class="btn btn-xs ${isBicycleView ? 'btn-primary' : 'btn-outline'}"
-            style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${isBicycleView ? 'background:#0284C7; color:#fff; border-color:#0284C7;' : 'background:#fff; color:#0284C7; border-color:#0284C7;'}"
-            onclick="toggleContractorCardMode('${c.id}', 'bicycle', event)"
-            data-agent-id="btn-contractor-mode-bicycle-${c.id}"
-            data-testid="btn-contractor-mode-bicycle-${c.id}"
-            aria-pressed="${isBicycleView ? 'true' : 'false'}"
-            aria-label="View Bicycle Courier rates for ${escapeAttr(c.name)}">
-            <i class="fa-solid fa-bicycle"></i> Bicycle Courier ($${Number(c.bicyclePerKmRateAud ?? 1.80).toFixed(2)}/km)
+      <div class="driver-card-collapsible-body" id="map-driver-card-body-${c.id}" data-agent-id="map-driver-card-body-${c.id}" data-testid="map-driver-card-body-${c.id}">
+        ${isDual ? `
+          <div style="display:flex; align-items:center; gap:0.4rem; margin:0.45rem 0 0.2rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
+            <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Service:</span>
+            <button
+              type="button"
+              class="btn btn-xs ${!isBicycleView ? 'btn-primary' : 'btn-outline'}"
+              style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${!isBicycleView ? 'background:#0B192C; color:#fff; border-color:#0B192C;' : 'background:#fff; color:#0B192C; border-color:#CBD5E1;'}"
+              onclick="toggleContractorCardMode('${c.id}', 'vehicle', event)"
+              data-agent-id="btn-contractor-mode-vehicle-${c.id}"
+              data-testid="btn-contractor-mode-vehicle-${c.id}"
+              aria-pressed="${!isBicycleView ? 'true' : 'false'}"
+              aria-label="View Motor Vehicle rates for ${escapeAttr(c.name)}">
+              <i class="fa-solid fa-truck"></i> Motor Vehicle ($${Number(c.vehiclePerKmRateAud ?? c.perKmRateAud ?? 2.20).toFixed(2)}/km)
+            </button>
+            <button
+              type="button"
+              class="btn btn-xs ${isBicycleView ? 'btn-primary' : 'btn-outline'}"
+              style="font-size:0.72rem; padding:0.2rem 0.55rem; font-weight:800; border-radius:999px; ${isBicycleView ? 'background:#0284C7; color:#fff; border-color:#0284C7;' : 'background:#fff; color:#0284C7; border-color:#0284C7;'}"
+              onclick="toggleContractorCardMode('${c.id}', 'bicycle', event)"
+              data-agent-id="btn-contractor-mode-bicycle-${c.id}"
+              data-testid="btn-contractor-mode-bicycle-${c.id}"
+              aria-pressed="${isBicycleView ? 'true' : 'false'}"
+              aria-label="View Bicycle Courier rates for ${escapeAttr(c.name)}">
+              <i class="fa-solid fa-bicycle"></i> Bicycle Courier ($${Number(c.bicyclePerKmRateAud ?? 1.80).toFixed(2)}/km)
+            </button>
+          </div>
+        ` : ''}
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.45rem; background:#F8FAFC; border:1px solid var(--border-light); border-radius:6px; padding:0.55rem 0.7rem; margin:0.6rem 0; font-size:0.76rem; color:var(--primary-navy);">
+          <div><strong>Same-Day Fee:</strong> +$${sameDayFee} AUD</div>
+          <div><strong>Urgent Fee:</strong> +$${urgentFee} AUD</div>
+          <div><strong>Max Weight:</strong> ${maxWeight}</div>
+          <div><strong>Max H×W×L:</strong> ${maxDims}</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.55rem; flex-wrap:wrap; gap:0.5rem;">
+          <div style="font-size:0.74rem; color:var(--text-muted);">
+            <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <strong style="color:#059669;">Verified Driver (${c.licenceState || 'QLD'})</strong> • <strong>PayID:</strong> ${c.payIdValue || c.phone}
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" style="${isSample ? 'background:#64748B; border-color:#475569;' : ''}" data-sample-blocked="${isSample ? 'true' : 'false'}" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="${isSample ? `Sample Profile Only - ${c.name} Cannot Be Booked` : `Select ${c.name} for Courier Booking`}">
+            <i class="fa-solid ${isSample ? 'fa-ban' : (isBicycleView ? 'fa-bicycle' : 'fa-truck-fast')}"></i> ${isSample ? 'Sample Only (Cannot Be Booked)' : 'Book Driver (9am–4pm)'}
           </button>
         </div>
-      ` : ''}
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.45rem; background:#F8FAFC; border:1px solid var(--border-light); border-radius:6px; padding:0.55rem 0.7rem; margin:0.6rem 0; font-size:0.76rem; color:var(--primary-navy);">
-        <div><strong>Same-Day Fee:</strong> +$${sameDayFee} AUD</div>
-        <div><strong>Urgent Fee:</strong> +$${urgentFee} AUD</div>
-        <div><strong>Max Weight:</strong> ${maxWeight}</div>
-        <div><strong>Max H×W×L:</strong> ${maxDims}</div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.55rem; flex-wrap:wrap; gap:0.5rem;">
-        <div style="font-size:0.74rem; color:var(--text-muted);">
-          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <strong style="color:#059669;">Verified Driver (${c.licenceState || 'QLD'})</strong> • <strong>PayID:</strong> ${c.payIdValue || c.phone}
-        </div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" style="${isSample ? 'background:#64748B; border-color:#475569;' : ''}" data-sample-blocked="${isSample ? 'true' : 'false'}" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="${isSample ? `Sample Profile Only - ${c.name} Cannot Be Booked` : `Select ${c.name} for Courier Booking`}">
-          <i class="fa-solid ${isSample ? 'fa-ban' : (isBicycleView ? 'fa-bicycle' : 'fa-truck-fast')}"></i> ${isSample ? 'Sample Only (Cannot Be Booked)' : 'Book Driver (9am–4pm)'}
-        </button>
       </div>
     </div>
   `}).join('');
@@ -1513,6 +1520,9 @@ function toggleContractorCardMode(providerId, mode, event) {
 window.toggleContractorCardMode = toggleContractorCardMode;
 
 function panToContractor(providerId, lat, lng) {
+  if (typeof window !== 'undefined' && Number(window.innerWidth || 1280) <= 960) {
+    toggleMobileDriverCard(providerId);
+  }
   if (appState.osmMap && lat && lng) {
     try { appState.osmMap.setView([lat, lng], 14); } catch (e) {}
   } else if (appState.contractorMap && window.google?.maps) {
@@ -3215,6 +3225,10 @@ async function executeCourierQuoteCalculation() {
 
 function selectCourierDriverForBooking(driverId) {
   appState.selectedCourierDriverId = driverId;
+  if (typeof window !== 'undefined' && Number(window.innerWidth || 1280) <= 960) {
+    if (!appState.expandedMobileDriverCards) appState.expandedMobileDriverCards = {};
+    appState.expandedMobileDriverCards[driverId] = !appState.expandedMobileDriverCards[driverId];
+  }
   const dist = appState.lastCourierRoute?.distanceKm || 8.5;
   const mins = appState.lastCourierRoute?.durationMins || 15;
   updateCourierPricingWithSettings(dist, mins);
@@ -3522,12 +3536,15 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
       const isFemale = (d.gender === 'female') || (!d.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (d.name || '').toLowerCase().includes(n)));
 
       const isSampleDriver = checkSampleProfileOrData(d);
+      const isMobileExpanded = !!(appState.expandedMobileDriverCards && appState.expandedMobileDriverCards[d.id]);
       const modeBadge = mode === 'bicycle'
-        ? '<span style="background:#0284C7; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-bicycle"></i> BICYCLE COURIER</span>'
-        : '<span style="background:#475569; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-truck"></i> MOTOR VEHICLE</span>';
+        ? '<span class="driver-card-mobile-hide-when-collapsed" style="background:#0284C7; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-bicycle"></i> BICYCLE COURIER</span>'
+        : '<span class="driver-card-mobile-hide-when-collapsed" style="background:#475569; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;"><i class="fa-solid fa-truck"></i> MOTOR VEHICLE</span>';
 
       return `
         <div
+          id="select-driver-card-${d.id}"
+          class="driver-select-card driver-collapsible-card ${isMobileExpanded ? '' : 'driver-card-mobile-collapsed'}"
           onclick="selectCourierDriverForBooking('${d.id}')"
           style="cursor:pointer; border:2px solid ${isSelected ? 'var(--brand-orange)' : 'var(--border-light)'}; background:${isSelected ? '#FFFDF9' : '#FFFFFF'}; border-radius:var(--radius-md); padding:0.95rem 1rem; transition:all 0.15s ease; opacity:${item.fitsPackage ? '1' : '0.68'};"
           data-agent-id="select-driver-card-${d.id}"
@@ -3537,7 +3554,7 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
           role="button"
           tabindex="0"
           aria-label="Select Driver ${escapeAttr(d.name)}">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
+          <div class="driver-card-summary-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
             <div style="display:flex; gap:0.5rem; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
@@ -3547,10 +3564,10 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                   ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
                   ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
                 </div>
-                <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${mode === 'bicycle' ? 'Bicycle / E-Bike / Cargo Bike' : (d.vehicle || d.tradeTitle || 'Courier Vehicle')}</div>
+                <div class="driver-card-mobile-hide-when-collapsed" style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${mode === 'bicycle' ? 'Bicycle / E-Bike / Cargo Bike' : (d.vehicle || d.tradeTitle || 'Courier Vehicle')}</div>
 
                 ${isDual ? `
-                  <div style="display:flex; align-items:center; gap:0.4rem; margin:0.35rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
+                  <div class="driver-card-mobile-hide-when-collapsed" style="display:flex; align-items:center; gap:0.4rem; margin:0.35rem 0; flex-wrap:wrap;" onclick="event.stopPropagation();">
                     <span style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">Mode:</span>
                     <button
                       type="button"
@@ -3578,50 +3595,56 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                 ` : ''}
 
                 <div style="font-size:0.74rem; color:var(--text-muted);">
-                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • <span style="color:#059669; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Verified Driver (${d.licenceState || 'QLD'})</span>
+                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) <span class="driver-card-mobile-hide-when-collapsed">• <span style="color:#059669; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Verified Driver (${d.licenceState || 'QLD'})</span></span>
                 </div>
               </div>
             </div>
-            <div style="text-align:right;">
+            <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:0.2rem;">
               <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);">$${q.totalAud.toFixed(2)} AUD</div>
-              <div style="font-size:0.72rem; color:var(--text-muted);">
+              <div class="driver-card-mobile-hide-when-collapsed" style="font-size:0.72rem; color:var(--text-muted);">
                 $${Number(q.perKmRateAud).toFixed(2)}/km (${q.distanceKm.toFixed(1)}km) • Same-Day +$${q.sameDayFeeAud} • Urgent +$${q.urgentFeeAud}
               </div>
-            </div>
-          </div>
-
-          <!-- Driver Card Footer + Map Dropdown Toggle Button -->
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px dashed var(--border-light); font-size:0.74rem;">
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-              ${item.fitBadge}
-              <span style="color:#047857; font-weight:700;">
-                <i class="fa-solid fa-money-bill-transfer"></i> PayID (${(d.payIdType || 'phone').toUpperCase()}): <strong>${d.payIdValue}</strong>
+              <span class="driver-card-mobile-toggle" onclick="event.stopPropagation(); toggleMobileDriverCard('${d.id}')" data-agent-id="btn-mobile-toggle-driver-${d.id}" data-testid="btn-mobile-toggle-driver-${d.id}" aria-expanded="${isMobileExpanded ? 'true' : 'false'}">
+                <span class="driver-card-toggle-text">${isMobileExpanded ? 'Hide' : 'Tap to Open'}</span>
+                <i class="fa-solid ${isMobileExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
               </span>
             </div>
-            <button
-              type="button"
-              class="btn btn-outline btn-sm"
-              onclick="event.stopPropagation(); toggleDriverBoxMap('${d.id}')"
-              style="padding:0.25rem 0.65rem; font-size:0.74rem; font-weight:800; border-color:var(--primary-navy); color:var(--primary-navy); background:${isMapOpen ? '#F1F5F9' : '#FFFFFF'};"
-              data-agent-id="btn-toggle-driver-map-${d.id}"
-              data-testid="btn-toggle-driver-map-${d.id}"
-              aria-expanded="${isMapOpen ? 'true' : 'false'}"
-              aria-label="Toggle Driver Map Dropdown for ${escapeAttr(d.name)}">
-              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i>
-              <span>${isMapOpen ? 'Hide Driver Map ▲' : 'Driver Map ▼'}</span>
-            </button>
           </div>
 
-          <!-- Collapsible Map Dropdown Inside Driver Box -->
-          <div
-            id="driver-map-dropdown-${d.id}"
-            onclick="event.stopPropagation();"
-            style="display:${isMapOpen ? 'block' : 'none'}; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border-light);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.76rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.45rem;">
-              <span><i class="fa-solid ${mode === 'bicycle' ? 'fa-bicycle' : 'fa-truck-fast'}" style="color:var(--brand-orange);"></i> ${d.name} (${d.baseSuburb || 'Gold Coast'}) → Pickup (${item.distToPickupKm.toFixed(1)} km) &amp; Delivery (${distanceKm.toFixed(1)} km)</span>
-              <span style="color:#059669; font-weight:800;">~${durationMins} mins road route</span>
+          <div class="driver-card-collapsible-body" id="driver-card-body-${d.id}" data-agent-id="driver-card-body-${d.id}" data-testid="driver-card-body-${d.id}">
+            <!-- Driver Card Footer + Map Dropdown Toggle Button -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px dashed var(--border-light); font-size:0.74rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                ${item.fitBadge}
+                <span style="color:#047857; font-weight:700;">
+                  <i class="fa-solid fa-money-bill-transfer"></i> PayID (${(d.payIdType || 'phone').toUpperCase()}): <strong>${d.payIdValue}</strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                onclick="event.stopPropagation(); toggleDriverBoxMap('${d.id}')"
+                style="padding:0.25rem 0.65rem; font-size:0.74rem; font-weight:800; border-color:var(--primary-navy); color:var(--primary-navy); background:${isMapOpen ? '#F1F5F9' : '#FFFFFF'};"
+                data-agent-id="btn-toggle-driver-map-${d.id}"
+                data-testid="btn-toggle-driver-map-${d.id}"
+                aria-expanded="${isMapOpen ? 'true' : 'false'}"
+                aria-label="Toggle Driver Map Dropdown for ${escapeAttr(d.name)}">
+                <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i>
+                <span>${isMapOpen ? 'Hide Driver Map ▲' : 'Driver Map ▼'}</span>
+              </button>
             </div>
-            <div id="driver-leaflet-map-${d.id}" style="height:245px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"></div>
+
+            <!-- Collapsible Map Dropdown Inside Driver Box -->
+            <div
+              id="driver-map-dropdown-${d.id}"
+              onclick="event.stopPropagation();"
+              style="display:${isMapOpen ? 'block' : 'none'}; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border-light);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.76rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.45rem;">
+                <span><i class="fa-solid ${mode === 'bicycle' ? 'fa-bicycle' : 'fa-truck-fast'}" style="color:var(--brand-orange);"></i> ${d.name} (${d.baseSuburb || 'Gold Coast'}) → Pickup (${item.distToPickupKm.toFixed(1)} km) &amp; Delivery (${distanceKm.toFixed(1)} km)</span>
+                <span style="color:#059669; font-weight:800;">~${durationMins} mins road route</span>
+              </div>
+              <div id="driver-leaflet-map-${d.id}" style="height:245px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"></div>
+            </div>
           </div>
         </div>
       `;
@@ -13363,11 +13386,55 @@ function initMobileCourierStepsCollapsed() {
   });
 }
 
+function toggleMobileDriverCard(driverId, forceExpand) {
+  if (!driverId) return false;
+  if (!appState.expandedMobileDriverCards) appState.expandedMobileDriverCards = {};
+
+  const currentExpanded = !!appState.expandedMobileDriverCards[driverId];
+  const shouldExpand = typeof forceExpand === 'boolean' ? forceExpand : !currentExpanded;
+  appState.expandedMobileDriverCards[driverId] = shouldExpand;
+
+  const cards = [
+    document.getElementById(`select-driver-card-${driverId}`),
+    document.getElementById(`search-card-${driverId}`)
+  ].filter(Boolean);
+
+  cards.forEach((card) => {
+    if (shouldExpand) {
+      card.classList.remove('driver-card-mobile-collapsed');
+    } else {
+      card.classList.add('driver-card-mobile-collapsed');
+    }
+    const togglePill = card.querySelector('.driver-card-mobile-toggle');
+    if (togglePill) {
+      togglePill.setAttribute('aria-expanded', shouldExpand ? 'true' : 'false');
+      const textEl = togglePill.querySelector('.driver-card-toggle-text');
+      const iconEl = togglePill.querySelector('i');
+      if (textEl) textEl.textContent = shouldExpand ? 'Hide' : 'Tap to Open';
+      if (iconEl) iconEl.className = `fa-solid ${shouldExpand ? 'fa-chevron-up' : 'fa-chevron-down'}`;
+    }
+  });
+
+  return shouldExpand;
+}
+
+function initMobileDriverCardsCollapsed() {
+  appState.expandedMobileDriverCards = {};
+  if (typeof document !== 'undefined') {
+    document.querySelectorAll('.driver-collapsible-card').forEach((card) => {
+      card.classList.add('driver-card-mobile-collapsed');
+    });
+  }
+}
+
 window.toggleCourierBookingStep = toggleCourierBookingStep;
 window.initMobileCourierStepsCollapsed = initMobileCourierStepsCollapsed;
+window.toggleMobileDriverCard = toggleMobileDriverCard;
+window.initMobileDriverCardsCollapsed = initMobileDriverCardsCollapsed;
 window.syncMobileResponsiveViewport = syncMobileResponsiveViewport;
 
 try { initMobileCourierStepsCollapsed(); } catch (e) {}
+try { initMobileDriverCardsCollapsed(); } catch (e) {}
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('orientationchange', () => {
