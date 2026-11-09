@@ -4436,6 +4436,13 @@ const SUPPORTER_COLLAPSE_PANELS = {
     btnId: 'btn-toggle-panel-buy-tokens',
     chevronId: 'chevron-panel-buy-tokens',
     bodyId: 'supporter-buy-tokens-subtab'
+  },
+  'superadmin-console': {
+    btnId: 'btn-toggle-superadmin-console',
+    headerId: 'superadmin-console-header-toggle',
+    labelId: 'superadmin-console-toggle-label',
+    chevronId: 'chevron-panel-superadmin-console',
+    bodyId: 'superadmin-console-collapse-body'
   }
 };
 
@@ -4444,9 +4451,13 @@ function collapseAllSupporterPanels() {
     const cfg = SUPPORTER_COLLAPSE_PANELS[key];
     const bodyEl = document.getElementById(cfg.bodyId);
     const btnEl = document.getElementById(cfg.btnId);
+    const headerEl = cfg.headerId ? document.getElementById(cfg.headerId) : null;
+    const labelEl = cfg.labelId ? document.getElementById(cfg.labelId) : null;
     const chevEl = document.getElementById(cfg.chevronId);
     if (bodyEl) bodyEl.style.display = 'none';
     if (btnEl) btnEl.setAttribute('aria-expanded', 'false');
+    if (headerEl) headerEl.setAttribute('aria-expanded', 'false');
+    if (labelEl) labelEl.textContent = 'Expand Console';
     if (chevEl) {
       chevEl.classList.remove('fa-chevron-up');
       chevEl.classList.add('fa-chevron-down');
@@ -4456,11 +4467,15 @@ function collapseAllSupporterPanels() {
 window.collapseAllSupporterPanels = collapseAllSupporterPanels;
 
 function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
-  const normalizedKey = panelKey === 'register-details' ? 'registration-details' : panelKey;
+  let normalizedKey = panelKey;
+  if (panelKey === 'register-details') normalizedKey = 'registration-details';
+  if (panelKey === 'superadmin' || panelKey === 'firebase-admin-account') normalizedKey = 'superadmin-console';
   const cfg = SUPPORTER_COLLAPSE_PANELS[normalizedKey];
   if (!cfg) return;
   const bodyEl = document.getElementById(cfg.bodyId);
   const btnEl = document.getElementById(cfg.btnId);
+  const headerEl = cfg.headerId ? document.getElementById(cfg.headerId) : null;
+  const labelEl = cfg.labelId ? document.getElementById(cfg.labelId) : null;
   const chevEl = document.getElementById(cfg.chevronId);
   if (!bodyEl) return;
 
@@ -4469,6 +4484,8 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
 
   bodyEl.style.display = nextOpen ? 'block' : 'none';
   if (btnEl) btnEl.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  if (headerEl) headerEl.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  if (labelEl) labelEl.textContent = nextOpen ? 'Collapse Console' : 'Expand Console';
   if (chevEl) {
     chevEl.classList.toggle('fa-chevron-up', nextOpen);
     chevEl.classList.toggle('fa-chevron-down', !nextOpen);
@@ -4485,9 +4502,22 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
     if (normalizedKey === 'bookings-history') {
       try { renderSupporterBookings(); } catch (e) {}
     }
+    if (normalizedKey === 'superadmin-console') {
+      try { syncSuperadminCourierControls(); } catch (e) {}
+      try { renderSuperadminTokenBalance(); } catch (e) {}
+      try { renderSuperadminDriverApprovals(); } catch (e) {}
+      try { renderSuperadminUniversalTokenConsole(); } catch (e) {}
+      try { renderSuperadminFreeDriverHourUI(); } catch (e) {}
+    }
   }
+  return { panelKey: normalizedKey, isOpen: nextOpen };
 }
 window.toggleSupporterCollapsePanel = toggleSupporterCollapsePanel;
+
+function toggleSuperadminConsoleCollapse(forceOpen = null) {
+  return toggleSupporterCollapsePanel('superadmin-console', forceOpen);
+}
+window.toggleSuperadminConsoleCollapse = toggleSuperadminConsoleCollapse;
 
 function openSupporterPanelFromGoogleMenu() {
   closeGoogleUserMenu();

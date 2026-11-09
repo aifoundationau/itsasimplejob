@@ -1262,15 +1262,24 @@
 
         </div> <!-- /#supporter-collapsed-panels-stack -->
 
-      <!-- SuperAdmin Panel: Distance Token Costs, Live Driver Approvals & Token Account Vault -->
-      <div id="superadmin-courier-config-card" class="superadmin-only courier-calc-card"
-        style="display:none; padding:1.75rem; background:#FFFBEB; border:2px solid #F59E0B; border-radius:var(--radius-md); margin-top:1.75rem;"
+      <!-- SuperAdmin Panel: Distance Token Costs, Live Driver Approvals & Token Account Vault (Collapsible) -->
+      <div id="superadmin-courier-config-card" class="superadmin-only courier-calc-card supporter-collapsible-card"
+        style="display:none; padding:0; overflow:hidden; background:#FFFBEB; border:2px solid #F59E0B; border-radius:var(--radius-md); margin-top:1.75rem;"
         data-agent-id="superadmin-courier-config-card" data-testid="superadmin-courier-config-card">
 
-        <!-- SuperAdmin Account Header -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.85rem; border-bottom:1px solid #FDE68A;">
+        <!-- SuperAdmin Account Header (Collapsible Toggle) -->
+        <div id="superadmin-console-header-toggle"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-controls="superadmin-console-collapse-body"
+          onclick="toggleSuperadminConsoleCollapse()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSuperadminConsoleCollapse();}"
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; padding:1.25rem 1.75rem; cursor:pointer; background:#FFFBEB; user-select:none;"
+          data-agent-id="superadmin-console-header-toggle" data-testid="superadmin-console-header-toggle"
+          aria-label="Toggle SuperAdmin Console Firebase Admin Account">
           <div>
-            <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
               <span style="background:#F59E0B; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; font-size:0.75rem; font-weight:900;">
                 <i class="fa-solid fa-crown"></i> SUPERADMIN CONSOLE
               </span>
@@ -1281,23 +1290,41 @@
             </div>
           </div>
 
-          <!-- SuperAdmin Token Vault & Wipe Control -->
-          <div style="background:#FFFFFF; border:1.5px solid #F59E0B; border-radius:var(--radius-sm); padding:0.6rem 1rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm);">
-            <div>
-              <div style="font-size:0.7rem; font-weight:800; color:#92400E; text-transform:uppercase;">SuperAdmin Token Vault</div>
-              <div style="font-size:1.25rem; font-weight:900; color:#D97706; display:flex; align-items:center; gap:0.4rem;">
-                <i class="fa-solid fa-coins"></i> <span id="superadmin-token-vault-balance">0 Tokens</span>
+          <!-- SuperAdmin Token Vault, Wipe Control & Collapse Toggle Button -->
+          <div style="display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+            <div onclick="event.stopPropagation();" style="background:#FFFFFF; border:1.5px solid #F59E0B; border-radius:var(--radius-sm); padding:0.6rem 1rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm);">
+              <div>
+                <div style="font-size:0.7rem; font-weight:800; color:#92400E; text-transform:uppercase;">SuperAdmin Token Vault</div>
+                <div style="font-size:1.25rem; font-weight:900; color:#D97706; display:flex; align-items:center; gap:0.4rem;">
+                  <i class="fa-solid fa-coins"></i> <span id="superadmin-token-vault-balance">0 Tokens</span>
+                </div>
               </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-wipe-superadmin-tokens"
+                onclick="event.stopPropagation(); handleWipeSuperadminTokens(this)"
+                style="color:#DC2626; border-color:#FECACA; font-weight:800; font-size:0.78rem;"
+                data-agent-id="btn-wipe-superadmin-tokens" data-testid="btn-wipe-superadmin-tokens"
+                aria-label="Wipe All Superadmin Tokens">
+                <i class="fa-solid fa-trash-can"></i> Wipe Tokens
+              </button>
             </div>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-wipe-superadmin-tokens"
-              onclick="handleWipeSuperadminTokens(this)"
-              style="color:#DC2626; border-color:#FECACA; font-weight:800; font-size:0.78rem;"
-              data-agent-id="btn-wipe-superadmin-tokens" data-testid="btn-wipe-superadmin-tokens"
-              aria-label="Wipe All Superadmin Tokens">
-              <i class="fa-solid fa-trash-can"></i> Wipe Tokens
+
+            <button type="button" id="btn-toggle-superadmin-console"
+              onclick="event.stopPropagation(); toggleSuperadminConsoleCollapse();"
+              aria-expanded="false"
+              aria-controls="superadmin-console-collapse-body"
+              style="background:#FEF3C7; color:#92400E; border:1.5px solid #F59E0B; border-radius:999px; padding:0.45rem 0.9rem; font-size:0.78rem; font-weight:800; display:inline-flex; align-items:center; gap:0.45rem; cursor:pointer;"
+              data-agent-id="btn-toggle-superadmin-console" data-testid="btn-toggle-superadmin-console"
+              aria-label="Toggle SuperAdmin Console Firebase Admin Account">
+              <span id="superadmin-console-toggle-label">Expand Console</span>
+              <i id="chevron-panel-superadmin-console" class="fa-solid fa-chevron-down" style="color:#92400E; font-size:0.85rem; transition:transform 0.2s ease;"></i>
             </button>
           </div>
         </div>
+
+        <!-- Collapsible Body of SuperAdmin Console (Firebase Admin Account) -->
+        <div id="superadmin-console-collapse-body" class="supporter-collapse-body"
+          style="display:none; padding:1.35rem 1.75rem 1.75rem; border-top:1px solid #FDE68A;"
+          data-agent-id="superadmin-console-collapse-body" data-testid="superadmin-console-collapse-body">
 
         <!-- Section A: SuperAdmin Sets Token Cost per Order Driver Receives -->
         <div style="margin-bottom:1.5rem; background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;">
@@ -1569,7 +1596,8 @@
           </div>
         </div>
 
-      </div>
+        </div> <!-- /#superadmin-console-collapse-body -->
+      </div> <!-- /#superadmin-courier-config-card -->
       </div> <!-- /#supporter-panel-wrapper -->
     </section>
 

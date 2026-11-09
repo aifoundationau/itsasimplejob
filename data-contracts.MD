@@ -2943,3 +2943,49 @@ Defines the state and token-waiver contract when SuperAdmin clicks **Offer Free 
   }
 }
 ```
+
+
+### 11.38 Collapsible SuperAdmin Console (Firebase Admin Account) Contract (`SuperadminConsoleCollapsibleContract`)
+Defines the collapsible accordion structure and state for the **SUPERADMIN CONSOLE — Firebase Admin Account** card (`#superadmin-courier-config-card`). By default, the body (`#superadmin-console-collapse-body`) is collapsed (`display: "none"`, `aria-expanded: "false"`). Clicking the header (`#superadmin-console-header-toggle`) or the toggle button (`#btn-toggle-superadmin-console`, calling `toggleSuperadminConsoleCollapse()`) expands or collapses `#superadmin-console-collapse-body`, updates `#superadmin-console-toggle-label` (`"Expand Console"` / `"Collapse Console"`), and rotates `#chevron-panel-superadmin-console` (`fa-chevron-down` / `fa-chevron-up`).
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperadminConsoleCollapsibleContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cardId",
+    "headerToggleId",
+    "buttonToggleId",
+    "bodyId",
+    "chevronId",
+    "isOpen"
+  ],
+  "properties": {
+    "cardId": {
+      "type": "string",
+      "const": "superadmin-courier-config-card"
+    },
+    "headerToggleId": {
+      "type": "string",
+      "const": "superadmin-console-header-toggle"
+    },
+    "buttonToggleId": {
+      "type": "string",
+      "const": "btn-toggle-superadmin-console"
+    },
+    "bodyId": {
+      "type": "string",
+      "const": "superadmin-console-collapse-body"
+    },
+    "chevronId": {
+      "type": "string",
+      "const": "chevron-panel-superadmin-console"
+    },
+    "isOpen": {
+      "type": "boolean"
+    }
+  }
+}
+```

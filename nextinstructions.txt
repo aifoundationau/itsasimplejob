@@ -535,3 +535,8 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `api/create-payment-intent.js` to use `automatic_tax: { enabled: true }` (with the Stripe MCP Price IDs `price_1UZf7RI8bClhBF4PEhIGJoc3`, `price_1UZf7VI8bClhBF4PE52HKTjw`, `price_1UZf7ZI8bClhBF4PcJWNqJv0` and `tax_behavior: 'exclusive'` instead of a hardcoded `tax_rates` array) and calculate 10% GST strictly when `customerCountry === 'AU'` (`0%` GST when `customerCountry !== 'AU'`).
 - Updated `js/stripe-service.js` (`calculateTokenTaxBreakdown`), `js/app.js` (`calculateTokenPurchaseTaxBreakdown`, `selectStripeTokenPack`, `confirmStripeTokenPopupPurchase`), and `index.html` (`#stripe-token-tax-label`) so 10% Exclusive AU GST is only charged to Australians (`AU`) and `$0.00 AUD (Non-AU)` is shown for non-Australians.
 - Verified with `node scratch/verify_stripe_token_tax_popup.mjs` and `npm run build` (0 errors).
+
+[2026-11-09] Task 68: Collapsible SUPERADMIN CONSOLE (Firebase Admin Account):
+- Updated `#superadmin-courier-config-card` in `index.html` with a clickable header (`#superadmin-console-header-toggle`), toggle button (`#btn-toggle-superadmin-console`), label (`#superadmin-console-toggle-label`), chevron (`#chevron-panel-superadmin-console`), and collapsible body (`#superadmin-console-collapse-body`, collapsed by default).
+- Added `'superadmin-console'` to `SUPPORTER_COLLAPSE_PANELS` and exposed `toggleSuperadminConsoleCollapse()` in `js/app.js`.
+- Verified with `node scratch/verify_superadmin_console_collapsible.mjs` and `npm run build` (0 errors).
