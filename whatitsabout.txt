@@ -1,0 +1,157 @@
+================================================================================
+IT'S A SIMPLE JOB — WHAT THIS WEBSITE IS ABOUT
+Website: https://itsasimplejob.com.au
+Operator: AI Foundation standardizing Direct Driver Courier Dispatch (AUD Only)
+ABN: 36 339 516 584 | Support: 0495 019 791 | Email: support@aifoundation.net.au
+================================================================================
+
+OVERVIEW
+--------
+"It's A Simple Job" is an Australian Direct-Driver Courier & Express Delivery
+platform operating in Australian Dollars ($ AUD) with live OpenStreetMap GPS
+routing, a 9:00 AM – 4:00 PM pickup booking window, direct Customer-to-Driver
+PayID settlement (100% of the delivery fare goes directly to the driver), and a
+flat distance-tier Token system instead of high percentage commissions.
+
+Every new user first registers as a Community Supporter via Google Sign-In.
+Supporters can book couriers immediately or apply to become a Driver (which is
+reviewed and approved by the SuperAdmin in the Super Admin Panel before going
+live on the customer maps).
+
+--------------------------------------------------------------------------------
+1. FROM THE PERSPECTIVE OF A COURIER DRIVER (Motor Vehicle: Van, Ute, Car)
+--------------------------------------------------------------------------------
+What it is for you:
+- You are an independent motor-vehicle courier driver who sets your own rates,
+  chooses your own @username handle (e.g. @callumevans), and keeps 100% of the
+  delivery fee paid by the client directly to your PayID.
+
+How it works for a Courier Driver:
+1. Register as a Supporter First, Then Apply as a Driver:
+   - You sign in with Google ("Register / Login"), complete your Community
+     Supporter details first, and then submit the "Register as a Driver" form
+     (located under "Buy Tokens" in the Supporter Panel or via the footer link).
+   - You provide your Driver Licence details (kept private and visible only to
+     SuperAdmin), vehicle description, base suburb/GPS coordinates, PayID
+     details (Mobile, Email, or ABN), and your custom @username.
+   - Your application enters "Pending SuperAdmin Approval" until the SuperAdmin
+     approves you in the Super Admin Panel.
+
+2. Set Your Own Vehicle Rates & Package Limits ($ AUD):
+   - You control your own Motor Vehicle pricing and cargo capacity:
+     * Per-Kilometre Rate ($/km in AUD, e.g. $2.10/km – $2.80/km)
+     * Same-Day Pickup Fee ($ AUD)
+     * Urgent 2-Hour Express Fee ($ AUD)
+     * Maximum Weight (up to the platform 50 kg limit per item) and Maximum
+       Dimensions: Height (cm) x Width (cm) x Length (cm).
+   - Note: You can also optionally enable Bicycle Courier mode on your profile
+     if you offer both services.
+
+3. Live GPS Map Visibility & Profile ON/OFF Toggle:
+   - Once approved by SuperAdmin, you can toggle your Driver Profile ON or OFF
+     at any time in your Driver Admin Panel.
+   - When turned ON, your live GPS pin, @username, vehicle symbol, and instant
+     route quote appear on the client maps ("Book Courier" & "Closest Drivers").
+
+4. Receiving Bookings, Getting Paid 100% via PayID, and Token Tiers:
+   - When a client books you for a 9:00 AM – 4:00 PM pickup, you receive an
+     instant booking alert, full pickup/dropoff route details, package specs,
+     and a direct 2-way message thread with the client.
+   - The client pays 100% of your quoted AUD fare directly into your PayID
+     account before/at dispatch.
+   - Instead of paying 20%–30% commission to a platform, you only use integer
+     Platform Tokens per completed order based on road distance:
+     * 0 – 20 km:    2 Tokens
+     * 21 – 50 km:   4 Tokens
+     * 51 – 100 km:  7 Tokens
+     * 101+ km:     10 Tokens
+     (During a SuperAdmin "1-Hour Free Mode", 0 Tokens are deducted.)
+   - You can top up tokens anytime via Stripe Checkout in AUD ($1.00 AUD per
+     token ex-GST + 10% GST for Australian customers).
+
+--------------------------------------------------------------------------------
+2. FROM THE PERSPECTIVE OF A BICYCLE COURIER (Bicycle / E-Bike / Cargo Bike)
+--------------------------------------------------------------------------------
+What it is for you:
+- You are a fast, eco-friendly inner-city or coastal express rider specializing
+  strictly in light, compact deliveries — specifically Letters, Documents, and
+  Food/Takeaway parcels.
+
+How it works for a Bicycle Courier:
+1. Dedicated Bicycle Mode & Symbol Badge:
+   - When applying in "Register as a Driver" (after registering as a Supporter
+     first and waiting for SuperAdmin approval), you tick the "Bicycle Courier
+     (Letters & Food Only)" mode (either as a standalone Bicycle Courier or
+     alongside a Motor Vehicle).
+   - Your profile displays the Bicycle symbol badge and your custom @username
+     so clients can filter or switch your card specifically to Bicycle mode.
+
+2. Strict Weight & Size Protection (Automatic Filtering):
+   - Bicycle couriers are protected from heavy or bulky cargo:
+     * Allowed Package Types: Letters / Documents and Food / Takeaway only.
+     * Maximum Weight: Capped at 8 kg (default) and never above lightweight
+       limits.
+     * Compact Dimensions: You set your own max Height x Width x Length (cm),
+       such as 35 x 30 x 40 cm (pannier/backpack/cargo-box size).
+   - If a client enters a heavy parcel or hardware item that exceeds your
+     bicycle weight/dimension limits or is not eligible for bicycle delivery,
+     the platform automatically filters out or disables Bicycle mode for that
+     quote so you are only matched with jobs you can safely carry.
+
+3. Custom Bicycle Rates & 100% Direct PayID Earnings:
+   - You set your own Bicycle $/km rate (e.g. $1.50/km – $1.80/km), Bicycle
+     Same-Day fee ($ AUD), and Bicycle Urgent Express fee ($ AUD).
+   - Just like vehicle drivers, clients pay 100% of your delivery fee directly
+     to your PayID, and you use the same flat distance-tier Tokens (typically
+     the 0–20 km short-haul tier = 2 Tokens) with zero percentage commission
+     taken from your delivery pay.
+
+--------------------------------------------------------------------------------
+3. FROM THE PERSPECTIVE OF A CLIENT (Community Supporter / Customer)
+--------------------------------------------------------------------------------
+What it is for you:
+- You are a local resident, professional, or business looking for transparent,
+  reliable, point-to-point courier delivery between 9:00 AM and 4:00 PM where
+  you can see the exact road distance, compare nearby drivers, search for your
+  preferred driver by @username, and pay your chosen driver directly via PayID.
+
+How it works for a Client:
+1. Register as a Community Supporter First:
+   - First-time visitors click "Register / Login" with Google and complete their
+     Community Supporter profile once (Full Name, Email, Mobile Phone, and
+     Address/Suburb).
+   - Your contact details automatically sync into the Booking Form so you never
+     have to re-type them on future bookings.
+
+2. Step-by-Step "Booking Form" (Collapsed & Easy to Use on Mobile & Desktop):
+   - Inside the "Booking Form" box, you check or update 3 simple collapsible
+     sections:
+     * Step 1: Route & 9:00 AM – 4:00 PM Pickup Window (Pickup origin, delivery
+       destination, pickup date, time between 9:00 AM and 4:00 PM, and speed
+       tier: Same-Day or Urgent 2-Hour Express).
+     * Step 2: Package Content Details, Size (H x W x L cm) & Weight (kg) —
+       choose Letters, Food, Parcels, or General Courier (up to 50 kg max per
+       single item).
+     * Step 3: Customer Contact Details (pre-filled from your Supporter profile,
+       editable anytime if booking for another pickup contact).
+
+3. Live Map Routing, @username Search & Choosing Your Driver:
+   - The OpenStreetMap route map calculates the exact road distance (km) and
+     drive time between your pickup and dropoff addresses.
+   - Available drivers are ranked by proximity ("Closest Drivers") and filtered
+     automatically so only drivers whose vehicle/bicycle can fit your package's
+     weight and H x W x L dimensions are selectable.
+   - You can also use the Top Navbar Search Bar to search directly for your
+     preferred driver by their `@username`, name, or suburb, or switch a driver
+     between Motor Vehicle and Bicycle mode using the symbol buttons.
+   - Note: Sample demonstration profiles (marked "SAMPLE ONLY") are clearly
+     labelled and blocked from being booked so you only ever book real,
+     SuperAdmin-approved live drivers.
+
+4. Direct PayID Payment & Two-Way Driver Messaging:
+   - Once you select your live driver and confirm the booking, you see the
+     driver's verified PayID details and exact total in $ AUD.
+   - You pay the driver directly via PayID (no middleman markup on the fare)
+     and can message your driver directly inside "My Bookings History" in your
+     Supporter Panel to coordinate pickup and delivery.
+================================================================================

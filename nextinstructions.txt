@@ -662,3 +662,9 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 - Updated `checkIsSuperadmin()`, `syncSuperadminControls()`, `canUserAccessDriverProfile()`, `canUserSeeDriverLicenceNumber()`, `getAccessibleDriverProfilesForCurrentUser()`, and `renderSupporterPanel()` in `js/app.js` so SuperAdmin (`support@aifoundation.net.au`, `davidrobertson.info@gmail.com`) is always SuperAdmin and can do anything across all panels and controls.
 - Updated `signInWithGoogle()` in `js/firebase-service.js`, `isDriverApproved()` in `js/providers-data.js`, and `getActiveUserRole()`, `openDriverAdminPanelFromGoogleMenu()`, `handleSupporterRegistrationSubmit()`, and `handleDriverRegistrationSubmit()` in `js/app.js` so first-time registrants become a Community Supporter (`role: 'supporter'`) and remain a Supporter while waiting for SuperAdmin to approve their driver application in the Super Admin Panel.
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-10] Task 88: Create `whatitsabout.txt` Explaining the Website from Courier Driver, Bicycle Courier, and Client Perspectives:
+- Created `whatitsabout.txt` in the project root detailing what "It's A Simple Job" (`itsasimplejob.com.au`) is about from three perspectives:
+  1. Courier Driver (Motor Vehicle: Van, Ute, Car)
+  2. Bicycle Courier (Bicycle / E-Bike: Letters & Food Only)
+  3. Client (Community Supporter / Customer)
