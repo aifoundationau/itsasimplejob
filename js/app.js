@@ -3344,8 +3344,16 @@ function scrollToDriverApplication(event) {
     if (event.preventDefault) event.preventDefault();
     if (event.stopPropagation) event.stopPropagation();
   }
+  if (!isSupporterRegistered()) {
+    switchTab('driver-admin-tab');
+    if (typeof showToast === 'function') {
+      showToast('🔒 Please sign in and register as a Community Supporter first to access the Courier Driver Application.');
+    }
+    return;
+  }
   const section = document.getElementById('driver-application-bottom-section');
   if (section) {
+    section.style.display = 'block';
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     try {
       history.pushState(null, '', '#driver-application-bottom-section');
@@ -3361,16 +3369,23 @@ function isSupporterRegistered() {
 window.isSupporterRegistered = isSupporterRegistered;
 
 function updateDriverApplicationGateUI() {
+  const sectionEl = document.getElementById('driver-application-bottom-section');
   const lockedEl = document.getElementById('driver-app-gate-locked');
   const unlockedEl = document.getElementById('driver-app-gate-unlocked');
-  if (!lockedEl && !unlockedEl) return;
+  const footerDriverAppLink = document.getElementById('footer-driver-app-link');
+  const footerBottomDriverAppLink = document.getElementById('footer-bottom-driver-app-link');
+  const footerBottomBullet = document.getElementById('footer-bottom-driver-app-bullet');
 
   const isRegistered = isSupporterRegistered();
   const supporter = isRegistered ? getCurrentSupporter() : null;
 
   if (isRegistered && supporter) {
+    if (sectionEl) sectionEl.style.display = 'block';
     if (lockedEl) lockedEl.style.display = 'none';
     if (unlockedEl) unlockedEl.style.display = 'block';
+    if (footerDriverAppLink) footerDriverAppLink.style.display = 'inline-flex';
+    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'inline-flex';
+    if (footerBottomBullet) footerBottomBullet.style.display = 'inline';
 
     const supNameBadge = document.getElementById('driver-app-unlocked-supporter-name');
     if (supNameBadge) {
@@ -3383,8 +3398,13 @@ function updateDriverApplicationGateUI() {
       console.warn('Error prefilling driver registration form:', e);
     }
   } else {
-    if (lockedEl) lockedEl.style.display = 'block';
+    // Visitor is not a supporter: completely hide the bottom application section and footer links
+    if (sectionEl) sectionEl.style.display = 'none';
+    if (lockedEl) lockedEl.style.display = 'none';
     if (unlockedEl) unlockedEl.style.display = 'none';
+    if (footerDriverAppLink) footerDriverAppLink.style.display = 'none';
+    if (footerBottomDriverAppLink) footerBottomDriverAppLink.style.display = 'none';
+    if (footerBottomBullet) footerBottomBullet.style.display = 'none';
   }
 }
 window.updateDriverApplicationGateUI = updateDriverApplicationGateUI;
@@ -3395,12 +3415,12 @@ function switchSupporterSubTab(subtabId) {
     return;
   }
 
-  // Driver Dispatch Console can ONLY be seen by approved Courier Drivers and SuperAdmin
+  // Driver Dispatch Console & Driver Information can ONLY be seen by approved Courier Drivers and SuperAdmin
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');
-  if (subtabId === 'supporter-dispatch-subtab' && !canSeeDispatch) {
+  const canSeeDriverFeatures = (activeRole === 'driver' || activeRole === 'superadmin');
+  if ((subtabId === 'supporter-dispatch-subtab' || subtabId === 'supporter-driver-info-subtab') && !canSeeDriverFeatures) {
     if (typeof showToast === 'function') {
-      showToast('🔒 Driver Dispatch Console is only accessible to approved Courier Drivers and SuperAdmin.');
+      showToast('🔒 Driver features are only accessible to approved Courier Drivers and SuperAdmin.');
     }
     subtabId = 'supporter-details-subtab';
   }
@@ -3422,9 +3442,164 @@ function switchSupporterSubTab(subtabId) {
   } else if (subtabId === 'supporter-dispatch-subtab') {
     document.getElementById('subtab-btn-dispatch')?.classList.add('active');
     try { renderDriverAdminDashboard(); } catch (e) {}
+  } else if (subtabId === 'supporter-driver-info-subtab') {
+    document.getElementById('subtab-btn-driver-info')?.classList.add('active');
+    try { renderDriverInformationView(); } catch (e) {}
   }
 }
 window.switchSupporterSubTab = switchSupporterSubTab;
+
+function renderDriverInformationView() {
+  if (!window.providerDB) return;
+  const allDrivers = window.providerDB.getAll();
+  const activeDriver = window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0];
+  if (!activeDriver) return;
+
+  const nameEl = document.getElementById('driver-info-name');
+  if (nameEl) nameEl.textContent = `${activeDriver.name || 'Courier Driver'}`;
+
+  const statusBadge = document.getElementById('driver-info-status-badge');
+  if (statusBadge) {
+    const isApproved = activeDriver.approved !== false && activeDriver.status !== 'pending_approval';
+    if (isApproved) {
+      statusBadge.style.background = '#DCFCE7';
+      statusBadge.style.color = '#15803D';
+      statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Approved Driver • Shown on Map';
+    } else {
+      statusBadge.style.background = '#FFFBEB';
+      statusBadge.style.color = '#92400E';
+      statusBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Pending SuperAdmin Approval';
+    }
+  }
+
+  const contactEl = document.getElementById('driver-info-contact-line');
+  if (contactEl) {
+    contactEl.textContent = `${activeDriver.email || ''} • ${activeDriver.phone || ''} • ${activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber}` : 'Licence on File')}`;
+  }
+
+  const payidEl = document.getElementById('driver-info-payid');
+  if (payidEl) {
+    payidEl.textContent = activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || 'payid@driver.com.au';
+  }
+
+  const locEl = document.getElementById('driver-info-location');
+  if (locEl) {
+    locEl.textContent = activeDriver.baseSuburb || activeDriver.address || 'Southport QLD';
+  }
+
+  const tokenEl = document.getElementById('driver-info-tokens');
+  if (tokenEl) {
+    tokenEl.textContent = `${activeDriver.tokenBalance ?? 25} Tokens`;
+  }
+
+  // Populate form fields
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = String(val ?? ''); };
+  const vChk = document.getElementById('info-drv-has-vehicle');
+  if (vChk) vChk.checked = activeDriver.hasVehicleCourier !== false;
+  const bChk = document.getElementById('info-drv-has-bicycle');
+  if (bChk) bChk.checked = activeDriver.hasBicycleCourier === true;
+  toggleInfoModesUI();
+
+  setVal('info-drv-per-km', activeDriver.vehiclePerKmRateAud ?? activeDriver.perKmRateAud ?? 2.20);
+  setVal('info-drv-sameday-fee', activeDriver.vehicleSameDayFeeAud ?? activeDriver.sameDayFeeAud ?? 0);
+  setVal('info-drv-urgent-fee', activeDriver.vehicleUrgentFeeAud ?? activeDriver.urgentFeeAud ?? 0);
+  setVal('info-drv-max-weight', activeDriver.vehicleMaxWeightKg ?? activeDriver.maxWeightKg ?? 50);
+  setVal('info-drv-max-height', activeDriver.vehicleMaxHeightCm ?? activeDriver.maxHeightCm ?? 70);
+  setVal('info-drv-max-width', activeDriver.vehicleMaxWidthCm ?? activeDriver.maxWidthCm ?? 50);
+  setVal('info-drv-max-length', activeDriver.vehicleMaxLengthCm ?? activeDriver.maxLengthCm ?? 50);
+
+  setVal('info-drv-bike-per-km', activeDriver.bicyclePerKmRateAud ?? 1.80);
+  setVal('info-drv-bike-sameday-fee', activeDriver.bicycleSameDayFeeAud ?? 0);
+  setVal('info-drv-bike-urgent-fee', activeDriver.bicycleUrgentFeeAud ?? 0);
+  setVal('info-drv-bike-max-weight', activeDriver.bicycleMaxWeightKg ?? 8);
+  setVal('info-drv-bike-max-height', activeDriver.bicycleMaxHeightCm ?? 35);
+  setVal('info-drv-bike-max-width', activeDriver.bicycleMaxWidthCm ?? 30);
+  setVal('info-drv-bike-max-length', activeDriver.bicycleMaxLengthCm ?? 40);
+
+  setVal('info-drv-payid-input', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
+  setVal('info-drv-licence-input', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+
+  // Also sync quick info in dispatch console
+  const qName = document.getElementById('driver-quick-info-name');
+  if (qName) qName.textContent = activeDriver.name;
+  const qBadge = document.getElementById('driver-quick-info-badge');
+  if (qBadge) {
+    const isApp = activeDriver.approved !== false && activeDriver.status !== 'pending_approval';
+    qBadge.style.background = isApp ? '#DCFCE7' : '#FFFBEB';
+    qBadge.style.color = isApp ? '#15803D' : '#92400E';
+    qBadge.innerHTML = isApp ? '<i class="fa-solid fa-circle-check"></i> Approved' : '<i class="fa-solid fa-clock"></i> Pending';
+  }
+}
+window.renderDriverInformationView = renderDriverInformationView;
+
+function toggleInfoModesUI() {
+  const vBox = document.getElementById('info-vehicle-rates-box');
+  const bBox = document.getElementById('info-bicycle-rates-box');
+  const vChk = document.getElementById('info-drv-has-vehicle');
+  const bChk = document.getElementById('info-drv-has-bicycle');
+  if (vBox && vChk) vBox.style.display = vChk.checked ? 'block' : 'none';
+  if (bBox && bChk) bBox.style.display = bChk.checked ? 'block' : 'none';
+}
+window.toggleInfoModesUI = toggleInfoModesUI;
+
+function saveDriverInfoProfile(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  if (!window.providerDB) return;
+  const activeDriver = window.providerDB.findById(appState.activeAdminDriverId);
+  if (!activeDriver) return;
+
+  const vChk = document.getElementById('info-drv-has-vehicle');
+  const bChk = document.getElementById('info-drv-has-bicycle');
+  const getNum = (id, def) => {
+    const val = parseFloat(document.getElementById(id)?.value);
+    return isNaN(val) ? def : val;
+  };
+
+  activeDriver.hasVehicleCourier = vChk ? vChk.checked : true;
+  activeDriver.hasBicycleCourier = bChk ? bChk.checked : false;
+
+  activeDriver.vehiclePerKmRateAud = getNum('info-drv-per-km', 2.20);
+  activeDriver.vehicleSameDayFeeAud = getNum('info-drv-sameday-fee', 0);
+  activeDriver.vehicleUrgentFeeAud = getNum('info-drv-urgent-fee', 0);
+  activeDriver.vehicleMaxWeightKg = getNum('info-drv-max-weight', 50);
+  activeDriver.vehicleMaxHeightCm = getNum('info-drv-max-height', 70);
+  activeDriver.vehicleMaxWidthCm = getNum('info-drv-max-width', 50);
+  activeDriver.vehicleMaxLengthCm = getNum('info-drv-max-length', 50);
+
+  activeDriver.perKmRateAud = activeDriver.vehiclePerKmRateAud;
+  activeDriver.sameDayFeeAud = activeDriver.vehicleSameDayFeeAud;
+  activeDriver.urgentFeeAud = activeDriver.vehicleUrgentFeeAud;
+  activeDriver.maxWeightKg = activeDriver.vehicleMaxWeightKg;
+  activeDriver.maxHeightCm = activeDriver.vehicleMaxHeightCm;
+  activeDriver.maxWidthCm = activeDriver.vehicleMaxWidthCm;
+  activeDriver.maxLengthCm = activeDriver.vehicleMaxLengthCm;
+
+  activeDriver.bicyclePerKmRateAud = getNum('info-drv-bike-per-km', 1.80);
+  activeDriver.bicycleSameDayFeeAud = getNum('info-drv-bike-sameday-fee', 0);
+  activeDriver.bicycleUrgentFeeAud = getNum('info-drv-bike-urgent-fee', 0);
+  activeDriver.bicycleMaxWeightKg = Math.min(getNum('info-drv-bike-max-weight', 8), 8);
+  activeDriver.bicycleMaxHeightCm = getNum('info-drv-bike-max-height', 35);
+  activeDriver.bicycleMaxWidthCm = getNum('info-drv-bike-max-width', 30);
+  activeDriver.bicycleMaxLengthCm = getNum('info-drv-bike-max-length', 40);
+
+  const payidVal = document.getElementById('info-drv-payid-input')?.value.trim();
+  if (payidVal) {
+    activeDriver.payIdValue = payidVal;
+    activeDriver.payId = payidVal;
+  }
+  const licVal = document.getElementById('info-drv-licence-input')?.value.trim();
+  if (licVal) {
+    activeDriver.licenceDetails = licVal;
+  }
+
+  window.providerDB.save();
+  renderDriverInformationView();
+  renderDriverAdminDashboard();
+  calculateCourierQuote();
+  filterContractors();
+  showToast('✅ Driver Information, rates & capacities updated successfully in $ AUD!');
+}
+window.saveDriverInfoProfile = saveDriverInfoProfile;
 
 function handleSupporterRegistrationSubmit(event) {
   if (event && event.preventDefault) event.preventDefault();
@@ -3504,23 +3679,29 @@ function renderSupporterPanel() {
       supTokenEl.textContent = `${supporter.tokenBalance ?? 25} Tokens`;
     }
 
-    // Role-based visibility for Driver Dispatch Console: strictly driver and superadmin ONLY
+    // Role-based visibility for Driver Dispatch Console & Driver Information: strictly driver and superadmin ONLY
     const canSeeDispatch = (activeRole === 'driver' || activeRole === 'superadmin');
     const dispatchSubtabBtn = document.getElementById('subtab-btn-dispatch');
+    const driverInfoSubtabBtn = document.getElementById('subtab-btn-driver-info');
     const dispatchNotice = document.getElementById('supporter-not-driver-notice');
     const dispatchConsole = document.getElementById('driver-dispatch-console');
     const dispatchSubtabView = document.getElementById('supporter-dispatch-subtab');
+    const driverInfoSubtabView = document.getElementById('supporter-driver-info-subtab');
 
     if (dispatchSubtabBtn) {
       dispatchSubtabBtn.style.display = canSeeDispatch ? 'inline-flex' : 'none';
+    }
+    if (driverInfoSubtabBtn) {
+      driverInfoSubtabBtn.style.display = canSeeDispatch ? 'inline-flex' : 'none';
     }
 
     if (!canSeeDispatch) {
       if (dispatchNotice) dispatchNotice.style.display = 'none';
       if (dispatchConsole) dispatchConsole.style.display = 'none';
       if (dispatchSubtabView) dispatchSubtabView.style.display = 'none';
+      if (driverInfoSubtabView) driverInfoSubtabView.style.display = 'none';
       const activeSubBtn = document.querySelector('.supporter-subnav-btn.active');
-      if (activeSubBtn && activeSubBtn.id === 'subtab-btn-dispatch') {
+      if (activeSubBtn && (activeSubBtn.id === 'subtab-btn-dispatch' || activeSubBtn.id === 'subtab-btn-driver-info')) {
         switchSupporterSubTab('supporter-details-subtab');
       }
     } else {
@@ -4170,6 +4351,15 @@ function renderDriverAdminDashboard() {
       approvalBanner.style.borderColor = '#FCD34D';
       approvalBanner.style.color = '#92400E';
       approvalBanner.innerHTML = `<i class="fa-solid fa-clock"></i> <strong>Application Pending SuperAdmin Approval</strong> — Your driver licence and PayID details have been submitted. Once approved by the SuperAdmin, your profile will immediately go live to receive customer orders.`;
+    }
+
+    const qName = document.getElementById('driver-quick-info-name');
+    if (qName) qName.textContent = activeDriver.name;
+    const qBadge = document.getElementById('driver-quick-info-badge');
+    if (qBadge) {
+      qBadge.style.background = isApproved ? '#DCFCE7' : '#FFFBEB';
+      qBadge.style.color = isApproved ? '#15803D' : '#92400E';
+      qBadge.innerHTML = isApproved ? '<i class="fa-solid fa-circle-check"></i> Approved' : '<i class="fa-solid fa-clock"></i> Pending';
     }
   }
 

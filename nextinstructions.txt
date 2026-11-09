@@ -266,9 +266,26 @@ Created: 2026-11-01
   * Verified end-to-end with verify_footer_combined_section.mjs (all assertions passing).
   * Compiled clean bundle with npm run build (0 errors).
 
+[COMPLETED 2026-11-08] TASK 43: SUPPORTER-GATED DRIVER APPLICATION & DRIVER INFORMATION NEXT TO DISPATCH CONSOLE
+- Supporter-First Application Gating:
+  * Section `#driver-application-bottom-section` ("The Driver Network • Join the Fleet — Courier Driver Application") is hidden by default (`display:none;`) and only revealed once a user becomes a registered supporter.
+  * In the footer, the "Courier Driver Application" links (`#footer-driver-app-link` and `#footer-bottom-driver-app-link`) are strictly hidden until the user registers as a supporter.
+  * Attempting to navigate or deep-link to the application when not registered smoothly routes to the Supporter Gateway with a toast alert.
+- Driver Lifecycle & Approval:
+  * Application submission saves the driver profile in pending status.
+  * SuperAdmin approval (`approveDriverBySuperadmin`) activates the driver and elevates their role to `driver`.
+- Driver Information Placed Next to Driver Dispatch Console:
+  * Added `Driver Information` subtab button (`#subtab-btn-driver-info`) right next to `Driver Dispatch Console` in the Supporter Navigation Bar, gated to approved drivers and superadmins (`driver-and-superadmin-only`).
+  * In `#driver-dispatch-console`, added an Active Driver Information banner (`#driver-dispatch-quick-info-bar`) with driver name, approval badge, and direct button to view driver information (`#btn-quick-goto-driver-info`).
+  * Built dedicated Driver Information subtab view (`#supporter-driver-info-subtab`) with complete driver details, verified approval badge, PayID address, live GPS location, token wallet balance, and editable rates and parcel dimensions form (`#driver-info-settings-form`).
+- Verification & Compliance:
+  * Documented Section 11.18 in data-contracts.MD.
+  * Verified end-to-end with verify_supporter_driver_info_lifecycle.mjs (all 7 assertions passing).
+  * Compiled clean bundle with npm run build (0 errors).
+
 --------------------------------------------------------------------------------
-CURRENT TASK: VERIFY UNIFIED SINGLE-SECTION FOOTER IN BROWSER
+CURRENT TASK: VERIFY SUPPORTER-GATED APPLICATION & DRIVER INFORMATION IN BROWSER
 --------------------------------------------------------------------------------
-1. In your browser at http://localhost:3002, scroll down to the bottom of the page and verify that the footer is now seamlessly combined into one single unified section (with no dividing lines or fragmented sub-bars) displaying the short-haul courier title, tagline, navigation links, copyright, and the Terms of Service & Courier Driver Application links.
+1. In your browser at http://localhost:3002, verify that before signing in / registering as a supporter, the "Driver Network • Join the Fleet" section and footer application links are completely hidden; then sign in/register as a supporter to verify that the application appears on the footer, and once approved as a driver, verify that "Driver Information" appears right next to "Driver Dispatch Console".
 
 ================================================================================

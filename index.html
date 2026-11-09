@@ -690,6 +690,12 @@
             data-agent-id="subtab-btn-dispatch" data-testid="subtab-btn-dispatch" aria-label="Driver Dispatch Console">
             <i class="fa-solid fa-clipboard-list"></i> Driver Dispatch Console
           </button>
+          <button type="button" class="supporter-subnav-btn driver-and-superadmin-only" id="subtab-btn-driver-info"
+            onclick="switchSupporterSubTab('supporter-driver-info-subtab')"
+            style="display:none;"
+            data-agent-id="subtab-btn-driver-info" data-testid="subtab-btn-driver-info" aria-label="Driver Information">
+            <i class="fa-solid fa-id-card-clip"></i> Driver Information
+          </button>
         </div>
 
         <!-- SUBTAB 1: Register Supporter Details -->
@@ -787,6 +793,26 @@
       </div>
 
       <div id="driver-dispatch-console">
+
+      <!-- Quick Driver Information Header Banner next to Dispatch Console -->
+      <div id="driver-dispatch-quick-info-bar" class="driver-dispatch-quick-info-bar" style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-md); padding:0.85rem 1.15rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <span style="font-size:0.75rem; font-weight:800; background:#DBEAFE; color:#1E40AF; padding:0.2rem 0.55rem; border-radius:999px;">
+            <i class="fa-solid fa-id-card-clip"></i> Driver Information
+          </span>
+          <strong id="driver-quick-info-name" style="font-size:0.95rem; color:#1E3A8A;">Driver Profile</strong>
+          <span id="driver-quick-info-badge" style="font-size:0.75rem; font-weight:800; background:#DCFCE7; color:#15803D; padding:0.15rem 0.5rem; border-radius:999px;">
+            <i class="fa-solid fa-circle-check"></i> Approved
+          </span>
+        </div>
+        <div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="switchSupporterSubTab('supporter-driver-info-subtab')"
+            style="background:#FFFFFF; border-color:#93C5FD; color:#1E40AF; font-weight:700; display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem;"
+            data-agent-id="btn-quick-goto-driver-info" data-testid="btn-quick-goto-driver-info" aria-label="View Full Driver Information">
+            <i class="fa-solid fa-sliders" style="color:var(--brand-orange);"></i> View Driver Information
+          </button>
+        </div>
+      </div>
 
       <!-- Driver Approval Status Banner (Awaiting vs Approved) -->
       <div id="driver-admin-approval-status-banner" style="display:none; margin-bottom:1.25rem; padding:0.85rem 1.15rem; border-radius:var(--radius-md); font-size:0.86rem; border:1px solid transparent;"></div>
@@ -1181,6 +1207,230 @@
       </div>
       </div> <!-- /#driver-dispatch-console -->
       </div> <!-- /#supporter-dispatch-subtab -->
+
+      <!-- SUBTAB 4: Driver Information (Gated to Approved Drivers & SuperAdmin) -->
+      <div id="supporter-driver-info-subtab" class="supporter-subview" style="display:none;"
+        data-agent-id="supporter-driver-info-subtab" data-testid="supporter-driver-info-subtab">
+        
+        <!-- Top Info Card: Verified Driver Profile & Telemetry -->
+        <div class="courier-calc-card" style="padding:1.5rem; margin-bottom:1.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:2px solid var(--bg-card-alt);">
+            <div style="display:flex; align-items:center; gap:0.85rem;">
+              <div style="width:48px; height:48px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:2px solid #BFDBFE;">
+                <i class="fa-solid fa-id-card-clip"></i>
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <h3 id="driver-info-name" style="font-size:1.25rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    Driver Information
+                  </h3>
+                  <span id="driver-info-status-badge" style="font-size:0.75rem; background:#DCFCE7; color:#15803D; font-weight:800; padding:0.2rem 0.65rem; border-radius:999px;">
+                    <i class="fa-solid fa-circle-check"></i> Approved Driver • Shown on Map
+                  </span>
+                </div>
+                <div id="driver-info-contact-line" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
+                  Active courier profile details and rates
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="switchSupporterSubTab('supporter-dispatch-subtab')"
+                style="display:inline-flex; align-items:center; gap:0.4rem; font-weight:700;"
+                data-agent-id="btn-info-goto-dispatch" data-testid="btn-info-goto-dispatch" aria-label="Go to Driver Dispatch Console">
+                <i class="fa-solid fa-clipboard-list" style="color:var(--brand-orange);"></i> Driver Dispatch Console
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Telemetry Grid: PayID, Geolocation, Token Balance -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-md); padding:0.85rem 1rem;">
+              <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">
+                <i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> Direct PayID
+              </div>
+              <div id="driver-info-payid" style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-top:0.25rem;">
+                payid@driver.com.au
+              </div>
+            </div>
+
+            <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:0.72rem; font-weight:800; color:#065F46; text-transform:uppercase;">
+                  <i class="fa-solid fa-location-dot"></i> Base Suburb / Live Location
+                </div>
+                <div id="driver-info-location" style="font-size:1rem; font-weight:800; color:#047857; margin-top:0.25rem;">
+                  Southport QLD
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="triggerDriverAdminGeolocate()"
+                style="background:#059669; border-color:#059669; font-size:0.75rem; padding:0.35rem 0.65rem;"
+                aria-label="Auto Geolocate Now">
+                <i class="fa-solid fa-location-crosshairs"></i> GPS
+              </button>
+            </div>
+
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:0.72rem; font-weight:800; color:#92400E; text-transform:uppercase;">
+                  <i class="fa-solid fa-coins" style="color:#F59E0B;"></i> Token Balance
+                </div>
+                <div id="driver-info-tokens" style="font-size:1rem; font-weight:800; color:#B45309; margin-top:0.25rem;">
+                  45 Tokens
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal()"
+                style="background:#D97706; border-color:#D97706; font-size:0.75rem; padding:0.35rem 0.65rem;"
+                aria-label="Buy Tokens in AUD">
+                <i class="fa-solid fa-plus"></i> Buy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Rates, Capacities & Profile Form -->
+        <div class="courier-calc-card" style="padding:1.5rem; margin-bottom:1.5rem;">
+          <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
+            <i class="fa-solid fa-sliders" style="color:var(--brand-orange);"></i> Update Rates, Delivery Modes &amp; Capacities
+          </h3>
+          <div style="background:rgba(255, 107, 0, 0.08); border-left:4px solid var(--brand-orange); padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1.25rem; font-size:0.84rem; color:var(--text-dark); line-height:1.45;">
+            <strong><i class="fa-solid fa-circle-check" style="color:var(--brand-orange);"></i> 100% AUD Only &amp; Direct PayID:</strong> Keep your Motor Vehicle and Bicycle courier rates, parcel dimensions, and PayID settlement details up-to-date.
+          </div>
+
+          <!-- Driver Info Settings Form -->
+          <form id="driver-info-settings-form" onsubmit="saveDriverInfoProfile(event)">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+              <label style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.75rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
+                <input type="checkbox" id="info-drv-has-vehicle" checked onchange="toggleInfoModesUI()"
+                  style="width:16px; height:16px; accent-color:var(--brand-orange);"
+                  data-agent-id="info-drv-has-vehicle" data-testid="info-drv-has-vehicle" aria-label="Has Motor Vehicle Service">
+                <span style="font-size:0.88rem; font-weight:700; color:var(--primary-navy);"><i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Motor Vehicle (Van/Ute/Car)</span>
+              </label>
+
+              <label style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:6px; padding:0.75rem; cursor:pointer; display:flex; gap:0.5rem; align-items:center;">
+                <input type="checkbox" id="info-drv-has-bicycle" onchange="toggleInfoModesUI()"
+                  style="width:16px; height:16px; accent-color:#059669;"
+                  data-agent-id="info-drv-has-bicycle" data-testid="info-drv-has-bicycle" aria-label="Has Bicycle Service">
+                <span style="font-size:0.88rem; font-weight:700; color:#065F46;"><i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier (Letters/Food)</span>
+              </label>
+            </div>
+
+            <!-- Motor Vehicle Box -->
+            <div id="info-vehicle-rates-box" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:1rem; margin-bottom:1.25rem;">
+              <div style="font-size:0.88rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.5rem;">
+                <i class="fa-solid fa-truck" style="color:var(--brand-orange);"></i> Motor Vehicle Delivery Rates &amp; Capacity
+              </div>
+              <div class="form-row" style="margin-bottom:0.6rem;">
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-per-km">Vehicle Rate Per KM ($ AUD / km):</label>
+                  <input type="number" id="info-drv-per-km" class="form-control" step="0.1" min="0.5" max="50" required
+                    placeholder="2.20" data-agent-id="info-drv-per-km" data-testid="info-drv-per-km" aria-label="Vehicle Rate Per KM">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-sameday-fee">Same-Day Fee ($ AUD):</label>
+                  <input type="number" id="info-drv-sameday-fee" class="form-control" step="1" min="0" max="500" required
+                    placeholder="0" data-agent-id="info-drv-sameday-fee" data-testid="info-drv-sameday-fee" aria-label="Vehicle Same Day Fee">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-urgent-fee">Urgent Fee ($ AUD):</label>
+                  <input type="number" id="info-drv-urgent-fee" class="form-control" step="1" min="0" max="500" required
+                    placeholder="0" data-agent-id="info-drv-urgent-fee" data-testid="info-drv-urgent-fee" aria-label="Vehicle Urgent Fee">
+                </div>
+              </div>
+              <div class="form-row driver-capacities-grid">
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-max-weight">Max Payload (kg):</label>
+                  <input type="number" id="info-drv-max-weight" class="form-control" step="1" min="1" max="10000" required
+                    placeholder="50" data-agent-id="info-drv-max-weight" data-testid="info-drv-max-weight" aria-label="Vehicle Max Weight">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-max-height">Max Height (cm):</label>
+                  <input type="number" id="info-drv-max-height" class="form-control" step="1" min="1" max="500" required
+                    placeholder="70" data-agent-id="info-drv-max-height" data-testid="info-drv-max-height" aria-label="Vehicle Max Height">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-max-width">Max Width (cm):</label>
+                  <input type="number" id="info-drv-max-width" class="form-control" step="1" min="1" max="500" required
+                    placeholder="50" data-agent-id="info-drv-max-width" data-testid="info-drv-max-width" aria-label="Vehicle Max Width">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-max-length">Max Length (cm):</label>
+                  <input type="number" id="info-drv-max-length" class="form-control" step="1" min="1" max="1000" required
+                    placeholder="50" data-agent-id="info-drv-max-length" data-testid="info-drv-max-length" aria-label="Vehicle Max Length">
+                </div>
+              </div>
+            </div>
+
+            <!-- Bicycle Box -->
+            <div id="info-bicycle-rates-box" style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:8px; padding:1rem; margin-bottom:1.25rem;">
+              <div style="font-size:0.88rem; font-weight:800; color:#065F46; margin-bottom:0.5rem;">
+                <i class="fa-solid fa-bicycle" style="color:#059669;"></i> Bicycle Courier Delivery Rates &amp; Capacity (Letters/Food)
+              </div>
+              <div class="form-row" style="margin-bottom:0.6rem;">
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-per-km">Bicycle Rate Per KM ($ AUD / km):</label>
+                  <input type="number" id="info-drv-bike-per-km" class="form-control" step="0.1" min="0.5" max="50" required
+                    placeholder="1.80" data-agent-id="info-drv-bike-per-km" data-testid="info-drv-bike-per-km" aria-label="Bicycle Rate Per KM">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-sameday-fee">Same-Day Fee ($ AUD):</label>
+                  <input type="number" id="info-drv-bike-sameday-fee" class="form-control" step="1" min="0" max="500" required
+                    placeholder="0" data-agent-id="info-drv-bike-sameday-fee" data-testid="info-drv-bike-sameday-fee" aria-label="Bicycle Same Day Fee">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-urgent-fee">Urgent Fee ($ AUD):</label>
+                  <input type="number" id="info-drv-bike-urgent-fee" class="form-control" step="1" min="0" max="500" required
+                    placeholder="0" data-agent-id="info-drv-bike-urgent-fee" data-testid="info-drv-bike-urgent-fee" aria-label="Bicycle Urgent Fee">
+                </div>
+              </div>
+              <div class="form-row driver-capacities-grid">
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-max-weight">Backpack Max Weight (kg - max 8kg):</label>
+                  <input type="number" id="info-drv-bike-max-weight" class="form-control" step="1" min="1" max="8" required
+                    placeholder="8" data-agent-id="info-drv-bike-max-weight" data-testid="info-drv-bike-max-weight" aria-label="Bicycle Max Weight">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-max-height">Max Height (cm):</label>
+                  <input type="number" id="info-drv-bike-max-height" class="form-control" step="1" min="1" max="100" required
+                    placeholder="35" data-agent-id="info-drv-bike-max-height" data-testid="info-drv-bike-max-height" aria-label="Bicycle Max Height">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-max-width">Max Width (cm):</label>
+                  <input type="number" id="info-drv-bike-max-width" class="form-control" step="1" min="1" max="100" required
+                    placeholder="30" data-agent-id="info-drv-bike-max-width" data-testid="info-drv-bike-max-width" aria-label="Bicycle Max Width">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="info-drv-bike-max-length">Max Length (cm):</label>
+                  <input type="number" id="info-drv-bike-max-length" class="form-control" step="1" min="1" max="100" required
+                    placeholder="40" data-agent-id="info-drv-bike-max-length" data-testid="info-drv-bike-max-length" aria-label="Bicycle Max Length">
+                </div>
+              </div>
+            </div>
+
+            <!-- PayID & Licence Details -->
+            <div class="form-row" style="margin-bottom:1rem;">
+              <div class="input-group">
+                <label class="input-label" for="info-drv-payid-input">PayID Direct Settlement Account (Mobile / ABN / Email):</label>
+                <input type="text" id="info-drv-payid-input" class="form-control" required
+                  placeholder="e.g. 0400 123 456 or driver@payid.com.au"
+                  data-agent-id="info-drv-payid-input" data-testid="info-drv-payid-input" aria-label="PayID Account">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="info-drv-licence-input">Driver Licence Details:</label>
+                <input type="text" id="info-drv-licence-input" class="form-control" required
+                  placeholder="e.g. QLD #482910384 (Class C)"
+                  data-agent-id="info-drv-licence-input" data-testid="info-drv-licence-input" aria-label="Licence Details">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+              <button type="submit" class="btn btn-primary" style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem;"
+                data-agent-id="btn-save-driver-info" data-testid="btn-save-driver-info" aria-label="Save Driver Information">
+                <i class="fa-solid fa-check"></i> Save Driver Information
+              </button>
+            </div>
+          </form>
+        </div>
+      </div> <!-- /#supporter-driver-info-subtab -->
       </div> <!-- /#supporter-panel-wrapper -->
     </section>
 
@@ -1188,7 +1438,7 @@
          DRIVER APPLICATION BOTTOM SECTION (Gated by Supporter Registration)
          ===================================================================== -->
     <section id="driver-application-bottom-section" class="driver-app-bottom-section container"
-      style="margin-top: 3.5rem; margin-bottom: 4rem; scroll-margin-top: 100px;"
+      style="display:none; margin-top: 3.5rem; margin-bottom: 4rem; scroll-margin-top: 100px;"
       data-agent-id="driver-application-bottom-section" data-testid="driver-application-bottom-section">
 
       <!-- Section Header -->
@@ -1684,7 +1934,7 @@
         <a href="#" id="footer-supporter-link" class="supporter-gated-nav" onclick="switchTab('driver-admin-tab'); return false;" style="color:#CBD5E1; text-decoration:none; display:none;" data-agent-id="footer-supporter-portal-link" data-testid="footer-supporter-portal-link">Supporter Portal</a>
         <a href="/terms.html#how-it-works" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-how-it-works-link" data-testid="footer-how-it-works-link">How It Works</a>
         <a href="/terms.html" style="color:#CBD5E1; text-decoration:none;" data-agent-id="footer-terms-link" data-testid="footer-terms-link">Terms of Service</a>
-        <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:0.35rem;" data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link" aria-label="Courier Driver Application">
+        <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:none; align-items:center; gap:0.35rem;" class="supporter-gated-nav" data-agent-id="footer-driver-app-link" data-testid="footer-driver-app-link" aria-label="Courier Driver Application">
           <i class="fa-solid fa-truck-fast"></i> Courier Driver Application
         </a>
       </div>
@@ -1696,8 +1946,8 @@
         </div>
         <div style="display:flex; gap:0.85rem; align-items:center; flex-wrap:wrap;">
           <a href="/terms.html" style="color:#94A3B8; text-decoration:underline;" data-agent-id="footer-bottom-terms-link" data-testid="footer-bottom-terms-link">Terms of Service</a>
-          <span style="color:#64748B;">•</span>
-          <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem;" data-agent-id="footer-bottom-driver-app-link" data-testid="footer-bottom-driver-app-link" aria-label="Courier Driver Application">
+          <span id="footer-bottom-driver-app-bullet" class="supporter-gated-nav" style="color:#64748B; display:none;">•</span>
+          <a href="#driver-application-bottom-section" onclick="scrollToDriverApplication(event); return false;" style="color:#F59E0B; text-decoration:none; font-weight:700; display:none; align-items:center; gap:0.3rem;" class="supporter-gated-nav" data-agent-id="footer-bottom-driver-app-link" data-testid="footer-bottom-driver-app-link" aria-label="Courier Driver Application">
             <i class="fa-solid fa-truck-fast"></i> Courier Driver Application
           </a>
         </div>

@@ -2065,6 +2065,25 @@ Combines the site footer into a single, cohesive section with consistent vertica
 2. **DOM Automation & Testing Selectors:**
    - All interactive footer links maintain their explicit `data-agent-id`, `data-testid`, and `aria-label` attributes.
 
+### 11.18 Supporter-Gated Application & Driver Information Contract (`SupporterGatedApplicationAndDriverInfoContract`)
+Defines the strict visibility and operational contracts for the driver application and driver information lifecycle:
+
+1. **Supporter-Only Driver Application Gating:**
+   - Section `#driver-application-bottom-section` ("The Driver Network • Join the Fleet — Courier Driver Application") is hidden by default (`display:none;`) and exclusively made visible once a user is verified as a registered supporter (`isSupporterRegistered() === true`).
+   - The Courier Driver Application link in the footer (`#footer-driver-app-link`, `#footer-bottom-driver-app-bullet`, `#footer-bottom-driver-app-link`) is strictly hidden until the user is a registered supporter.
+   - Deep-linking or attempting navigation to `#driver-application-bottom-section` without supporter registration redirects to the Supporter Portal with an instructive toast message.
+
+2. **SuperAdmin Approval Transition:**
+   - Upon driver application submission, the driver record is created with `status: 'pending_approval'` and `approved: false`.
+   - SuperAdmin reviews and approves the application via `approveDriverBySuperadmin(driverId)`.
+   - Once approved, the user's role is promoted to `driver`, granting access to driver dispatch and profile management features.
+
+3. **Driver Information Placement Next to Driver Dispatch Console:**
+   - In the Supporter Portal navigation subnav (`.supporter-subnav-bar`), the `Driver Information` button (`#subtab-btn-driver-info`) is placed immediately adjacent to `Driver Dispatch Console` (`#subtab-btn-dispatch`). Both buttons are gated with class `driver-and-superadmin-only` (strictly hidden from ordinary supporters).
+   - In `#driver-dispatch-console`, a dedicated header banner (`#driver-dispatch-quick-info-bar`) displays the active driver's name, approval badge, and direct button (`#btn-quick-goto-driver-info`) to view/edit full driver information.
+   - Dedicated subtab view `#supporter-driver-info-subtab` displays the complete driver profile, verified approval badge, PayID address, live GPS location with auto-geolocate trigger, driver token balance with top-up trigger, and complete editable rates and package limits form (`#driver-info-settings-form`) with real-time quote and map synchronization.
+
+
 
 
 
