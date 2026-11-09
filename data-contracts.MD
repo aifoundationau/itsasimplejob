@@ -262,6 +262,47 @@ The application defaults to an ultra-reliable, zero-key Leaflet OpenStreetMap en
 }
 ```
 
+### 10.2 SuperAdmin Distance Tier Token Costs & Token Pricing Contract
+- **SuperAdmin Authority**: Token price and distance tier token costs per order are set **ONLY by SuperAdmin**.
+- **Real-Time SuperAdmin Editing**: SuperAdmin can edit token price (`tokenPriceAud`) and all 4 distance tier token costs (`tier0to20km`, `tier21to50km`, `tier51to100km`, `tier101PlusKm`) at any time from the SuperAdmin console.
+- **Persistence**: Edits are persisted immediately to the Firestore database under `platform_settings/pricing` and synced across all client instances.
+- **Immediate Effect on Driver Token Top-Ups**: Changing the token price immediately recalculates all driver token top-up packs (10, 50, 100 Tokens @ `$tokenPriceAud` AUD/token) and the distance token charges deducted from drivers when customer orders are placed.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperAdminTokenPricingAndDistanceTiersContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tokenPriceAud", "driverOrderTokens", "updatedBy", "updatedAt"],
+  "properties": {
+    "tokenPriceAud": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "AUD price of 1 token, set strictly by SuperAdmin (default 1)"
+    },
+    "driverOrderTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier0to20km", "tier21to50km", "tier51to100km", "tier101PlusKm"],
+      "properties": {
+        "tier0to20km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier21to50km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier51to100km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier101PlusKm": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      }
+    },
+    "tokenPacks": {
+      "type": "array",
+      "items": { "type": "integer", "enum": [10, 50, 100] }
+    },
+    "updatedBy": { "type": "string", "format": "email" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+```
+
 ---
 
 ### 3.4 Universal Mobile (Android/iOS) Leaflet & Touch Autocomplete Contract
@@ -308,6 +349,28 @@ Enforces zero-latency touch event bindings, ResizeObserver responsiveness, and f
       "type": "boolean",
       "enum": [true],
       "description": "Automatically populates cust-address or courier-origin/dest from NLP prompt analysis"
+    }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
     }
   }
 }
@@ -770,6 +833,28 @@ Controls global feature flags in Cloud Firestore (`platform_settings/global`). P
 }
 ```
 
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
+  }
+}
+```
+
 ---
 
 ### 6.2 Superadmin Multi-Role Perspective Contract
@@ -795,6 +880,28 @@ Stores the active simulated role perspective for superadmins in `sessionStorage[
     "timestamp": {
       "type": "string",
       "format": "date-time"
+    }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
     }
   }
 }
@@ -828,6 +935,28 @@ Governs live security rule deployment for database `itsasimplejob` under project
     "deployedAt": { "type": "string", "format": "date-time" },
     "deployedBy": { "type": "string", "format": "email" },
     "status": { "type": "string", "enum": ["ACTIVE", "DEPRECATED"] }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
   }
 }
 ```
@@ -877,6 +1006,28 @@ Whole tokens and whole AUD on every price; USD conversions show 2 decimal places
       "description": "AUD in whole dollars; USD conversion with exactly 2 decimals, rounded up to the cent. e.g. '$98 AUD/hr' or '≈ $68.85 USD/hr'"
     },
     "isTokenSystemEnabled": { "type": "boolean" }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
   }
 }
 ```
@@ -944,6 +1095,28 @@ Enforces strict two-step confirmation on all interactive deletion triggers acros
       "type": "string",
       "maxLength": 60,
       "description": "User-facing label displayed on the confirmation button"
+    }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
     }
   }
 }
@@ -1059,6 +1232,28 @@ Written only by `/api/messages` (`server/messages.js`, Admin SDK); `firestore.ru
 }
 ```
 
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
+  }
+}
+```
+
 ---
 
 ## 8. DOM Automation & Accessibility Testability Contract
@@ -1103,6 +1298,28 @@ All interactive elements (`<button>`, `<input>`, `<select>`, `<textarea>`) acros
 }
 ```
 
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
+  }
+}
+```
+
 ---
 
 ## 9. Change Log & Maintenance Rules
@@ -1117,3 +1334,366 @@ All interactive elements (`<button>`, `<input>`, `<select>`, `<textarea>`) acros
 - **2 November 2026 — USD conversions to the cent.** USD conversions (display only) now show 2 decimal places maximum, rounded up to the next cent with `roundUpToCents()` / `convertAudToUsd()` in `shared/pricing.js` (e.g. `≈ $68.85 USD`, rate note `A$100 ≈ US$70.25`). `usdEstimate` (5.2, 5.3) and courier `totalFiat` (4.2) are now numbers with at most 2 decimals. AUD amounts, tokens and invoices remain whole numbers.
 - **2 November 2026 — Refunds & superadmin messages.** Refund requests must be made in writing by sending a message to the superadmin (support@aifoundation.net.au; Terms of Service section 5, tokens FAQ, Token Wallet). Messages to the superadmin are free: never priced in tokens or AUD (6.6).
 - **2 November 2026 — Messages panel.** Admin Page > Messages (`js/messages-panel.js`, `GET/POST/PATCH /api/messages`, `server/messages.js`): users message each other by email, or the superadmin. Messages to (and from) the superadmin are free; messages to other users cost `fees.message` tokens (default 1, set in the price list, 6.6), charged in the delivery transaction. Contracts 5.6 and 6.7; `mailboxes` is server-only in `firestore.rules`. Refund requests can now be sent to the superadmin from the Messages panel (or by email).
+
+---
+
+## 9. Courier Platform & Community Supporter Contracts
+
+### 9.0 Community Supporter Registration Contract (`SupporterRegistrationContract`)
+Supporters register with basic contact details (full name, email, mobile phone, and suburb/postcode) to access the network.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterRegistrationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "fullName", "email", "phone", "suburb"],
+  "properties": {
+    "id": { "type": "string", "minLength": 3, "maxLength": 64 },
+    "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+    "email": { "type": "string", "format": "email" },
+    "phone": { "type": "string", "pattern": "^(?:\\+?61|0)[4-5]\\d{8}$" },
+    "suburb": { "type": "string", "minLength": 2, "maxLength": 120 },
+    "role": { "type": "string", "enum": ["supporter", "member", "admin"] },
+    "isVerified": { "type": "boolean", "default": true },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+```
+
+### 9.1 Courier Driver Registration Contract (`CourierDriverRegistrationContract`)
+Drivers register with licence details, address, phone, email, PayID, custom rates, maximum package dimensions, and live GPS position.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CourierDriverRegistrationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "serviceProviderNumber", "name", "businessName", "category",
+    "licenceNumber", "licenceState", "licenceClass", "licenceExpiry",
+    "address", "phone", "email", "payIdType", "payIdValue", "payIdAccountName",
+    "perKmRateAud", "sameDayFeeAud", "urgentFeeAud",
+    "maxWeightKg", "maxHeightCm", "maxWidthCm", "maxLengthCm",
+    "tokenBalance", "lat", "lng"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 3, "maxLength": 64 },
+    "serviceProviderNumber": { "type": "string", "pattern": "^(DRV|SPN)-\\d{6}$" },
+    "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+    "businessName": { "type": "string", "minLength": 2, "maxLength": 160 },
+    "category": { "type": "string", "enum": ["courier"] },
+    "licenceNumber": { "type": "string", "minLength": 4, "maxLength": 32 },
+    "licenceState": { "type": "string", "enum": ["QLD", "NSW", "VIC", "WA", "SA", "TAS", "ACT", "NT"] },
+    "licenceClass": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "licenceExpiry": { "type": "string", "format": "date" },
+    "address": { "type": "string", "minLength": 5, "maxLength": 240 },
+    "phone": { "type": "string", "minLength": 8, "maxLength": 24 },
+    "email": { "type": "string", "format": "email" },
+    "payIdType": { "type": "string", "enum": ["phone", "email", "abn"] },
+    "payIdValue": { "type": "string", "minLength": 5, "maxLength": 120 },
+    "payIdAccountName": { "type": "string", "minLength": 2, "maxLength": 140 },
+    "perKmRateAud": { "type": "number", "minimum": 0.5, "maximum": 100, "default": 2.20 },
+    "sameDayFeeAud": { "type": "number", "minimum": 0, "maximum": 1000, "default": 0 },
+    "urgentFeeAud": { "type": "number", "minimum": 0, "maximum": 1000, "default": 0 },
+    "maxWeightKg": { "type": "number", "minimum": 1, "maximum": 20000, "default": 50 },
+    "maxHeightCm": { "type": "number", "minimum": 10, "maximum": 600, "default": 70 },
+    "maxWidthCm": { "type": "number", "minimum": 10, "maximum": 600, "default": 50 },
+    "maxLengthCm": { "type": "number", "minimum": 10, "maximum": 1500, "default": 50 },
+    "tokenBalance": { "type": "integer", "minimum": 0 },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lng": { "type": "number", "minimum": -180, "maximum": 180 }
+  }
+}
+```
+
+### 9.2 Customer Courier Order & 9am–4pm Pickup Contract (`CustomerCourierOrderContract`)
+Recorded on the Driver Admin Page (`window.courierOrderDB`). Customers select a pickup time strictly between 09:00 AM and 04:00 PM.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CustomerCourierOrderContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "orderId", "createdAt", "driverId", "driverName", "driverPayIdType", "driverPayIdValue",
+    "pickupDate", "pickupTime", "speedTier", "originAddress", "destAddress", "distanceKm",
+    "customerName", "customerPhone", "customerEmail", "customerAddress", "packageContents",
+    "weightKg", "heightCm", "widthCm", "lengthCm", "totalAud",
+    "tokensChargedToDriver", "tokenTierLabel", "paymentMethod", "status"
+  ],
+  "properties": {
+    "orderId": { "type": "string", "pattern": "^ORD-\\d{6}$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "driverId": { "type": "string" },
+    "driverName": { "type": "string" },
+    "driverPayIdType": { "type": "string", "enum": ["phone", "email", "abn"] },
+    "driverPayIdValue": { "type": "string" },
+    "pickupDate": { "type": "string", "format": "date" },
+    "pickupTime": {
+      "type": "string",
+      "enum": [
+        "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
+        "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+        "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
+        "03:00 PM", "03:30 PM", "04:00 PM"
+      ]
+    },
+    "speedTier": { "type": "string", "enum": ["standard", "same_day", "urgent"] },
+    "originAddress": { "type": "string", "minLength": 5, "maxLength": 240 },
+    "destAddress": { "type": "string", "minLength": 5, "maxLength": 240 },
+    "distanceKm": { "type": "number", "minimum": 0.1 },
+    "customerName": { "type": "string", "minLength": 2, "maxLength": 120 },
+    "customerPhone": { "type": "string", "minLength": 8, "maxLength": 24 },
+    "customerEmail": { "type": "string", "format": "email" },
+    "customerAddress": { "type": "string", "minLength": 5, "maxLength": 240 },
+    "packageContents": { "type": "string", "minLength": 2, "maxLength": 500 },
+    "weightKg": { "type": "number", "minimum": 0.1, "maximum": 20000 },
+    "heightCm": { "type": "number", "minimum": 1, "maximum": 600 },
+    "widthCm": { "type": "number", "minimum": 1, "maximum": 600 },
+    "lengthCm": { "type": "number", "minimum": 1, "maximum": 1500 },
+    "totalAud": { "type": "number", "minimum": 0 },
+    "tokensChargedToDriver": { "type": "integer", "minimum": 1 },
+    "tokenTierLabel": { "type": "string", "enum": ["0–20 km", "21–50 km", "51–100 km", "101+ km"] },
+    "paymentMethod": { "type": "string", "enum": ["Direct to Driver PayID (AUD)"] },
+    "status": { "type": "string" }
+  }
+}
+```
+
+### 9.3 SuperAdmin Distance-Bracket Driver Token Charge Contract (`SuperAdminDistanceTokenTierContract`)
+Drivers buy tokens in AUD. Every customer order deducts tokens according to 4 distance brackets:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperAdminDistanceTokenTierContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tokenPriceAud", "tier0to20km", "tier21to50km", "tier51to100km", "tier101PlusKm"],
+  "properties": {
+    "tokenPriceAud": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 1 },
+    "tier0to20km": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 2 },
+    "tier21to50km": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 5 },
+    "tier51to100km": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 10 },
+    "tier101PlusKm": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 15 }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 }
+  }
+}
+```
+
+### 9.4 Supporter Bookings History & Re-booking Contract (`SupporterBookingsHistoryContract`)
+When community supporters log in, they can view all their past and active courier delivery bookings, review pickup windows (9:00 AM – 4:00 PM), tracking status, PayID settlement details, and trigger new courier bookings with contact details pre-filled from their supporter profile.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupporterBookingsHistoryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supporterId", "email", "totalBookings", "orders"],
+  "properties": {
+    "supporterId": { "type": "string", "minLength": 3 },
+    "email": { "type": "string", "format": "email" },
+    "totalBookings": { "type": "integer", "minimum": 0 },
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomerCourierOrderContract" }
+    }
+  }
+}
+```
+
+---
+
+## 10. SuperAdmin Governance & Token Flow Contract
+
+### 10.1 SuperAdmin Identity & Driver Approval Schema
+- **Firebase Admin Email Binding**: SuperAdmin is authorized via the Firebase admin email address (`support@aifoundation.net.au`, `davidrobertson.info@gmail.com`, or configured `SUPERADMIN_EMAILS`).
+- **Driver Approval Gate**: Newly registered courier drivers default to `approved: false` / `status: "pending_approval"`. Only drivers explicitly approved by SuperAdmin (`approved: true`, `status: "active"`) appear on the customer booking map and receive orders.
+- **Automated Token Transfer**: On every confirmed customer courier order, the distance-tier token charge is automatically deducted from the driver's token account and credited to the SuperAdmin's token account vault (`iasj_superadmin_tokens_v1`).
+- **SuperAdmin Token Wipe**: SuperAdmin has the unilateral authority to wipe all tokens from the SuperAdmin account (`iasjConfirmDelete` protocol), resetting the platform vault balance to 0.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperAdminGovernanceContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["superadminEmail", "isSuperAdmin", "driverApprovalsEnabled", "tokenVaultBalance"],
+  "properties": {
+    "superadminEmail": { "type": "string", "format": "email" },
+    "isSuperAdmin": { "type": "boolean", "default": true },
+    "driverApprovalsEnabled": { "type": "boolean", "default": true },
+    "tokenVaultBalance": { "type": "integer", "minimum": 0 }
+  }
+}
+```
+
+### 10.2 SuperAdmin Distance Tier Token Costs & Token Pricing Contract
+- **SuperAdmin Authority**: Token price and distance tier token costs per order are set **ONLY by SuperAdmin**.
+- **Real-Time SuperAdmin Editing**: SuperAdmin can edit token price (`tokenPriceAud`) and all 4 distance tier token costs (`tier0to20km`, `tier21to50km`, `tier51to100km`, `tier101PlusKm`) at any time from the SuperAdmin console.
+- **Persistence**: Edits are persisted immediately to the Firestore database under `platform_settings/pricing` and synced across all client instances.
+- **Immediate Effect on Driver Token Top-Ups**: Changing the token price immediately recalculates all driver token top-up packs (10, 50, 100 Tokens @ `$tokenPriceAud` AUD/token) and the distance token charges deducted from drivers when customer orders are placed.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperAdminTokenPricingAndDistanceTiersContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tokenPriceAud", "driverOrderTokens", "updatedBy", "updatedAt"],
+  "properties": {
+    "tokenPriceAud": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "AUD price of 1 token, set strictly by SuperAdmin (default 1)"
+    },
+    "driverOrderTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier0to20km", "tier21to50km", "tier51to100km", "tier101PlusKm"],
+      "properties": {
+        "tier0to20km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier21to50km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier51to100km": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "tier101PlusKm": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      }
+    },
+    "tokenPacks": {
+      "type": "array",
+      "items": { "type": "integer", "enum": [10, 50, 100] }
+    },
+    "updatedBy": { "type": "string", "format": "email" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+```
+
+
+---
+
+## 11. Role-Based Access Control (RBAC) & Driver Approval Contract
+
+### 11.1 Hardwired Roles & Permissions Schema
+Defines the authoritative roles stored in the Firestore database (`users/{uid}` and `driver_applications/{appId}`):
+
+- **`superadmin` (Supreme Ruler)**:
+  * Full, unrestricted control over the entire web application and Firestore database.
+  * Authority to approve and revoke driver applications.
+  * Direct ability to set platform pricing and distance token brackets.
+  * Unilateral right to wipe all platform tokens.
+  * Bypasses client-side permission gates across all collections (`allow read, write, delete: if isSuperAdmin();`).
+
+- **`driver` (Approved Courier Driver)**:
+  * Granted strictly when SuperAdmin approves an application.
+  * Unlocks the Driver Dispatch Console, live routing, and order acceptance.
+  * Authorised to purchase token packs (10, 50, 100 @ $1 AUD/token) via Stripe and maintain a token balance.
+  * Manages personal courier rates (per-km, urgent fee, same-day fee) and vehicle dimensions.
+
+- **`supporter` / `customer` (Default Authenticated User)**:
+  * Default role upon signing in with Google.
+  * Authorised to book couriers, view their personal booking history, and submit a driver application.
+  * Driver applications remain in `status: "pending_approval"` with `approved: false` until SuperAdmin approval.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FirestoreUserRbacContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["uid", "email", "role"],
+  "properties": {
+    "uid": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "displayName": { "type": "string", "maxLength": 100 },
+    "photoURL": { "type": "string" },
+    "role": {
+      "type": "string",
+      "enum": ["superadmin", "driver", "supporter", "customer"]
+    },
+    "isSuperadmin": { "type": "boolean", "default": false },
+    "isDriver": { "type": "boolean", "default": false },
+    "approved": { "type": "boolean", "default": false },
+    "driverId": { "type": "string" },
+    "serviceProviderNumber": { "type": "string" },
+    "approvedBy": { "type": ["string", "null"] },
+    "approvedAt": { "type": ["string", "null"], "format": "date-time" },
+    "revokedBy": { "type": ["string", "null"] },
+    "revokedAt": { "type": ["string", "null"], "format": "date-time" },
+    "businessId": { "type": "string", "const": "its-a-simple-job" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+```
+
+### 11.2 Driver Application Lifecycle Contract (`DriverApplicationContract`)
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverApplicationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "appId", "uid", "name", "email", "phone", "address", 
+    "licenceNumber", "licenceState", "licenceClass", 
+    "payIdValue", "status", "approved"
+  ],
+  "properties": {
+    "appId": { "type": "string" },
+    "uid": { "type": "string" },
+    "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+    "email": { "type": "string", "format": "email" },
+    "phone": { "type": "string" },
+    "address": { "type": "string" },
+    "baseSuburb": { "type": "string" },
+    "vehicle": { "type": "string" },
+    "licenceNumber": { "type": "string" },
+    "licenceState": { "type": "string" },
+    "licenceClass": { "type": "string" },
+    "licenceExpiry": { "type": "string" },
+    "payIdType": { "type": "string", "enum": ["phone", "email", "abn"] },
+    "payIdValue": { "type": "string" },
+    "payIdAccountName": { "type": "string" },
+    "perKmRateAud": { "type": "number", "minimum": 0.5 },
+    "sameDayFeeAud": { "type": "number", "minimum": 0 },
+    "urgentFeeAud": { "type": "number", "minimum": 0 },
+    "maxWeightKg": { "type": "number", "minimum": 1 },
+    "maxHeightCm": { "type": "number", "minimum": 10 },
+    "maxWidthCm": { "type": "number", "minimum": 10 },
+    "maxLengthCm": { "type": "number", "minimum": 10 },
+    "status": {
+      "type": "string",
+      "enum": ["pending_approval", "active", "rejected"]
+    },
+    "approved": { "type": "boolean" },
+    "approvedBy": { "type": ["string", "null"] },
+    "approvedAt": { "type": ["string", "null"], "format": "date-time" },
+    "businessId": { "type": "string", "const": "its-a-simple-job" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+```

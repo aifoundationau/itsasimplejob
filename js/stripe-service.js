@@ -4,10 +4,10 @@
  * Credentials loaded dynamically from .env via window.ENV
  */
 
-const STRIPE_PUBLISHABLE_KEY = (typeof window !== 'undefined' && window.ENV?.STRIPE_PUBLISHABLE_KEY) || "";
+const STRIPE_PUBLISHABLE_KEY = (typeof window !== 'undefined' && window.ENV?.STRIPE_PUBLISHABLE_KEY) || "pk_test_51UKnKUI8bClhBF4Pl59doST5JkSHIg47DaHs5bicuWUEM0iuyT6BtcVV2zlvZUAAL5HjnRNt5PAzJQETRIckLarb00o6jAlzpi";
 
 const STRIPE_CONFIG = {
-  accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || "",
+  accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || "acct_1UKnKUI8bClhBF4P",
   accountName: "AI Foundation",
   publishableKey: STRIPE_PUBLISHABLE_KEY,
   currency: "aud",

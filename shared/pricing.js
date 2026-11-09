@@ -1,119 +1,107 @@
 /**
- * It's A Simple Job - Shared pricing rules (used by the browser bundle and the /api functions).
+ * It's A Simple Job - Courier-Only Shared Pricing & Driver Token Rules
+ * (Used by browser bundle and /api serverless functions)
  *
- * Business rules:
- *  - Everything is priced and invoiced in Australian Dollars (AUD).
- *  - Services and products are priced in tokens. The superadmin sets every token amount
- *    and the AUD price of one token (default A$1).
- *  - Whole numbers only: every calculated AUD and token amount is rounded UP to a whole number.
- *  - Visitors in Australia and New Zealand see AUD; everyone else sees a USD conversion
- *    (2 decimal places maximum, rounded up to the cent), but they are still invoiced and charged in AUD.
+ * Business Rules:
+ *  - Web App uses Australian Dollars (AUD) ONLY.
+ *  - Customers pay the selected Courier Driver directly via the Driver's PayID (customers do not pay the web app).
+ *  - Each Courier Driver sets their own:
+ *      • Per-km rate ($ AUD / km)
+ *      • Same-day fee ($ AUD)
+ *      • Urgent fee ($ AUD)
+ *      • Max pickup weight (kg) & Max package dimensions: Height, Width, Length (cm)
+ *  - Drivers buy Tokens in AUD. Every customer order charges the driver tokens based on route distance:
+ *      • 0 – 20 km
+ *      • 21 – 50 km
+ *      • 51 – 100 km
+ *      • 101+ km
+ *    SuperAdmin decides the token price for each distance tier and the AUD price per token.
  */
 
 export const BASE_CURRENCY = 'AUD';
 export const GST_PERCENT = 10;
-export const AUD_REGIONS = ['AU', 'NZ'];
+export const AUD_REGIONS = ['AU'];
 export const DEFAULT_COUNTRY = 'AU';
-export const MAX_COURIER_WEIGHT_KG = 20;
+export const MAX_COURIER_WEIGHT_KG = 5000;
 export const MIN_TOKEN_PURCHASE = 1;
 export const MAX_TOKEN_PURCHASE = 10000;
 
+export const PICKUP_TIME_SLOTS_9AM_TO_4PM = Object.freeze([
+  '09:00 AM',
+  '09:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '01:00 PM',
+  '01:30 PM',
+  '02:00 PM',
+  '02:30 PM',
+  '03:00 PM',
+  '03:30 PM',
+  '04:00 PM'
+]);
+
 export const SERVICE_LABELS = {
-  plumbing: 'Plumbing & Water Services',
-  electrical: 'Licensed Electrical Services',
-  handyman: 'General Handyman & Assembly',
-  garden: 'Garden & Lawn Maintenance',
-  painting: 'Painting & Surface Repairs',
-  appliance: 'Appliance Repair & Installation',
-  courier: 'Courier & Express Freight'
+  courier: 'Direct Driver Courier Service'
 };
 
 export const DEFAULT_PRICING = Object.freeze({
   tokenPriceAud: 1,
+  driverOrderTokens: Object.freeze({
+    tier0to20km: 2,
+    tier21to50km: 5,
+    tier51to100km: 10,
+    tier101PlusKm: 15
+  }),
   hourlyTokens: Object.freeze({
-    plumbing: 98,
-    electrical: 110,
-    handyman: 75,
-    garden: 68,
-    painting: 72,
-    appliance: 90,
     courier: 55
   }),
   fees: Object.freeze({
-    calloutStandard: 35,
-    calloutUrgent: 55,
-    calloutCourier: 25,
-    materialsBuffer: 25,
-    // Tokens to send a message to another user. Messages to (and from) the superadmin are always free.
+    calloutStandard: 0,
+    calloutUrgent: 0,
+    calloutCourier: 0,
+    materialsBuffer: 0,
     message: 1
   }),
   courier: Object.freeze({
-    baseLoading: 35,
+    baseLoading: 0,
     perKm: 2,
     includedKm: 20,
-    extraKmSurchargePct: 10,
-    asapSurchargePct: 20
+    extraKmSurchargePct: 0,
+    asapSurchargePct: 0
   }),
-  tokenPacks: Object.freeze([10, 25, 50, 100])
+  tokenPacks: Object.freeze([10, 50, 100])
 });
 
 /**
- * Every superadmin-editable number. Drives validation here and the price list editor in the browser.
+ * SuperAdmin editable fields (AUD only + 4 Distance Bracket Token Tiers)
  */
 export const PRICING_FIELDS = [
-  { path: 'tokenPriceAud', group: 'Tokens', label: 'Price of 1 token', unit: 'AUD', min: 1, max: 1000 },
+  { path: 'tokenPriceAud', group: 'Token Economy (AUD Only)', label: 'AUD Price of 1 Driver Token', unit: 'AUD', min: 1, max: 1000 },
 
-  ...Object.keys(DEFAULT_PRICING.hourlyTokens).map(key => ({
-    path: `hourlyTokens.${key}`, group: 'Trade services (hourly rate)', label: SERVICE_LABELS[key], unit: 'tokens / hr', min: 1, max: 5000
-  })),
+  { path: 'driverOrderTokens.tier0to20km', group: 'Driver Order Token Charge by Distance', label: '0 – 20 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
+  { path: 'driverOrderTokens.tier21to50km', group: 'Driver Order Token Charge by Distance', label: '21 – 50 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
+  { path: 'driverOrderTokens.tier51to100km', group: 'Driver Order Token Charge by Distance', label: '51 – 100 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
+  { path: 'driverOrderTokens.tier101PlusKm', group: 'Driver Order Token Charge by Distance', label: '101+ km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
 
-  { path: 'fees.calloutStandard', group: 'Job fees', label: 'Standard callout & vehicle transit', unit: 'tokens', min: 0, max: 5000 },
-  { path: 'fees.calloutUrgent', group: 'Job fees', label: 'Urgent / emergency callout', unit: 'tokens', min: 0, max: 5000 },
-  { path: 'fees.calloutCourier', group: 'Job fees', label: 'Courier callout', unit: 'tokens', min: 0, max: 5000 },
-  { path: 'fees.materialsBuffer', group: 'Job fees', label: 'Consumables / materials buffer', unit: 'tokens', min: 0, max: 5000 },
-
-  { path: 'fees.message', group: 'Messages', label: 'Message to another user (messages to the superadmin are always free)', unit: 'tokens', min: 0, max: 100 },
-
-  { path: 'courier.baseLoading', group: 'Courier', label: 'Base loading & dispatch', unit: 'tokens', min: 0, max: 5000 },
-  { path: 'courier.perKm', group: 'Courier', label: 'Distance rate', unit: 'tokens / km', min: 1, max: 500 },
-  { path: 'courier.includedKm', group: 'Courier', label: 'Distance charged at the standard rate', unit: 'km', min: 0, max: 5000 },
-  { path: 'courier.extraKmSurchargePct', group: 'Courier', label: 'Surcharge on each km after that', unit: '%', min: 0, max: 100 },
-  { path: 'courier.asapSurchargePct', group: 'Courier', label: 'ASAP priority surcharge', unit: '%', min: 0, max: 100 }
+  { path: 'fees.message', group: 'Platform Messaging', label: 'Message to another user (messages to SuperAdmin are always free)', unit: 'tokens', min: 0, max: 100 }
 ];
 
 export const TOKEN_PACK_COUNT = DEFAULT_PRICING.tokenPacks.length;
-
-/* ----------------------------------------------------------------------------
-   Messages between users (Admin Page > Messages)
-   ---------------------------------------------------------------------------- */
 
 export const SUPERADMIN_MAILBOX = 'superadmin';
 export const MESSAGE_SUBJECT_MAX = 120;
 export const MESSAGE_BODY_MAX = 2000;
 
-/**
- * Tokens charged for one message. Messages to the superadmin are always free,
- * and so are the superadmin's own messages (replies to refund requests and the like).
- */
-export function messagePriceTokens(pricing, { toSuperadmin, fromSuperadmin }) {
-  if (toSuperadmin || fromSuperadmin) return 0;
-  return wholeUp(pricing?.fees?.message ?? DEFAULT_PRICING.fees.message);
-}
-
-/**
- * Round any amount UP to a whole number. Floating-point noise is removed first,
- * so 150 * 0.1 (= 15.000000000000002) becomes 15, not 16.
- */
 export function wholeUp(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;
   return Math.ceil(Math.round(n * 1e6) / 1e6);
 }
 
-/**
- * Round UP to the next cent (2 decimal places maximum). Only used for USD conversions;
- * every AUD amount and token amount stays a whole number.
- */
 export function roundUpToCents(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;
@@ -121,18 +109,120 @@ export function roundUpToCents(value) {
 }
 
 /**
- * USD conversion of an AUD amount for display (the AUD amount is what is charged)
+ * Web App uses AUD only.
  */
-export function convertAudToUsd(aud, audToUsdRate) {
-  return roundUpToCents(wholeUp(aud) * Number(audToUsdRate));
+export function convertAudToUsd(aud) {
+  return wholeUp(aud);
 }
 
-export function isAudRegion(country) {
-  return AUD_REGIONS.includes(String(country || '').toUpperCase());
+export function isAudRegion() {
+  return true;
 }
 
-export function displayCurrencyFor(country) {
-  return isAudRegion(country) ? 'AUD' : 'USD';
+export function displayCurrencyFor() {
+  return 'AUD';
+}
+
+export function messagePriceTokens(pricing, { toSuperadmin, fromSuperadmin }) {
+  if (toSuperadmin || fromSuperadmin) return 0;
+  return wholeUp(pricing?.fees?.message ?? DEFAULT_PRICING.fees.message);
+}
+
+/**
+ * Determine which distance bracket a courier route falls into and how many tokens the driver is charged.
+ * Brackets:
+ *  - 0–20 km
+ *  - 21–50 km
+ *  - 51–100 km
+ *  - 101+ km
+ */
+export function getDriverOrderTokenCharge(distanceKm, pricing = DEFAULT_PRICING) {
+  const km = Math.max(0, Number(distanceKm) || 0);
+  const tiers = pricing?.driverOrderTokens || DEFAULT_PRICING.driverOrderTokens;
+  const tokenPriceAud = wholeUp(pricing?.tokenPriceAud ?? DEFAULT_PRICING.tokenPriceAud);
+
+  if (km <= 20) {
+    const tokens = wholeUp(tiers.tier0to20km ?? DEFAULT_PRICING.driverOrderTokens.tier0to20km);
+    return {
+      tierKey: 'tier0to20km',
+      tierLabel: '0–20 km',
+      tokens,
+      tokenPriceAud,
+      audCost: tokens * tokenPriceAud
+    };
+  }
+  if (km <= 50) {
+    const tokens = wholeUp(tiers.tier21to50km ?? DEFAULT_PRICING.driverOrderTokens.tier21to50km);
+    return {
+      tierKey: 'tier21to50km',
+      tierLabel: '21–50 km',
+      tokens,
+      tokenPriceAud,
+      audCost: tokens * tokenPriceAud
+    };
+  }
+  if (km <= 100) {
+    const tokens = wholeUp(tiers.tier51to100km ?? DEFAULT_PRICING.driverOrderTokens.tier51to100km);
+    return {
+      tierKey: 'tier51to100km',
+      tierLabel: '51–100 km',
+      tokens,
+      tokenPriceAud,
+      audCost: tokens * tokenPriceAud
+    };
+  }
+  const tokens = wholeUp(tiers.tier101PlusKm ?? DEFAULT_PRICING.driverOrderTokens.tier101PlusKm);
+  return {
+    tierKey: 'tier101PlusKm',
+    tierLabel: '101+ km',
+    tokens,
+    tokenPriceAud,
+    audCost: tokens * tokenPriceAud
+  };
+}
+
+/**
+ * Calculate the customer's AUD price for a specific driver based on the driver's own rates:
+ *  - distanceKm * driver.perKmRateAud
+ *  - + driver.sameDayFeeAud (if speedTier === 'same_day')
+ *  - + driver.urgentFeeAud (if speedTier === 'urgent')
+ */
+export function calculateDriverCourierPrice(
+  {
+    distanceKm,
+    speedTier = 'standard',
+    driver = {}
+  },
+  pricing = DEFAULT_PRICING
+) {
+  const km = Math.max(1, Math.round((Number(distanceKm) || 1) * 10) / 10);
+  const perKmRateAud = Number(driver.perKmRateAud ?? driver.perKmRate ?? 2.5);
+  const sameDayFeeAud = Number(driver.sameDayFeeAud ?? driver.sameDayFee ?? 20);
+  const urgentFeeAud = Number(driver.urgentFeeAud ?? driver.urgentFee ?? 35);
+
+  const distanceChargeAud = roundUpToCents(km * perKmRateAud);
+  const appliedSameDayFeeAud = speedTier === 'same_day' ? roundUpToCents(sameDayFeeAud) : 0;
+  const appliedUrgentFeeAud = speedTier === 'urgent' ? roundUpToCents(urgentFeeAud) : 0;
+  const totalAud = roundUpToCents(
+    distanceChargeAud + appliedSameDayFeeAud + appliedUrgentFeeAud
+  );
+
+  const tokenCharge = getDriverOrderTokenCharge(km, pricing);
+
+  return {
+    currency: 'AUD',
+    distanceKm: km,
+    perKmRateAud,
+    distanceChargeAud,
+    distanceFeeAud: distanceChargeAud,
+    speedTier,
+    sameDayFeeAud: appliedSameDayFeeAud,
+    urgentFeeAud: appliedUrgentFeeAud,
+    totalAud,
+    driverTokenCharge: tokenCharge.tokens,
+    distanceTierLabel: tokenCharge.tierLabel,
+    driverTokenCostAud: tokenCharge.audCost
+  };
 }
 
 const getPath = (obj, path) => path.split('.').reduce((node, key) => (node == null ? undefined : node[key]), obj);
@@ -140,17 +230,15 @@ const getPath = (obj, path) => path.split('.').reduce((node, key) => (node == nu
 function setPath(obj, path, value) {
   const keys = path.split('.');
   let node = obj;
-  keys.slice(0, -1).forEach(key => { node = node[key]; });
+  keys.slice(0, -1).forEach(key => {
+    if (!node[key] || typeof node[key] !== 'object') node[key] = {};
+    node = node[key];
+  });
   node[keys[keys.length - 1]] = value;
 }
 
 const clonePricing = pricing => JSON.parse(JSON.stringify(pricing));
 
-/**
- * Clean a price list into whole numbers.
- * strict: report every missing or out-of-range value (used when the superadmin saves).
- * not strict: silently fall back to the defaults (used when reading stored settings).
- */
 export function normalizePricing(input, { strict = false } = {}) {
   const pricing = clonePricing(DEFAULT_PRICING);
   const errors = [];
@@ -177,122 +265,47 @@ export function normalizePricing(input, { strict = false } = {}) {
     && new Set(packs).size === packs.length;
   if (packsValid) {
     pricing.tokenPacks = [...packs].sort((a, b) => a - b);
-  } else if (strict) {
+  } else if (strict && source.tokenPacks !== undefined) {
     errors.push(`Token packs must be ${TOKEN_PACK_COUNT} different whole numbers from ${MIN_TOKEN_PURCHASE} to ${MAX_TOKEN_PURCHASE}.`);
   }
 
   return { pricing, errors };
 }
 
-/**
- * Turn token line items into an AUD tax invoice. Each line's AUD amount is tokens x token price.
- * GST is 10% of the AUD subtotal (rounded up), and the token total is the AUD total in tokens (rounded up).
- */
-function buildInvoice(lines, tokenPriceAud) {
-  const price = wholeUp(tokenPriceAud) || 1;
-  const pricedLines = lines.map(line => ({ ...line, tokens: wholeUp(line.tokens), aud: wholeUp(line.tokens) * price }));
-  const subtotalTokens = pricedLines.reduce((sum, line) => sum + line.tokens, 0);
-  const subtotalAud = subtotalTokens * price;
-  const gstAud = wholeUp(subtotalAud * GST_PERCENT / 100);
-  const totalAud = subtotalAud + gstAud;
-  const totalTokens = wholeUp(totalAud / price);
+export function priceCourier({ distanceKm, isAsap, speedTier, driver }, pricing = DEFAULT_PRICING) {
+  const tier = speedTier || (isAsap ? 'urgent' : 'standard');
+  const calc = calculateDriverCourierPrice({ distanceKm, speedTier: tier, driver: driver || {} }, pricing);
   return {
-    currency: BASE_CURRENCY,
-    tokenPriceAud: price,
+    currency: 'AUD',
+    tokenPriceAud: pricing.tokenPriceAud,
     gstPercent: GST_PERCENT,
-    lines: pricedLines,
-    subtotal: subtotalAud,
-    gst: gstAud,
-    estimatedTotal: totalAud,
+    distanceKm: calc.distanceKm,
+    isAsap: tier === 'urgent',
+    speedTier: tier,
+    perKmRateAud: calc.perKmRateAud,
+    distanceChargeAud: calc.distanceChargeAud,
+    sameDayFeeAud: calc.sameDayFeeAud,
+    urgentFeeAud: calc.urgentFeeAud,
+    subtotal: calc.totalAud,
+    gst: 0,
+    estimatedTotal: calc.totalAud,
+    calloutFee: calc.sameDayFeeAud + calc.urgentFeeAud,
+    baseLabour: calc.distanceChargeAud,
+    materialsEstimate: 0,
     tokens: {
-      subtotal: subtotalTokens,
-      gst: totalTokens - subtotalTokens,
-      estimatedTotal: totalTokens
-    }
+      subtotal: calc.driverTokenCharge,
+      gst: 0,
+      estimatedTotal: calc.driverTokenCharge
+    },
+    driverTokenCharge: calc.driverTokenCharge,
+    distanceTierLabel: calc.distanceTierLabel
   };
 }
 
-/**
- * Price a trade job. hourlyTokens is the trade's hourly rate in tokens; hours are rounded up to whole hours.
- * Returns AUD amounts in the fields the invoice, Stripe checkout and dispatch feed already use.
- */
-export function priceJob({ hourlyTokens, hours, calloutTokens, materialsTokens, categoryName = 'Labour' }, pricing = DEFAULT_PRICING) {
-  const billableHours = Math.max(1, wholeUp(hours));
-  const rateTokens = wholeUp(hourlyTokens);
-  const invoice = buildInvoice([
-    { key: 'labour', label: `${categoryName} - Labour (${billableHours} hr${billableHours === 1 ? '' : 's'})`, tokens: rateTokens * billableHours },
-    { key: 'callout', label: 'Insured Vehicle Transit & Mobilisation', tokens: calloutTokens },
-    { key: 'materials', label: 'Consumables / Materials Buffer', tokens: materialsTokens }
-  ], pricing.tokenPriceAud);
-
-  const [labour, callout, materials] = invoice.lines;
-  return {
-    ...invoice,
-    hours: billableHours,
-    hourlyRate: rateTokens * invoice.tokenPriceAud,
-    baseLabour: labour.aud,
-    calloutFee: callout.aud,
-    materialsEstimate: materials.aud,
-    tokens: {
-      ...invoice.tokens,
-      hourlyRate: rateTokens,
-      baseLabour: labour.tokens,
-      calloutFee: callout.tokens,
-      materialsEstimate: materials.tokens
-    }
-  };
+export function priceJob(args, pricing = DEFAULT_PRICING) {
+  return priceCourier({ distanceKm: 15, speedTier: 'standard' }, pricing);
 }
 
-/**
- * Price a trade job from the price list for a category (used by the AI booking agent)
- */
-export function priceCategoryJob({ category, hours, isUrgent, hourlyTokens, categoryName }, pricing = DEFAULT_PRICING) {
-  const key = Object.prototype.hasOwnProperty.call(pricing.hourlyTokens, category) ? category : 'handyman';
-  const calloutTokens = isUrgent
-    ? pricing.fees.calloutUrgent
-    : (key === 'courier' ? pricing.fees.calloutCourier : pricing.fees.calloutStandard);
-  return priceJob({
-    hourlyTokens: hourlyTokens ?? pricing.hourlyTokens[key],
-    hours,
-    calloutTokens,
-    materialsTokens: key === 'courier' ? 0 : pricing.fees.materialsBuffer,
-    categoryName: categoryName || SERVICE_LABELS[key]
-  }, pricing);
-}
-
-/**
- * Price a courier run. Distance is rounded up to whole km.
- */
-export function priceCourier({ distanceKm, isAsap }, pricing = DEFAULT_PRICING) {
-  const c = pricing.courier;
-  const km = Math.max(1, wholeUp(distanceKm));
-  const standardKm = Math.min(km, c.includedKm);
-  const extraKm = km - standardKm;
-
-  const baseTokens = c.baseLoading;
-  const distanceTokens = standardKm * c.perKm + wholeUp(extraKm * c.perKm * (100 + c.extraKmSurchargePct) / 100);
-  const asapTokens = isAsap ? wholeUp((baseTokens + distanceTokens) * c.asapSurchargePct / 100) : 0;
-
-  const lines = [
-    { key: 'base', label: 'Base Loading & Dispatch', tokens: baseTokens },
-    { key: 'distance', label: `Distance Charge (${km} km)`, tokens: distanceTokens }
-  ];
-  if (isAsap) lines.push({ key: 'asap', label: `ASAP Priority Dispatch (+${c.asapSurchargePct}%)`, tokens: asapTokens });
-
-  const invoice = buildInvoice(lines, pricing.tokenPriceAud);
-  const line = key => invoice.lines.find(l => l.key === key) || { aud: 0, tokens: 0 };
-  return {
-    ...invoice,
-    distanceKm: km,
-    standardKm,
-    extraKm,
-    isAsap: !!isAsap,
-    perKmTokens: c.perKm,
-    extraKmSurchargePct: c.extraKmSurchargePct,
-    asapSurchargePct: c.asapSurchargePct,
-    // Fields the invoice, Stripe checkout and dispatch feed already use
-    calloutFee: line('base').aud,
-    baseLabour: line('distance').aud + line('asap').aud,
-    materialsEstimate: 0
-  };
+export function priceCategoryJob(args, pricing = DEFAULT_PRICING) {
+  return priceCourier({ distanceKm: 15, speedTier: args?.isUrgent ? 'urgent' : 'standard' }, pricing);
 }

@@ -81,6 +81,9 @@ class TokenWallet {
   }
 
   renderChip() {
+    if (document.getElementById('nav-token-wallet-btn')) {
+      return;
+    }
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.id = 'token-wallet-chip';

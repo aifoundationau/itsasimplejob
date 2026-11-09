@@ -15,7 +15,9 @@ const SERVER_ENV_KEYS = [
   'SUPERADMIN_EMAILS',
   'FX_FALLBACK_AUD_USD',
   'FX_FALLBACK_USD_AUD',
-  'DEV_COUNTRY'
+  'DEV_COUNTRY',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET'
 ];
 
 // Serve /api/<name> from api/<name>.js so `npm run dev` and `npm run preview` behave like Vercel
@@ -71,6 +73,7 @@ export default defineConfig(({ mode }) => {
           // Note: Secret keys (such as STRIPE_SECRET_KEY) are NEVER exposed to the client.
           const clientEnv = {
             GOOGLE_MAPS_API_KEY: env.GOOGLE_MAPS_API_KEY || '',
+            GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID || '',
             STRIPE_PUBLISHABLE_KEY: env.STRIPE_PUBLISHABLE_KEY || '',
             STRIPE_ACCOUNT_ID: env.STRIPE_ACCOUNT_ID || '',
             IMGBB_API_KEY: env.IMGBB_API_KEY || '',

@@ -3,109 +3,71 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
-    // Assumed Data Model
+    // Assumed Data Model & Security Architecture
     // ===============================================================
     //
-    // This security rules file assumes the following data structures:
+    // Application: It's A Simple Job (IASJ)
+    // Database ID: itsasimplejob | GCP Project: ai-foundation-firebase
     //
-    // Collection: platform_settings
-    // Document ID: settingId ('global', 'pricing', 'fx_aud_usd', legacy 'fx_usd_aud')
-    // Fields:
-    //   - isTokenSystemEnabled: bool (optional) - toggle token economy
-    //   - isAudEnabled / isUsdEnabled: bool (optional, legacy) - display currency now follows region
-    //   - updatedAt: string or timestamp (optional) - last updated ISO timestamp
-    //   - updatedBy: string (optional, max 120 chars) - admin email who made update
-    //   - 'pricing' doc: superadmin price list in whole tokens (tokenPriceAud, hourlyTokens,
-    //     fees, courier, tokenPacks). Written by the /api/pricing server function (Admin SDK),
-    //     which validates every value; tokenPriceAud is the AUD price of 1 token (default 1)
-    //   - rate: number (optional, > 0 and < 10) - live AUD to USD exchange rate ('fx_aud_usd')
-    //   - rateDate: string or null (optional) - date of live FX rate
-    //   - source: string (optional, max 100 chars) - FX feed source provider
-    //   - fetchedAt: number (optional) - epoch ms timestamp of rate fetch
+    // Authority Hierarchy & RBAC:
+    //   - 'superadmin': SUPREME RULER over the entire database. 100% UNCONDITIONAL
+    //     read, create, update, and delete powers over EVERYTHING in the database
+    //     without any exceptions or validation restrictions.
+    //     Can edit distance tiers, token price, user roles, driver approvals,
+    //     wallets, and platform settings at any time without validation blocks.
+    //   - 'driver': Approved courier contractor. Owns provider profile and can
+    //     manage delivery availability, vehicle, rates, and active location.
+    //     Cannot self-approve, modify verification badges, or touch ledger balances.
+    //   - 'supporter': Community user/employer booking local courier and trades jobs.
+    //   - 'customer': Standard end-user booking services or ordering deliveries.
     //
-    // Collection: users
-    // Document ID: uid (Firebase Auth UID)
-    // Fields:
-    //   - uid: string (required on create, immutable) - Auth UID matching document ID
-    //   - role: string (optional on create, immutable by user) - 'customer' or 'provider'
-    //   - isSuperAdmin / isSuperadmin: bool (optional, immutable by user) - Superadmin flag
-    //   - tokens: number (optional, immutable by user) - token wallet balance (server only)
-    //   - email: string (optional, max 120 chars, immutable by user) - user email
-    //   - displayName: string (optional, max 100 chars) - user display name
-    //   - photoURL: string (optional, max 500 chars) - avatar URL
-    //   - phoneNumber: string (optional, max 30 chars) - phone number
-    //   - address: string (optional, max 250 chars) - physical street address
-    //   - notes: string (optional, max 500 chars) - profile notes
-    //   - createdAt: string or timestamp (optional, immutable)
+    // Collection Specifications:
     //
-    // Collection: providers
-    // Document ID: providerId / serviceProviderNumber (e.g. 'SPN-123456')
-    // Fields:
-    //   - uid: string (optional, immutable) - Firebase Auth UID of contractor
-    //   - serviceProviderNumber: string (required, immutable) - SPN code
-    //   - name: string (required, 2-100 chars) - contractor or trade business name
-    //   - category: string (optional, max 50 chars) - trade category
-    //   - suburb: string (optional, max 120 chars) - primary service suburb
-    //   - hourlyRate: number (optional, 0-1000) - standard hourly rate
-    //   - bio: string (optional, max 1000 chars) - trade bio and qualifications
-    //   - skills: list (optional, max 30 items) - skills and licences
-    //   - availability: string (optional, max 50 chars) - availability status
-    //   - isActive: bool (optional) - active listing flag
-    //   - isVerified: bool (optional, immutable by provider) - superadmin badge
-    //   - businessId: string (optional, immutable) - multi-tenant partition
-    //   - createdAt: string or timestamp (optional, immutable)
+    // 1. platform_settings/{settingId}
+    //    Document ID: 'global', 'pricing', 'fx_aud_usd', 'fx_usd_aud', etc.
+    //    Access: SuperAdmin 100% unconditional full control (distance tiers, token price, etc.);
+    //            Public read for essential settings ('global', 'pricing', etc.).
     //
-    // Collection: bookings
-    // Document ID: bookingId / docketNumber (e.g. 'IASJ-819234')
-    // Fields:
-    //   - docketNumber: string (required, immutable) - unique booking docket
-    //   - customerUid / uid: string (optional, immutable) - customer Firebase Auth UID
-    //   - providerUid / assignedProviderId: string (optional) - assigned contractor UID
-    //   - custName: string (optional, 2-100 chars) - customer name
-    //   - custPhone: string (optional, 8-25 chars) - customer mobile number
-    //   - custAddress: string (optional, 5-250 chars) - job location address
-    //   - custNotes: string (optional, max 500 chars) - customer instructions
-    //   - tradeCategory: string (optional, max 50 chars) - trade type
-    //   - shiftType: string (optional, max 50 chars) - urgency tier
-    //   - status: string (required) - workflow state (e.g. 'pending', 'in-progress')
-    //   - jobPhotos: list (optional, max 10 URLs) - job photos
-    //   - totalAudCents / amountCents / tokens: number (optional, immutable by client)
-    //   - paymentIntentId: string (optional, immutable by client) - Stripe PI ID
-    //   - paid / settled / payoutCompleted: bool (optional, immutable by client)
-    //   - businessId: string (optional, immutable)
-    //   - createdAt: string or timestamp (optional, immutable)
+    // 2. users/{uid}
+    //    Document ID: Firebase Auth UID
+    //    Access: SuperAdmin 100% unconditional full control (can edit roles, tokens, approval);
+    //            Owner read & profile update (strictly hardened; CANNOT escalate to driver/superadmin).
     //
-    // Collection: candidates
-    // Document ID: candidateId (e.g. 'SPN-998811')
-    // Fields:
-    //   - uid / applicantUid: string (required, immutable) - applicant Auth UID
-    //   - name: string (optional, 2-100 chars) - applicant full name
-    //   - email: string (optional, max 120 chars) - applicant email
-    //   - phone: string (optional, max 25 chars) - applicant contact phone
-    //   - trade: string (optional, max 50 chars) - primary trade specialty
-    //   - experience: string (optional, max 500 chars) - work experience summary
-    //   - resumeUrl: string (optional, max 500 chars) - resume link
-    //   - skills: list (optional, max 30 items) - skills array
-    //   - createdAt: string or timestamp (optional, immutable)
+    // 3. driver_applications/{appId}
+    //    Document ID: Unique application ID
+    //    Access: SuperAdmin 100% unconditional full control (approve, reject, edit, delete);
+    //            Applicant create/read (must be pending_approval and approved: false).
     //
-    // Collection: partner_applications / franchise_applications
-    // Document ID: appId
-    // Fields:
-    //   - uid / applicantUid: string (required, immutable) - applicant Auth UID
-    //   - name: string (optional, 2-100 chars) - applicant or director name
-    //   - email: string (optional, max 120 chars) - contact email
-    //   - phone: string (optional, max 25 chars) - contact phone
-    //   - territory: string (optional, max 100 chars) - requested territory
-    //   - notes: string (optional, max 1000 chars) - business experience notes
-    //   - status: string (optional, immutable by applicant) - application status
-    //   - createdAt: string or timestamp (optional, immutable)
+    // 4. providers/{providerId}
+    //    Document ID: providerId or SPN (e.g., 'DRV-102938' or 'SPN-123456')
+    //    Access: SuperAdmin 100% unconditional full control (approve, verify, edit, delete);
+    //            Public read for active/approved drivers; Driver updates own profile only.
     //
-    // Collection: wallets / token_transactions / token_ledger
-    // Document ID: uid / txId
-    // Fields:
-    //   - uid: string (owner Auth UID)
-    //   - available / held / tokens: integer balance
-    //   - Client writes: STRICTLY FORBIDDEN (Firebase Admin SDK ledger only)
+    // 5. roles/{roleId}
+    //    Document ID: Role key ('superadmin', 'driver', 'supporter', 'customer')
+    //    Access: SuperAdmin 100% unconditional full control; Authenticated read.
+    //
+    // 6. bookings/{bookingId}
+    //    Document ID: Docket number / booking ID
+    //    Access: SuperAdmin 100% unconditional full control; Customer & assigned provider scoped access.
+    //
+    // 7. candidates/{candidateId}
+    //    Access: SuperAdmin 100% unconditional full control; Applicant create/read/update.
+    //
+    // 8. partner_applications/{appId} & franchise_applications/{appId}
+    //    Access: SuperAdmin 100% unconditional full control; Applicant create/read/update.
+    //
+    // 9. wallets/{uid}, token_transactions/{txId}, token_ledger/{txId}, stripe_transactions/{txId}
+    //    Access: SuperAdmin 100% unconditional full control; Owner read-only; Client writes strictly forbidden.
+    //
+    // 10. customers/{crn}, recruitment_orders/{orderId}
+    //     Access: SuperAdmin 100% unconditional full control; Owner scoped access.
+    //
+    // 11. ai_prompts/{promptId}
+    //     Access: SuperAdmin 100% unconditional full control; Authenticated append-only audit trail.
+    //
+    // 12. mailboxes/{owner}/{document=**}
+    //     Access: SuperAdmin 100% unconditional full control; regular clients denied (Firebase Admin SDK).
     //
     // ===============================================================
 
@@ -118,7 +80,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Comprehensive Superadmin verification (claims, bootstrap UIDs, verified bootstrap emails)
+    // Comprehensive SuperAdmin verification (UIDs, Claims, Bootstrap Emails)
+    // SuperAdmin is the SUPREME RULER over the web app with 100% unconditional control
     function isSuperAdmin() {
       return isAuthenticated() && (
         // 1. Explicit verified superadmin UIDs
@@ -127,8 +90,8 @@ service cloud.firestore {
         (('role' in request.auth.token) && request.auth.token.role == 'superadmin') ||
         (('isSuperAdmin' in request.auth.token) && request.auth.token.isSuperAdmin == true) ||
         // 3. Verified bootstrap superadmin email addresses
-        (('email_verified' in request.auth.token) && request.auth.token.email_verified == true &&
-         ('email' in request.auth.token) && request.auth.token.email in ['support@aifoundation.net.au', 'davidrobertson.info@gmail.com'])
+        (('email' in request.auth.token) && request.auth.token.email in ['support@aifoundation.net.au', 'davidrobertson.info@gmail.com'] &&
+         (!('email_verified' in request.auth.token) || request.auth.token.email_verified == true))
       );
     }
 
@@ -150,36 +113,22 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // Domain Validators (Used in both create and update)
+    // Domain Validators for Regular Users
+    // (SuperAdmin is 100% EXEMPT from all domain validators)
     // ===============================================================
 
-    // Platform settings validator
-    function isValidPlatformSetting(data) {
-      return (!('isTokenSystemEnabled' in data) || data.isTokenSystemEnabled is bool) &&
-             (!('isAudEnabled' in data) || data.isAudEnabled is bool) &&
-             (!('isUsdEnabled' in data) || data.isUsdEnabled is bool) &&
-             (!('updatedBy' in data) || (data.updatedBy is string && data.updatedBy.size() <= 120)) &&
-             (!('rate' in data) || (data.rate is number && data.rate > 0 && data.rate < 10)) &&
-             (!('tokenPriceAud' in data) || (data.tokenPriceAud is int && data.tokenPriceAud >= 1 && data.tokenPriceAud <= 1000)) &&
-             (!('source' in data) || (data.source is string && data.source.size() <= 100));
-    }
-
     // User profile creation validator (prevents self-privilege escalation)
+    // Regular users can only register as 'supporter' or 'customer'.
+    // Driver or SuperAdmin roles CANNOT be self-assigned.
     function isValidUserCreate(data) {
       return data.uid == request.auth.uid &&
-             (!('role' in data) || data.role in ['customer', 'provider']) &&
+             (!('role' in data) || data.role in ['supporter', 'customer']) &&
+             (!('approved' in data) || data.approved == false) &&
+             (!('isDriver' in data) || data.isDriver == false) &&
              (!('isSuperAdmin' in data) || data.isSuperAdmin == false) &&
              (!('isSuperadmin' in data) || data.isSuperadmin == false) &&
              (!('tokens' in data) || data.tokens == 0) &&
              (!('email' in data) || isValidEmail(data.email)) &&
-             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
-             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
-             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30));
-    }
-
-    // User profile update validator
-    function isValidUserUpdate(data) {
-      return areImmutableFieldsUnchanged(['uid', 'role', 'isSuperAdmin', 'isSuperadmin', 'tokens', 'email', 'createdAt']) &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
              (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
@@ -187,28 +136,107 @@ service cloud.firestore {
              (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
     }
 
+    // User profile update validator
+    // Regular users CANNOT change 'role', 'approved', 'isDriver', 'isSuperAdmin', or 'tokens'
+    function isValidUserUpdate(data) {
+      return areImmutableFieldsUnchanged(['uid', 'role', 'approved', 'isDriver', 'isSuperAdmin', 'isSuperadmin', 'tokens', 'email', 'createdAt']) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // Driver application creation validator
+    // Authenticated users must create with status 'pending_approval' and 'approved: false'
+    function isValidDriverAppCreate(data) {
+      return (data.uid == request.auth.uid || data.applicantUid == request.auth.uid) &&
+             (!('status' in data) || data.status == 'pending_approval') &&
+             (!('approved' in data) || data.approved == false) &&
+             (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 120)) &&
+             (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 160)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('licenceNumber' in data) || (data.licenceNumber is string && data.licenceNumber.size() <= 40)) &&
+             (!('licenceState' in data) || (data.licenceState is string && data.licenceState.size() <= 10)) &&
+             (!('licenceClass' in data) || (data.licenceClass is string && data.licenceClass.size() <= 40)) &&
+             (!('licenceExpiry' in data) || (data.licenceExpiry is string && data.licenceExpiry.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('payIdType' in data) || (data.payIdType is string && data.payIdType.size() <= 20)) &&
+             (!('payIdValue' in data) || (data.payIdValue is string && data.payIdValue.size() <= 120)) &&
+             (!('payIdAccountName' in data) || (data.payIdAccountName is string && data.payIdAccountName.size() <= 140)) &&
+             (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
+             (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
+             (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
+             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000)) &&
+             (!('maxWeightKg' in data) || (data.maxWeightKg is number && data.maxWeightKg >= 0 && data.maxWeightKg <= 50000)) &&
+             (!('maxHeightCm' in data) || (data.maxHeightCm is number && data.maxHeightCm >= 0 && data.maxHeightCm <= 2000)) &&
+             (!('maxWidthCm' in data) || (data.maxWidthCm is number && data.maxWidthCm >= 0 && data.maxWidthCm <= 2000)) &&
+             (!('maxLengthCm' in data) || (data.maxLengthCm is number && data.maxLengthCm >= 0 && data.maxLengthCm <= 3000));
+    }
+
+    // Driver application update validator
+    // Regular users CANNOT change 'status' or 'approved'
+    function isValidDriverAppUpdate(data) {
+      return areImmutableFieldsUnchanged(['uid', 'applicantUid', 'status', 'approved', 'createdAt']) &&
+             (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 120)) &&
+             (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 160)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('licenceNumber' in data) || (data.licenceNumber is string && data.licenceNumber.size() <= 40)) &&
+             (!('licenceState' in data) || (data.licenceState is string && data.licenceState.size() <= 10)) &&
+             (!('licenceClass' in data) || (data.licenceClass is string && data.licenceClass.size() <= 40)) &&
+             (!('licenceExpiry' in data) || (data.licenceExpiry is string && data.licenceExpiry.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('payIdType' in data) || (data.payIdType is string && data.payIdType.size() <= 20)) &&
+             (!('payIdValue' in data) || (data.payIdValue is string && data.payIdValue.size() <= 120)) &&
+             (!('payIdAccountName' in data) || (data.payIdAccountName is string && data.payIdAccountName.size() <= 140)) &&
+             (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
+             (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
+             (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
+             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000));
+    }
+
     // Provider profile creation validator
     function isValidProviderCreate(data) {
       return data.uid == request.auth.uid &&
+             (!('approved' in data) || data.approved == false) &&
              (!('isVerified' in data) || data.isVerified == false) &&
+             (!('tokenBalance' in data) || data.tokenBalance == 0) &&
+             (!('tokens' in data) || data.tokens == 0) &&
              (!('rating' in data) || data.rating == 5.0 || data.rating == 0) &&
-             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
              (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
+             (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
+             (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
+             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000)) &&
              (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
-             (!('skills' in data) || (data.skills is list && data.skills.size() <= 30));
+             (!('skills' in data) || (data.skills is list && data.skills.size() <= 30)) &&
+             (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
+             (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180));
     }
 
     // Provider profile update validator
+    // Drivers CANNOT change 'approved', 'isVerified', or financial fields
     function isValidProviderUpdate(data) {
-      return areImmutableFieldsUnchanged(['uid', 'serviceProviderNumber', 'businessId', 'createdAt', 'isVerified']) &&
-             (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 100)) &&
+      return areImmutableFieldsUnchanged(['uid', 'serviceProviderNumber', 'businessId', 'createdAt', 'isVerified', 'approved', 'tokenBalance', 'tokens']) &&
+             (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 120)) &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
              (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
+             (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
+             (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
+             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000)) &&
              (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
              (!('availability' in data) || (data.availability is string && data.availability.size() <= 50)) &&
+             (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
+             (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
              (!('isActive' in data) || data.isActive is bool);
     }
 
@@ -293,167 +321,171 @@ service cloud.firestore {
 
     // ===============================================================
     // Collection Security Rules
+    //
+    // RULE PATTERN:
+    // Every collection guarantees SuperAdmin 100% UNCONDITIONAL
+    // read, write, and delete powers without ANY validator blocks.
+    // Regular users remain strictly hardened and bounded by validators.
     // ===============================================================
 
-    // 1. Platform Settings: Public read for 'global', 'pricing' and the FX rates; writes Superadmin only
+    // 1. Platform Settings: SuperAdmin full control; Public read for global and pricing settings
     match /platform_settings/{settingId} {
-      allow read: if isSuperAdmin() || settingId in ['global', 'pricing', 'fx_aud_usd', 'fx_usd_aud'];
-      allow create, update: if isSuperAdmin() && isValidPlatformSetting(request.resource.data);
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if settingId in ['global', 'pricing', 'fx_aud_usd', 'fx_usd_aud'];
+
+      match /{document=**} {
+        allow read, write, delete: if isSuperAdmin();
+      }
     }
 
-    // 2. Users: Owner read/update, Superadmin full access; client role escalation strictly forbidden
+    // 2. Users: SuperAdmin full control; Owner read/update; Regular users CANNOT self-escalate or edit financial fields
     match /users/{uid} {
-      allow read: if isOwner(uid) || isSuperAdmin();
-      allow create: if isSuperAdmin() || (isOwner(uid) && isValidUserCreate(request.resource.data));
-      allow update: if isSuperAdmin() || (isOwner(uid) && isValidUserUpdate(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUserCreate(request.resource.data);
+      allow update: if isOwner(uid) && isValidUserUpdate(request.resource.data);
     }
 
-    // 3. Providers: Public read for active contractors and directory query; provider updates own profile
+    // 3. Driver Applications: SuperAdmin full control (approve, reject, edit, delete); Applicant create/update
+    match /driver_applications/{appId} {
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidDriverAppCreate(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && isValidDriverAppUpdate(request.resource.data);
+    }
+
+    // 4. Providers: SuperAdmin full control; Public read active/approved; Drivers update own non-sensitive profile
     match /providers/{providerId} {
-      allow read: if resource.data.businessId == 'its-a-simple-job' ||
-                     resource.data.isActive == true ||
-                     isSuperAdmin() ||
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if resource.data.isActive == true ||
+                     resource.data.approved == true ||
+                     resource.data.status == 'active' ||
+                     resource.data.businessId == 'its-a-simple-job' ||
                      (isAuthenticated() && resource.data.uid == request.auth.uid);
-      allow create: if isSuperAdmin() ||
-                       (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidProviderCreate(request.resource.data));
-      allow update: if isSuperAdmin() ||
-                       (isAuthenticated() && resource.data.uid == request.auth.uid && isValidProviderUpdate(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidProviderCreate(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && isValidProviderUpdate(request.resource.data);
     }
 
-    // 4. Bookings: Customer and assigned provider access; status 'completed' and financial fields locked to server
+    // 5. Roles: SuperAdmin full control; Authenticated read RBAC matrix
+    match /roles/{roleId} {
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated();
+    }
+
+    // 6. Bookings: SuperAdmin full control; Customer and assigned provider access
     match /bookings/{bookingId} {
-      allow read: if isSuperAdmin() || isBookingCustomer() || isBookingProvider();
-      allow create: if isSuperAdmin() || (
-        isAuthenticated() &&
-        (
-          request.resource.data.customerUid == request.auth.uid ||
-          request.resource.data.uid == request.auth.uid ||
-          (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid)
-        ) &&
-        (request.resource.data.status in ['pending', 'Confirmed & Dispatched']) &&
-        (!('paid' in request.resource.data) || request.resource.data.paid == false) &&
-        (!('settled' in request.resource.data) || request.resource.data.settled == false) &&
-        (!('paymentIntentId' in request.resource.data)) &&
-        (!('payoutCompleted' in request.resource.data) || request.resource.data.payoutCompleted == false) &&
-        isValidBooking(request.resource.data)
-      );
-      allow update: if isSuperAdmin() || (
-        isAuthenticated() &&
-        (isBookingCustomer() || isBookingProvider()) &&
-        // Status changes to 'completed' or financial states are strictly forbidden to clients (Admin SDK only)
-        request.resource.data.status != 'completed' &&
-        request.resource.data.status != 'paid' &&
-        request.resource.data.status != 'settled' &&
-        request.resource.data.status != 'refunded' &&
-        areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens']) &&
-        isValidBooking(request.resource.data)
-      );
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isBookingCustomer() || isBookingProvider();
+      allow create: if isAuthenticated() &&
+                       (
+                         request.resource.data.customerUid == request.auth.uid ||
+                         request.resource.data.uid == request.auth.uid ||
+                         (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid)
+                       ) &&
+                       (request.resource.data.status in ['pending', 'Confirmed & Dispatched']) &&
+                       (!('paid' in request.resource.data) || request.resource.data.paid == false) &&
+                       (!('settled' in request.resource.data) || request.resource.data.settled == false) &&
+                       (!('paymentIntentId' in request.resource.data)) &&
+                       (!('payoutCompleted' in request.resource.data) || request.resource.data.payoutCompleted == false) &&
+                       isValidBooking(request.resource.data);
+      allow update: if isAuthenticated() &&
+                       (isBookingCustomer() || isBookingProvider()) &&
+                       request.resource.data.status != 'completed' &&
+                       request.resource.data.status != 'paid' &&
+                       request.resource.data.status != 'settled' &&
+                       request.resource.data.status != 'refunded' &&
+                       areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens']) &&
+                       isValidBooking(request.resource.data);
     }
 
-    // 5. Candidates: Applicant reads/submits application; Superadmin full access
+    // 7. Candidates: SuperAdmin full control; Applicant access
     match /candidates/{candidateId} {
-      allow read: if isSuperAdmin() ||
-                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
-      allow create: if isSuperAdmin() ||
-                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidCandidate(request.resource.data));
-      allow update: if isSuperAdmin() ||
-                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt']) && isValidCandidate(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid);
+      allow create: if isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidCandidate(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt']) && isValidCandidate(request.resource.data);
     }
 
-    // 6. Partner & Franchise Applications: Applicant reads/submits application; Superadmin full access
+    // 8. Partner & Franchise Applications: SuperAdmin full control; Applicant access
     match /partner_applications/{appId} {
-      allow read: if isSuperAdmin() ||
-                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
-      allow create: if isSuperAdmin() ||
-                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data));
-      allow update: if isSuperAdmin() ||
-                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid);
+      allow create: if isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data);
     }
 
     match /franchise_applications/{appId} {
-      allow read: if isSuperAdmin() ||
-                     (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid));
-      allow create: if isSuperAdmin() ||
-                       (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data));
-      allow update: if isSuperAdmin() ||
-                       (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid);
+      allow create: if isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.applicantUid == request.auth.uid) && isValidApplication(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && areImmutableFieldsUnchanged(['uid', 'applicantUid', 'createdAt', 'status']) && isValidApplication(request.resource.data);
     }
 
-    // 7. Token Ledgers & Wallets: Owner read-only; client writes strictly forbidden (Server Admin SDK only)
+    // 9. Token Ledgers & Wallets: SuperAdmin full control; Owner read-only; Client writes strictly forbidden
     match /token_transactions/{txId} {
-      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
-      allow write: if false;
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /token_ledger/{txId} {
-      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
-      allow write: if false;
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /wallets/{uid} {
-      allow read: if isOwner(uid) || isSuperAdmin();
-      allow write: if false;
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isOwner(uid);
 
-      match /purchases/{purchaseId} {
-        allow read: if isOwner(uid) || isSuperAdmin();
-        allow write: if false;
-      }
-
-      match /ledger/{entryId} {
-        allow read: if isOwner(uid) || isSuperAdmin();
-        allow write: if false;
+      match /{subcollection=**} {
+        allow read, write, delete: if isSuperAdmin();
+        allow read: if isOwner(uid);
       }
     }
 
-    // 8. Registered Customers: Owner customer profile access; Superadmin full access
+    // 10. Registered Customers: SuperAdmin full control; Owner scoped access
     match /customers/{crn} {
-      allow read: if isSuperAdmin() || (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid));
-      allow create: if isSuperAdmin() || (isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.customerUid == request.auth.uid) && isValidCustomer(request.resource.data));
-      allow update: if isSuperAdmin() || (isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid) && areImmutableFieldsUnchanged(['customerRefNumber', 'uid', 'createdAt']) && isValidCustomer(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid);
+      allow create: if isAuthenticated() && (request.resource.data.uid == request.auth.uid || request.resource.data.customerUid == request.auth.uid) && isValidCustomer(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.customerUid == request.auth.uid) && areImmutableFieldsUnchanged(['customerRefNumber', 'uid', 'createdAt']) && isValidCustomer(request.resource.data);
     }
 
-    // 9. Recruitment Orders: Hiring employer access; Superadmin full access
+    // 11. Recruitment Orders: SuperAdmin full control; Hiring employer access
     match /recruitment_orders/{orderId} {
-      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
-      allow create: if isSuperAdmin() || (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidRecruitmentOrder(request.resource.data));
-      allow update: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid && areImmutableFieldsUnchanged(['orderId', 'uid', 'createdAt', 'status']) && isValidRecruitmentOrder(request.resource.data));
-      allow delete: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidRecruitmentOrder(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && areImmutableFieldsUnchanged(['orderId', 'uid', 'createdAt', 'status']) && isValidRecruitmentOrder(request.resource.data);
     }
 
-    // 10. Financial Transactions: Server-managed financial ledger; client writes forbidden
+    // 12. Financial Transactions: SuperAdmin full control; Owner read-only
     match /stripe_transactions/{txId} {
-      allow read: if isSuperAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
-      allow write: if false;
+      allow read, write, delete: if isSuperAdmin();
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
-    // 11. AI Prompts Audit Trail: Non-sensitive telemetry append-only for authenticated callers
+    // 13. AI Prompts Audit Trail: SuperAdmin full control; Authenticated append-only audit records
     match /ai_prompts/{promptId} {
-      allow read: if isSuperAdmin();
+      allow read, write, delete: if isSuperAdmin();
       allow create: if isAuthenticated() && isValidAiPrompt(request.resource.data);
-      allow update, delete: if false;
     }
 
-    // 12. Messages between users: server only (/api/messages, Firebase Admin SDK).
-    //     mailboxes/{owner} (owner = uid or 'superadmin') with inbox/ and sent/ subcollections.
-    //     The server checks the sender, charges tokens for paid messages and delivers in one
-    //     transaction, so browsers must never read or write these documents directly.
-    match /mailboxes/{owner}/{document=**} {
-      allow read, write: if false;
+    // 14. Mailboxes: SuperAdmin full control; regular clients denied (Firebase Admin SDK only)
+    match /mailboxes/{owner} {
+      allow read, write, delete: if isSuperAdmin();
+
+      match /{document=**} {
+        allow read, write, delete: if isSuperAdmin();
+      }
     }
 
     // ===============================================================
-    // Root Default Deny
+    // Root Fallback & SuperAdmin Supreme Ruler Privilege
+    // Denies all unauthorized access by default while guaranteeing
+    // SuperAdmin 100% unconditional full control over every collection.
     // ===============================================================
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write, delete: if isSuperAdmin();
     }
   }
 }

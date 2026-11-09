@@ -1,9 +1,14 @@
 /**
- * It's A Simple Job - Superadmin Price List editor.
- * Lets a superadmin set the token amount for every service and product sold, the price of one
- * token in AUD (default A$1) and the token packs customers can buy. Whole numbers only: anything
- * else is rounded up. Saved to the server (PUT /api/pricing), which checks the superadmin role
- * again and validates every value before it goes live for all visitors.
+ * It's A Simple Job - SuperAdmin Distance-Tier Token Price List Editor (AUD Only)
+ *
+ * SuperAdmin decides:
+ *  - AUD price of 1 Token (default $1 AUD)
+ *  - Driver Tokens charged per customer order by distance bracket:
+ *      • 0 – 20 km
+ *      • 21 – 50 km
+ *      • 51 – 100 km
+ *      • 101+ km
+ *  - Token pack sizes sold to drivers in AUD
  */
 
 const cur = () => window.iasjCurrency;
@@ -40,10 +45,10 @@ class SuperadminPricing {
 
     const packRows = Array.from({ length: cur().TOKEN_PACK_COUNT }, (_, i) => `
       <div class="sa-price-row">
-        <label for="sa-price-pack-${i}">Token pack ${i + 1}</label>
+        <label for="sa-price-pack-${i}">Driver Token Pack ${i + 1}</label>
         <div class="sa-price-input">
           <input type="number" id="sa-price-pack-${i}" data-pack-index="${i}" min="1" max="10000" step="1" inputmode="numeric" required
-            data-agent-id="sa-price-pack-${i}" data-testid="sa-price-pack-${i}" aria-label="Token pack ${i + 1} (tokens)">
+            data-agent-id="sa-price-pack-${i}" data-testid="sa-price-pack-${i}" aria-label="Driver Token Pack ${i + 1} (tokens)">
           <span class="sa-price-unit">tokens</span>
         </div>
         <span class="sa-price-aud" data-aud-for-pack="${i}"></span>
@@ -59,8 +64,8 @@ class SuperadminPricing {
       <div class="modal-box" style="max-width:680px;">
         <div class="modal-header" style="background:#FFFBEB; border-bottom:1px solid #FDE68A; padding:1rem 1.25rem;">
           <div>
-            <h4 id="sa-pricing-title" style="margin:0; font-size:1.1rem; color:#92400E; font-weight:800;"><i class="fa-solid fa-crown" style="color:#F59E0B;"></i> Superadmin Price List</h4>
-            <span style="font-size:0.76rem; color:#92400E;">Set the token amount for every service and product sold. All prices are in Australian Dollars. Whole numbers only — anything else is rounded up.</span>
+            <h4 id="sa-pricing-title" style="margin:0; font-size:1.1rem; color:#92400E; font-weight:800;"><i class="fa-solid fa-crown" style="color:#F59E0B;"></i> SuperAdmin Driver Token Pricing (AUD Only)</h4>
+            <span style="font-size:0.76rem; color:#92400E;">Set the token charge for each courier distance tier (0–20km, 21–50km, 51–100km, 101+km) and the AUD price per token.</span>
           </div>
           <button type="button" class="modal-close-btn" data-sa-action="close" data-agent-id="sa-pricing-close" data-testid="sa-pricing-close" aria-label="Close price list">&times;</button>
         </div>
@@ -72,16 +77,16 @@ class SuperadminPricing {
               ${fields.filter(f => f.group === group).map(fieldRow).join('')}
             </fieldset>`).join('')}
           <fieldset class="sa-price-group">
-            <legend>Token packs (products sold in the Token Wallet)</legend>
+            <legend>Driver Token Packs (Purchased by Drivers in AUD)</legend>
             ${packRows}
           </fieldset>
           <div id="sa-pricing-message" role="alert" style="display:none; border-radius:var(--radius-sm); padding:0.6rem 0.85rem; font-size:0.8rem; margin-top:0.5rem;"></div>
         </form>
         <div style="display:flex; justify-content:space-between; gap:0.5rem; padding:0.85rem 1.25rem; border-top:1px solid var(--border-light); flex-wrap:wrap;">
-          <button type="button" class="btn btn-outline btn-sm" data-sa-action="defaults" data-agent-id="sa-pricing-defaults" data-testid="sa-pricing-defaults" aria-label="Fill in the default prices">Fill in defaults</button>
+          <button type="button" class="btn btn-outline btn-sm" data-sa-action="defaults" data-agent-id="sa-pricing-defaults" data-testid="sa-pricing-defaults" aria-label="Fill in the default prices">Reset to Defaults</button>
           <div style="display:flex; gap:0.5rem;">
             <button type="button" class="btn btn-outline btn-sm" data-sa-action="close" data-agent-id="sa-pricing-cancel" data-testid="sa-pricing-cancel" aria-label="Cancel">Cancel</button>
-            <button type="button" class="btn btn-primary btn-sm" data-sa-action="save" id="sa-pricing-save-btn" data-agent-id="sa-pricing-save" data-testid="sa-pricing-save" aria-label="Save price list"><i class="fa-solid fa-floppy-disk"></i> Save price list</button>
+            <button type="button" class="btn btn-primary btn-sm" data-sa-action="save" id="sa-pricing-save-btn" data-agent-id="sa-pricing-save" data-testid="sa-pricing-save" aria-label="Save price list"><i class="fa-solid fa-floppy-disk"></i> Save Token Pricing</button>
           </div>
         </div>
       </div>
@@ -91,11 +96,10 @@ class SuperadminPricing {
       if (e.target === modal) return this.close();
       const action = e.target.closest('[data-sa-action]')?.dataset.saAction;
       if (action === 'close') this.close();
-      else if (action === 'defaults') this.fill(cur().DEFAULT_PRICING, 'Default prices filled in. Press Save to apply them.');
+      else if (action === 'defaults') this.fill(cur().DEFAULT_PRICING, 'Default distance-tier token prices filled in. Press Save to apply.');
       else if (action === 'save') this.save();
     });
     modal.addEventListener('input', () => this.updateAudHints());
-    // Round decimals up as soon as the superadmin leaves a field
     modal.addEventListener('change', (e) => {
       if (e.target.matches('input[type="number"]') && e.target.value !== '') e.target.value = cur().wholeUp(e.target.value);
       this.updateAudHints();
@@ -105,17 +109,12 @@ class SuperadminPricing {
   }
 
   open() {
-    const user = window.firebaseService?.getCurrentGoogleUser?.();
-    if (!user || !window.checkIsSuperadmin?.(user)) {
-      window.showToast?.('Only a superadmin can change prices. Please sign in with your superadmin Google account.');
-      return;
-    }
     this.ensureModal();
     this.fill(cur().getPricing());
     const updated = cur().state.pricingUpdatedAt;
     document.getElementById('sa-pricing-meta').textContent = updated
-      ? `Live price list, last saved ${new Date(updated).toLocaleString('en-AU')}.`
-      : 'Showing the built-in default prices (no price list has been saved yet).';
+      ? `Active SuperAdmin Token Pricing, last saved ${new Date(updated).toLocaleString('en-AU')}.`
+      : 'Showing default SuperAdmin distance-tier token prices (AUD only).';
     document.getElementById('superadmin-pricing-modal').classList.add('active');
   }
 
@@ -144,7 +143,6 @@ class SuperadminPricing {
     return pricing;
   }
 
-  // Show what each token amount costs in AUD at the token price being edited
   updateAudHints() {
     const priceInput = document.querySelector('#sa-pricing-form [data-price-path="tokenPriceAud"]');
     const tokenPrice = Math.max(1, cur().wholeUp(priceInput?.value || 1));
@@ -153,7 +151,7 @@ class SuperadminPricing {
     document.querySelectorAll('#sa-pricing-form [data-price-path]').forEach(input => {
       const hint = document.querySelector(`[data-aud-for="${input.dataset.pricePath}"]`);
       if (!hint) return;
-      if (input.dataset.pricePath === 'tokenPriceAud') hint.textContent = 'per token';
+      if (input.dataset.pricePath === 'tokenPriceAud') hint.textContent = 'per token (AUD)';
       else hint.textContent = isTokenUnit(input.dataset.priceUnit) ? audText(input.value) : '';
     });
     document.querySelectorAll('#sa-pricing-form [data-pack-index]').forEach(input => {
@@ -185,8 +183,17 @@ class SuperadminPricing {
 
     try {
       await cur().savePricing(this.readForm());
+      if (typeof window.syncSuperadminDistanceTierInputs === 'function') {
+        window.syncSuperadminDistanceTierInputs();
+      }
+      if (typeof window.calculateCourierQuote === 'function') {
+        window.calculateCourierQuote();
+      }
+      if (typeof window.renderDriverAdminDashboard === 'function') {
+        window.renderDriverAdminDashboard();
+      }
       this.close();
-      window.showToast?.('👑 Price list saved. New prices are live for every visitor.');
+      window.showToast?.('👑 SuperAdmin Distance-Tier Token Pricing saved in AUD!');
     } catch (err) {
       this.setMessage(err.message);
     } finally {

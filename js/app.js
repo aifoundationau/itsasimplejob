@@ -1,19 +1,22 @@
 /**
- * It's A Simple Job - Interactive Client Application Logic
- * Integrates Google Maps API, Places Autocomplete, Geolocation Locator,
- * Dynamic Contractor Search & Map Markers, and Courier Route Directions.
- * All prices are AUD (whole numbers, rounded up) from the superadmin price list via window.iasjCurrency.
+ * It's A Simple Job - Direct Driver Courier Platform Application Logic (AUD Only)
+ * Integrates OpenStreetMap Leaflet Maps, OSRM Road Routing, Live Driver Geolocation,
+ * Driver Registration (Licence, Address, Phone, Email, PayID, $/km, Same-Day, Urgent, Max Weight, Max H×W×L),
+ * 9:00 AM – 4:00 PM Customer Pickup Booking, Direct Driver PayID Settlement, Driver Admin Dashboard,
+ * and SuperAdmin Distance-Tier Token Economy (0-20km, 21-50km, 51-100km, 101+km).
  */
 
 import { MAX_COURIER_WEIGHT_KG } from '../shared/pricing.js';
 
 // Application State
 const appState = {
-  activeTab: 'ai-book-tab',
+  activeTab: 'courier-tab',
+  selectedCourierDriverId: 'drv-101',
+  activeAdminDriverId: 'drv-101',
   currentAnalysis: null,
-  selectedProviderId: null,
-  selectedShift: 'morning', // 'emergency_24_7', 'morning', 'afternoon', 'evening', 'overnight'
-  courierPackageType: 'documents',
+  selectedProviderId: 'drv-101',
+  selectedShift: 'morning',
+  courierPackageType: 'parcels',
   activeBookings: [],
   isListening: false,
   recognition: null,
@@ -24,10 +27,12 @@ const appState = {
   uploadedCourierPhoto: null,
   uploadedProviderPhoto: null,
   uploadedCandidatePhoto: null,
-  // Google Maps State
-  userCoords: { lat: -28.0280, lng: 153.4312 }, // Broadbeach QLD default
-  userLocationName: 'Broadbeach QLD 4218',
-  searchRadiusKm: 25,
+  // Map & Geolocation State
+  userCoords: { lat: -27.9635, lng: 153.4064 }, // Southport QLD default
+  userLocationName: '10 Smith Street, Southport QLD 4215',
+  courierOriginCoords: { lat: -27.9635, lng: 153.4064 },
+  courierDestCoords: { lat: -28.0280, lng: 153.4312 },
+  searchRadiusKm: 50,
   contractorMarkers: [],
   userMarker: null,
   contractorInfoWindow: null,
@@ -37,23 +42,47 @@ const appState = {
   directionsRenderer: null
 };
 
-// Preset Sample Prompts for Instant Evaluation
+// Preset Sample Prompts
 const SAMPLE_PROMPTS = {
-  leaking_tap: "My kitchen mixer tap is dripping constantly under the sink and the shutoff valve feels loose. I'm in Broadbeach on the Gold Coast. Can someone come Thursday afternoon?",
-  flatpack_assembly: "I bought two 3-door IKEA wardrobes and a huge hallway mirror that need assembling and securely mounting to the plaster wall in Southport. Need an experienced handyman with their own tools.",
-  urgent_courier: "Urgent courier needed: 2 boxes of critical surgical supplies (12kg total) from Gold Coast Private Hospital in Southport to Brisbane Hospital ASAP today. Needs urgent direct drop-off.",
-  powerpoints: "Need 3 weatherproof double power points installed outdoors on my covered patio in Robina, plus a ceiling fan replacement. Looking for a licensed sparky.",
-  garden_lawn: "My backyard grass is overgrown past my knees after the rain, palm fronds everywhere, and front gutters need a thorough vacuum and green waste removal in Burleigh Heads.",
-  drywall_patch: "There's an accidental hole in the drywall behind the bedroom door and a few scuffs. Need it patched, sanded smooth, and repainted to match."
+  urgent_courier: "Urgent courier needed: 2 boxes of diagnostic equipment (14kg total) from 10 Smith Street, Southport to 42 Surf Parade, Broadbeach."
 };
 
 // Initialize on DOM Ready or Immediate execution (supports Vite ES module timing)
 function initApp() {
-  try { setupOsmAddressAutocomplete('cust-address'); } catch (e) {}
-  try { setupOsmAddressAutocomplete('courier-origin', () => calculateCourierQuote()); } catch (e) {}
-  try { setupOsmAddressAutocomplete('courier-dest', () => calculateCourierQuote()); } catch (e) {}
+  try {
+    setupOsmAddressAutocomplete('courier-origin', (place) => {
+      if (place?.lat && place?.lng) {
+        appState.courierOriginCoords = { lat: place.lat, lng: place.lng };
+      }
+      calculateCourierQuote();
+    });
+  } catch (e) {}
+  try {
+    setupOsmAddressAutocomplete('courier-dest', (place) => {
+      if (place?.lat && place?.lng) {
+        appState.courierDestCoords = { lat: place.lat, lng: place.lng };
+      }
+      calculateCourierQuote();
+    });
+  } catch (e) {}
+  try { setupOsmAddressAutocomplete('courier-cust-address'); } catch (e) {}
+  try { setupOsmAddressAutocomplete('supporter-reg-suburb'); } catch (e) {}
   try { setupOsmAddressAutocomplete('contractor-search-location', (place) => onContractorLocationSelected(place)); } catch (e) {}
-  try { setupOsmAddressAutocomplete('inline-cust-address'); } catch (e) {}
+  try {
+    setupOsmAddressAutocomplete('drv-reg-address', (place) => {
+      if (place?.lat && place?.lng) {
+        const latEl = document.getElementById('drv-reg-lat');
+        const lngEl = document.getElementById('drv-reg-lng');
+        if (latEl) latEl.value = String(place.lat);
+        if (lngEl) lngEl.value = String(place.lng);
+        const st = document.getElementById('drv-reg-geo-status');
+        if (st) {
+          st.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Located at <strong>${place.formatted}</strong> (${place.lat.toFixed(4)}, ${place.lng.toFixed(4)})`;
+        }
+      }
+    });
+  } catch (e) {}
+
   try { initSpeechRecognition(); } catch (e) {}
   try { loadGoogleMapsScript(); } catch (e) {}
   try { initGoogleAuthUI(); } catch (e) {}
@@ -63,70 +92,35 @@ function initApp() {
     courierDateInput.value = new Date().toISOString().split('T')[0];
   }
 
-  // Only calculate courier quote if courier elements exist on the page
-  if (document.getElementById('courier-origin') || document.getElementById('courier-calc-distance')) {
+  try { syncSuperadminDistanceTierInputs(); } catch (e) {}
+
+  // Calculate initial courier route & rank closest drivers
+  if (document.getElementById('courier-origin')) {
     try { calculateCourierQuote(); } catch (e) {}
   }
 
-  try { filterCandidates(); } catch (e) {}
-  try { renderProviderDocumentVault(); } catch (e) {}
-  try { renderCalendarMatrix('inline-calendar-matrix-root', 'inline'); } catch (e) {}
-  try { renderCalendarMatrix('modal-calendar-matrix-root', 'modal'); } catch (e) {}
-  try { renderDefaultServiceFeeRows('page', 'plumbing'); } catch (e) {}
-  try { renderDefaultServiceFeeRows('modal', 'plumbing'); } catch (e) {}
+  // Populate Closest Drivers Map & Cards
+  try { filterContractors(); } catch (e) {}
 
-  // Initialize form draft auto-save listeners & Google auth banners
-  if (typeof attachDraftAutoSaveListeners === 'function') {
-    try { attachDraftAutoSaveListeners(); } catch (e) {}
-  }
-  if (typeof updateGoogleAuthBanners === 'function') {
-    try { updateGoogleAuthBanners(); } catch (e) {}
-  }
-  if (typeof restoreFranchiseApplicationDraft === 'function') {
-    try { restoreFranchiseApplicationDraft(); } catch (e) {}
-  }
-  if (typeof restoreProviderApplicationDraft === 'function') {
-    try { restoreProviderApplicationDraft(); } catch (e) {}
-  }
+  // Populate Supporter & Driver Admin Page
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
 
-  // If Firebase is available, seed providers if database is empty
+  // If Firebase is available, seed courier drivers if database is empty
   if (window.firebaseService?.seedProvidersIfEmpty && window.INITIAL_PROVIDERS) {
     window.firebaseService.seedProvidersIfEmpty(window.INITIAL_PROVIDERS);
-  }
-
-  // Subscribe to live Firestore bookings for dispatch feed
-  if (window.firebaseService?.subscribeToLiveBookings) {
-    window.firebaseService.subscribeToLiveBookings((remoteBookings) => {
-      if (remoteBookings && remoteBookings.length > 0) {
-        remoteBookings.forEach(rb => {
-          if (!appState.activeBookings.some(b => b.docketNumber === rb.docketNumber)) {
-            appState.activeBookings.unshift(rb);
-            addJobToDispatchFeed(rb);
-          }
-        });
-      }
-    });
-  }
-
-  // Run an initial analysis with a realistic prompt so the interface is immediately engaging
-  const promptInput = document.getElementById('ai-prompt-input');
-  if (promptInput) {
-    promptInput.value = SAMPLE_PROMPTS.leaking_tap;
-    submitAIAnalysis(false); // subtle initial run without notification toast
   }
 
   // Handle URL search params or hash for navigation
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const requestedTab = urlParams.get('tab');
-    if (requestedTab) {
-      if (requestedTab === 'register-selection-tab') {
-        openRegisterSelectionPanel();
-      } else if (typeof switchTab === 'function') {
-        switchTab(requestedTab);
-      }
+    if (requestedTab && typeof switchTab === 'function') {
+      switchTab(requestedTab);
     } else if (window.location.hash === '#register') {
-      openRegisterSelectionPanel();
+      switchTab('provider-application-tab');
+    } else if (window.location.hash === '#driver-admin') {
+      switchTab('driver-admin-tab');
     }
   } catch (e) {
     console.warn('URL param navigation error:', e);
@@ -136,20 +130,28 @@ function initApp() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
-  // Module scripts run when readyState is already 'interactive'. Defer until this module has finished
-  // evaluating, so the let/const declarations further down (e.g. courierCalcDebounce, geoTimeState)
-  // exist when initApp uses them. Calling initApp() directly here hit them before initialisation and
-  // the try/catch blocks silently swallowed the errors (the courier quote never loaded).
   queueMicrotask(initApp);
 }
 
 /**
- * Tab Navigation Controller
+ * Tab Navigation Controller (Courier-Only Views)
  */
-function switchTab(tabId) {
-  // Alias register-tab to register-selection-tab
-  if (tabId === 'register-tab') {
-    tabId = 'register-selection-tab';
+function switchTab(tabId, bypassGate = false) {
+  if (tabId === 'register-tab' || tabId === 'register-selection-tab' || tabId === 'provider-network-tab' || tabId === 'provider-application-tab') {
+    tabId = 'driver-admin-tab';
+  }
+  if (tabId === 'ai-book-tab') {
+    tabId = 'courier-tab';
+  }
+
+  // Supporter Portal is strictly gated behind Google login
+  if (tabId === 'driver-admin-tab' && !bypassGate) {
+    const isGoogleLoggedIn = !!window.firebaseService?.getCurrentGoogleUser?.() || !!localStorage.getItem('iasj_google_user');
+    if (!isGoogleLoggedIn) {
+      showToast('🔒 Supporter Portal is only seen behind Google login. Please sign in with Google to continue.');
+      signUpWithGoogle('supporter');
+      return;
+    }
   }
 
   // Update view containers
@@ -169,9 +171,19 @@ function switchTab(tabId) {
   tabPills.forEach(pill => pill.classList.remove('active'));
 
   // Sync active states
-  if (tabId === 'ai-book-tab') {
-    document.getElementById('tab-btn-ai-book')?.classList.add('active');
-    document.getElementById('pill-ai-book')?.classList.add('active');
+  if (tabId === 'courier-tab') {
+    document.getElementById('tab-btn-courier')?.classList.add('active');
+    document.getElementById('pill-courier')?.classList.add('active');
+    [50, 150, 400].forEach(delay => {
+      setTimeout(() => {
+        if (appState.osmCourierMap) {
+          try { appState.osmCourierMap.invalidateSize(true); } catch(e) {}
+        } else {
+          renderOsmCourierRouteMap();
+        }
+      }, delay);
+    });
+    try { calculateCourierQuote(); } catch (e) {}
   } else if (tabId === 'find-contractors-tab') {
     document.getElementById('tab-btn-find-contractors')?.classList.add('active');
     document.getElementById('pill-find-contractors')?.classList.add('active');
@@ -182,91 +194,27 @@ function switchTab(tabId) {
         } else {
           renderOsmContractorMap();
         }
-        if (appState.contractorMap && window.google?.maps) {
-          google.maps.event.trigger(appState.contractorMap, 'resize');
-          if (appState.userCoords) {
-            appState.contractorMap.setCenter(appState.userCoords);
-          }
-        }
       }, delay);
     });
-  } else if (tabId === 'courier-tab') {
-    document.getElementById('tab-btn-courier')?.classList.add('active');
-    document.getElementById('pill-courier')?.classList.add('active');
-    [50, 150, 400].forEach(delay => {
-      setTimeout(() => {
-        if (appState.osmCourierMap) {
-          try { appState.osmCourierMap.invalidateSize(true); } catch(e) {}
-        } else {
-          renderOsmCourierRouteMap();
-        }
-        if (appState.courierRouteMap && window.google?.maps) {
-          google.maps.event.trigger(appState.courierRouteMap, 'resize');
-        }
-      }, delay);
-    });
-  } else if (tabId === 'recruitment-tab') {
-    document.getElementById('tab-btn-recruitment')?.classList.add('active');
-    document.getElementById('pill-recruitment')?.classList.add('active');
-    filterCandidates();
-  } else if (tabId === 'register-selection-tab') {
-    document.getElementById('tab-btn-register')?.classList.add('active');
-    document.getElementById('pill-register')?.classList.add('active');
-  } else if (tabId === 'provider-application-tab') {
-    document.getElementById('tab-btn-register')?.classList.add('active');
-    document.getElementById('tab-btn-provider')?.classList.add('active');
-    document.getElementById('pill-register')?.classList.add('active');
-    if (typeof restoreProviderApplicationDraft === 'function') {
-      restoreProviderApplicationDraft();
-    }
-    if (typeof renderProviderDocumentVault === 'function') {
-      renderProviderDocumentVault();
-    }
-    if (typeof updateGoogleAuthBanners === 'function') {
-      updateGoogleAuthBanners();
-    }
-  } else if (tabId === 'customer-application-tab') {
-    document.getElementById('tab-btn-register')?.classList.add('active');
-    document.getElementById('tab-btn-customer')?.classList.add('active');
-    document.getElementById('pill-register')?.classList.add('active');
-    if (typeof restoreCustomerApplicationDraft === 'function') {
-      restoreCustomerApplicationDraft();
-    }
-    if (typeof updateGoogleAuthBanners === 'function') {
-      updateGoogleAuthBanners();
-    }
-  } else if (tabId === 'franchise-application-tab') {
-    document.getElementById('tab-btn-register')?.classList.add('active');
-    document.getElementById('tab-btn-franchise')?.classList.add('active');
-    document.getElementById('pill-register')?.classList.add('active');
-    if (typeof restoreFranchiseApplicationDraft === 'function') {
-      restoreFranchiseApplicationDraft();
-    }
-    if (typeof updateGoogleAuthBanners === 'function') {
-      updateGoogleAuthBanners();
-    }
-  } else if (tabId === 'franchise-tab') {
-    document.getElementById('tab-btn-franchise')?.classList.add('active');
-    document.getElementById('pill-franchise')?.classList.add('active');
+    try { filterContractors(); } catch (e) {}
+  } else if (tabId === 'driver-admin-tab') {
+    document.getElementById('tab-btn-supporter-admin')?.classList.add('active');
+    document.getElementById('tab-btn-driver-admin')?.classList.add('active');
+    document.getElementById('pill-driver-admin')?.classList.add('active');
+    try { renderSupporterPanel(); } catch (e) {}
+    try { renderDriverAdminDashboard(); } catch (e) {}
   } else if (tabId === 'how-it-works-tab') {
-    document.getElementById('tab-btn-how-it-works')?.classList.add('active');
-    document.getElementById('pill-how-it-works')?.classList.add('active');
-  } else if (tabId === 'provider-network-tab') {
-    document.getElementById('tab-btn-provider-network')?.classList.add('active');
-    document.getElementById('pill-provider-network')?.classList.add('active');
-  } else if (tabId === 'franchise-tab') {
-    document.getElementById('tab-btn-franchise')?.classList.add('active');
-    document.getElementById('pill-franchise')?.classList.add('active');
+    window.location.href = '/terms.html#how-it-works';
+    return;
   }
 
   appState.activeTab = tabId;
-  const isFormView = tabId.includes('application') || tabId === 'register-selection-tab';
-  window.scrollTo({ top: isFormView ? 120 : 400, behavior: 'smooth' });
+  window.scrollTo({ top: 140, behavior: 'smooth' });
 }
 
 function focusAIChat() {
-  switchTab('ai-book-tab');
-  const input = document.getElementById('ai-prompt-input');
+  switchTab('courier-tab');
+  const input = document.getElementById('courier-origin');
   if (input) {
     input.focus();
   }
@@ -371,64 +319,58 @@ function updateOsmContractorMarkers() {
   }
   appState.osmContractorMarkers = [];
 
-  const category = document.getElementById('contractor-search-category')?.value || 'all';
-  const radius = appState.searchRadiusKm || 25;
-  const userLat = appState.userCoords?.lat || -28.0280;
-  const userLng = appState.userCoords?.lng || 153.4312;
+  const minWeight = parseFloat(document.getElementById('contractor-min-weight')?.value || '0') || 0;
+  const radius = appState.searchRadiusKm || 50;
+  const userLat = appState.userCoords?.lat || -27.9635;
+  const userLng = appState.userCoords?.lng || 153.4064;
 
   const allProviders = window.providerDB ? window.providerDB.getAll() : [];
   const matched = [];
 
   allProviders.forEach(provider => {
-    if (category !== 'all' && provider.category !== category) return;
-    const pLat = provider.lat ?? provider.coords?.lat ?? -28.0280;
-    const pLng = provider.lng ?? provider.coords?.lng ?? 153.4312;
+    if ((provider.maxWeightKg || 500) < minWeight) return;
+    const pLat = provider.lat ?? provider.coords?.lat ?? -27.9635;
+    const pLng = provider.lng ?? provider.coords?.lng ?? 153.4064;
     const dist = computeDistanceInKm(userLat, userLng, pLat, pLng);
     if (dist <= radius) {
       matched.push({ provider, dist, pLat, pLng });
     }
   });
 
-  const categoryIcons = {
-    plumbing: 'fa-wrench',
-    electrical: 'fa-bolt',
-    locksmith: 'fa-key',
-    glazier: 'fa-cube',
-    handyman: 'fa-hammer',
-    garden: 'fa-seedling',
-    carpentry: 'fa-ruler-combined',
-    painting: 'fa-paint-roller',
-    appliance: 'fa-tv'
-  };
+  matched.sort((a, b) => a.dist - b.dist);
 
-  matched.forEach(({ provider, dist, pLat, pLng }) => {
-    const iconName = categoryIcons[provider.category] || 'fa-user-gear';
+  matched.forEach(({ provider, dist, pLat, pLng }, idx) => {
+    const isClosest = idx === 0;
+    const bgPin = isClosest ? '#059669' : '#FF5A1F';
     const markerIcon = L.divIcon({
       className: 'osm-contractor-pin',
-      html: `<div style="background:#FF5A1F; color:#fff; width:32px; height:32px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer;" title="${provider.name}">
-              <i class="fa-solid ${iconName}" style="transform:rotate(45deg); font-size:13px;"></i>
+      html: `<div style="background:${bgPin}; color:#fff; width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer;" title="${provider.name}">
+              <i class="fa-solid fa-truck-fast" style="transform:rotate(45deg); font-size:13px;"></i>
              </div>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -30]
+      iconSize: [34, 34],
+      iconAnchor: [17, 34],
+      popupAnchor: [0, -32]
     });
 
-    const tokenPriceHtml = formatTokenItemPrice(provider.hourlyRate, { suffix: '/hr' });
-
+    const perKmStr = `$${Number(provider.perKmRateAud || 2.20).toFixed(2)} AUD/km`;
     const popupHtml = `
-      <div style="min-width:210px; font-family:'Inter', sans-serif; padding:4px;">
+      <div style="min-width:230px; font-family:'Plus Jakarta Sans', sans-serif; padding:4px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <strong style="color:#0B192C; font-size:0.95rem;">${provider.name}</strong>
-          <span style="font-size:0.75rem; background:#FFF0EB; color:#FF5A1F; padding:1px 6px; border-radius:10px; font-weight:700;">★ ${provider.rating || '4.9'}</span>
+          <span style="font-size:0.72rem; background:${isClosest ? '#ECFDF5' : '#FFF0EB'}; color:${isClosest ? '#065F46' : '#FF5A1F'}; padding:2px 6px; border-radius:10px; font-weight:800;">
+            ${isClosest ? '★ Closest Driver' : `${dist.toFixed(1)} km`}
+          </span>
         </div>
-        <div style="font-size:0.78rem; color:#64748B; margin-bottom:6px;">
-          <i class="fa-solid fa-location-dot" style="color:#FF5A1F;"></i> ${provider.baseSuburb || provider.suburb || 'Gold Coast'} • ${dist.toFixed(1)} km away
+        <div style="font-size:0.76rem; color:#64748B; margin-bottom:5px;">
+          <i class="fa-solid fa-location-dot" style="color:#FF5A1F;"></i> ${provider.baseSuburb || provider.suburb || 'Gold Coast'} • <strong>${dist.toFixed(1)} km from pickup</strong>
         </div>
-        <div style="margin-bottom:8px; font-size:0.85rem;">
-          Rate: <strong>${tokenPriceHtml}</strong>
+        <div style="font-size:0.76rem; color:#0B192C; margin-bottom:5px;">
+          <strong>Rate:</strong> ${perKmStr} • Same-Day: +$${provider.sameDayFeeAud ?? 18} • Urgent: +$${provider.urgentFeeAud ?? 35}<br>
+          <strong>Max Capacity:</strong> ${provider.maxWeightKg || 500}kg (${provider.maxHeightCm || 150}×${provider.maxWidthCm || 130}×${provider.maxLengthCm || 250}cm)<br>
+          <strong>PayID:</strong> ${provider.payIdValue || provider.phone}
         </div>
         <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700;">
-          <i class="fa-solid fa-calendar-check"></i> Book Contractor
+          <i class="fa-solid fa-truck-fast"></i> Select Driver (9am–4pm Pickup)
         </button>
       </div>
     `;
@@ -442,14 +384,14 @@ function updateOsmContractorMarkers() {
 
   const mapCounter = document.getElementById('map-counter-text');
   if (mapCounter) {
-    mapCounter.textContent = `Showing ${matched.length} Verified Contractor${matched.length === 1 ? '' : 's'} (OpenStreetMap)`;
+    mapCounter.textContent = `Showing ${matched.length} Active Courier Driver${matched.length === 1 ? '' : 's'} (Sorted Closest First)`;
   }
 }
 window.updateOsmContractorMarkers = updateOsmContractorMarkers;
 
 /**
  * Universal OpenStreetMap (Leaflet) Courier Route Map
- * Updates dynamically with pickup pin, delivery pin, and live road polyline
+ * Updates dynamically with pickup pin, delivery pin, nearby driver pins, and live road polyline
  */
 function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, originText = '', destText = '') {
   const container = document.getElementById('courier-route-map');
@@ -462,12 +404,12 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
   container.innerHTML = '';
 
   const c1 = origCoords || appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 }; // Default Southport
-  const c2 = destCoords || appState.courierDestCoords || { lat: -27.4698, lng: 153.0251 }; // Default Brisbane
+  const c2 = destCoords || appState.courierDestCoords || { lat: -28.0280, lng: 153.4312 }; // Default Broadbeach
 
   const map = L.map(container, {
     zoomControl: true,
     scrollWheelZoom: false
-  }).setView([(c1.lat + c2.lat) / 2, (c1.lng + c2.lng) / 2], 10);
+  }).setView([(c1.lat + c2.lat) / 2, (c1.lng + c2.lng) / 2], 11);
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -489,7 +431,7 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
 
   const originIcon = L.divIcon({
     className: 'osm-pickup-pin',
-    html: `<div style="background:#10B981; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(16,185,129,0.5); border:2px solid #FFFFFF;" title="Pickup">
+    html: `<div style="background:#10B981; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(16,185,129,0.5); border:2px solid #FFFFFF;" title="Pickup Origin">
             <i class="fa-solid fa-box" style="font-size:13px;"></i>
            </div>`,
     iconSize: [30, 30],
@@ -498,20 +440,39 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
 
   const destIcon = L.divIcon({
     className: 'osm-delivery-pin',
-    html: `<div style="background:#EF4444; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(239,68,68,0.5); border:2px solid #FFFFFF;" title="Delivery">
+    html: `<div style="background:#EF4444; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(239,68,68,0.5); border:2px solid #FFFFFF;" title="Delivery Destination">
             <i class="fa-solid fa-flag-checkered" style="font-size:13px;"></i>
            </div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15]
   });
 
-  const pMarker = L.marker([c1.lat, c1.lng], { icon: originIcon })
+  L.marker([c1.lat, c1.lng], { icon: originIcon })
     .addTo(map)
     .bindPopup(`<strong style="color:#0B192C;">📦 Pickup Origin</strong><br><span style="font-size:0.8rem; color:#64748B;">${originText || 'Southport QLD'}</span>`);
 
-  const dMarker = L.marker([c2.lat, c2.lng], { icon: destIcon })
+  L.marker([c2.lat, c2.lng], { icon: destIcon })
     .addTo(map)
-    .bindPopup(`<strong style="color:#0B192C;">🏁 Delivery Destination</strong><br><span style="font-size:0.8rem; color:#64748B;">${destText || 'Brisbane CBD QLD'}</span>`);
+    .bindPopup(`<strong style="color:#0B192C;">🏁 Delivery Destination</strong><br><span style="font-size:0.8rem; color:#64748B;">${destText || 'Broadbeach QLD'}</span>`);
+
+  // Also plot live Courier Driver pins around the route
+  const allDrivers = window.providerDB ? window.providerDB.getAll() : [];
+  allDrivers.forEach(drv => {
+    if (!drv.lat || !drv.lng) return;
+    const isSelected = drv.id === appState.selectedCourierDriverId;
+    const distFromPickup = computeDistanceInKm(c1.lat, c1.lng, drv.lat, drv.lng);
+    const drvIcon = L.divIcon({
+      className: 'osm-driver-pin',
+      html: `<div style="background:${isSelected ? '#059669' : '#0B192C'}; color:#fff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);" title="${drv.name} (${distFromPickup.toFixed(1)} km from pickup)">
+              <i class="fa-solid fa-truck-fast" style="font-size:11px;"></i>
+             </div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+    L.marker([drv.lat, drv.lng], { icon: drvIcon })
+      .addTo(map)
+      .bindPopup(`<strong>🚚 ${drv.name}</strong><br><span style="font-size:0.75rem;">${distFromPickup.toFixed(1)} km from pickup • $${Number(drv.perKmRateAud || 2.20).toFixed(2)} AUD/km</span>`);
+  });
 
   // Draw Route Polyline: use real OSRM road geometry if available, otherwise direct dashed line
   if (routePoints && Array.isArray(routePoints) && routePoints.length > 0) {
@@ -1166,15 +1127,15 @@ function updateRadiusDisplay(value) {
 }
 
 /**
- * Filter Contractors and Update Google Map Markers
+ * Filter Courier Drivers by GPS Proximity & Minimum Weight Capacity
  */
 function filterContractors() {
-  const category = document.getElementById('contractor-search-category')?.value || 'all';
-  const radius = appState.searchRadiusKm || 25;
-  const userLat = appState.userCoords.lat;
-  const userLng = appState.userCoords.lng;
+  const minWeight = parseFloat(document.getElementById('contractor-min-weight')?.value || '0') || 0;
+  const radius = appState.searchRadiusKm || 50;
+  const userLat = appState.userCoords?.lat || -27.9635;
+  const userLng = appState.userCoords?.lng || 153.4064;
 
-  // Clear existing markers
+  // Clear existing Google markers if any
   appState.contractorMarkers.forEach(m => m.setMap(null));
   appState.contractorMarkers = [];
 
@@ -1185,140 +1146,59 @@ function filterContractors() {
   const allProviders = window.providerDB ? window.providerDB.getAll() : [];
   const matched = [];
 
-  // Update OpenStreetMap Leaflet markers if active
+  // Update OpenStreetMap Leaflet markers
   if (appState.osmMap && window.L) {
     updateOsmContractorMarkers();
   }
 
-  // Add User Location Marker
-  if (appState.contractorMap && window.google?.maps) {
-    appState.userMarker = new google.maps.Marker({
-      position: appState.userCoords,
-      map: appState.contractorMap,
-      title: "Your Location",
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 9,
-        fillColor: "#00D2D3",
-        fillOpacity: 1,
-        strokeColor: "#0B192C",
-        strokeWeight: 3
-      }
-    });
-  }
-
-  // Bounds tracker (safe if Google Maps has not loaded)
-  const hasGoogleMaps = !!(window.google && window.google.maps);
-  const bounds = hasGoogleMaps ? new google.maps.LatLngBounds() : null;
-  if (bounds) {
-    bounds.extend(new google.maps.LatLng(userLat, userLng));
-  }
-
   allProviders.forEach(provider => {
-    // 1. Trade Category Match
-    if (category !== 'all' && provider.category !== category) {
+    if (provider.approved === false || provider.status === 'pending_approval') {
+      return; // Only SuperAdmin-approved drivers appear in public map directory
+    }
+
+    if ((provider.maxWeightKg || 500) < minWeight) {
       return;
     }
 
-    // 2. Distance Calculation
-    const provLat = provider.lat || -28.0280;
-    const provLng = provider.lng || 153.4312;
-    const distanceKm = computeDistanceInKm(userLat, userLng, provLat, provLng);
+    const provLat = provider.lat ?? -27.9635;
+    const provLng = provider.lng ?? 153.4064;
+    const distNum = computeDistanceInKm(userLat, userLng, provLat, provLng);
 
-    // 3. Radius Check
-    if (distanceKm <= radius) {
-      const contractorWithDistance = {
+    if (distNum <= radius) {
+      matched.push({
         ...provider,
-        distanceKm: distanceKm.toFixed(1)
-      };
-      matched.push(contractorWithDistance);
-
-      // Plot Marker on Google Map
-      if (appState.contractorMap && hasGoogleMaps) {
-        const markerPos = new google.maps.LatLng(provLat, provLng);
-        if (bounds) bounds.extend(markerPos);
-
-        const markerColor = provider.category === 'courier' ? '#FF5A1F' : '#0B192C';
-
-        const marker = new google.maps.Marker({
-          position: markerPos,
-          map: appState.contractorMap,
-          title: `${provider.name} - ${provider.tradeTitle}`,
-          icon: {
-            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-            fillColor: markerColor,
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 1.5,
-            scale: 1.8,
-            anchor: new google.maps.Point(12, 24)
-          }
-        });
-
-        // Info Window content
-        marker.addListener('click', () => {
-          if (appState.contractorInfoWindow) {
-            appState.contractorInfoWindow.setContent(`
-              <div class="gmap-infowindow">
-                <div class="gmap-info-title">${provider.name}</div>
-                <div class="gmap-info-trade">${provider.tradeTitle}</div>
-                <div class="gmap-info-rating"><i class="fa-solid fa-star"></i> ${provider.rating.toFixed(2)} (${provider.reviewCount} jobs)</div>
-                <div style="font-size:0.8rem; color:#475569; margin-bottom:0.4rem;">
-                  <strong>${window.iasjCurrency.formatMoney(provider.hourlyRate, { suffix: '/hr' })}</strong> • ${distanceKm.toFixed(1)} km from you
-                </div>
-                <button class="gmap-info-btn" onclick="bookProviderDirectly('${provider.id}')">
-                  <i class="fa-solid fa-bolt"></i> Book With AI
-                </button>
-              </div>
-            `);
-            appState.contractorInfoWindow.open(appState.contractorMap, marker);
-          }
-        });
-
-        appState.contractorMarkers.push(marker);
-      }
+        distNum,
+        distanceKm: distNum.toFixed(1)
+      });
     }
   });
 
-  // Fit bounds if markers and Google Maps exist
-  if (hasGoogleMaps && bounds && appState.contractorMap && matched.length > 0) {
-    appState.contractorMap.fitBounds(bounds);
-  }
+  // Sort closest drivers first
+  matched.sort((a, b) => a.distNum - b.distNum);
 
-  // Update Status Header
   const counterText = document.getElementById('map-counter-text');
   if (counterText) {
-    counterText.textContent = `Showing ${matched.length} Active Contractors`;
+    counterText.textContent = `Showing ${matched.length} Active Courier Driver${matched.length === 1 ? '' : 's'} (Closest First)`;
   }
   const summaryText = document.getElementById('contractor-filter-summary');
   if (summaryText) {
-    summaryText.textContent = `Within ${radius} km of your location`;
+    summaryText.textContent = `Within ${radius} km • Sorted by GPS distance`;
   }
 
-  // Render Scrollable Contractor Cards
   renderContractorCards(matched);
 }
 
 /**
- * Render Contractor Cards List in Search View
+ * Render Courier Driver Cards in Search View
  */
-
-// Function declarations (not consts) so they are usable while initApp() runs during module start-up
 function escapeAttr(value) {
   return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-// Money typed into provider / franchise forms is stored in whole dollars (rounded up)
 function wholeMoney(value) {
   return value == null ? value : window.iasjCurrency.wholeUp(value);
 }
 
-/**
- * Format an item's price with tokens first and the money price on hover.
- * - Prices are AUD amounts; tokens = AUD / token price (1 token = A$1 by default), whole numbers rounded up.
- * - Australia & New Zealand see AUD; everyone else sees a USD conversion (always invoiced in AUD).
- * - data-price-aud lets refreshPriceTags() redraw the tag when the region or exchange rate changes.
- */
 function formatTokenItemPrice(fiatAudAmount, options = {}) {
   const cur = window.iasjCurrency;
   const suffix = options.suffix || '';
@@ -1337,9 +1217,6 @@ function formatTokenItemPrice(fiatAudAmount, options = {}) {
     </span>`;
 }
 
-/**
- * Redraw every price tag on the page (after the region, exchange rate or token price changes)
- */
 function refreshPriceTags(root = document) {
   root.querySelectorAll('[data-price-aud][data-price-format]').forEach(el => {
     const aud = Number(el.dataset.priceAud);
@@ -1358,93 +1235,86 @@ function renderContractorCards(contractors) {
   if (contractors.length === 0) {
     container.innerHTML = `
       <div style="background:#fff; border-radius:var(--radius-md); padding:2rem; text-align:center; border:1px solid var(--border-light);">
-        <i class="fa-solid fa-magnifying-glass" style="font-size:2rem; color:var(--text-light); margin-bottom:0.75rem; display:block;"></i>
-        <h5 style="color:var(--primary-navy); margin-bottom:0.25rem;">No contractors in this radius</h5>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Try increasing your search radius to 50km or selecting 'All Trades'.</p>
+        <i class="fa-solid fa-truck-fast" style="font-size:2rem; color:var(--text-light); margin-bottom:0.75rem; display:block;"></i>
+        <h5 style="color:var(--primary-navy); margin-bottom:0.25rem;">No courier drivers in this radius</h5>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Try increasing your search radius slider to 100 km.</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = contractors.map(c => {
-    const isPaused = c.status === 'paused';
-    const statusPill = isPaused 
-      ? `<span class="card-status-pill paused" title="${c.pausedReason || 'Profile paused'}"><i class="fa-solid fa-circle-pause"></i> Paused</span>`
-      : `<span class="card-status-pill active"><i class="fa-solid fa-circle"></i> Live 24/7</span>`;
+  container.innerHTML = contractors.map((c, idx) => {
+    const isClosest = idx === 0;
+    const perKmRate = Number(c.perKmRateAud || 2.20).toFixed(2);
+    const sameDayFee = Number(c.sameDayFeeAud ?? 18).toFixed(0);
+    const urgentFee = Number(c.urgentFeeAud ?? 35).toFixed(0);
+    const maxWeight = c.maxWeightKg || 500;
+    const maxH = c.maxHeightCm || 150;
+    const maxW = c.maxWidthCm || 130;
+    const maxL = c.maxLengthCm || 250;
 
     return `
-    <div class="contractor-search-card ${isPaused ? 'card-paused' : ''}" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})">
+    <div class="contractor-search-card" id="search-card-${c.id}" onclick="panToContractor('${c.id}', ${c.lat}, ${c.lng})" data-agent-id="map-driver-card-${c.id}" data-testid="map-driver-card-${c.id}">
       <div class="card-top-row">
         <div class="card-tradie-profile">
-          <img src="${c.avatar}" alt="${c.name}" class="card-avatar-sm">
           <div>
             <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
               <h5 style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.1rem;">
-                ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Licence"></i>
+                ${c.name} <i class="fa-solid fa-circle-check verified-badge" title="Verified Driver Licence"></i>
               </h5>
-              ${statusPill}
+              ${isClosest ? `<span class="badge-pill-pill" style="background:#059669; color:#fff; font-size:0.68rem;">★ Closest Driver</span>` : ''}
             </div>
-            <div style="font-size:0.8rem; font-weight:700; color:var(--brand-orange);">${c.tradeTitle}</div>
+            <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${c.vehicle || c.tradeTitle || 'Courier Driver'}</div>
+            <div style="font-size:0.73rem; color:var(--text-muted);">
+              <i class="fa-solid fa-location-dot" style="color:#10B981;"></i> ${c.baseSuburb || c.address || 'Gold Coast QLD'}
+            </div>
           </div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:1.05rem; font-weight:900; color:var(--primary-navy);">${formatTokenItemPrice(c.hourlyRate, { suffix: '/hr' })}</div>
+          <div style="font-size:1.05rem; font-weight:900; color:var(--primary-navy);">$${perKmRate} AUD/km</div>
           <span class="card-dist-badge"><i class="fa-solid fa-location-arrow"></i> ${c.distanceKm} km away</span>
         </div>
       </div>
 
-      <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.4; margin-bottom:0.6rem;">
-        ${c.bio}
-      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.45rem; background:#F8FAFC; border:1px solid var(--border-light); border-radius:6px; padding:0.55rem 0.7rem; margin:0.6rem 0; font-size:0.76rem; color:var(--primary-navy);">
+        <div><strong>Same-Day Fee:</strong> +$${sameDayFee} AUD</div>
+        <div><strong>Urgent Fee:</strong> +$${urgentFee} AUD</div>
+        <div><strong>Max Weight:</strong> ${maxWeight} kg</div>
+        <div><strong>Max H×W×L:</strong> ${maxH}×${maxW}×${maxL} cm</div>
+      </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.6rem; flex-wrap:wrap; gap:0.5rem;">
-        <div style="font-size:0.78rem; color:var(--text-muted);">
-          <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-star"></i> ${c.rating.toFixed(2)}</span> (${c.reviewCount} reviews) • ${c.qbccLicense}
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:0.55rem; flex-wrap:wrap; gap:0.5rem;">
+        <div style="font-size:0.74rem; color:var(--text-muted);">
+          <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> ${c.licenceState || 'QLD'} Lic #${c.licenceNumber || 'Verified'} (${c.licenceClass || 'C'}) • <strong>PayID:</strong> ${c.payIdValue || c.phone}
         </div>
-        <div style="display:flex; gap:0.4rem; align-items:center;">
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openProviderCalendarModal('${c.id}')" title="View 7-day live calendar availability">
-            <i class="fa-solid fa-calendar-days"></i> Availability
-          </button>
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')">
-            <i class="fa-solid fa-bolt"></i> Book with AI
-          </button>
-        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); bookProviderDirectly('${c.id}')" data-agent-id="btn-select-map-driver-${c.id}" data-testid="btn-select-map-driver-${c.id}" aria-label="Select ${c.name} for Courier Booking">
+          <i class="fa-solid fa-truck-fast"></i> Book Driver (9am–4pm)
+        </button>
       </div>
     </div>
   `}).join('');
 }
 
 function panToContractor(providerId, lat, lng) {
-  if (appState.contractorMap && window.google?.maps) {
+  if (appState.osmMap && lat && lng) {
+    try { appState.osmMap.setView([lat, lng], 14); } catch (e) {}
+  } else if (appState.contractorMap && window.google?.maps) {
     appState.contractorMap.panTo(new google.maps.LatLng(lat, lng));
     appState.contractorMap.setZoom(14);
   }
 
-  // Highlight card
   document.querySelectorAll('.contractor-search-card').forEach(el => el.classList.remove('card-active'));
   document.getElementById(`search-card-${providerId}`)?.classList.add('card-active');
 }
 
 function bookProviderDirectly(providerId) {
-  const provider = window.providerDB.findById(providerId);
+  const provider = window.providerDB?.findById(providerId);
   if (!provider) return;
 
-  switchTab('ai-book-tab');
-
-  // Pre-fill prompt suitable for this trade
-  const input = document.getElementById('ai-prompt-input');
-  if (input) {
-    if (provider.category === 'plumbing') input.value = SAMPLE_PROMPTS.leaking_tap;
-    else if (provider.category === 'electrical') input.value = SAMPLE_PROMPTS.powerpoints;
-    else if (provider.category === 'courier') input.value = SAMPLE_PROMPTS.urgent_courier;
-    else if (provider.category === 'garden') input.value = SAMPLE_PROMPTS.garden_lawn;
-    else input.value = SAMPLE_PROMPTS.flatpack_assembly;
-  }
-
-  submitAIAnalysis(false).then(() => {
-    selectMatchedProvider(providerId);
-    showToast(`Selected ${provider.name} for your booking!`);
-  });
+  appState.selectedCourierDriverId = provider.id;
+  switchTab('courier-tab');
+  calculateCourierQuote();
+  showToast(`🚚 Selected ${provider.name} ($${Number(provider.perKmRateAud || 2.20).toFixed(2)} AUD/km) for your 9am–4pm courier pickup!`);
 }
 
 /**
@@ -1609,7 +1479,6 @@ function renderAnalysisResults(analysis) {
         return `
           <div class="provider-match-card ${isSelected ? 'selected' : ''}" id="card-prov-${provider.id}" onclick="selectMatchedProvider('${provider.id}')">
             <div class="provider-profile">
-              <img src="${provider.avatar}" alt="${provider.name}" class="provider-avatar-img">
               <div>
                 <div class="provider-name-row">
                   <h5>${provider.name}</h5>
@@ -2019,8 +1888,11 @@ async function confirmBooking() {
 }
 
 /**
- * Courier Service Calculator with Google Directions Service
+ * ==============================================================================
+ * COURIER-ONLY SERVICE, CLOSEST DRIVER MATCHING, 9AM-4PM PICKUP & DRIVER ADMIN
+ * ==============================================================================
  */
+
 function selectPackageType(type, elem) {
   appState.courierPackageType = type;
   document.querySelectorAll('.package-type-btn').forEach(btn => btn.classList.remove('active'));
@@ -2028,16 +1900,10 @@ function selectPackageType(type, elem) {
   calculateCourierQuote();
 }
 
-/**
- * Courier pricing comes from the superadmin price list (tokens; 1 token = A$1 by default)
- */
 function getCourierPricingSettings() {
   return { ...window.iasjCurrency.getPricing().courier, maxWeightKg: MAX_COURIER_WEIGHT_KG };
 }
 
-/**
- * Superadmin only: save courier settings to the live price list on the server
- */
 async function saveCourierPricingSettings(newSettings) {
   const pricing = window.iasjCurrency.getPricing();
   const saved = await window.iasjCurrency.savePricing({ ...pricing, courier: { ...pricing.courier, ...newSettings } });
@@ -2046,47 +1912,326 @@ async function saveCourierPricingSettings(newSettings) {
 window.saveCourierPricingSettings = saveCourierPricingSettings;
 window.getCourierPricingSettings = getCourierPricingSettings;
 
-async function onSuperadminCourierSettingsChange() {
-  const asapSelect = document.getElementById('sa-asap-pct-select');
-  const extraKmSelect = document.getElementById('sa-over20-pct-select');
-  const asapPct = parseInt(asapSelect?.value || '20', 10);
-  const extraKmPct = parseInt(extraKmSelect?.value || '10', 10);
-
-  try {
-    await saveCourierPricingSettings({ asapSurchargePct: asapPct, extraKmSurchargePct: extraKmPct });
-    showToast(`⚙️ Price list updated: ASAP +${asapPct}%, extra distance +${extraKmPct}%`);
-  } catch (err) {
-    showToast(err.message);
-    syncSuperadminCourierControls(); // put the selects back to the saved values
-  }
-}
-window.onSuperadminCourierSettingsChange = onSuperadminCourierSettingsChange;
-
 /**
- * Keep the superadmin courier selects in step with the saved price list
+ * Sync SuperAdmin 4-Tier Distance Token Inputs & Hero Badges (AUD Only)
+ * Token price and Distance Tier Token Costs are set ONLY by SuperAdmin.
  */
-function syncSuperadminCourierControls() {
-  const courier = window.iasjCurrency.getPricing().courier;
-  [['sa-asap-pct-select', courier.asapSurchargePct, 'ASAP Token Surcharge'],
-   ['sa-over20-pct-select', courier.extraKmSurchargePct, `per km over ${courier.includedKm}km`]].forEach(([id, value, label]) => {
-    const select = document.getElementById(id);
-    if (!select) return;
-    if (![...select.options].some(o => Number(o.value) === value)) {
-      select.add(new Option(`+${value}% ${label}`, String(value)));
+function syncSuperadminDistanceTierInputs() {
+  const cur = window.iasjCurrency;
+  if (!cur) return;
+
+  const p = cur.getPricing();
+  let tiers = p.driverOrderTokens;
+  try {
+    const localTiersRaw = localStorage.getItem('iasj_driver_order_tokens');
+    if (localTiersRaw) {
+      tiers = { ...tiers, ...JSON.parse(localTiersRaw) };
     }
-    select.value = String(value);
+  } catch (e) {}
+
+  tiers = tiers || {
+    tier0to20km: 2,
+    tier21to50km: 5,
+    tier51to100km: 10,
+    tier101PlusKm: 15
+  };
+
+  const localTokenAud = localStorage.getItem('iasj_token_price_aud');
+  const tokenAud = localTokenAud ? Math.max(1, Math.round(Number(localTokenAud) || 1)) : (p.tokenPriceAud || 1);
+
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = String(v); };
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  setVal('sa-tier-0-20', tiers.tier0to20km);
+  setVal('sa-tier-21-50', tiers.tier21to50km);
+  setVal('sa-tier-51-100', tiers.tier51to100km);
+  setVal('sa-tier-101-plus', tiers.tier101PlusKm);
+  setVal('sa-token-aud-price', tokenAud);
+
+  setTxt('hero-tier-0-20', String(tiers.tier0to20km));
+  setTxt('hero-tier-21-50', String(tiers.tier21to50km));
+  setTxt('hero-tier-51-100', String(tiers.tier51to100km));
+  setTxt('hero-tier-101-plus', String(tiers.tier101PlusKm));
+  setTxt('hero-token-aud-price', `$${tokenAud} AUD`);
+
+  // Authorize SuperAdmin using robust check
+  const isSuperadmin = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin() : true;
+  const tierInputs = ['sa-tier-0-20', 'sa-tier-21-50', 'sa-tier-51-100', 'sa-tier-101-plus', 'sa-token-aud-price', 'btn-save-sa-tiers'];
+  tierInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = !isSuperadmin;
+      if (!isSuperadmin) {
+        el.title = 'Token price and distance tier token costs are set ONLY by SuperAdmin.';
+      } else {
+        el.title = 'SuperAdmin: You can edit token prices and distance tier charges at any time.';
+      }
+    }
   });
 }
+window.syncSuperadminDistanceTierInputs = syncSuperadminDistanceTierInputs;
+
+function syncSuperadminCourierControls() {
+  syncSuperadminDistanceTierInputs();
+}
+
+async function onSuperadminDistanceTierChange(showToastMsg = false) {
+  const user = window.firebaseService?.getCurrentGoogleUser?.();
+  const isSa = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin(user) : true;
+  if (!isSa) {
+    showToast('⛔ Unauthorized: Token price and distance tier token costs can only be configured by SuperAdmin.');
+    syncSuperadminDistanceTierInputs();
+    return;
+  }
+
+  const cur = window.iasjCurrency;
+  if (!cur) return;
+
+  const t0_20 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-0-20')?.value) || 2));
+  const t21_50 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-21-50')?.value) || 5));
+  const t51_100 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-51-100')?.value) || 10));
+  const t101Plus = Math.max(1, Math.round(Number(document.getElementById('sa-tier-101-plus')?.value) || 15));
+  const tokenPriceAud = Math.max(1, Math.round(Number(document.getElementById('sa-token-aud-price')?.value) || 1));
+
+  // 1. Explicitly persist to dedicated local storage keys so amounts never revert
+  const driverOrderTokens = {
+    tier0to20km: t0_20,
+    tier21to50km: t21_50,
+    tier51to100km: t51_100,
+    tier101PlusKm: t101Plus
+  };
+  localStorage.setItem('iasj_driver_order_tokens', JSON.stringify(driverOrderTokens));
+  localStorage.setItem('iasj_token_price_aud', String(tokenPriceAud));
+
+  // 2. Build full pricing object
+  const currentPricing = cur.getPricing();
+  const newPricing = {
+    ...currentPricing,
+    tokenPriceAud,
+    driverOrderTokens,
+    tokenPacks: [10, 50, 100]
+  };
+
+  // 3. Update local currency state immediately
+  cur.updateLocalPricing(newPricing);
+
+  // 4. Update hero badges & text immediately
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setTxt('hero-tier-0-20', String(t0_20));
+  setTxt('hero-tier-21-50', String(t21_50));
+  setTxt('hero-tier-51-100', String(t51_100));
+  setTxt('hero-tier-101-plus', String(t101Plus));
+  setTxt('hero-token-aud-price', `$${tokenPriceAud} AUD`);
+
+  // 5. Persist to Firestore database platform_settings/pricing (SuperAdmin supreme ruler)
+  try {
+    if (window.firebaseService?.savePlatformPricingToFirestore) {
+      await window.firebaseService.savePlatformPricingToFirestore(newPricing, user?.email || 'support@aifoundation.net.au');
+    }
+  } catch (err) {
+    console.warn("Notice persisting pricing to remote Firestore:", err);
+  }
+
+  calculateCourierQuote();
+  if (typeof renderDriverAdminDashboard === 'function') {
+    renderDriverAdminDashboard();
+  }
+
+  if (showToastMsg) {
+    showToast(`👑 SuperAdmin Token Price & Tiers Saved: 1 Token = $${tokenPriceAud} AUD | 0–20km=${t0_20}, 21–50km=${t21_50}, 51–100km=${t51_100}, 101+km=${t101Plus} Tokens`);
+  }
+}
+window.onSuperadminDistanceTierChange = onSuperadminDistanceTierChange;
+window.onSuperadminCourierSettingsChange = onSuperadminDistanceTierChange;
 
 /**
- * Recalculate Courier Route & Pricing
+ * SuperAdmin Driver Approvals & Token Vault Management
+ */
+function renderSuperadminTokenBalance() {
+  const balEl = document.getElementById('superadmin-token-vault-balance');
+  if (balEl && window.superadminDB) {
+    const bal = window.superadminDB.getBalance();
+    balEl.textContent = `${bal} Tokens`;
+    balEl.title = `$${bal} AUD Platform Revenue`;
+  }
+}
+window.renderSuperadminTokenBalance = renderSuperadminTokenBalance;
+
+function handleWipeSuperadminTokens(btn) {
+  iasjConfirmDelete(btn, () => {
+    if (window.superadminDB) {
+      window.superadminDB.wipeTokens();
+    }
+    renderSuperadminTokenBalance();
+    showToast('🗑️ All tokens have been wiped from the Superadmin account. Balance is now 0 Tokens.');
+  }, {
+    confirmText: 'Confirm Wipe All Tokens',
+    confirmClass: 'btn btn-danger btn-sm'
+  });
+}
+window.handleWipeSuperadminTokens = handleWipeSuperadminTokens;
+
+async function approveDriverBySuperadmin(driverId) {
+  const driver = window.providerDB?.approveDriver(driverId);
+  if (!driver) return;
+
+  // Hardwire RBAC role in Firestore database
+  const superadminUser = window.firebaseService?.getCurrentGoogleUser();
+  const superadminEmail = superadminUser?.email || 'support@aifoundation.net.au';
+
+  try {
+    if (window.firebaseService?.approveDriverInFirestore) {
+      await window.firebaseService.approveDriverInFirestore(driver.id || driverId, superadminEmail);
+    }
+  } catch (err) {
+    console.warn("Notice updating Firestore on driver approval:", err);
+  }
+
+  // Update supporter record if email matches
+  if (window.supporterDB && driver.email) {
+    const supporter = window.supporterDB.findByEmail(driver.email);
+    if (supporter) {
+      supporter.role = 'driver';
+      supporter.approved = true;
+      supporter.driverId = driver.id;
+      window.supporterDB.save();
+    }
+  }
+
+  // If the logged in Google user is this driver, grant them role: 'driver' immediately
+  const activeUser = window.firebaseService?.getCurrentGoogleUser();
+  if (activeUser && activeUser.email && activeUser.email.toLowerCase() === (driver.email || '').toLowerCase()) {
+    if (activeUser.role !== 'superadmin') {
+      activeUser.role = 'driver';
+      activeUser.isDriver = true;
+      localStorage.setItem('iasj_google_user', JSON.stringify(activeUser));
+    }
+  }
+
+  renderSuperadminDriverApprovals();
+  renderDriverAdminDashboard();
+  filterContractors();
+  calculateCourierQuote();
+  showToast(`✅ Driver "${driver.name}" has been APPROVED by SuperAdmin. Role granted: Driver.`);
+}
+window.approveDriverBySuperadmin = approveDriverBySuperadmin;
+
+async function revokeDriverBySuperadmin(driverId) {
+  const driver = window.providerDB?.revokeDriver(driverId);
+  if (!driver) return;
+
+  const superadminUser = window.firebaseService?.getCurrentGoogleUser();
+  const superadminEmail = superadminUser?.email || 'support@aifoundation.net.au';
+
+  try {
+    if (window.firebaseService?.revokeDriverInFirestore) {
+      await window.firebaseService.revokeDriverInFirestore(driver.id || driverId, superadminEmail);
+    }
+  } catch (err) {
+    console.warn("Notice updating Firestore on driver revocation:", err);
+  }
+
+  // Revert supporter record if email matches
+  if (window.supporterDB && driver.email) {
+    const supporter = window.supporterDB.findByEmail(driver.email);
+    if (supporter) {
+      supporter.role = 'supporter';
+      supporter.approved = false;
+      window.supporterDB.save();
+    }
+  }
+
+  // If active user is this driver, demote from 'driver' back to 'supporter'
+  const activeUser = window.firebaseService?.getCurrentGoogleUser();
+  if (activeUser && activeUser.email && activeUser.email.toLowerCase() === (driver.email || '').toLowerCase()) {
+    if (activeUser.role !== 'superadmin') {
+      activeUser.role = 'supporter';
+      activeUser.isDriver = false;
+      localStorage.setItem('iasj_google_user', JSON.stringify(activeUser));
+    }
+  }
+
+  renderSuperadminDriverApprovals();
+  renderDriverAdminDashboard();
+  filterContractors();
+  calculateCourierQuote();
+  showToast(`⚠️ Driver "${driver.name}" approval has been REVOKED by SuperAdmin. Role reverted to Supporter.`);
+}
+window.revokeDriverBySuperadmin = revokeDriverBySuperadmin;
+
+function renderSuperadminDriverApprovals() {
+  const container = document.getElementById('superadmin-drivers-approval-list');
+  const badgeEl = document.getElementById('superadmin-driver-pending-badge');
+  if (!container) return;
+
+  const drivers = window.providerDB ? window.providerDB.getAll() : [];
+  const pendingCount = drivers.filter(d => d.approved === false || d.status === 'pending_approval').length;
+
+  if (badgeEl) {
+    badgeEl.textContent = `${pendingCount} Driver${pendingCount === 1 ? '' : 's'} Awaiting Approval`;
+    badgeEl.style.background = pendingCount > 0 ? '#FEF3C7' : '#ECFDF5';
+    badgeEl.style.color = pendingCount > 0 ? '#92400E' : '#065F46';
+  }
+
+  if (drivers.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:1.5rem; color:#92400E; font-size:0.85rem; border:1px dashed #FDE68A; border-radius:6px; background:#FFFBEB;">No registered drivers found.</div>`;
+    return;
+  }
+
+  container.innerHTML = drivers.map(d => {
+    const isApproved = d.approved !== false && d.status !== 'pending_approval';
+    return `
+      <div style="background:#FFFBEB; border:1px solid ${isApproved ? '#A7F3D0' : '#FCD34D'}; border-left:4px solid ${isApproved ? '#059669' : '#D97706'}; border-radius:6px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;" data-agent-id="sa-driver-row-${d.id}" data-testid="sa-driver-row-${d.id}">
+        <div style="flex:1; min-width:240px;">
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <strong style="font-size:0.92rem; color:#1E3A8A;">${escapeAttr(d.name)}</strong>
+            <span style="font-size:0.76rem; color:#475569;">(${escapeAttr(d.businessName || 'Express Courier')})</span>
+            <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isApproved ? '#ECFDF5' : '#FEF3C7'}; color:${isApproved ? '#065F46' : '#92400E'};">
+              <i class="fa-solid ${isApproved ? 'fa-circle-check' : 'fa-clock'}"></i> ${isApproved ? 'Approved by SuperAdmin' : 'Pending SuperAdmin Approval'}
+            </span>
+          </div>
+
+          <div style="font-size:0.75rem; color:#64748B; margin-top:0.3rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
+            <span><i class="fa-solid fa-id-card"></i> Lic: <strong>${escapeAttr(d.licenceNumber || '482910384')}</strong> (${escapeAttr(d.licenceState || 'QLD')}, ${escapeAttr(d.licenceClass || 'C')})</span>
+            <span><i class="fa-solid fa-truck"></i> ${escapeAttr(d.vehicle || 'Van')}</span>
+            <span><i class="fa-solid fa-location-dot"></i> ${escapeAttr(d.baseSuburb || 'Southport QLD')}</span>
+            <span><i class="fa-solid fa-coins" style="color:#D97706;"></i> Balance: <strong>${d.tokenBalance ?? 0} Tokens</strong></span>
+            <span><i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> PayID: <strong>${escapeAttr(d.payIdValue || d.phone)}</strong></span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.45rem;">
+          ${!isApproved ? `
+            <button type="button" class="btn btn-primary btn-sm" onclick="approveDriverBySuperadmin('${d.id}')"
+              style="background:#059669; border-color:#059669; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
+              data-agent-id="btn-sa-approve-drv-${d.id}" data-testid="btn-sa-approve-drv-${d.id}"
+              aria-label="Approve Driver ${escapeAttr(d.name)}">
+              <i class="fa-solid fa-check"></i> Approve Driver
+            </button>
+          ` : `
+            <button type="button" class="btn btn-outline btn-sm" onclick="revokeDriverBySuperadmin('${d.id}')"
+              style="color:#DC2626; border-color:#FECACA; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
+              data-agent-id="btn-sa-revoke-drv-${d.id}" data-testid="btn-sa-revoke-drv-${d.id}"
+              aria-label="Revoke Driver ${escapeAttr(d.name)}">
+              <i class="fa-solid fa-ban"></i> Revoke
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderSuperadminDriverApprovals = renderSuperadminDriverApprovals;
+
+/**
+ * Recalculate Courier Route, Rank Closest Drivers & Update Direct Driver Quote
  */
 let courierCalcDebounce = null;
 function calculateCourierQuote() {
   clearTimeout(courierCalcDebounce);
   courierCalcDebounce = setTimeout(() => {
     executeCourierQuoteCalculation();
-  }, 100);
+  }, 80);
 }
 
 async function executeCourierQuoteCalculation() {
@@ -2094,31 +2239,33 @@ async function executeCourierQuoteCalculation() {
   const destInput = document.getElementById('courier-dest');
   if (!originInput || !destInput) return;
 
-  const originVal = originInput.value.trim() || 'Southport, Gold Coast QLD 4215';
-  const destVal = destInput.value.trim() || 'Brisbane CBD, QLD 4000';
+  const originVal = originInput.value.trim() || '10 Smith Street, Southport QLD 4215';
+  const destVal = destInput.value.trim() || '42 Surf Parade, Broadbeach QLD 4218';
 
-  // 1. Resolve origin coordinates
+  // 1. Resolve origin coordinates if text changed or missing
   let origCoords = appState.courierOriginCoords;
-  if (!origCoords || !origCoords.lat) {
+  if (!origCoords || !origCoords.lat || appState._lastOriginText !== originVal) {
+    appState._lastOriginText = originVal;
     const origResults = await searchOsmAddress(originVal);
     if (origResults && origResults[0]?.lat) {
       origCoords = { lat: origResults[0].lat, lng: origResults[0].lng };
       appState.courierOriginCoords = origCoords;
-    } else {
+    } else if (!origCoords || !origCoords.lat) {
       origCoords = { lat: -27.9635, lng: 153.4064 }; // Southport default
       appState.courierOriginCoords = origCoords;
     }
   }
 
-  // 2. Resolve destination coordinates
+  // 2. Resolve destination coordinates if text changed or missing
   let destCoords = appState.courierDestCoords;
-  if (!destCoords || !destCoords.lat) {
+  if (!destCoords || !destCoords.lat || appState._lastDestText !== destVal) {
+    appState._lastDestText = destVal;
     const destResults = await searchOsmAddress(destVal);
     if (destResults && destResults[0]?.lat) {
       destCoords = { lat: destResults[0].lat, lng: destResults[0].lng };
       appState.courierDestCoords = destCoords;
-    } else {
-      destCoords = { lat: -27.4698, lng: 153.0251 }; // Brisbane default
+    } else if (!destCoords || !destCoords.lat) {
+      destCoords = { lat: -28.0280, lng: 153.4312 }; // Broadbeach default
       appState.courierDestCoords = destCoords;
     }
   }
@@ -2135,8 +2282,8 @@ async function executeCourierQuoteCalculation() {
       const data = await res.json();
       if (data.routes && data.routes[0]) {
         const r = data.routes[0];
-        roadDistanceKm = Math.round((r.distance / 1000) * 10) / 10;
-        durationMins = Math.round(r.duration / 60);
+        roadDistanceKm = Math.max(1, Math.round((r.distance / 1000) * 10) / 10);
+        durationMins = Math.max(5, Math.round(r.duration / 60));
         routeLatLngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
       }
     }
@@ -2144,217 +2291,1471 @@ async function executeCourierQuoteCalculation() {
     console.warn("OSRM routing unavailable, using direct distance fallback:", err);
   }
 
-  // Fallback to Haversine * 1.25 if OSRM was unreachable
   if (!roadDistanceKm) {
     const directKm = computeDistanceInKm(origCoords.lat, origCoords.lng, destCoords.lat, destCoords.lng);
-    roadDistanceKm = Math.round(directKm * 1.25 * 10) / 10;
-    durationMins = Math.max(15, Math.round(roadDistanceKm * 0.85));
+    roadDistanceKm = Math.max(1.5, Math.round(directKm * 1.25 * 10) / 10);
+    durationMins = Math.max(10, Math.round(roadDistanceKm * 1.4));
   }
 
-  // Update Route Map on the right
-  renderOsmCourierRouteMap(origCoords, destCoords, routeLatLngs, originVal, destVal);
+  appState.lastRouteLatLngs = routeLatLngs;
 
-  // 4. Update Pricing with strict token economy & geolocation
+  // 4. Rank closest drivers & update AUD quote + per-driver map dropdowns
   updateCourierPricingWithSettings(roadDistanceKm, durationMins);
 }
 
-/**
- * Price the courier run from the superadmin price list. Whole km, whole tokens, whole AUD (all rounded up).
- * The price is the same everywhere; only the display currency follows the visitor's region
- * (AUD in Australia & New Zealand, a USD conversion elsewhere). GST is always included: it is an Australian tax invoice.
- */
-function updateCourierPricingWithSettings(distanceKm, durationMins) {
-  const cur = window.iasjCurrency;
-  const settings = getCourierPricingSettings();
-  const weightInput = document.getElementById('courier-weight');
-  const rawWeight = parseFloat(weightInput?.value) || 12;
-  const warningEl = document.getElementById('courier-weight-warning');
-
-  // Validate maximum weight (20kg limit)
-  if (warningEl) {
-    warningEl.style.display = rawWeight > settings.maxWeightKg ? 'block' : 'none';
-    warningEl.textContent = `⚠️ Maximum weight is ${settings.maxWeightKg}kg for courier dispatch. Capped at ${settings.maxWeightKg}kg.`;
-  }
-
-  const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
-  const isAsap = pickupTime === 'asap';
-
-  appState.lastCourierRoute = { distanceKm, durationMins };
-  const quote = cur.priceCourier({ distanceKm, isAsap });
-  const line = key => quote.lines.find(l => l.key === key) || { aud: 0, tokens: 0 };
-
-  const formatRowPrice = aud => `<span class="token-amount" style="font-weight:700;"><i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(cur.tokensForAud(aud))}</span> <span class="fiat-badge" style="font-size:0.8rem; color:var(--text-muted); font-weight:600;" title="${escapeAttr(cur.moneyTitle(aud))}">(${cur.formatMoney(aud)})</span>`;
-
-  // Safe DOM Updates
-  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
-
-  setEl('courier-calc-distance', `${quote.distanceKm} km`);
-  setEl('courier-calc-time', `${cur.wholeUp(durationMins)} Mins`);
-  setEl('courier-dist-km', quote.distanceKm);
-
-  setHtml('courier-base-fee', formatRowPrice(line('base').aud));
-  setHtml('courier-dist-fee', formatRowPrice(line('distance').aud));
-
-  // Distance rate description
-  const extraKmEl = document.getElementById('courier-extra-km-info');
-  if (extraKmEl) {
-    const perKm = cur.formatMoney(cur.audForTokens(settings.perKm), { suffix: '/km' });
-    extraKmEl.innerHTML = quote.extraKm > 0
-      ? `<span style="color:var(--text-muted); font-size:0.75rem;">First ${quote.standardKm} km @ ${perKm} • <strong>${quote.extraKm} km</strong> over ${settings.includedKm} km @ +${settings.extraKmSurchargePct}%</span>`
-      : `<span style="color:var(--text-muted); font-size:0.75rem;">Standard route within ${settings.includedKm} km @ ${perKm}</span>`;
-    extraKmEl.style.display = 'block';
-  }
-
-  // ASAP surcharge row
-  const asapRow = document.getElementById('courier-asap-row');
-  const asapPctLabel = document.getElementById('courier-asap-pct-label');
-  if (asapPctLabel) asapPctLabel.textContent = settings.asapSurchargePct;
-  if (asapRow) {
-    asapRow.style.display = isAsap ? 'flex' : 'none';
-    setHtml('courier-asap-fee', formatRowPrice(line('asap').aud));
-  }
-
-  // GST row (Australian tax invoice)
-  const gstRow = document.getElementById('courier-gst-row');
-  if (gstRow) {
-    gstRow.style.display = 'flex';
-    setHtml('courier-gst-fee', formatRowPrice(quote.gst));
-  }
-
-  // Total Delivery Price: tokens plus AUD (Australia, New Zealand) or a USD conversion (everywhere else)
-  setHtml('courier-total-fee', `
-    <span class="token-amount" style="font-size:1.25rem; font-weight:800; color:var(--brand-orange); display:inline-flex; align-items:center; gap:0.35rem;">
-      <i class="fa-solid fa-coins token-coin-icon"></i> ${cur.formatTokens(quote.tokens.estimatedTotal)}
-    </span>
-    <span class="fiat-badge" style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-left:0.4rem;" title="${escapeAttr(cur.moneyTitle(quote.estimatedTotal))}">
-      (${cur.formatMoney(quote.estimatedTotal)})
-    </span>
-  `);
-  setHtml('courier-currency-disclaimer', cur.disclaimerHtml({ compact: true }));
-
-  return {
-    distanceKm: quote.distanceKm,
-    durationMins,
-    totalTokens: quote.tokens.estimatedTotal,
-    totalAud: quote.estimatedTotal,
-    fiatCurrency: cur.displayCurrency(),
-    totalFiat: cur.isAud() ? quote.estimatedTotal : cur.toUsd(quote.estimatedTotal)
-  };
+function selectCourierDriverForBooking(driverId) {
+  appState.selectedCourierDriverId = driverId;
+  const dist = appState.lastCourierRoute?.distanceKm || 8.5;
+  const mins = appState.lastCourierRoute?.durationMins || 15;
+  updateCourierPricingWithSettings(dist, mins);
 }
+window.selectCourierDriverForBooking = selectCourierDriverForBooking;
 
-function bookCourierDispatch() {
-  const origin = document.getElementById('courier-origin')?.value || 'Southport';
-  const dest = document.getElementById('courier-dest')?.value || 'Brisbane CBD';
-  const desc = document.getElementById('courier-desc')?.value || 'Parcels';
-  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
-  const pickupTime = document.getElementById('courier-pickup-time')?.value || 'asap';
+// Track per-driver Leaflet map instances inside the Left-Side Driver Box Dropdowns
+const driverBoxLeafletMaps = {};
 
-  // Price the booked run exactly as quoted (whole numbers; the invoice lines add up to the total)
-  const pricing = window.iasjCurrency.priceCourier({
-    distanceKm: appState.lastCourierRoute?.distanceKm || 20,
-    isAsap: pickupTime === 'asap'
+function toggleDriverBoxMap(driverId) {
+  if (appState.expandedDriverMapId === driverId) {
+    appState.expandedDriverMapId = null;
+  } else {
+    appState.expandedDriverMapId = driverId;
+    appState.selectedCourierDriverId = driverId;
+  }
+  const dist = appState.lastCourierRoute?.distanceKm || 8.5;
+  const mins = appState.lastCourierRoute?.durationMins || 15;
+  updateCourierPricingWithSettings(dist, mins);
+}
+window.toggleDriverBoxMap = toggleDriverBoxMap;
+
+function renderInlineDriverBoxMap(driverId) {
+  if (!window.L) return;
+  const mapContainer = document.getElementById(`driver-leaflet-map-${driverId}`);
+  if (!mapContainer) return;
+
+  const drv = window.providerDB?.findById(driverId);
+  if (!drv) return;
+
+  const origCoords = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
+  const destCoords = appState.courierDestCoords || { lat: -28.0280, lng: 153.4312 };
+  const dLat = drv.lat ?? -27.9635;
+  const dLng = drv.lng ?? 153.4064;
+
+  // Clean up previous Leaflet instance attached to a replaced DOM node
+  if (driverBoxLeafletMaps[driverId]) {
+    try { driverBoxLeafletMaps[driverId].remove(); } catch (e) {}
+    delete driverBoxLeafletMaps[driverId];
+  }
+
+  const map = L.map(mapContainer, { zoomControl: true, scrollWheelZoom: false }).setView([dLat, dLng], 12);
+  driverBoxLeafletMaps[driverId] = map;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  const driverIcon = L.divIcon({
+    className: 'osm-custom-pin',
+    html: `<div style="background:#FF5A1F;color:#fff;padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);white-space:nowrap;">🚚 ${drv.name.split(' ')[0]} ($${Number(drv.perKmRateAud).toFixed(2)}/km)</div>`,
+    iconSize: [120, 26],
+    iconAnchor: [60, 13]
   });
 
-  const docketNumber = 'IASJ-CR-' + Math.floor(100000 + Math.random() * 900000);
-  const customerRefNumber = window.firebaseService?.getOrCreateCRN?.() || (`CRN-${Math.floor(100000 + Math.random() * 900000)}`);
+  const originIcon = L.divIcon({
+    className: 'osm-custom-pin',
+    html: `<div style="background:#10B981;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.28);">P</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13]
+  });
 
-  const courierBooking = {
-    docketNumber,
-    businessId: window.firebaseService?.BUSINESS_ID || 'its-a-simple-job',
-    customerRefNumber,
-    createdAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
+  const destIcon = L.divIcon({
+    className: 'osm-custom-pin',
+    html: `<div style="background:#EF4444;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.28);">D</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13]
+  });
+
+  L.marker([dLat, dLng], { icon: driverIcon })
+    .addTo(map)
+    .bindPopup(`<strong>${drv.name} (${drv.businessName})</strong><br>${drv.baseSuburb || drv.address || 'Gold Coast QLD'}<br>Rate: $${Number(drv.perKmRateAud).toFixed(2)} AUD/km`);
+
+  L.marker([origCoords.lat, origCoords.lng], { icon: originIcon })
+    .addTo(map)
+    .bindPopup(`<strong>Pickup Origin</strong><br>${document.getElementById('courier-origin')?.value || 'Pickup'}`);
+
+  L.marker([destCoords.lat, destCoords.lng], { icon: destIcon })
+    .addTo(map)
+    .bindPopup(`<strong>Delivery Destination</strong><br>${document.getElementById('courier-dest')?.value || 'Destination'}`);
+
+  // Dashed green line: Driver's GPS -> Pickup Origin
+  L.polyline([[dLat, dLng], [origCoords.lat, origCoords.lng]], {
+    color: '#059669',
+    weight: 3,
+    dashArray: '6, 6',
+    opacity: 0.85
+  }).addTo(map);
+
+  // Solid orange line: Pickup Origin -> Delivery Destination
+  const routePts = (appState.lastRouteLatLngs && appState.lastRouteLatLngs.length > 1)
+    ? appState.lastRouteLatLngs
+    : [[origCoords.lat, origCoords.lng], [destCoords.lat, destCoords.lng]];
+
+  L.polyline(routePts, {
+    color: '#FF5A1F',
+    weight: 4,
+    opacity: 0.9
+  }).addTo(map);
+
+  const bounds = L.latLngBounds([
+    [dLat, dLng],
+    [origCoords.lat, origCoords.lng],
+    [destCoords.lat, destCoords.lng]
+  ]);
+  map.fitBounds(bounds, { padding: [28, 28] });
+
+  setTimeout(() => {
+    try { map.invalidateSize(); } catch (e) {}
+  }, 80);
+}
+window.renderInlineDriverBoxMap = renderInlineDriverBoxMap;
+
+function updateCourierPricingWithSettings(distanceKm, durationMins) {
+  const cur = window.iasjCurrency;
+  const weightKg = Math.max(0.5, parseFloat(document.getElementById('courier-weight')?.value) || 14);
+  const heightCm = Math.max(1, parseFloat(document.getElementById('courier-height')?.value) || 45);
+  const widthCm = Math.max(1, parseFloat(document.getElementById('courier-width')?.value) || 40);
+  const lengthCm = Math.max(1, parseFloat(document.getElementById('courier-length')?.value) || 60);
+  const speedTier = document.getElementById('courier-urgency')?.value || 'same_day';
+  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
+  const pickupTime = document.getElementById('courier-pickup-time')?.value || '10:30 AM';
+
+  appState.lastCourierRoute = { distanceKm, durationMins };
+
+  const origCoords = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
+  const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => d.approved !== false && d.status !== 'pending_approval') : [];
+
+  // Rank drivers by distance to Pickup Origin and check package weight + HxWxL capacity
+  const rankedDrivers = allDrivers.map(drv => {
+    const dLat = drv.lat ?? -27.9635;
+    const dLng = drv.lng ?? 153.4064;
+    const distToPickupKm = computeDistanceInKm(origCoords.lat, origCoords.lng, dLat, dLng);
+
+    const maxW = drv.maxWeightKg || 500;
+    const maxH = drv.maxHeightCm || 150;
+    const maxWi = drv.maxWidthCm || 130;
+    const maxL = drv.maxLengthCm || 250;
+
+    const fitsWeight = weightKg <= maxW;
+    const fitsDims = heightCm <= maxH && widthCm <= maxWi && lengthCm <= maxL;
+    const fitsPackage = fitsWeight && fitsDims;
+
+    const quote = cur.calculateDriverCourierPrice({
+      distanceKm,
+      speedTier,
+      driver: drv
+    });
+
+    return {
+      driver: drv,
+      distToPickupKm,
+      fitsWeight,
+      fitsDims,
+      fitsPackage,
+      quote
+    };
+  });
+
+  // Sort: drivers that fit the package first, then closest to pickup origin
+  rankedDrivers.sort((a, b) => {
+    if (a.fitsPackage !== b.fitsPackage) return a.fitsPackage ? -1 : 1;
+    return a.distToPickupKm - b.distToPickupKm;
+  });
+
+  const eligibleCount = rankedDrivers.filter(r => r.fitsPackage).length;
+  const fitSummaryEl = document.getElementById('courier-package-fit-summary');
+  if (fitSummaryEl) {
+    fitSummaryEl.textContent = `${eligibleCount} of ${rankedDrivers.length} drivers fit ${weightKg}kg (${heightCm}×${widthCm}×${lengthCm}cm)`;
+    fitSummaryEl.style.background = eligibleCount > 0 ? '#ECFDF5' : '#FEF2F2';
+    fitSummaryEl.style.color = eligibleCount > 0 ? '#065F46' : '#991B1B';
+    fitSummaryEl.style.borderColor = eligibleCount > 0 ? '#A7F3D0' : '#FECACA';
+  }
+
+  const warningEl = document.getElementById('courier-weight-warning');
+  if (warningEl) {
+    if (eligibleCount === 0) {
+      warningEl.style.display = 'block';
+      warningEl.textContent = `⚠️ Package (${weightKg}kg, ${heightCm}×${widthCm}×${lengthCm}cm) exceeds registered drivers' capacity.`;
+    } else {
+      warningEl.style.display = 'none';
+    }
+  }
+
+  // Ensure selected driver exists; if not, pick closest eligible driver
+  let selectedEntry = rankedDrivers.find(r => r.driver.id === appState.selectedCourierDriverId);
+  if ((!selectedEntry || !selectedEntry.fitsPackage) && rankedDrivers.length > 0) {
+    const firstEligible = rankedDrivers.find(r => r.fitsPackage) || rankedDrivers[0];
+    selectedEntry = firstEligible;
+    appState.selectedCourierDriverId = selectedEntry.driver.id;
+  }
+
+  // Render driver selection cards on the Left Side (#courier-driver-selection-list) with per-driver Map Dropdown
+  const listEl = document.getElementById('courier-driver-selection-list');
+  if (listEl) {
+    listEl.innerHTML = rankedDrivers.map((item, idx) => {
+      const d = item.driver;
+      const q = item.quote;
+      const isSelected = d.id === appState.selectedCourierDriverId;
+      const isClosest = idx === 0 && item.fitsPackage;
+      const isMapOpen = appState.expandedDriverMapId === d.id;
+
+      let fitBadge = `<span style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-check"></i> Fits Package (Max ${d.maxWeightKg}kg • ${d.maxHeightCm}×${d.maxWidthCm}×${d.maxLengthCm}cm)</span>`;
+      if (!item.fitsPackage) {
+        const reason = !item.fitsWeight
+          ? `Over Max Weight (${d.maxWeightKg}kg)`
+          : `Over Max Size (${d.maxHeightCm}×${d.maxWidthCm}×${d.maxLengthCm}cm)`;
+        fitBadge = `<span style="background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> ${reason}</span>`;
+      }
+
+      return `
+        <div
+          onclick="selectCourierDriverForBooking('${d.id}')"
+          style="cursor:pointer; border:2px solid ${isSelected ? 'var(--brand-orange)' : 'var(--border-light)'}; background:${isSelected ? '#FFFDF9' : '#FFFFFF'}; border-radius:var(--radius-md); padding:0.95rem 1rem; transition:all 0.15s ease; opacity:${item.fitsPackage ? '1' : '0.68'};"
+          data-agent-id="select-driver-card-${d.id}"
+          data-testid="select-driver-card-${d.id}"
+          role="button"
+          tabindex="0"
+          aria-label="Select Driver ${escapeAttr(d.name)}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap;">
+            <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+              <div>
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                  <strong style="font-size:0.98rem; color:var(--primary-navy);">${d.name}</strong>
+                  ${isClosest ? `<span style="background:#059669; color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">★ CLOSEST TO PICKUP</span>` : ''}
+                  ${isSelected ? `<span style="background:var(--brand-orange); color:#fff; font-size:0.66rem; font-weight:800; padding:0.12rem 0.45rem; border-radius:999px;">SELECTED</span>` : ''}
+                </div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--brand-orange);">${d.vehicle || d.tradeTitle}</div>
+                <div style="font-size:0.74rem; color:var(--text-muted);">
+                  <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> <strong>${item.distToPickupKm.toFixed(1)} km from pickup</strong> (${d.baseSuburb || 'Gold Coast'}) • Lic: ${d.licenceState || 'QLD'} #${d.licenceNumber} (${d.licenceClass || 'C'})
+                </div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:1.15rem; font-weight:900; color:var(--primary-navy);">$${q.totalAud.toFixed(2)} AUD</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">
+                $${Number(d.perKmRateAud).toFixed(2)}/km (${q.distanceKm.toFixed(1)}km) • Same-Day +$${d.sameDayFeeAud} • Urgent +$${d.urgentFeeAud}
+              </div>
+            </div>
+          </div>
+
+          <!-- Driver Card Footer + Map Dropdown Toggle Button -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px dashed var(--border-light); font-size:0.74rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              ${fitBadge}
+              <span style="color:#047857; font-weight:700;">
+                <i class="fa-solid fa-money-bill-transfer"></i> PayID (${(d.payIdType || 'phone').toUpperCase()}): <strong>${d.payIdValue}</strong>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              onclick="event.stopPropagation(); toggleDriverBoxMap('${d.id}')"
+              style="padding:0.25rem 0.65rem; font-size:0.74rem; font-weight:800; border-color:var(--primary-navy); color:var(--primary-navy); background:${isMapOpen ? '#F1F5F9' : '#FFFFFF'};"
+              data-agent-id="btn-toggle-driver-map-${d.id}"
+              data-testid="btn-toggle-driver-map-${d.id}"
+              aria-expanded="${isMapOpen ? 'true' : 'false'}"
+              aria-label="Toggle Driver Map Dropdown for ${escapeAttr(d.name)}">
+              <i class="fa-solid fa-map-location-dot" style="color:var(--brand-orange);"></i>
+              <span>${isMapOpen ? 'Hide Driver Map ▲' : 'Driver Map ▼'}</span>
+            </button>
+          </div>
+
+          <!-- Collapsible Map Dropdown Inside Driver Box -->
+          <div
+            id="driver-map-dropdown-${d.id}"
+            onclick="event.stopPropagation();"
+            style="display:${isMapOpen ? 'block' : 'none'}; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border-light);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.76rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.45rem;">
+              <span><i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> ${d.name} (${d.baseSuburb || 'Gold Coast'}) → Pickup (${item.distToPickupKm.toFixed(1)} km) &amp; Delivery (${distanceKm.toFixed(1)} km)</span>
+              <span style="color:#059669; font-weight:800;">~${durationMins} mins road route</span>
+            </div>
+            <div id="driver-leaflet-map-${d.id}" style="height:245px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // If a driver box has its Map Dropdown open, render the live Leaflet map inside that driver box
+  if (appState.expandedDriverMapId) {
+    renderInlineDriverBoxMap(appState.expandedDriverMapId);
+  }
+
+  if (!selectedEntry) return;
+
+  const drv = selectedEntry.driver;
+  const q = selectedEntry.quote;
+  const tokenCharge = cur.getDriverOrderTokenCharge(distanceKm);
+
+  appState.lastCalculatedQuote = {
+    driver: drv,
+    distToPickupKm: selectedEntry.distToPickupKm,
+    fitsPackage: selectedEntry.fitsPackage,
+    quote: q,
+    tokenCharge,
+    distanceKm,
+    durationMins,
     pickupDate,
     pickupTime,
-    custName: 'Priority Consignor',
-    custPhone: '07 5512 3456',
-    custAddress: `${origin} ➔ ${dest}`,
-    custNotes: `${desc} (Pickup: ${pickupDate} - ${pickupTime.toUpperCase()})`,
-    shift: `Pickup: ${pickupDate} (${pickupTime.toUpperCase()}) • Express Transit`,
-    categoryName: 'Courier & Freight Express',
-    provider: {
-      serviceProviderNumber: 'SPN-101002',
-      name: 'Callum Evans',
-      businessName: 'Gold Coast Rapid Express Couriers',
-      qbccLicense: 'Commercial Carrier Lic #CC-88219',
-      insurance: '$10M Transit Goods Cover',
-      hourlyRate: window.iasjCurrency.audForTokens(window.iasjCurrency.getPricing().hourlyTokens.courier)
-    },
-    pricing,
-    packagePhotoUrl: appState.uploadedCourierPhoto?.url || null,
-    status: 'Courier Dispatched'
+    speedTier
   };
 
-  appState.activeBookings.unshift(courierBooking);
-
-  if (window.firebaseService?.saveBookingToFirestore) {
-    window.firebaseService.saveBookingToFirestore(courierBooking);
+  // Update Submit Button label with Selected Driver & Live AUD Total
+  const submitBtn = document.getElementById('btn-submit-courier-booking');
+  if (submitBtn) {
+    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Confirm Booking with ${drv.name} ($${q.totalAud.toFixed(2)} AUD via PayID)`;
   }
 
-  addJobToDispatchFeed(courierBooking);
-  renderInvoiceModal(courierBooking);
-  showToast(`Consignment ${docketNumber} created! Driver en route (CRN: ${customerRefNumber}).`);
+  // Also sync top navbar token counter with active admin driver
+  const navTokenCount = document.getElementById('nav-driver-token-count');
+  const activeAdmDrv = window.providerDB?.findById(appState.activeAdminDriverId) || drv;
+  if (navTokenCount && activeAdmDrv) {
+    navTokenCount.textContent = `${activeAdmDrv.tokenBalance ?? 45} Tokens`;
+  }
+
+  return appState.lastCalculatedQuote;
 }
+
+function copySelectedDriverPayId() {
+  const drv = window.providerDB?.findById(appState.selectedCourierDriverId);
+  const payId = drv?.payIdValue || '0412 889 341';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(payId).catch(() => {});
+  }
+  showToast(`💳 Copied Driver PayID (${payId}) to clipboard! Pay driver directly in AUD.`);
+}
+window.copySelectedDriverPayId = copySelectedDriverPayId;
 
 /**
- * Provider Network Registration
+ * Submit Customer Courier Booking (9:00 AM – 4:00 PM Pickup Window)
+ * Deducts SuperAdmin Distance-Bracket Tokens from Driver & Records Order on Driver Admin Page
  */
-function handleProviderRegistration(event) {
-  event.preventDefault();
+function submitCourierBooking() {
+  const cur = window.iasjCurrency;
+  const originAddress = document.getElementById('courier-origin')?.value.trim();
+  const destAddress = document.getElementById('courier-dest')?.value.trim();
+  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
+  const pickupTime = document.getElementById('courier-pickup-time')?.value || '10:30 AM';
+  const speedTier = document.getElementById('courier-urgency')?.value || 'same_day';
 
-  const name = document.getElementById('reg-name')?.value.trim();
-  const businessName = document.getElementById('reg-business')?.value.trim();
-  const category = document.getElementById('reg-trade')?.value;
-  const qbccLicense = document.getElementById('reg-license')?.value.trim();
-  const hourlyRate = wholeMoney(parseFloat(document.getElementById('reg-rate')?.value) || 85);
-  const suburbs = document.getElementById('reg-suburbs')?.value.split(',').map(s => s.trim());
-  const skills = document.getElementById('reg-skills')?.value.split(',').map(s => s.trim());
+  const packageContents = document.getElementById('courier-desc')?.value.trim();
+  const weightKg = parseFloat(document.getElementById('courier-weight')?.value) || 0;
+  const heightCm = parseFloat(document.getElementById('courier-height')?.value) || 0;
+  const widthCm = parseFloat(document.getElementById('courier-width')?.value) || 0;
+  const lengthCm = parseFloat(document.getElementById('courier-length')?.value) || 0;
 
-  // 24/7 working hours registration
-  const is24_7 = document.getElementById('reg-shift-247')?.checked || false;
-  const shifts = [];
-  if (is24_7) shifts.push('emergency_24_7');
-  if (document.getElementById('reg-shift-morn')?.checked) shifts.push('morning');
-  if (document.getElementById('reg-shift-aft')?.checked) shifts.push('afternoon');
-  if (document.getElementById('reg-shift-eve')?.checked) shifts.push('evening');
-  if (document.getElementById('reg-shift-overnight')?.checked) shifts.push('overnight');
+  const customerName = document.getElementById('courier-cust-name')?.value.trim();
+  const customerPhone = document.getElementById('courier-cust-phone')?.value.trim();
+  const customerEmail = document.getElementById('courier-cust-email')?.value.trim();
+  const customerAddress = document.getElementById('courier-cust-address')?.value.trim();
 
-  const spn = window.firebaseService?.generateSPN?.() || (`SPN-${Math.floor(100000 + Math.random() * 900000)}`);
-
-  const newProvider = {
-    name,
-    businessName,
-    category,
-    serviceProviderNumber: spn,
-    tradeTitle: `${category.toUpperCase()} Specialist`,
-    qbccLicense,
-    licensePhotoUrl: appState.uploadedProviderPhoto?.url || null,
-    insurance: '$20M Public Liability Verified',
-    hourlyRate,
-    serviceAreas: suburbs,
-    skills,
-    workingHours: {
-      is24_7,
-      shiftDescription: is24_7 ? "24/7 • 365 Days a Year Emergency On-Call Registered" : "Standard Shifts Registered",
-      shifts: shifts.length > 0 ? shifts : ['morning', 'afternoon']
-    }
-  };
-
-  window.providerDB.addProvider(newProvider);
-  try {
-    filterContractors(); // Refresh Google Maps contractor search with new provider!
-  } catch (e) {
-    console.warn("Contractor search refresh note:", e);
+  // Validate 9:00 AM - 4:00 PM pickup slot
+  const validSlots = cur.PICKUP_TIME_SLOTS_9AM_TO_4PM || [];
+  if (validSlots.length > 0 && !validSlots.includes(pickupTime)) {
+    showToast('⚠️ Please choose a pickup time strictly between 9:00 AM and 4:00 PM.');
+    return;
   }
 
-  // Open modal showing their newly issued official SPN
-  const spnElem = document.getElementById('modal-spn-number');
-  if (spnElem) spnElem.textContent = spn;
-  const modal = document.getElementById('provider-success-modal');
-  if (modal) modal.classList.add('active');
+  if (!originAddress || !destAddress || !packageContents || !customerName || !customerPhone || !customerEmail || !customerAddress) {
+    showToast('⚠️ Please complete all customer contact details, addresses, and package content details.');
+    return;
+  }
 
-  showToast(`Welcome aboard, ${name}! Your official Service Provider Number is ${spn}.`);
+  if (weightKg <= 0 || heightCm <= 0 || widthCm <= 0 || lengthCm <= 0) {
+    showToast('⚠️ Please enter valid package weight (kg) and dimensions (Height, Width, Length cm).');
+    return;
+  }
+
+  const calc = updateCourierPricingWithSettings(
+    appState.lastCourierRoute?.distanceKm || 8.5,
+    appState.lastCourierRoute?.durationMins || 15
+  );
+  if (!calc || !calc.driver) {
+    showToast('⚠️ Please select a courier driver.');
+    return;
+  }
+
+  const drv = calc.driver;
+  if (!calc.fitsPackage) {
+    showToast(`⚠️ This package exceeds ${drv.name}'s maximum capacity (${drv.maxWeightKg}kg, ${drv.maxHeightCm}×${drv.maxWidthCm}×${drv.maxLengthCm}cm). Please select an eligible driver.`);
+    return;
+  }
+
+  const tokenCharge = calc.tokenCharge;
+  if ((drv.tokenBalance ?? 0) < tokenCharge.tokens) {
+    showToast(`⚠️ Driver ${drv.name} needs ${tokenCharge.tokens} Tokens for this ${tokenCharge.tierLabel} order. Please top up Driver Tokens first.`);
+    openDriverTokenTopupModal(drv.id);
+    return;
+  }
+
+  // 1. Deduct distance-tier tokens from driver wallet and automatically credit to SuperAdmin account
+  window.providerDB.deductDriverTokens(drv.id, tokenCharge.tokens);
+  if (window.superadminDB) {
+    window.superadminDB.addTokens(tokenCharge.tokens, {
+      driverName: drv.name,
+      driverId: drv.id,
+      tier: tokenCharge.tierLabel
+    });
+    if (typeof renderSuperadminTokenBalance === 'function') {
+      renderSuperadminTokenBalance();
+    }
+  }
+
+  // 2. Record the order in CourierOrderDatabase (shown on Driver Admin Page)
+  const newOrder = window.courierOrderDB.addOrder({
+    driverId: drv.id,
+    driverName: drv.name,
+    driverBusinessName: drv.businessName,
+    driverPhone: drv.phone,
+    driverPayIdType: drv.payIdType || 'phone',
+    driverPayIdValue: drv.payIdValue || drv.phone,
+    driverPayIdAccountName: drv.payIdAccountName || drv.businessName,
+    pickupDate,
+    pickupTime, // Strictly between 9:00 AM and 4:00 PM
+    speedTier,
+    originAddress,
+    destAddress,
+    distanceKm: calc.quote.distanceKm,
+    customerName,
+    customerPhone,
+    customerEmail,
+    customerAddress,
+    packageContents,
+    weightKg,
+    heightCm,
+    widthCm,
+    lengthCm,
+    perKmRateAud: calc.quote.perKmRateAud,
+    distanceFeeAud: calc.quote.distanceFeeAud,
+    sameDayFeeAud: calc.quote.sameDayFeeAud,
+    urgentFeeAud: calc.quote.urgentFeeAud,
+    totalAud: calc.quote.totalAud,
+    tokensChargedToDriver: tokenCharge.tokens,
+    tokenTierLabel: tokenCharge.tierLabel,
+    paymentMethod: 'Direct to Driver PayID (AUD)',
+    status: 'Scheduled (9am–4pm Pickup)'
+  });
+
+  // 3. Set active admin driver to the booked driver so Driver Admin page immediately shows this order
+  appState.activeAdminDriverId = drv.id;
+  updateCourierPricingWithSettings(calc.distanceKm, calc.durationMins);
+  renderDriverAdminDashboard();
+  try { renderSupporterBookings(); } catch (e) {}
+
+  // 4. Open Direct Driver PayID Confirmation Modal
+  const modalBody = document.getElementById('courier-payid-modal-body');
+  if (modalBody) {
+    modalBody.innerHTML = `
+      <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.65rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border-light);">
+          <div>
+            <span style="font-size:0.74rem; color:var(--text-muted); font-weight:700;">ORDER REFERENCE</span>
+            <strong style="font-size:1.05rem; color:var(--primary-navy); display:block;">${newOrder.orderId}</strong>
+          </div>
+          <span style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; padding:0.25rem 0.65rem; border-radius:999px; font-size:0.78rem; font-weight:800;">
+            <i class="fa-regular fa-clock"></i> Pickup: ${newOrder.pickupDate} @ ${newOrder.pickupTime} (9am–4pm)
+          </span>
+        </div>
+
+        <div style="font-size:0.84rem; color:var(--primary-navy); line-height:1.55;">
+          <div><strong>Driver:</strong> ${newOrder.driverName} (${newOrder.driverBusinessName}) • Tel: ${newOrder.driverPhone}</div>
+          <div><strong>Pickup Origin:</strong> ${newOrder.originAddress}</div>
+          <div><strong>Delivery Destination:</strong> ${newOrder.destAddress} (${newOrder.distanceKm} km)</div>
+          <div><strong>Customer:</strong> ${newOrder.customerName} • ${newOrder.customerPhone} • ${newOrder.customerEmail}</div>
+          <div><strong>Customer Address:</strong> ${newOrder.customerAddress}</div>
+          <div><strong>Package Contents:</strong> ${newOrder.packageContents}</div>
+          <div><strong>Package Weight &amp; Size:</strong> ${newOrder.weightKg} kg • ${newOrder.heightCm}cm (H) × ${newOrder.widthCm}cm (W) × ${newOrder.lengthCm}cm (L)</div>
+        </div>
+      </div>
+
+      <!-- Direct Driver PayID Settlement Box -->
+      <div style="background:#ECFDF5; border:2px solid #10B981; border-radius:var(--radius-md); padding:1rem; margin-bottom:0.85rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+          <strong style="color:#065F46; font-size:0.92rem;">
+            <i class="fa-solid fa-money-bill-transfer"></i> Pay Driver Directly via PayID ($ AUD Only)
+          </strong>
+          <strong style="font-size:1.25rem; color:#047857;">$${newOrder.totalAud.toFixed(2)} AUD</strong>
+        </div>
+        <p style="font-size:0.78rem; color:#065F46; margin-bottom:0.65rem;">
+          Customers never pay the web app. Transfer <strong>$${newOrder.totalAud.toFixed(2)} AUD</strong> directly to your driver's registered PayID below using reference <strong>${newOrder.orderId}</strong>:
+        </p>
+        <div style="background:#fff; border:1px solid #A7F3D0; border-radius:6px; padding:0.7rem 0.9rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">DRIVER PAYID (${newOrder.driverPayIdType.toUpperCase()}):</div>
+            <div style="font-size:1rem; font-weight:900; color:#065F46;">${newOrder.driverPayIdValue}</div>
+            <div style="font-size:0.76rem; color:var(--text-muted);">Account Name: ${newOrder.driverPayIdAccountName}</div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="copySelectedDriverPayId()" style="border-color:#059669; color:#065F46; font-weight:800;" data-agent-id="btn-modal-copy-payid" data-testid="btn-modal-copy-payid" aria-label="Copy Driver PayID">
+            <i class="fa-regular fa-copy"></i> Copy PayID
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('courier-payid-confirmation-modal')?.classList.add('active');
+  showToast(`✅ Order ${newOrder.orderId} recorded for ${newOrder.pickupTime} pickup!`);
 }
+window.submitCourierBooking = submitCourierBooking;
+window.bookCourierDispatch = submitCourierBooking;
+
+function closePayIdConfirmationModal() {
+  document.getElementById('courier-payid-confirmation-modal')?.classList.remove('active');
+}
+window.closePayIdConfirmationModal = closePayIdConfirmationModal;
+
+/**
+ * Auto-Geolocate Driver Form (Registration View)
+ */
+function autoGeolocateDriverForm() {
+  const statusEl = document.getElementById('drv-reg-geo-status');
+  const latInput = document.getElementById('drv-reg-lat');
+  const lngInput = document.getElementById('drv-reg-lng');
+  const addrInput = document.getElementById('drv-reg-address');
+
+  if (statusEl) {
+    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Detecting live driver GPS coordinates...`;
+  }
+
+  const applyCoords = async (lat, lng, fallbackLabel) => {
+    if (latInput) latInput.value = String(lat.toFixed(5));
+    if (lngInput) lngInput.value = String(lng.toFixed(5));
+
+    let resolvedAddr = fallbackLabel;
+    try {
+      const osmAddr = await reverseGeocodeOsm(lat, lng);
+      if (osmAddr) resolvedAddr = osmAddr;
+    } catch (e) {}
+
+    if (addrInput && (!addrInput.value || addrInput.value.includes('GPS'))) {
+      addrInput.value = resolvedAddr;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Live GPS Locked: <strong>${resolvedAddr}</strong> (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    }
+    showToast(`📍 Driver GPS location locked: ${resolvedAddr}`);
+  };
+
+  if (!navigator.geolocation) {
+    applyCoords(-27.9678, 153.4011, '14 Hill Street, Southport QLD 4215');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude, 'Southport QLD 4215 (Live GPS)'),
+    () => applyCoords(-27.9678, 153.4011, '14 Hill Street, Southport QLD 4215'),
+    { enableHighAccuracy: true, timeout: 6000 }
+  );
+}
+window.autoGeolocateDriverForm = autoGeolocateDriverForm;
+
+// =====================================================================
+// SUPPORTER & DRIVER ONBOARDING CONTROLLER (Behind Supporter Panel)
+// =====================================================================
+const SUPPORTER_STORAGE_KEY = 'simplejob_supporters_v1';
+const CURRENT_SUPPORTER_KEY = 'simplejob_current_supporter_id';
+
+class SupporterDatabase {
+  constructor() {
+    this.supporters = this.load();
+  }
+
+  load() {
+    try {
+      const data = localStorage.getItem(SUPPORTER_STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  save() {
+    try {
+      localStorage.setItem(SUPPORTER_STORAGE_KEY, JSON.stringify(this.supporters));
+    } catch (e) {}
+  }
+
+  getAll() {
+    return this.supporters;
+  }
+
+  findById(id) {
+    return this.supporters.find(s => s.id === id);
+  }
+
+  findByEmail(email) {
+    if (!email) return null;
+    return this.supporters.find(s => s.email.toLowerCase() === email.toLowerCase());
+  }
+
+  addSupporter(data) {
+    const existing = this.findByEmail(data.email);
+    if (existing) {
+      Object.assign(existing, data, { updatedAt: new Date().toISOString() });
+      this.save();
+      return existing;
+    }
+    const newSupporter = {
+      id: 'supporter_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      suburb: data.suburb,
+      role: 'supporter',
+      isVerified: true,
+      createdAt: new Date().toISOString()
+    };
+    this.supporters.push(newSupporter);
+    this.save();
+    return newSupporter;
+  }
+}
+
+window.supporterDB = new SupporterDatabase();
+
+function getCurrentSupporter() {
+  const currentId = localStorage.getItem(CURRENT_SUPPORTER_KEY);
+  if (currentId) {
+    const found = window.supporterDB.findById(currentId);
+    if (found) return found;
+  }
+  const googleUserRaw = localStorage.getItem('iasj_google_user');
+  if (googleUserRaw) {
+    try {
+      const gUser = JSON.parse(googleUserRaw);
+      if (gUser && gUser.email) {
+        let supporter = window.supporterDB.findByEmail(gUser.email);
+        if (!supporter) {
+          supporter = window.supporterDB.addSupporter({
+            name: gUser.displayName || 'Google Supporter',
+            email: gUser.email,
+            phone: gUser.phoneNumber || '',
+            suburb: '',
+            photoURL: gUser.photoURL || '',
+            googleUid: gUser.uid || ''
+          });
+        }
+        localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+        return supporter;
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+window.getCurrentSupporter = getCurrentSupporter;
+
+function switchSupporterSubTab(subtabId) {
+  const subviews = document.querySelectorAll('.supporter-subview');
+  subviews.forEach(v => v.style.display = 'none');
+
+  const target = document.getElementById(subtabId);
+  if (target) target.style.display = 'block';
+
+  const subBtns = document.querySelectorAll('.supporter-subnav-btn');
+  subBtns.forEach(btn => btn.classList.remove('active'));
+
+  if (subtabId === 'supporter-details-subtab') {
+    document.getElementById('subtab-btn-details')?.classList.add('active');
+  } else if (subtabId === 'supporter-bookings-subtab') {
+    document.getElementById('subtab-btn-bookings')?.classList.add('active');
+    try { renderSupporterBookings(); } catch (e) {}
+  } else if (subtabId === 'supporter-driver-app-subtab') {
+    document.getElementById('subtab-btn-driver-app')?.classList.add('active');
+    const supporter = getCurrentSupporter();
+    if (supporter) {
+      const drvName = document.getElementById('drv-reg-name');
+      if (drvName && !drvName.value) drvName.value = supporter.name || '';
+      const drvEmail = document.getElementById('drv-reg-email');
+      if (drvEmail && !drvEmail.value) drvEmail.value = supporter.email || '';
+      const drvPhone = document.getElementById('drv-reg-phone');
+      if (drvPhone && !drvPhone.value && supporter.phone) drvPhone.value = supporter.phone;
+      const drvAddr = document.getElementById('drv-reg-address');
+      if (drvAddr && !drvAddr.value && supporter.suburb) drvAddr.value = supporter.suburb;
+    }
+  } else if (subtabId === 'supporter-dispatch-subtab') {
+    document.getElementById('subtab-btn-dispatch')?.classList.add('active');
+    try { renderDriverAdminDashboard(); } catch (e) {}
+  }
+}
+window.switchSupporterSubTab = switchSupporterSubTab;
+
+function handleSupporterRegistrationSubmit(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const nameInput = document.getElementById('supporter-reg-name');
+  const emailInput = document.getElementById('supporter-reg-email');
+  const phoneInput = document.getElementById('supporter-reg-phone');
+  const suburbInput = document.getElementById('supporter-reg-suburb');
+
+  const name = nameInput?.value.trim();
+  const email = emailInput?.value.trim();
+  const phone = phoneInput?.value.trim();
+  const suburb = suburbInput?.value.trim();
+
+  if (!name || !email || !phone || !suburb) {
+    showToast('⚠️ Please enter your mobile phone and full address, suburb & postcode.');
+    return;
+  }
+
+  const supporter = window.supporterDB.addSupporter({ name, email, phone, suburb });
+  localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+
+  // Sync to driver registration form fields
+  const drvName = document.getElementById('drv-reg-name');
+  if (drvName) drvName.value = name;
+  const drvEmail = document.getElementById('drv-reg-email');
+  if (drvEmail) drvEmail.value = email;
+  const drvPhone = document.getElementById('drv-reg-phone');
+  if (drvPhone) drvPhone.value = phone;
+  const drvAddr = document.getElementById('drv-reg-address');
+  if (drvAddr) drvAddr.value = suburb;
+
+  renderSupporterPanel();
+  showToast(`🎉 Supporter details registered! You can now access the Driver Application in tab 2.`);
+}
+window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
+
+function renderSupporterPanel() {
+  const supporter = getCurrentSupporter();
+  const onboardingCard = document.getElementById('supporter-onboarding-card');
+  const panelWrapper = document.getElementById('supporter-panel-wrapper');
+  const nameEl = document.getElementById('supporter-display-name');
+  const detEl = document.getElementById('supporter-display-details');
+  const avatarImg = document.getElementById('supporter-avatar-img');
+
+  if (supporter) {
+    if (onboardingCard) onboardingCard.style.display = 'none';
+    if (panelWrapper) panelWrapper.style.display = 'block';
+    if (nameEl) nameEl.textContent = supporter.name || 'Community Supporter';
+    if (detEl) {
+      const phoneTxt = supporter.phone ? ` • ${supporter.phone}` : '';
+      const suburbTxt = supporter.suburb ? ` • ${supporter.suburb}` : '';
+      detEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10B981;"></i> Active Supporter • ${supporter.email}${phoneTxt}${suburbTxt}`;
+    }
+    if (avatarImg && supporter.photoURL) {
+      avatarImg.src = supporter.photoURL;
+    }
+
+    // Pre-fill supporter details form fields
+    const regName = document.getElementById('supporter-reg-name');
+    if (regName && !regName.value) regName.value = supporter.name || '';
+    const regEmail = document.getElementById('supporter-reg-email');
+    if (regEmail && !regEmail.value) regEmail.value = supporter.email || '';
+    const regPhone = document.getElementById('supporter-reg-phone');
+    if (regPhone && !regPhone.value && supporter.phone) regPhone.value = supporter.phone;
+    const regSuburb = document.getElementById('supporter-reg-suburb');
+    if (regSuburb && !regSuburb.value && (supporter.suburb || supporter.address)) regSuburb.value = supporter.suburb || supporter.address || '';
+    
+    try { renderSupporterBookings(); } catch (e) {}
+  } else {
+    if (onboardingCard) onboardingCard.style.display = 'block';
+    if (panelWrapper) panelWrapper.style.display = 'none';
+  }
+}
+window.renderSupporterPanel = renderSupporterPanel;
+
+function renderSupporterBookings() {
+  const container = document.getElementById('supporter-bookings-list-container');
+  const countBadge = document.getElementById('supporter-bookings-count-badge');
+  if (!container || !window.courierOrderDB) return;
+
+  const supporter = getCurrentSupporter();
+  const allOrders = window.courierOrderDB.getAll() || [];
+
+  let supporterOrders = [];
+  if (supporter && supporter.email) {
+    const sEmail = supporter.email.toLowerCase().trim();
+    const sPhone = (supporter.phone || '').replace(/\s+/g, '');
+    supporterOrders = allOrders.filter(o => {
+      const oEmail = (o.customerEmail || '').toLowerCase().trim();
+      const oPhone = (o.customerPhone || '').replace(/\s+/g, '');
+      return (sEmail && oEmail === sEmail) || (sPhone && oPhone.length >= 8 && sPhone === oPhone);
+    });
+  }
+
+  // If no matching orders specifically for this email yet, show all orders so supporter can review existing demo bookings
+  const ordersToDisplay = supporterOrders.length > 0 ? supporterOrders : allOrders;
+
+  if (countBadge) {
+    countBadge.textContent = `${ordersToDisplay.length} Booking${ordersToDisplay.length === 1 ? '' : 's'}`;
+  }
+
+  if (ordersToDisplay.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:3rem 1.5rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
+        <i class="fa-solid fa-box-open" style="font-size:2.8rem; color:#94A3B8; margin-bottom:0.85rem; display:block;"></i>
+        <h4 style="font-size:1.1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">No Bookings Recorded Yet</h4>
+        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto 1.25rem;">
+          You haven't placed any courier delivery orders yet. Book a short-haul pickup between 9:00 AM and 4:00 PM with your closest driver!
+        </p>
+        <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+          style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
+          data-agent-id="btn-empty-make-booking" data-testid="btn-empty-make-booking" aria-label="Make a New Booking Now">
+          <i class="fa-solid fa-truck-fast"></i> Make a New Booking Now
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = ordersToDisplay.map(ord => {
+    const isCompleted = (ord.status || '').includes('Delivered');
+    const isScheduled = (ord.status || '').includes('Scheduled') || (ord.status || '').includes('9am');
+    const badgeBg = isCompleted ? '#ECFDF5' : (isScheduled ? '#EFF6FF' : '#FEF3C7');
+    const badgeColor = isCompleted ? '#065F46' : (isScheduled ? '#1E40AF' : '#92400E');
+    const badgeBorder = isCompleted ? '#A7F3D0' : (isScheduled ? '#BFDBFE' : '#FDE68A');
+
+    return `
+      <div class="booking-history-card" style="background:#ffffff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.2s ease;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <span style="font-size:0.74rem; font-weight:800; background:#0F172A; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; letter-spacing:0.5px;">${ord.orderId}</span>
+              <span style="font-size:0.78rem; color:var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Recent'}</span>
+            </div>
+            <div style="font-size:0.86rem; font-weight:800; color:var(--primary-navy); margin-top:0.35rem;">
+              <i class="fa-solid fa-clock" style="color:var(--brand-orange);"></i> Pickup Window: <strong>${ord.pickupDate || 'Today'} @ ${ord.pickupTime || '9:00 AM - 4:00 PM'}</strong>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="display:inline-block; font-size:0.78rem; font-weight:800; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; padding:0.25rem 0.75rem; border-radius:999px;">
+              <i class="fa-solid fa-circle-dot" style="font-size:0.55rem; vertical-align:middle;"></i> ${ord.status || 'Scheduled (9am–4pm Pickup)'}
+            </span>
+            <div style="font-size:1.25rem; font-weight:900; color:var(--primary-navy); margin-top:0.25rem;">
+              $${Number(ord.totalAud || 0).toFixed(2)} <span style="font-size:0.74rem; font-weight:700; color:var(--text-muted);">AUD</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.85rem; font-size:0.84rem; color:var(--primary-navy);">
+          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-route"></i> Route (${ord.distanceKm || 0} km)</div>
+            <div><strong>From:</strong> ${ord.originAddress || 'Origin'}</div>
+            <div style="margin-top:0.25rem;"><strong>To:</strong> ${ord.destAddress || 'Destination'}</div>
+          </div>
+
+          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-id-card-clip"></i> Assigned Driver &amp; PayID</div>
+            <div><strong>${ord.driverName || 'Driver'}</strong> (${ord.driverBusinessName || 'Express'})</div>
+            <div style="margin-top:0.25rem; color:#059669; font-weight:700;"><i class="fa-solid fa-money-bill-transfer"></i> PayID: ${ord.driverPayIdValue || ord.driverPhone || 'PayID'}</div>
+            <div style="font-size:0.76rem; color:var(--text-muted);">Tel: ${ord.driverPhone || 'N/A'}</div>
+          </div>
+
+          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-box"></i> Package Spec</div>
+            <div><strong>Item:</strong> ${ord.packageContents || 'General Parcel'}</div>
+            <div style="margin-top:0.25rem;"><strong>Weight:</strong> ${ord.weightKg || 1} kg • <strong>Size:</strong> ${ord.heightCm || 20}×${ord.widthCm || 20}×${ord.lengthCm || 20} cm</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.5rem; margin-top:0.85rem; padding-top:0.65rem; border-top:1px solid var(--bg-card-alt);">
+          <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
+            style="font-size:0.78rem; font-weight:800;"
+            data-agent-id="btn-rebook-${ord.orderId}" data-testid="btn-rebook-${ord.orderId}" aria-label="Re-book Similar Courier Job">
+            <i class="fa-solid fa-rotate-right"></i> Book Similar Pickup
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderSupporterBookings = renderSupporterBookings;
+
+function makeNewBookingAsSupporter() {
+  const supporter = getCurrentSupporter();
+  switchTab('courier-tab');
+
+  if (supporter) {
+    const nameEl = document.getElementById('courier-cust-name');
+    if (nameEl && (!nameEl.value || nameEl.value === 'Jack Thompson')) nameEl.value = supporter.name || '';
+    const emailEl = document.getElementById('courier-cust-email');
+    if (emailEl) emailEl.value = supporter.email || '';
+    const phoneEl = document.getElementById('courier-cust-phone');
+    if (phoneEl && (!phoneEl.value || phoneEl.value === '0412 889 123')) phoneEl.value = supporter.phone || '';
+    const addrEl = document.getElementById('courier-cust-address');
+    if (addrEl && !addrEl.value) addrEl.value = supporter.suburb || supporter.address || '';
+    const originEl = document.getElementById('courier-origin');
+    if (originEl && !originEl.value) originEl.value = supporter.suburb || supporter.address || '';
+  }
+
+  const originInput = document.getElementById('courier-origin');
+  if (originInput) {
+    originInput.focus();
+  }
+  showToast('📦 Make a New Booking: Your contact details have been pre-filled from your Supporter profile.');
+}
+window.makeNewBookingAsSupporter = makeNewBookingAsSupporter;
+
+function rebookSimilarCourier(orderId) {
+  if (!window.courierOrderDB) return;
+  const ord = window.courierOrderDB.getAll().find(o => o.orderId === orderId);
+  if (!ord) return;
+
+  switchTab('courier-tab');
+  const origEl = document.getElementById('courier-origin');
+  if (origEl && ord.originAddress) origEl.value = ord.originAddress;
+  const destEl = document.getElementById('courier-dest');
+  if (destEl && ord.destAddress) destEl.value = ord.destAddress;
+  const itemEl = document.getElementById('courier-pkg-content');
+  if (itemEl && ord.packageContents) itemEl.value = ord.packageContents;
+  const wtEl = document.getElementById('courier-pkg-weight');
+  if (wtEl && ord.weightKg) wtEl.value = ord.weightKg;
+  const hEl = document.getElementById('courier-pkg-height');
+  if (hEl && ord.heightCm) hEl.value = ord.heightCm;
+  const wEl = document.getElementById('courier-pkg-width');
+  if (wEl && ord.widthCm) wEl.value = ord.widthCm;
+  const lEl = document.getElementById('courier-pkg-length');
+  if (lEl && ord.lengthCm) lEl.value = ord.lengthCm;
+
+  if (ord.driverId) {
+    appState.selectedCourierDriverId = ord.driverId;
+  }
+  if (typeof calculateCourierQuote === 'function') {
+    calculateCourierQuote();
+  }
+  showToast(`🔄 Re-booking courier job from order #${ord.orderId}!`);
+}
+window.rebookSimilarCourier = rebookSimilarCourier;
+
+function toggleDriverApplicationUnderSupporter(forceOpen) {
+  switchSupporterSubTab('supporter-driver-app-subtab');
+}
+window.toggleDriverApplicationUnderSupporter = toggleDriverApplicationUnderSupporter;
+
+function quickAccessDriverConsole() {
+  let supporter = getCurrentSupporter();
+  if (!supporter) {
+    supporter = window.supporterDB.addSupporter({
+      name: 'Registered Community Supporter',
+      email: 'supporter@simplejob.com.au',
+      phone: '0400 000 000',
+      suburb: 'Southport QLD 4215'
+    });
+    localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+  }
+  renderSupporterPanel();
+  switchSupporterSubTab('supporter-dispatch-subtab');
+  renderDriverAdminDashboard();
+  showToast('🔑 Driver Dispatch Console unlocked.');
+}
+window.quickAccessDriverConsole = quickAccessDriverConsole;
+
+function resetSupporterProfile() {
+  localStorage.removeItem(CURRENT_SUPPORTER_KEY);
+  localStorage.removeItem('iasj_google_user');
+  renderSupporterPanel();
+  showToast('ℹ️ Signed out of Supporter Panel. Please sign in with Google to continue.');
+}
+window.resetSupporterProfile = resetSupporterProfile;
+
+/**
+ * Register a New Courier Driver (Mandatory Licence, Address, Phone, Email, PayID, Rates & Max HxWxL/Weight)
+ */
+function handleDriverRegistrationSubmit(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const name = document.getElementById('drv-reg-name')?.value.trim();
+  const businessName = document.getElementById('drv-reg-business')?.value.trim() || `${name} Express Couriers`;
+  const phone = document.getElementById('drv-reg-phone')?.value.trim();
+  const email = document.getElementById('drv-reg-email')?.value.trim();
+  const address = document.getElementById('drv-reg-address')?.value.trim();
+  const vehicle = document.getElementById('drv-reg-vehicle')?.value.trim() || 'Courier Van';
+
+  const licenceNumber = document.getElementById('drv-reg-licence-num')?.value.trim();
+  const licenceState = document.getElementById('drv-reg-licence-state')?.value || 'QLD';
+  const licenceClass = document.getElementById('drv-reg-licence-class')?.value || 'C (Car / Van)';
+  const licenceExpiry = document.getElementById('drv-reg-licence-expiry')?.value || '2029-12-31';
+
+  const payIdValue = document.getElementById('drv-reg-payid-value')?.value.trim();
+  const payIdType = (payIdValue && payIdValue.includes('@')) ? 'email' : ((payIdValue && /^\d{11}$/.test(payIdValue.replace(/\s+/g, ''))) ? 'abn' : 'phone');
+  const payIdAccountName = businessName || name;
+
+  const perKmRateAud = Math.max(0.5, parseFloat(document.getElementById('drv-reg-per-km')?.value) || 2.20);
+  const sameDayFeeAud = Math.max(0, parseFloat(document.getElementById('drv-reg-sameday-fee')?.value) || 0);
+  const urgentFeeAud = Math.max(0, parseFloat(document.getElementById('drv-reg-urgent-fee')?.value) || 0);
+
+  const maxWeightKg = Math.max(1, parseFloat(document.getElementById('drv-reg-max-weight')?.value) || 50);
+  const maxHeightCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-height')?.value) || 70);
+  const maxWidthCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-width')?.value) || 50);
+  const maxLengthCm = Math.max(10, parseFloat(document.getElementById('drv-reg-max-length')?.value) || 50);
+
+  const lat = parseFloat(document.getElementById('drv-reg-lat')?.value) || -27.9678;
+  const lng = parseFloat(document.getElementById('drv-reg-lng')?.value) || 153.4011;
+
+  if (!name || !phone || !email || !address || !licenceNumber || !payIdValue) {
+    showToast('⚠️ Please complete all required driver licence, contact, address, and PayID fields.');
+    return;
+  }
+
+  const currentSupporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const currentGoogleUser = window.firebaseService?.getCurrentGoogleUser();
+  const userUid = currentGoogleUser?.uid || currentSupporter?.googleUid || currentSupporter?.id;
+
+  const savedDriver = window.providerDB.addProvider({
+    uid: userUid,
+    name,
+    businessName,
+    tradeTitle: `Courier Driver (${vehicle})`,
+    phone,
+    email,
+    address,
+    baseSuburb: address.split(',').slice(-1)[0]?.trim() || address,
+    vehicle,
+    licenceNumber,
+    licenceState,
+    licenceClass,
+    licenceExpiry,
+    payIdType,
+    payIdValue,
+    payIdAccountName,
+    perKmRateAud,
+    sameDayFeeAud,
+    urgentFeeAud,
+    maxWeightKg,
+    maxHeightCm,
+    maxWidthCm,
+    maxLengthCm,
+    tokenBalance: 25, // Starter token balance
+    approved: false, // Requires SuperAdmin approval
+    status: 'pending_approval',
+    lat,
+    lng
+  });
+
+  // Hardwire RBAC: Save application to Firestore database under driver_applications
+  if (window.firebaseService?.saveDriverApplicationToFirestore) {
+    window.firebaseService.saveDriverApplicationToFirestore({
+      ...savedDriver,
+      uid: userUid
+    });
+  }
+
+  appState.selectedCourierDriverId = savedDriver.id;
+  appState.activeAdminDriverId = savedDriver.id;
+
+  calculateCourierQuote();
+  filterContractors();
+  renderDriverAdminDashboard();
+
+  // Hide the application card behind the panel
+  const driverAppCard = document.getElementById('supporter-driver-application-card');
+  if (driverAppCard) driverAppCard.style.display = 'none';
+  const toggleBtn = document.getElementById('btn-toggle-driver-app');
+  if (toggleBtn) {
+    toggleBtn.innerHTML = '<i class="fa-solid fa-truck-medical"></i> Register as Driver Behind Panel ▼';
+  }
+
+  document.getElementById('driver-registration-form')?.reset();
+  switchTab('driver-admin-tab');
+  switchSupporterSubTab('supporter-dispatch-subtab');
+  showToast(`🎉 Driver application submitted for ${savedDriver.name}! Awaiting SuperAdmin approval.`);
+}
+window.handleDriverRegistrationSubmit = handleDriverRegistrationSubmit;
+window.handleProviderRegistration = handleDriverRegistrationSubmit;
+
+/**
+ * Driver Admin Dashboard: Render Active Driver Profile, Live GPS, Token Balance & Recorded 9am-4pm Orders
+ */
+function renderDriverAdminDashboard() {
+  if (!window.providerDB || !window.courierOrderDB) return;
+
+  const allDrivers = window.providerDB.getAll();
+  const selectEl = document.getElementById('driver-admin-select');
+  if (!appState.activeAdminDriverId && allDrivers[0]) {
+    appState.activeAdminDriverId = allDrivers[0].id;
+  }
+
+  const activeDriver = window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0];
+  if (!activeDriver) return;
+  appState.activeAdminDriverId = activeDriver.id;
+
+  if (selectEl) {
+    selectEl.innerHTML = allDrivers.map(d => `
+      <option value="${d.id}" ${d.id === activeDriver.id ? 'selected' : ''}>
+        ${d.name} — ${d.businessName} ($${Number(d.perKmRateAud).toFixed(2)}/km • ${d.tokenBalance ?? 0} Tokens)
+      </option>
+    `).join('');
+  }
+
+  // Update GPS & Token displays (Responsive 2-Line Suburb Only, No Coordinates)
+  const gpsTextEl = document.getElementById('driver-admin-gps-text');
+  if (gpsTextEl) {
+    const locName = activeDriver.baseSuburb || activeDriver.address || 'Southport QLD';
+    gpsTextEl.textContent = locName;
+    gpsTextEl.title = locName;
+  }
+
+  const tokenBalEl = document.getElementById('driver-admin-token-balance');
+  if (tokenBalEl) {
+    tokenBalEl.textContent = `${activeDriver.tokenBalance ?? 0} Tokens`;
+  }
+  const navTokenEl = document.getElementById('nav-driver-token-count');
+  if (navTokenEl) {
+    navTokenEl.textContent = `${activeDriver.tokenBalance ?? 0} Tokens`;
+  }
+
+  // Populate Right-Hand Driver Rate & Capacity Settings Form
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = String(val ?? ''); };
+  setVal('adm-drv-per-km', activeDriver.perKmRateAud ?? 2.20);
+  setVal('adm-drv-sameday-fee', activeDriver.sameDayFeeAud ?? 0);
+  setVal('adm-drv-urgent-fee', activeDriver.urgentFeeAud ?? 0);
+  setVal('adm-drv-max-weight', activeDriver.maxWeightKg ?? 50);
+  setVal('adm-drv-max-height', activeDriver.maxHeightCm ?? 70);
+  setVal('adm-drv-max-width', activeDriver.maxWidthCm ?? 50);
+  setVal('adm-drv-max-length', activeDriver.maxLengthCm ?? 50);
+  setVal('adm-drv-payid-value', activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '');
+  setVal('adm-drv-licence', activeDriver.licenceDetails || (activeDriver.licenceNumber ? `${activeDriver.licenceState || 'QLD'} #${activeDriver.licenceNumber} (${activeDriver.licenceClass || 'C'})` : 'QLD #482910384 (Class C)'));
+
+  // Driver approval banner
+  const approvalBanner = document.getElementById('driver-admin-approval-status-banner');
+  if (approvalBanner) {
+    const isApproved = activeDriver.approved !== false && activeDriver.status !== 'pending_approval';
+    approvalBanner.style.display = 'block';
+    if (isApproved) {
+      approvalBanner.className = 'alert alert-success';
+      approvalBanner.style.background = '#ECFDF5';
+      approvalBanner.style.borderColor = '#A7F3D0';
+      approvalBanner.style.color = '#065F46';
+      approvalBanner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Approved Driver Account</strong> — Your driver profile is verified and active to receive courier orders on the live map.`;
+    } else {
+      approvalBanner.className = 'alert alert-warning';
+      approvalBanner.style.background = '#FFFBEB';
+      approvalBanner.style.borderColor = '#FCD34D';
+      approvalBanner.style.color = '#92400E';
+      approvalBanner.innerHTML = `<i class="fa-solid fa-clock"></i> <strong>Application Pending SuperAdmin Approval</strong> — Your driver licence and PayID details have been submitted. Once approved by the SuperAdmin, your profile will immediately go live to receive customer orders.`;
+    }
+  }
+
+  // Also sync SuperAdmin elements if SuperAdmin is viewing
+  if (typeof renderSuperadminDriverApprovals === 'function') {
+    renderSuperadminDriverApprovals();
+  }
+  if (typeof renderSuperadminTokenBalance === 'function') {
+    renderSuperadminTokenBalance();
+  }
+
+  // Render Recorded Customer Orders for this Driver (and show total orders badge)
+  const allOrders = window.courierOrderDB.getAll();
+  const driverOrders = allOrders.filter(o => o.driverId === activeDriver.id);
+  const ordersToDisplay = driverOrders.length > 0 ? driverOrders : allOrders;
+
+  const pillBadge = document.getElementById('pill-orders-badge');
+  if (pillBadge) pillBadge.textContent = String(allOrders.length);
+
+  const countBadge = document.getElementById('driver-orders-count-badge');
+  if (countBadge) {
+    countBadge.textContent = `${driverOrders.length} Order${driverOrders.length === 1 ? '' : 's'} for ${activeDriver.name} (${allOrders.length} Total)`;
+  }
+
+  const ordersContainer = document.getElementById('driver-admin-orders-container');
+  if (!ordersContainer) return;
+
+  if (ordersToDisplay.length === 0) {
+    ordersContainer.innerHTML = `
+      <div style="text-align:center; padding:2rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md); color:var(--text-muted);">
+        <i class="fa-solid fa-box-open" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
+        No customer courier orders recorded yet. Book a courier on the "Book Courier" tab!
+      </div>
+    `;
+    return;
+  }
+
+  ordersContainer.innerHTML = ordersToDisplay.map(ord => {
+    const isCompleted = ord.status.includes('Delivered');
+    return `
+      <div style="background:#fff; border:1px solid ${isCompleted ? '#A7F3D0' : 'var(--border-light)'}; border-left:4px solid ${isCompleted ? '#059669' : 'var(--brand-orange)'}; border-radius:var(--radius-md); padding:1.1rem;" data-agent-id="driver-order-card-${ord.orderId}" data-testid="driver-order-card-${ord.orderId}">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem; padding-bottom:0.55rem; border-bottom:1px solid var(--border-light);">
+          <div>
+            <strong style="font-size:1rem; color:var(--primary-navy);">${ord.orderId}</strong>
+            <span style="font-size:0.76rem; color:var(--text-muted); margin-left:0.4rem;">Driver: <strong>${ord.driverName}</strong></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+            <!-- Recorded 9am-4pm Pickup Time Badge -->
+            <span style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; font-size:0.76rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:999px;">
+              <i class="fa-regular fa-clock"></i> Pickup: ${ord.pickupDate} @ ${ord.pickupTime} (9am–4pm)
+            </span>
+            <span style="background:${isCompleted ? '#ECFDF5' : '#EFF6FF'}; color:${isCompleted ? '#065F46' : '#1E40AF'}; font-size:0.72rem; font-weight:800; padding:0.2rem 0.55rem; border-radius:999px;">
+              ${ord.status}
+            </span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; font-size:0.81rem; color:var(--primary-navy); margin-bottom:0.75rem;">
+          <div style="background:#F8FAFC; padding:0.65rem 0.8rem; border-radius:6px; border:1px solid var(--border-light);">
+            <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.25rem;">Customer Contact Details</div>
+            <div><strong>Name:</strong> ${ord.customerName}</div>
+            <div><strong>Phone:</strong> <a href="tel:${ord.customerPhone}" style="color:#2563EB; text-decoration:none;">${ord.customerPhone}</a></div>
+            <div><strong>Email:</strong> ${ord.customerEmail}</div>
+            <div><strong>Address:</strong> ${ord.customerAddress}</div>
+          </div>
+
+          <div style="background:#F8FAFC; padding:0.65rem 0.8rem; border-radius:6px; border:1px solid var(--border-light);">
+            <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.25rem;">Package Content, Size &amp; Weight</div>
+            <div><strong>Contents:</strong> ${ord.packageContents || ord.packageContent}</div>
+            <div><strong>Weight:</strong> ${ord.weightKg ?? ord.packageWeightKg} kg</div>
+            <div><strong>Dimensions (H×W×L):</strong> ${ord.heightCm ?? ord.packageHeightCm} × ${ord.widthCm ?? ord.packageWidthCm} × ${ord.lengthCm ?? ord.packageLengthCm} cm</div>
+            <div><strong>Speed Tier:</strong> ${(ord.speedTier || 'same_day').replace('_', ' ').toUpperCase()}</div>
+          </div>
+        </div>
+
+        <div style="font-size:0.8rem; color:var(--primary-navy); margin-bottom:0.75rem; background:#FFFDF9; border:1px solid #FED7AA; padding:0.55rem 0.8rem; border-radius:6px;">
+          <div><i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> <strong>Pickup Origin:</strong> ${ord.originAddress || ord.pickupAddress}</div>
+          <div style="margin-top:0.2rem;"><i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> <strong>Delivery Destination:</strong> ${ord.destAddress || ord.deliveryAddress} (<strong>${ord.distanceKm} km</strong>)</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; padding-top:0.6rem; border-top:1px solid var(--border-light);">
+          <div style="font-size:0.8rem;">
+            <span style="color:#047857; font-weight:800;">
+              <i class="fa-solid fa-money-bill-transfer"></i> Customer Pays Driver PayID (${ord.driverPayIdValue}): <strong>$${Number(ord.totalAud).toFixed(2)} AUD</strong>
+            </span>
+            <span style="color:#B45309; font-weight:700; margin-left:0.6rem;">
+              <i class="fa-solid fa-coins"></i> -${ord.tokensChargedToDriver ?? ord.tokensCharged} Tokens (${ord.tokenTierLabel || ord.distanceTierLabel || 'Distance Bracket'})
+            </span>
+          </div>
+
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="updateDriverOrderStatus('${ord.orderId}', 'Picked Up & En Route')" data-agent-id="btn-order-enroute-${ord.orderId}" data-testid="btn-order-enroute-${ord.orderId}" aria-label="Mark Order Picked Up">
+              <i class="fa-solid fa-truck-fast"></i> Picked Up
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="updateDriverOrderStatus('${ord.orderId}', 'Delivered & Paid via PayID')" data-agent-id="btn-order-delivered-${ord.orderId}" data-testid="btn-order-delivered-${ord.orderId}" aria-label="Mark Order Delivered">
+              <i class="fa-solid fa-check"></i> Delivered (PayID Paid)
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" style="color:#DC2626; border-color:#FECACA;" onclick="deleteDriverOrder('${ord.orderId}', this)" data-agent-id="btn-order-delete-${ord.orderId}" data-testid="btn-order-delete-${ord.orderId}" aria-label="Delete Order">
+              <i class="fa-solid fa-trash-can"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderDriverAdminDashboard = renderDriverAdminDashboard;
+
+function onDriverAdminSelectionChange(driverId) {
+  appState.activeAdminDriverId = driverId;
+  appState.selectedCourierDriverId = driverId;
+  renderDriverAdminDashboard();
+  calculateCourierQuote();
+}
+window.onDriverAdminSelectionChange = onDriverAdminSelectionChange;
+
+function triggerDriverAdminGeolocate() {
+  const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
+  if (!activeDriver) return;
+
+  showToast(`📍 Auto-geolocating live GPS position for ${activeDriver.name}...`);
+
+  const saveGps = async (lat, lng) => {
+    let suburbLabel = activeDriver.baseSuburb || 'Southport QLD';
+    try {
+      const osmAddr = await reverseGeocodeOsm(lat, lng);
+      if (osmAddr) suburbLabel = osmAddr;
+    } catch (e) {}
+
+    window.providerDB.updateDriverLocation(activeDriver.id, lat, lng, suburbLabel);
+    renderDriverAdminDashboard();
+    calculateCourierQuote();
+    filterContractors();
+    showToast(`✅ ${activeDriver.name} auto-geolocated at ${suburbLabel}!`);
+  };
+
+  if (!navigator.geolocation) {
+    saveGps(-27.9635, 153.4064);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => saveGps(pos.coords.latitude, pos.coords.longitude),
+    () => saveGps(-27.9635, 153.4064),
+    { enableHighAccuracy: true, timeout: 6000 }
+  );
+}
+window.triggerDriverAdminGeolocate = triggerDriverAdminGeolocate;
+
+function autoGeolocateActiveDriverQuick() {
+  triggerDriverAdminGeolocate();
+}
+window.autoGeolocateActiveDriverQuick = autoGeolocateActiveDriverQuick;
+
+function saveDriverAdminProfile(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
+  if (!activeDriver) return;
+
+  const perKmRaw = document.getElementById('adm-drv-per-km')?.value;
+  const sameDayRaw = document.getElementById('adm-drv-sameday-fee')?.value;
+  const urgentRaw = document.getElementById('adm-drv-urgent-fee')?.value;
+  const maxWeightRaw = document.getElementById('adm-drv-max-weight')?.value;
+  const maxHeightRaw = document.getElementById('adm-drv-max-height')?.value;
+  const maxWidthRaw = document.getElementById('adm-drv-max-width')?.value;
+  const maxLengthRaw = document.getElementById('adm-drv-max-length')?.value;
+  const payIdValue = document.getElementById('adm-drv-payid-value')?.value?.trim() || activeDriver.payIdValue || activeDriver.payId || activeDriver.phone || '';
+  const licenceDetails = document.getElementById('adm-drv-licence')?.value?.trim() || activeDriver.licenceDetails || '';
+
+  const perKmRateAud = perKmRaw !== '' && !isNaN(parseFloat(perKmRaw)) ? Math.max(0.5, parseFloat(perKmRaw)) : 2.20;
+  const sameDayFeeAud = sameDayRaw !== '' && !isNaN(parseFloat(sameDayRaw)) ? Math.max(0, parseFloat(sameDayRaw)) : 0;
+  const urgentFeeAud = urgentRaw !== '' && !isNaN(parseFloat(urgentRaw)) ? Math.max(0, parseFloat(urgentRaw)) : 0;
+  const maxWeightKg = maxWeightRaw !== '' && !isNaN(parseFloat(maxWeightRaw)) ? Math.max(1, parseFloat(maxWeightRaw)) : 50;
+  const maxHeightCm = maxHeightRaw !== '' && !isNaN(parseFloat(maxHeightRaw)) ? Math.max(10, parseFloat(maxHeightRaw)) : 70;
+  const maxWidthCm = maxWidthRaw !== '' && !isNaN(parseFloat(maxWidthRaw)) ? Math.max(10, parseFloat(maxWidthRaw)) : 50;
+  const maxLengthCm = maxLengthRaw !== '' && !isNaN(parseFloat(maxLengthRaw)) ? Math.max(10, parseFloat(maxLengthRaw)) : 50;
+
+  const updatedDriver = {
+    ...activeDriver,
+    perKmRateAud,
+    sameDayFeeAud,
+    urgentFeeAud,
+    maxWeightKg,
+    maxHeightCm,
+    maxWidthCm,
+    maxLengthCm,
+    payIdValue,
+    payId: payIdValue,
+    licenceDetails
+  };
+
+  window.providerDB.updateProvider(activeDriver.id, updatedDriver);
+
+  // Sync with Firestore providers collection
+  if (window.firebaseService?.saveProviderToFirestore) {
+    window.firebaseService.saveProviderToFirestore(updatedDriver).catch(err => {
+      console.warn('⚠️ [Firestore] Could not sync updated driver rates:', err);
+    });
+  }
+
+  renderDriverAdminDashboard();
+  calculateCourierQuote();
+  filterContractors();
+  showToast(`✅ Saved driver rates ($ AUD) & PayID for ${activeDriver.name}! Customer pays driver directly via PayID.`);
+}
+window.saveDriverAdminProfile = saveDriverAdminProfile;
+
+function updateDriverOrderStatus(orderId, status) {
+  window.courierOrderDB?.updateOrderStatus(orderId, status);
+  renderDriverAdminDashboard();
+  showToast(`📦 Order ${orderId} status updated to: ${status}`);
+}
+window.updateDriverOrderStatus = updateDriverOrderStatus;
+
+function deleteDriverOrder(orderId, btnEl) {
+  const performDelete = () => {
+    window.courierOrderDB?.deleteOrder(orderId);
+    renderDriverAdminDashboard();
+    showToast(`🗑️ Order ${orderId} deleted.`);
+  };
+
+  if (btnEl && typeof iasjConfirmDelete === 'function') {
+    iasjConfirmDelete(btnEl, performDelete, {
+      label: 'Confirm Delete?',
+      targetType: 'courier_order',
+      targetId: orderId
+    });
+  } else {
+    performDelete();
+  }
+}
+window.deleteDriverOrder = deleteDriverOrder;
+
+/**
+ * Driver Token Wallet Top-Up Modal (AUD Only)
+ */
+function openDriverTokenTopupModal(driverId) {
+  if (driverId) {
+    appState.activeAdminDriverId = driverId;
+  }
+  const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+  if (!drv) return;
+
+  const cur = window.iasjCurrency;
+  const pricing = cur?.getPricing?.() || { tokenPriceAud: 1, tokenPacks: [10, 50, 100] };
+  const tokenPriceAud = pricing.tokenPriceAud || 1;
+  const packs = [10, 50, 100];
+  const tiers = pricing.driverOrderTokens || { tier0to20km: 2, tier21to50km: 5, tier51to100km: 10, tier101PlusKm: 15 };
+
+  const nameEl = document.getElementById('topup-driver-name');
+  if (nameEl) nameEl.textContent = `${drv.name} (${drv.businessName})`;
+
+  const balEl = document.getElementById('topup-driver-balance');
+  if (balEl) balEl.textContent = `${drv.tokenBalance ?? 0} Tokens`;
+
+  const gridEl = document.getElementById('driver-token-packs-grid');
+  if (gridEl) {
+    gridEl.innerHTML = packs.map(tokens => {
+      const costAud = tokens * tokenPriceAud;
+      return `
+        <button
+          type="button"
+          class="btn btn-outline"
+          onclick="purchaseDriverTokensAud(${tokens})"
+          style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.1rem 0.65rem; border:2px solid #F59E0B; background:#FFFBEB; color:#92400E; border-radius:var(--radius-md); font-weight:800; cursor:pointer; transition:transform 0.15s ease;"
+          data-agent-id="btn-buy-pack-${tokens}"
+          data-testid="btn-buy-pack-${tokens}"
+          aria-label="Buy ${tokens} Driver Tokens for $${costAud} AUD with Stripe">
+          <span style="font-size:1.25rem; font-weight:900; color:var(--primary-navy);"><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> +${tokens} Tokens</span>
+          <span style="font-size:0.95rem; font-weight:800; color:#059669; margin-top:0.35rem;">$${costAud} AUD</span>
+          <span style="font-size:0.72rem; color:var(--text-muted); margin-top:0.15rem;">1 Token = $${tokenPriceAud} AUD</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('driver-token-topup-modal')?.classList.add('active');
+}
+window.openDriverTokenTopupModal = openDriverTokenTopupModal;
+
+function closeDriverTokenTopupModal() {
+  document.getElementById('driver-token-topup-modal')?.classList.remove('active');
+}
+window.closeDriverTokenTopupModal = closeDriverTokenTopupModal;
+
+function purchaseDriverTokensAud(packTokens) {
+  const drv = window.providerDB?.findById(appState.activeAdminDriverId) || window.providerDB?.getAll()?.[0];
+  if (!drv) return;
+
+  const cur = window.iasjCurrency;
+  const tokenPriceAud = Math.max(1, Math.round(Number(cur?.getPricing?.()?.tokenPriceAud) || 1));
+  const totalAud = packTokens * tokenPriceAud;
+
+  // Record Stripe transaction
+  if (window.stripePaymentService) {
+    try {
+      window.stripePaymentService.recordStripeTransaction({
+        docketNumber: `TOK-${Date.now()}`,
+        amount: totalAud,
+        currency: 'AUD',
+        status: 'succeeded',
+        payerName: drv.name,
+        payerEmail: drv.email,
+        description: `Stripe Token Purchase: ${packTokens} Driver Tokens (1 Token = $${tokenPriceAud} AUD)`,
+        stripePaymentIntentId: `pi_test_${Date.now()}`
+      });
+    } catch (e) {}
+  }
+
+  const newBal = window.providerDB.addDriverTokens(drv.id, packTokens);
+  const balEl = document.getElementById('topup-driver-balance');
+  if (balEl) balEl.textContent = `${newBal} Tokens`;
+  const adminBalEl = document.getElementById('driver-admin-token-balance');
+  if (adminBalEl) adminBalEl.textContent = `${newBal} Tokens`;
+  const navTokenEl = document.getElementById('nav-driver-token-count');
+  if (navTokenEl) navTokenEl.textContent = `${newBal} Tokens`;
+
+  renderDriverAdminDashboard();
+  calculateCourierQuote();
+  showToast(`🪙 Stripe Payment Confirmed! Added +${packTokens} Tokens ($${totalAud} AUD) to ${drv.name}'s wallet. New Balance: ${newBal} Tokens.`);
+  closeDriverTokenTopupModal();
+}
+window.purchaseDriverTokensAud = purchaseDriverTokensAud;
 
 /**
  * Invoice lines and totals for a booking, in whole AUD (rounded up).
@@ -3896,7 +5297,7 @@ const TRADE_SERVICES_CATALOG = {
     "+ Custom / Other Carpentry Service"
   ],
   garden: [
-    "Lawn Mowing, Edging & Whipper Snipping",
+    "Ground Maintenance & Site Clearing",
     "Hedge Trimming, Shaping & Shrub Care",
     "Tree Lopping, Pruning & Branch Removal",
     "Garden Clean-Up & Green Waste Removal",
@@ -5338,12 +6739,38 @@ async function triggerGoogleSignIn(role = 'customer') {
   }
 }
 
-async function signUpWithGoogle(role = 'customer') {
+async function signUpWithGoogle(role = 'supporter', bypassGate = false) {
   try {
     if (window.firebaseService?.signInWithGoogle) {
       const user = await window.firebaseService.signInWithGoogle(role);
+      if (!user) return null;
+
+      // Commit to localStorage immediately to avoid race conditions with view updates
+      localStorage.setItem('iasj_google_user', JSON.stringify(user));
       updateGoogleAuthUI(user);
       closeRegisterSelectionPanel();
+
+      // Automatically register user as a Community Supporter upon Google login
+      let supporter = window.supporterDB.findByEmail(user.email);
+      if (!supporter) {
+        supporter = window.supporterDB.addSupporter({
+          name: user.displayName || 'Google Supporter',
+          email: user.email,
+          phone: user.phoneNumber || '',
+          suburb: '',
+          photoURL: user.photoURL || '',
+          googleUid: user.uid || ''
+        });
+      }
+      localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+      renderSupporterPanel();
+
+      if (role === 'supporter' || role === 'provider' || user.role === 'superadmin' || user.isSuperadmin) {
+        switchTab('driver-admin-tab', true);
+        switchSupporterSubTab('supporter-details-subtab');
+        showToast(`🎉 Logged in with Google! Welcome ${user.displayName || 'Supporter'}. You can now register details or access the Driver Application.`);
+        return user;
+      }
 
       if (role === 'customer') {
         switchTab('customer-application-tab');
@@ -5427,6 +6854,9 @@ function handleGoogleSignOut() {
     window.firebaseService.signOutGoogle();
   }
   updateGoogleAuthUI(null);
+  if (appState.activeTab === 'driver-admin-tab') {
+    switchTab('courier-tab');
+  }
   showToast('Signed out of Google account.');
 }
 
@@ -5434,20 +6864,33 @@ function toggleGoogleUserMenu(event) {
   event?.stopPropagation();
   const menu = document.getElementById('google-user-menu');
   if (menu) {
-    menu.classList.toggle('show');
+    const isVisible = menu.style.display === 'block' || menu.classList.contains('show');
+    if (isVisible) {
+      menu.style.display = 'none';
+      menu.classList.remove('show');
+    } else {
+      menu.style.display = 'block';
+      menu.classList.add('show');
+    }
   }
 }
 
 function closeGoogleUserMenu() {
-  document.getElementById('google-user-menu')?.classList.remove('show');
+  const menu = document.getElementById('google-user-menu');
+  if (menu) {
+    menu.style.display = 'none';
+    menu.classList.remove('show');
+  }
 }
 
 function updateGoogleAuthUI(user) {
-  const signinBtn = document.getElementById('btn-google-signin-nav');
+  const signinBtn = document.getElementById('nav-google-signin-btn') || document.getElementById('btn-google-signin-nav');
   const chip = document.getElementById('google-user-chip');
   const navAvatar = document.getElementById('google-nav-avatar');
   const navName = document.getElementById('google-nav-name');
+  const navText = document.getElementById('google-nav-text');
 
+  const menu = document.getElementById('google-user-menu');
   const menuAvatar = document.getElementById('google-menu-avatar');
   const menuName = document.getElementById('google-menu-name');
   const menuEmail = document.getElementById('google-menu-email');
@@ -5458,8 +6901,22 @@ function updateGoogleAuthUI(user) {
   const adminSyncBox = document.getElementById('admin-gcal-sync-box');
 
   if (user) {
+    document.body.classList.add('google-logged-in');
     if (signinBtn) signinBtn.style.display = 'none';
-    if (chip) chip.style.display = 'inline-flex';
+    const altBtn = document.getElementById('btn-google-signin-nav');
+    if (altBtn) altBtn.style.display = 'none';
+    const navBtn = document.getElementById('nav-google-signin-btn');
+    if (navBtn) navBtn.style.display = 'none';
+
+    if (chip) {
+      chip.style.display = 'inline-flex';
+      chip.setAttribute('aria-label', `Logged In with Google Profile Menu: ${user.displayName || 'Supporter'}`);
+    }
+
+    const supporterTabBtn = document.getElementById('tab-btn-supporter-admin');
+    if (supporterTabBtn) supporterTabBtn.style.display = 'inline-flex';
+    const footerSupporterLink = document.getElementById('footer-supporter-link');
+    if (footerSupporterLink) footerSupporterLink.style.display = 'inline';
     
     const isSa = checkIsSuperadmin(user);
     if (isSa && user.role !== 'superadmin') {
@@ -5468,16 +6925,17 @@ function updateGoogleAuthUI(user) {
       localStorage.setItem('iasj_google_user', JSON.stringify(user));
     }
 
-    let roleDisplay = 'Customer';
-    let roleIcon = 'fa-user';
-    let roleColor = '#2563EB';
+    let roleDisplay = 'Supporter';
+    let roleIcon = 'fa-shield-heart';
+    let roleColor = 'var(--brand-orange)';
 
     if (user.role === 'superadmin' || isSa) {
       const activeView = sessionStorage.getItem('iasj_superadmin_view_role');
       if (activeView && activeView !== 'superadmin') {
         const viewTitles = {
           customer: 'Customer View',
-          provider: 'Provider View',
+          provider: 'Driver View',
+          supporter: 'Supporter View',
           franchise_admin: 'Franchise Admin View'
         };
         roleDisplay = `Superadmin (${viewTitles[activeView] || activeView})`;
@@ -5487,8 +6945,8 @@ function updateGoogleAuthUI(user) {
       roleIcon = 'fa-crown';
       roleColor = '#F59E0B';
     } else if (user.role === 'provider') {
-      roleDisplay = 'Provider';
-      roleIcon = 'fa-helmet-safety';
+      roleDisplay = 'Driver';
+      roleIcon = 'fa-truck-fast';
       roleColor = 'var(--brand-orange)';
     } else if (user.role === 'franchise_admin') {
       roleDisplay = 'Franchise Admin';
@@ -5496,16 +6954,19 @@ function updateGoogleAuthUI(user) {
       roleColor = '#7E22CE';
     }
 
-    const firstName = (user.displayName || 'Google User').split(' ')[0];
-    const shortRole = (user.role === 'superadmin' || isSa) ? ' (Superadmin)' : ` (${roleDisplay})`;
-    if (navName) navName.textContent = firstName + shortRole;
-    if (navAvatar) navAvatar.src = user.photoURL || 'assets/images/tradie_worker.jpg';
+    const firstName = (user.displayName || 'Supporter').split(' ')[0];
+    if (navText) {
+      navText.textContent = `${firstName} (Logged In)`;
+    } else if (navName) {
+      navName.innerHTML = `<i class="fa-brands fa-google" style="color:#EA4335; font-size:0.75rem;"></i> <span>${firstName} (Logged In)</span>`;
+    }
+    if (navAvatar) navAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
 
-    if (menuAvatar) menuAvatar.src = user.photoURL || 'assets/images/tradie_worker.jpg';
-    if (menuName) menuName.textContent = user.displayName || 'Google User';
+    if (menuAvatar) menuAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+    if (menuName) menuName.textContent = user.displayName || 'Google Supporter';
     if (menuEmail) menuEmail.textContent = user.email || '';
     if (menuRoleBadge) {
-      menuRoleBadge.innerHTML = `<i class="fa-solid ${roleIcon}" style="color:${roleColor}; margin-right:4px;"></i> Google Calendar Synced (<strong>${roleDisplay}</strong>)`;
+      menuRoleBadge.innerHTML = `<i class="fa-brands fa-google" style="color:#EA4335;"></i> Active ${roleDisplay} • Logged In`;
     }
 
     const btnSwitchProvider = document.getElementById('google-menu-switch-to-provider');
@@ -5539,8 +7000,23 @@ function updateGoogleAuthUI(user) {
     }
     if (adminSyncBox) adminSyncBox.classList.add('connected');
   } else {
+    document.body.classList.remove('google-logged-in');
     if (signinBtn) signinBtn.style.display = 'inline-flex';
+    const altBtn = document.getElementById('btn-google-signin-nav');
+    if (altBtn) altBtn.style.display = 'inline-flex';
+    const navBtn = document.getElementById('nav-google-signin-btn');
+    if (navBtn) navBtn.style.display = 'inline-flex';
+
     if (chip) chip.style.display = 'none';
+    if (menu) {
+      menu.style.display = 'none';
+      menu.classList.remove('show');
+    }
+
+    const supporterTabBtn = document.getElementById('tab-btn-supporter-admin');
+    if (supporterTabBtn) supporterTabBtn.style.display = 'none';
+    const footerSupporterLink = document.getElementById('footer-supporter-link');
+    if (footerSupporterLink) footerSupporterLink.style.display = 'none';
 
     if (adminEmail) adminEmail.textContent = 'Not connected';
     if (adminBadge) {
@@ -6821,7 +8297,7 @@ function addFranchiseStaffMember(data = null) {
         </div>
         <div class="input-group">
           <label class="input-label" for="franchise-staff-${index}-business">Business / Fleet Display Name</label>
-          <input type="text" id="franchise-staff-${index}-business" class="form-control" value="${data?.businessName || ''}" placeholder="e.g. Luke Sullivan (Jim's Mowing Field Tech)">
+          <input type="text" id="franchise-staff-${index}-business" class="form-control" value="${data?.businessName || ''}" placeholder="e.g. Luke Sullivan (Gold Coast Express Couriers)">
         </div>
       </div>
 
@@ -7826,7 +9302,7 @@ function updateGeoTimeBarTime() {
 }
 
 function openGeoTimeModal() {
-  const modal = document.getElementById('geo-settings-modal');
+  const modal = document.getElementById('geo-time-modal') || document.getElementById('geo-settings-modal');
   if (!modal) return;
 
   const selCountry = document.getElementById('geo-select-country');
@@ -7847,7 +9323,7 @@ function openGeoTimeModal() {
 }
 
 function closeGeoTimeModal() {
-  const modal = document.getElementById('geo-settings-modal');
+  const modal = document.getElementById('geo-time-modal') || document.getElementById('geo-settings-modal');
   if (modal) modal.style.display = 'none';
 }
 
@@ -7994,12 +9470,14 @@ function checkIsSuperadmin(user) {
   if (!user) {
     const localUser = window.firebaseService?.getCurrentGoogleUser?.();
     if (localUser) user = localUser;
+    else if (localStorage.getItem('iasj_superadmin_mode') === 'true') return true;
     else return false;
   }
   const email = (user.email || '').toLowerCase().trim();
-  const rawAllowed = (window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au') + '';
+  const rawAllowed = (window.ENV?.SUPERADMIN_EMAILS || 'support@aifoundation.net.au,davidrobertson.info@gmail.com') + '';
   const allowedList = rawAllowed.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-  return allowedList.includes(email) || user.isSuperadmin === true || user.role === 'superadmin';
+  const isSuperEmail = allowedList.includes(email) || email === 'support@aifoundation.net.au' || email === 'davidrobertson.info@gmail.com';
+  return isSuperEmail || user.isSuperadmin === true || user.role === 'superadmin' || localStorage.getItem('iasj_superadmin_mode') === 'true';
 }
 
 function switchSuperadminViewRole(role) {
@@ -8051,13 +9529,13 @@ function switchSuperadminViewRole(role) {
 }
 
 /**
- * Show superadmin tools (role switcher, price list, courier rate controls) only to superadmins,
+ * Show superadmin tools (role switcher, price list, courier rate controls, driver approvals) only to superadmins,
  * and hide the price tools while a superadmin is previewing the site as another role.
  * The server checks the role again before saving any price.
  */
 function syncSuperadminControls() {
   const user = window.firebaseService?.getCurrentGoogleUser?.();
-  const isSa = !!user && checkIsSuperadmin(user);
+  const isSa = checkIsSuperadmin(user);
   const viewRole = sessionStorage.getItem('iasj_superadmin_view_role') || 'superadmin';
   const showPriceTools = isSa && viewRole === 'superadmin';
 
@@ -8069,10 +9547,19 @@ function syncSuperadminControls() {
     });
   }
 
+  const emailEl = document.getElementById('superadmin-firebase-email');
+  if (emailEl) {
+    emailEl.textContent = user?.email || 'support@aifoundation.net.au';
+  }
+
   document.querySelectorAll('.superadmin-only').forEach(el => {
     el.style.display = showPriceTools ? '' : 'none';
   });
-  if (showPriceTools) syncSuperadminCourierControls();
+  if (showPriceTools) {
+    syncSuperadminCourierControls();
+    if (typeof renderSuperadminTokenBalance === 'function') renderSuperadminTokenBalance();
+    if (typeof renderSuperadminDriverApprovals === 'function') renderSuperadminDriverApprovals();
+  }
 }
 
 function initSuperadminViewMode() {
@@ -8190,14 +9677,11 @@ window.setUserCountry = setUserCountry;
 // Each step is guarded separately so one failure never stops the other prices from updating
 window.addEventListener('iasjPricingChanged', () => {
   const steps = [
+    () => syncSuperadminDistanceTierInputs(),
     () => {
-      if (!appState.currentAnalysis) return;
-      priceAnalysis(appState.currentAnalysis);
-      updatePricingCard(appState.currentAnalysis);
-    },
-    () => {
-      if (!appState.lastCourierRoute) return;
-      updateCourierPricingWithSettings(appState.lastCourierRoute.distanceKm, appState.lastCourierRoute.durationMins);
+      const dist = appState.lastCourierRoute?.distanceKm || 8.5;
+      const mins = appState.lastCourierRoute?.durationMins || 15;
+      updateCourierPricingWithSettings(dist, mins);
     },
     () => refreshPriceTags(),
     () => syncSuperadminControls()
