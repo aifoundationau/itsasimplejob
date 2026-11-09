@@ -3334,6 +3334,16 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "navbarMenuOrder": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Closest Drivers",
+          "Book Courier"
+        ]
+      }
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

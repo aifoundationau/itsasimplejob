@@ -88,14 +88,14 @@
 
       <!-- Desktop Nav Buttons (Front Page Navigation Only — Supporter Console is in the Google Log In Dropdown Menu) -->
       <div class="nav-menu">
-        <button type="button" class="nav-item-btn active" id="tab-btn-courier" onclick="switchTab('courier-tab')"
-          data-agent-id="tab-btn-courier" data-testid="tab-btn-courier" aria-label="Book Courier">
-          <i class="fa-solid fa-truck-fast"></i> Book Courier
-        </button>
         <button type="button" class="nav-item-btn" id="tab-btn-find-contractors"
           onclick="switchTab('find-contractors-tab')" data-agent-id="tab-btn-find-contractors"
           data-testid="tab-btn-find-contractors" aria-label="Closest Drivers Map">
           <i class="fa-solid fa-map-location-dot"></i> Closest Drivers
+        </button>
+        <button type="button" class="nav-item-btn active" id="tab-btn-courier" onclick="switchTab('courier-tab')"
+          data-agent-id="tab-btn-courier" data-testid="tab-btn-courier" aria-label="Book Courier">
+          <i class="fa-solid fa-truck-fast"></i> Book Courier
         </button>
       </div>
 
@@ -270,13 +270,13 @@
   <!-- Interactive Section Tabs Navigation Bar -->
   <section class="app-section-tabs">
     <div class="container tab-nav-bar">
-      <button type="button" class="tab-nav-btn active" id="pill-courier" onclick="switchTab('courier-tab')"
-        data-agent-id="pill-courier" data-testid="pill-courier" aria-label="1. Book Courier">
-        <i class="fa-solid fa-truck-fast"></i> 1. Book Courier
-      </button>
       <button type="button" class="tab-nav-btn" id="pill-find-contractors" onclick="switchTab('find-contractors-tab')"
-        data-agent-id="pill-find-contractors" data-testid="pill-find-contractors" aria-label="2. Closest Drivers Map">
-        <i class="fa-solid fa-map-location-dot"></i> 2. Closest Drivers Map
+        data-agent-id="pill-find-contractors" data-testid="pill-find-contractors" aria-label="1. Closest Drivers Map">
+        <i class="fa-solid fa-map-location-dot"></i> 1. Closest Drivers Map
+      </button>
+      <button type="button" class="tab-nav-btn active" id="pill-courier" onclick="switchTab('courier-tab')"
+        data-agent-id="pill-courier" data-testid="pill-courier" aria-label="2. Book Courier">
+        <i class="fa-solid fa-truck-fast"></i> 2. Book Courier
       </button>
     </div>
   </section>

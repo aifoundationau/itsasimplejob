@@ -668,3 +668,8 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
   1. Courier Driver (Motor Vehicle: Van, Ute, Car)
   2. Bicycle Courier (Bicycle / E-Bike: Letters & Food Only)
   3. Client (Community Supporter / Customer)
+
+[2026-11-10] Task 89: Reorder Navbar Menu so "Closest Drivers" Is First, Then "Book Courier":
+- Reordered `.nav-menu` in `index.html` so `#tab-btn-find-contractors` (`Closest Drivers`) is first and `#tab-btn-courier` (`Book Courier`) is second.
+- Reordered `.app-section-tabs .tab-nav-bar` in `index.html` so `#pill-find-contractors` (`1. Closest Drivers Map`) is first and `#pill-courier` (`2. Book Courier`) is second across mobile and tablet viewports as well.
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
