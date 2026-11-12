@@ -5722,11 +5722,21 @@ function renderSupporterPanel() {
     const mainDescEl = document.getElementById('portal-panel-main-desc');
     if (mainDescEl) {
       mainDescEl.textContent = isDriverAdminMode
-        ? 'Select any panel below to manage your register details, driver information, bookings history, or buy tokens in Australian Dollars ($ AUD).'
-        : 'Select any panel below to view your registration details, register or update your details, check your bookings history, or buy tokens in Australian Dollars ($ AUD).';
+        ? 'Select any panel below to manage your bookings history, register details, driver information, or buy tokens in Australian Dollars ($ AUD).'
+        : 'Select any panel below to check your bookings history, view or update your registration details, or buy tokens in Australian Dollars ($ AUD).';
     }
 
-    // Update Panel 1 Header Title: 'Register Details' in Driver Admin Panel, 'Registration Details' in Supporter Panel
+    // Ensure My Bookings History (#supporter-panel-bookings-history) is ALWAYS the first item in the Driver Admin Panel / Supporter Panel stack
+    const panelsStack = document.getElementById('supporter-collapsed-panels-stack');
+    const bookingsHistoryPanelCard = document.getElementById('supporter-panel-bookings-history');
+    if (bookingsHistoryPanelCard) {
+      bookingsHistoryPanelCard.style.order = '-1';
+      if (panelsStack && panelsStack.firstElementChild !== bookingsHistoryPanelCard) {
+        panelsStack.insertBefore(bookingsHistoryPanelCard, panelsStack.firstElementChild);
+      }
+    }
+
+    // Update Registration Details Panel Header Title: 'Register Details' in Driver Admin Panel, 'Registration Details' in Supporter Panel
     const regTitleEl = document.getElementById('title-panel-registration-details');
     if (regTitleEl) {
       regTitleEl.textContent = isDriverAdminMode ? 'Register Details' : 'Registration Details';

@@ -694,3 +694,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-12] Task 93: Create `aboutme.txt` Explaining the Complete Web Application:
 - Created `aboutme.txt` in the project root providing a complete functional and technical walkthrough of "It's A Simple Job" (Executive Overview, Welcome Popup, User Roles & RBAC Lifecycle, Navigation & Views, Pricing & Direct PayID Settlement, Integer Token Economy, and Technical File Architecture).
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-12] Task 94: Place "My Bookings History" Always as the First Item in the Driver Admin Panel:
+- Reordered `#supporter-collapsed-panels-stack` in `index.html` and added a DOM/flex-order guard in `renderSupporterPanel()` in `js/app.js` so **My Bookings History** (`#supporter-panel-bookings-history`) is always the first item in the Driver Admin Panel (followed by `Register Details`, `Driver Information`, `Buy Tokens`, and `Register as a Driver`).
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

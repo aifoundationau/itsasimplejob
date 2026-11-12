@@ -834,12 +834,73 @@
       <!-- Supporter Panel & Collapsed Panels Stack (Active when logged in with Google) -->
       <div id="supporter-panel-wrapper" style="display:none;">
 
-        <!-- 3 Collapsed Supporter Panels: Registration Details, My Bookings History, Buy Tokens -->
+        <!-- Collapsed Panels Stack: My Bookings History is ALWAYS the First Item -->
         <div id="supporter-collapsed-panels-stack"
           style="display:flex; flex-direction:column; gap:0.95rem; margin-bottom:1.5rem;"
           data-agent-id="supporter-collapsed-panels-stack" data-testid="supporter-collapsed-panels-stack">
 
-          <!-- COLLAPSED PANEL 1: Registration Details (View & Edit Supporter Registration Details) -->
+          <!-- COLLAPSED PANEL 1 (ALWAYS FIRST ITEM): My Bookings History -->
+          <div id="supporter-panel-bookings-history" class="courier-calc-card supporter-collapsible-card"
+            style="padding:0; overflow:hidden; border:1px solid var(--border-light); order:-1;"
+            data-agent-id="supporter-panel-bookings-history" data-testid="supporter-panel-bookings-history">
+            <button type="button" id="btn-toggle-panel-bookings-history"
+              onclick="toggleSupporterCollapsePanel('bookings-history')" aria-expanded="false"
+              aria-controls="supporter-bookings-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-bookings-history" data-testid="btn-toggle-panel-bookings-history"
+              aria-label="Toggle My Bookings History Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span
+                  style="width:36px; height:36px; border-radius:50%; background:#ECFDF5; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">My
+                    Bookings History</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Review your 9:00 AM – 4:00 PM courier
+                    bookings, PayID details &amp; message between Supporter and Driver</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span id="supporter-bookings-count-badge"
+                  style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.6rem; border-radius:999px;">0
+                  Bookings</span>
+                <i id="chevron-panel-bookings-history" class="fa-solid fa-chevron-down"
+                  style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
+              </div>
+            </button>
+            <div id="supporter-bookings-subtab" class="supporter-subview supporter-collapse-body"
+              style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);"
+              data-agent-id="supporter-bookings-subtab" data-testid="supporter-bookings-subtab">
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
+                <div>
+                  <h3
+                    style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History
+                    &amp; Supporter ↔ Driver Messaging
+                  </h3>
+                  <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
+                    Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, PayID
+                    details, and message directly between the Supporter and Driver inside each booking card below.
+                  </p>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+                  style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
+                  data-agent-id="btn-supporter-new-booking-subtab" data-testid="btn-supporter-new-booking-subtab"
+                  aria-label="Make a New Courier Booking">
+                  <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+                </button>
+              </div>
+
+              <!-- List Container for Bookings -->
+              <div id="supporter-bookings-list-container" style="display:flex; flex-direction:column; gap:1rem;">
+                <!-- Populated dynamically by renderSupporterBookings() -->
+              </div>
+            </div>
+          </div>
+
+          <!-- COLLAPSED PANEL 2: Registration Details (View & Edit Supporter Registration Details) -->
           <div id="supporter-panel-registration-details" class="courier-calc-card supporter-collapsible-card"
             style="padding:0; overflow:hidden; border:1px solid var(--border-light);"
             data-agent-id="supporter-panel-registration-details" data-testid="supporter-panel-registration-details">
@@ -1409,68 +1470,7 @@
             </div>
           </div>
 
-          <!-- COLLAPSED PANEL 3: My Bookings History -->
-          <div id="supporter-panel-bookings-history" class="courier-calc-card supporter-collapsible-card"
-            style="padding:0; overflow:hidden; border:1px solid var(--border-light);"
-            data-agent-id="supporter-panel-bookings-history" data-testid="supporter-panel-bookings-history">
-            <button type="button" id="btn-toggle-panel-bookings-history"
-              onclick="toggleSupporterCollapsePanel('bookings-history')" aria-expanded="false"
-              aria-controls="supporter-bookings-subtab"
-              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
-              data-agent-id="btn-toggle-panel-bookings-history" data-testid="btn-toggle-panel-bookings-history"
-              aria-label="Toggle My Bookings History Panel">
-              <div style="display:flex; align-items:center; gap:0.75rem;">
-                <span
-                  style="width:36px; height:36px; border-radius:50%; background:#ECFDF5; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
-                  <i class="fa-solid fa-clock-rotate-left"></i>
-                </span>
-                <div>
-                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">My
-                    Bookings History</strong>
-                  <span style="font-size:0.78rem; color:var(--text-muted);">Review your 9:00 AM – 4:00 PM courier
-                    bookings, PayID details &amp; message between Supporter and Driver</span>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; gap:0.65rem;">
-                <span id="supporter-bookings-count-badge"
-                  style="font-size:0.74rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.2rem 0.6rem; border-radius:999px;">0
-                  Bookings</span>
-                <i id="chevron-panel-bookings-history" class="fa-solid fa-chevron-down"
-                  style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
-              </div>
-            </button>
-            <div id="supporter-bookings-subtab" class="supporter-subview supporter-collapse-body"
-              style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);"
-              data-agent-id="supporter-bookings-subtab" data-testid="supporter-bookings-subtab">
-              <div
-                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
-                <div>
-                  <h3
-                    style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
-                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings History
-                    &amp; Supporter ↔ Driver Messaging
-                  </h3>
-                  <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                    Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, PayID
-                    details, and message directly between the Supporter and Driver inside each booking card below.
-                  </p>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
-                  style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
-                  data-agent-id="btn-supporter-new-booking-subtab" data-testid="btn-supporter-new-booking-subtab"
-                  aria-label="Make a New Courier Booking">
-                  <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
-                </button>
-              </div>
-
-              <!-- List Container for Bookings -->
-              <div id="supporter-bookings-list-container" style="display:flex; flex-direction:column; gap:1rem;">
-                <!-- Populated dynamically by renderSupporterBookings() -->
-              </div>
-            </div>
-          </div>
-
-          <!-- COLLAPSED PANEL 3: Buy Tokens -->
+          <!-- COLLAPSED PANEL 4: Buy Tokens -->
           <div id="supporter-panel-buy-tokens" class="courier-calc-card supporter-collapsible-card"
             style="padding:0; overflow:hidden; border:1px solid var(--border-light);"
             data-agent-id="supporter-panel-buy-tokens" data-testid="supporter-panel-buy-tokens">
