@@ -4876,6 +4876,11 @@ const SUPPORTER_COLLAPSE_PANELS = {
     chevronId: 'chevron-panel-driver-information',
     bodyId: 'supporter-driver-info-subtab'
   },
+  'delivery-modes-rates': {
+    btnId: 'btn-toggle-panel-delivery-modes-rates',
+    chevronId: 'chevron-panel-delivery-modes-rates',
+    bodyId: 'supporter-delivery-modes-rates-subtab'
+  },
   'bookings-history': {
     btnId: 'btn-toggle-panel-bookings-history',
     chevronId: 'chevron-panel-bookings-history',
@@ -4923,6 +4928,7 @@ window.collapseAllSupporterPanels = collapseAllSupporterPanels;
 function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   let normalizedKey = panelKey;
   if (panelKey === 'register-details') normalizedKey = 'registration-details';
+  if (panelKey === 'rates' || panelKey === 'delivery-modes' || panelKey === 'custom-rates') normalizedKey = 'delivery-modes-rates';
   if (panelKey === 'register-as-driver' || panelKey === 'driver-application') normalizedKey = 'register-driver';
   if (panelKey === 'superadmin' || panelKey === 'firebase-admin-account') normalizedKey = 'superadmin-console';
 
@@ -4962,7 +4968,7 @@ function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
     if (normalizedKey === 'register-driver') {
       try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
     }
-    if (normalizedKey === 'driver-information') {
+    if (normalizedKey === 'driver-information' || normalizedKey === 'delivery-modes-rates') {
       try { renderDriverInformationView(); } catch (e) {}
       try { renderDriverAdminDashboard(); } catch (e) {}
     }
@@ -5128,6 +5134,13 @@ function switchSupporterSubTab(subtabId) {
     appState.activePortalPanelMode = 'driver-admin';
     try { renderSupporterPanel(); } catch (e) {}
     toggleSupporterCollapsePanel('driver-information', true);
+    return;
+  }
+
+  if (subtabId === 'supporter-delivery-modes-rates-subtab') {
+    appState.activePortalPanelMode = 'driver-admin';
+    try { renderSupporterPanel(); } catch (e) {}
+    toggleSupporterCollapsePanel('delivery-modes-rates', true);
   }
 }
 window.switchSupporterSubTab = switchSupporterSubTab;
@@ -5496,10 +5509,10 @@ function saveDriverInfoProfile(event) {
   activeDriver.bicycleMaxWidthCm = getNum('info-drv-bike-max-width', 30);
   activeDriver.bicycleMaxLengthCm = getNum('info-drv-bike-max-length', 40);
 
-  const rawUsername = document.getElementById('info-drv-username-input')?.value.trim();
+  // Username is permanent and cannot be changed once assigned
   activeDriver.username = typeof window.normalizeDriverUsername === 'function'
-    ? window.normalizeDriverUsername(rawUsername || activeDriver.username, activeDriver.name, activeDriver.id)
-    : (rawUsername ? (rawUsername.startsWith('@') ? rawUsername.toLowerCase() : `@${rawUsername.toLowerCase()}`) : (activeDriver.username || '@driver'));
+    ? window.normalizeDriverUsername(activeDriver.username, activeDriver.name, activeDriver.id)
+    : (activeDriver.username || '@driver');
 
   const payidVal = document.getElementById('info-drv-payid-input')?.value.trim();
   if (payidVal) {
@@ -5514,11 +5527,12 @@ function saveDriverInfoProfile(event) {
   }
 
   window.providerDB.save();
+  try { renderSupporterPanel(); } catch (e) {}
   renderDriverInformationView();
   renderDriverAdminDashboard();
   calculateCourierQuote();
   filterContractors();
-  showToast('✅ Driver Information, rates & capacities updated successfully in $ AUD!');
+  showToast('✅ Delivery Modes & Custom Rates ($ AUD) updated successfully!');
 }
 window.saveDriverInfoProfile = saveDriverInfoProfile;
 
@@ -5529,11 +5543,15 @@ function handleSupporterRegistrationSubmit(event) {
   const emailInput = document.getElementById('supporter-reg-email');
   const phoneInput = document.getElementById('supporter-reg-phone');
   const suburbInput = document.getElementById('supporter-reg-suburb');
+  const licenceInput = document.getElementById('supporter-reg-licence-number');
+  const payidInput = document.getElementById('supporter-reg-payid');
 
   const name = nameInput?.value.trim();
   const email = emailInput?.value.trim();
   const phone = phoneInput?.value.trim();
   const suburb = suburbInput?.value.trim();
+  const licenceNumber = licenceInput?.value.trim() || '';
+  const payIdValue = payidInput?.value.trim() || '';
 
   if (!name || !email || !phone || !suburb) {
     showToast('⚠️ Please enter your full name, email, mobile phone and full address, suburb & postcode.');
@@ -5544,10 +5562,23 @@ function handleSupporterRegistrationSubmit(event) {
   const existingApprovedDriver = window.providerDB?.getAll?.()?.find(
     d => (d.email || '').toLowerCase().trim() === email.toLowerCase().trim() && isDriverApproved(d)
   );
+  const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+  const matchedDriver = ownedDriver || existingApprovedDriver || window.providerDB?.getAll?.()?.find(
+    d => !checkSampleProfileOrData(d) && (d.email || '').toLowerCase().trim() === email.toLowerCase().trim()
+  ) || null;
   const resolvedRole = isSaEmail ? 'superadmin' : (existingApprovedDriver ? 'driver' : 'supporter');
 
   // Update active supporter in-place if one is currently selected, or add/update by email
   let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  // Username cannot be changed once assigned; preserve existing driver/supporter username or initialize once
+  const existingUsername = matchedDriver?.username || supporter?.username || '';
+  const immutableUsername = typeof window.normalizeDriverUsername === 'function'
+    ? window.normalizeDriverUsername(existingUsername, name, matchedDriver?.id || supporter?.id || 'sup')
+    : (existingUsername || `@${String(name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'supporter'}`);
+
+  const resolvedLicence = licenceNumber || supporter?.licenceNumber || matchedDriver?.licenceNumber || '';
+  const resolvedPayId = payIdValue || supporter?.payIdValue || supporter?.payId || matchedDriver?.payIdValue || matchedDriver?.payId || phone;
+
   if (supporter && window.supporterDB) {
     Object.assign(supporter, {
       name,
@@ -5555,6 +5586,10 @@ function handleSupporterRegistrationSubmit(event) {
       phone,
       suburb,
       address: suburb,
+      username: immutableUsername,
+      licenceNumber: resolvedLicence,
+      payId: resolvedPayId,
+      payIdValue: resolvedPayId,
       role: resolvedRole,
       approved: Boolean(isSaEmail || existingApprovedDriver),
       registrationCompleted: true,
@@ -5569,6 +5604,10 @@ function handleSupporterRegistrationSubmit(event) {
       phone,
       suburb,
       address: suburb,
+      username: immutableUsername,
+      licenceNumber: resolvedLicence,
+      payId: resolvedPayId,
+      payIdValue: resolvedPayId,
       role: resolvedRole,
       approved: Boolean(isSaEmail || existingApprovedDriver),
       registrationCompleted: true,
@@ -5576,6 +5615,27 @@ function handleSupporterRegistrationSubmit(event) {
     });
   }
   localStorage.setItem(CURRENT_SUPPORTER_KEY, supporter.id);
+
+  // Sync updated Registration Details (including Driver Licence Number and Driver PayID Details) to linked driver profile while keeping Username immutable
+  if (matchedDriver && window.providerDB) {
+    matchedDriver.name = name;
+    matchedDriver.email = email;
+    matchedDriver.phone = phone;
+    matchedDriver.address = suburb;
+    matchedDriver.baseSuburb = suburb;
+    matchedDriver.username = typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(matchedDriver.username || immutableUsername, matchedDriver.name, matchedDriver.id)
+      : (matchedDriver.username || immutableUsername);
+    if (resolvedLicence) {
+      matchedDriver.licenceNumber = resolvedLicence;
+      matchedDriver.licenceDetails = `${matchedDriver.licenceState || 'QLD'} #${resolvedLicence} (Class ${matchedDriver.licenceClass || 'C'})`;
+    }
+    if (resolvedPayId) {
+      matchedDriver.payId = resolvedPayId;
+      matchedDriver.payIdValue = resolvedPayId;
+    }
+    window.providerDB.save();
+  }
 
   // Sync cached Google user profile in localStorage so user is logged in as Supporter (or SuperAdmin)
   try {
@@ -5586,6 +5646,9 @@ function handleSupporterRegistrationSubmit(event) {
         gParsed.displayName = name;
         gParsed.email = email;
         gParsed.phoneNumber = phone;
+        gParsed.username = immutableUsername;
+        gParsed.licenceNumber = resolvedLicence;
+        gParsed.payId = resolvedPayId;
         gParsed.role = resolvedRole;
         gParsed.isSuperadmin = Boolean(isSaEmail);
         gParsed.isDriver = resolvedRole === 'driver';
@@ -5597,6 +5660,9 @@ function handleSupporterRegistrationSubmit(event) {
         displayName: name,
         email: email,
         phoneNumber: phone,
+        username: immutableUsername,
+        licenceNumber: resolvedLicence,
+        payId: resolvedPayId,
         role: resolvedRole,
         isSuperadmin: Boolean(isSaEmail),
         isDriver: resolvedRole === 'driver',
@@ -5614,6 +5680,10 @@ function handleSupporterRegistrationSubmit(event) {
   if (drvPhone) drvPhone.value = phone;
   const drvAddr = document.getElementById('drv-reg-address');
   if (drvAddr) drvAddr.value = suburb;
+  const drvLic = document.getElementById('drv-reg-licence-number');
+  if (drvLic && resolvedLicence) drvLic.value = resolvedLicence;
+  const drvPayid = document.getElementById('drv-reg-payid-value');
+  if (drvPayid && resolvedPayId) drvPayid.value = resolvedPayId;
 
   // Sync supporter personal details to Firestore users collection
   const gUser = window.firebaseService?.getCurrentGoogleUser?.();
@@ -5622,7 +5692,9 @@ function handleSupporterRegistrationSubmit(event) {
       displayName: name,
       phoneNumber: phone,
       address: suburb,
-      suburb: suburb
+      suburb: suburb,
+      licenceNumber: resolvedLicence,
+      payId: resolvedPayId
     }).catch(e => console.warn('Could not sync supporter profile to Firestore:', e));
   }
 
@@ -5633,7 +5705,7 @@ function handleSupporterRegistrationSubmit(event) {
     const activeUser = window.firebaseService?.getCurrentGoogleUser?.() || JSON.parse(localStorage.getItem('iasj_google_user') || 'null');
     if (activeUser) updateGoogleAuthUI(activeUser);
   } catch (e) {}
-  showToast(`🎉 Registered as a Community Supporter! Your details are now synced to the Booking Form.`);
+  showToast(`🎉 Registration Details saved! Your details, Driver Licence Number & Direct PayID ($ AUD) are updated.`);
 }
 window.handleSupporterRegistrationSubmit = handleSupporterRegistrationSubmit;
 
@@ -5692,6 +5764,23 @@ function renderSupporterPanel() {
       supTokenEl.textContent = `${supporter.tokenBalance ?? 25} Tokens`;
     }
 
+    // Resolve any linked driver profile for this user
+    const ownedDriverProfile = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+    const supporterEmailLower = String(supporter?.email || '').toLowerCase().trim();
+    const matchedDriverByEmail = (!ownedDriverProfile && supporterEmailLower && window.providerDB?.getAll)
+      ? window.providerDB.getAll().find(d => !checkSampleProfileOrData(d) && String(d.email || '').toLowerCase().trim() === supporterEmailLower)
+      : null;
+    const linkedDriver = ownedDriverProfile
+      || matchedDriverByEmail
+      || (supporter?.driverId && window.providerDB?.findById ? window.providerDB.findById(supporter.driverId) : null)
+      || (appState.activePortalPanelMode === 'driver-admin' && window.providerDB?.findById ? window.providerDB.findById(appState.activeAdminDriverId) : null);
+
+    const resolvedUsername = typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(linkedDriver?.username || supporter.username, linkedDriver?.name || supporter.name, linkedDriver?.id || supporter.id)
+      : (linkedDriver?.username || supporter.username || '@driver');
+    const resolvedLicence = supporter.licenceNumber || linkedDriver?.licenceNumber || linkedDriver?.licenceDetails || '';
+    const resolvedPayId = supporter.payIdValue || supporter.payId || linkedDriver?.payIdValue || linkedDriver?.payId || supporter.phone || '';
+
     // Update Registration Details Summary Grid inside Collapsed Panel 1
     const regDetName = document.getElementById('supporter-reg-detail-name');
     if (regDetName) regDetName.textContent = supporter.name || 'Community Supporter';
@@ -5701,6 +5790,12 @@ function renderSupporterPanel() {
     if (regDetPhone) regDetPhone.textContent = supporter.phone || 'Not entered yet';
     const regDetSuburb = document.getElementById('supporter-reg-detail-suburb');
     if (regDetSuburb) regDetSuburb.textContent = supporter.suburb || supporter.address || 'Not entered yet';
+    const regDetUsername = document.getElementById('supporter-reg-detail-username');
+    if (regDetUsername) regDetUsername.textContent = resolvedUsername;
+    const regDetLicence = document.getElementById('supporter-reg-detail-licence');
+    if (regDetLicence) regDetLicence.textContent = resolvedLicence || 'Not entered yet';
+    const regDetPayid = document.getElementById('supporter-reg-detail-payid');
+    if (regDetPayid) regDetPayid.textContent = resolvedPayId || 'Not entered yet';
 
     // Driver Dispatch Console is retired ("We do not need Driver Dispatch Console")
     const dispatchConsole = document.getElementById('driver-dispatch-console');
@@ -5724,7 +5819,7 @@ function renderSupporterPanel() {
     const mainDescEl = document.getElementById('portal-panel-main-desc');
     if (mainDescEl) {
       mainDescEl.textContent = isDriverAdminMode
-        ? 'Select any panel below to manage your bookings history, register details, driver information, or buy tokens in Australian Dollars ($ AUD).'
+        ? 'Select any panel below to manage your bookings history, register details, driver information, delivery modes & custom rates ($ AUD), or buy tokens in Australian Dollars ($ AUD).'
         : 'Select any panel below to check your bookings history, view or update your registration details, or buy tokens in Australian Dollars ($ AUD).';
     }
 
@@ -5755,11 +5850,6 @@ function renderSupporterPanel() {
     }
 
     // Hide 'Register as a Driver' (#supporter-panel-register-driver) in the Driver Admin Panel or once the driver has registered
-    const ownedDriverProfile = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
-    const supporterEmailLower = String(supporter?.email || '').toLowerCase().trim();
-    const matchedDriverByEmail = (!ownedDriverProfile && supporterEmailLower && window.providerDB?.getAll)
-      ? window.providerDB.getAll().find(d => !checkSampleProfileOrData(d) && String(d.email || '').toLowerCase().trim() === supporterEmailLower)
-      : null;
     const hasRegisteredAsDriver = Boolean(ownedDriverProfile || matchedDriverByEmail || supporter?.driverId || activeRole === 'driver');
     const shouldHideRegisterAsDriverPanel = isDriverAdminMode || hasRegisteredAsDriver;
     const registerDriverPanelCard = document.getElementById('supporter-panel-register-driver');
@@ -5769,6 +5859,17 @@ function renderSupporterPanel() {
     }
     if (shouldHideRegisterAsDriverPanel && registerDriverSubtabView) {
       registerDriverSubtabView.style.display = 'none';
+    }
+
+    // Show or hide the separate 'Delivery Modes & Custom Rates ($ AUD)' panel (#supporter-panel-delivery-modes-rates)
+    const deliveryModesRatesPanelCard = document.getElementById('supporter-panel-delivery-modes-rates');
+    const deliveryModesRatesSubtabView = document.getElementById('supporter-delivery-modes-rates-subtab');
+    const shouldShowDeliveryModesRatesPanel = isDriverAdminMode || hasRegisteredAsDriver;
+    if (deliveryModesRatesPanelCard) {
+      deliveryModesRatesPanelCard.style.display = shouldShowDeliveryModesRatesPanel ? 'block' : 'none';
+    }
+    if (!shouldShowDeliveryModesRatesPanel && deliveryModesRatesSubtabView) {
+      deliveryModesRatesSubtabView.style.display = 'none';
     }
 
     // SuperAdmin console gating — SuperAdmin is always superadmin and can always access SuperAdmin controls
@@ -5789,11 +5890,21 @@ function renderSupporterPanel() {
     if (regPhone) regPhone.value = supporter.phone || '';
     const regSuburb = document.getElementById('supporter-reg-suburb');
     if (regSuburb) regSuburb.value = supporter.suburb || supporter.address || '';
+    const regUsername = document.getElementById('supporter-reg-username');
+    if (regUsername) {
+      regUsername.value = resolvedUsername;
+      regUsername.readOnly = true;
+      regUsername.setAttribute('readonly', 'readonly');
+    }
+    const regLicence = document.getElementById('supporter-reg-licence-number');
+    if (regLicence) regLicence.value = resolvedLicence;
+    const regPayid = document.getElementById('supporter-reg-payid');
+    if (regPayid) regPayid.value = resolvedPayId;
     
     try { renderSupporterBookings(); } catch (e) {}
     try { prefillSupporterDriverRegistrationForm(supporter); } catch (e) {}
     try { syncSupporterDetailsToBookingForm(supporter, false); } catch (e) {}
-    if (isDriverAdminMode) {
+    if (isDriverAdminMode || hasRegisteredAsDriver) {
       try { renderDriverInformationView(); } catch (e) {}
       try { renderDriverAdminDashboard(); } catch (e) {}
     }

@@ -3363,6 +3363,21 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "editRegistrationDetailsDriverFields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Username (Cannot Be Changed - readonly)",
+          "Driver Licence Number",
+          "Driver PayID Details (Direct Customer Payment in $ AUD)"
+        ]
+      }
+    },
+    "separateDeliveryModesAndCustomRatesPanel": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

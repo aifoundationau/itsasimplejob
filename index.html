@@ -986,6 +986,15 @@
                 </div>
                 <div
                   style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;"><i
+                      class="fa-solid fa-lock" style="font-size:0.65rem;"></i> Username (Locked)</div>
+                  <div id="supporter-reg-detail-username"
+                    style="font-size:0.95rem; font-weight:800; color:#1D4ED8; margin-top:0.2rem;"
+                    data-agent-id="supporter-reg-detail-username" data-testid="supporter-reg-detail-username">
+                    @supporter</div>
+                </div>
+                <div
+                  style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
                   <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Email Address
                   </div>
                   <div id="supporter-reg-detail-email"
@@ -1007,6 +1016,24 @@
                     style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;">Not
                     entered yet</div>
                 </div>
+                <div
+                  style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Driver
+                    Licence Number</div>
+                  <div id="supporter-reg-detail-licence"
+                    style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;"
+                    data-agent-id="supporter-reg-detail-licence" data-testid="supporter-reg-detail-licence">Not entered
+                    yet</div>
+                </div>
+                <div
+                  style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Driver PayID
+                    ($ AUD)</div>
+                  <div id="supporter-reg-detail-payid"
+                    style="font-size:0.95rem; font-weight:800; color:#059669; margin-top:0.2rem;"
+                    data-agent-id="supporter-reg-detail-payid" data-testid="supporter-reg-detail-payid">Not entered yet
+                  </div>
+                </div>
               </div>
 
               <!-- Edit Registration Details Form (Inline inside Registration Details Screen) -->
@@ -1026,7 +1053,7 @@
                     <i class="fa-solid fa-user-pen" style="color:var(--brand-orange);"></i> Edit Registration Details
                   </h3>
                   <p style="font-size:0.83rem; color:var(--text-muted); margin:0;">
-                    Edit your full name, email address, mobile phone number, and registered address/suburb below:
+                    Edit your full name, email address, mobile phone number, address/suburb, Driver Licence Number, and Driver PayID Details ($ AUD) below (Username is locked and cannot be changed):
                   </p>
                 </div>
 
@@ -1057,6 +1084,36 @@
                       <input type="text" id="supporter-reg-suburb" class="form-control" required
                         placeholder="e.g. 12 Marine Parade, Southport QLD 4215" data-agent-id="supporter-reg-suburb"
                         data-testid="supporter-reg-suburb" aria-label="Full Address, Suburb and Postcode">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-username">
+                        <i class="fa-solid fa-lock" style="color:#64748B;"></i> Username (Cannot Be Changed):
+                      </label>
+                      <input type="text" id="supporter-reg-username" class="form-control" readonly aria-readonly="true"
+                        style="background:#F1F5F9; color:#475569; font-weight:800; cursor:not-allowed;"
+                        placeholder="@username" data-agent-id="supporter-reg-username"
+                        data-testid="supporter-reg-username" aria-label="Username (Cannot Be Changed)">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-licence-number">
+                        <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> Driver Licence Number:
+                      </label>
+                      <input type="text" id="supporter-reg-licence-number" class="form-control"
+                        placeholder="e.g. 482910384" data-agent-id="supporter-reg-licence-number"
+                        data-testid="supporter-reg-licence-number" aria-label="Driver Licence Number">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="input-group" style="width:100%; grid-column: 1 / -1;">
+                      <label class="input-label" for="supporter-reg-payid">
+                        <i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> Driver PayID Details (Direct Customer Payment in $ AUD):
+                      </label>
+                      <input type="text" id="supporter-reg-payid" class="form-control"
+                        placeholder="PayID (Mobile Phone, Email, or ABN) — e.g. 0412 345 678 or pay@driver.com.au"
+                        data-agent-id="supporter-reg-payid" data-testid="supporter-reg-payid"
+                        aria-label="Driver PayID Details (Direct Customer Payment in $ AUD)">
                     </div>
                   </div>
                   <button type="submit" class="btn btn-primary" style="width:100%; font-weight:800;"
@@ -1256,18 +1313,81 @@
                 </div>
               </div>
 
-              <!-- Driver Rates, Capacities & Profile Form -->
+              <!-- Recorded Customer Orders & Scheduled 9am–4pm Pickups (Inside Driver Information Panel) -->
+              <div id="driver-free-hour-active-banner"
+                style="display:none; background:#ECFDF5; border:2px solid #10B981; border-radius:var(--radius-sm); padding:0.85rem 1.1rem; margin-top:1rem; color:#065F46; font-weight:800; font-size:0.86rem;"
+                data-agent-id="driver-free-hour-active-banner" data-testid="driver-free-hour-active-banner">
+                <i class="fa-solid fa-gift" style="color:#059669;"></i>
+                <span id="driver-free-hour-banner-text">SuperAdmin 1-Hour Free Mode Active! All drivers pay 0 Tokens to
+                  SuperAdmin during this hour.</span>
+              </div>
+
+              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;">
+                <div
+                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
+                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
+                    <i class="fa-solid fa-clipboard-check" style="color:var(--brand-orange);"></i> Recorded Customer
+                    Orders &amp; Scheduled 9am–4pm Pickups
+                  </h3>
+                  <span id="driver-orders-count-badge" class="badge-pill-pill" style="background:var(--primary-navy);">
+                    1 Recorded Order
+                  </span>
+                </div>
+
+                <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
+                  <!-- Populated dynamically by renderDriverAdminDashboard() -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLLAPSED PANEL 3B: Delivery Modes & Custom Rates ($ AUD) (Separate Panel for Vehicle & Bicycle) -->
+          <div id="supporter-panel-delivery-modes-rates" class="courier-calc-card supporter-collapsible-card"
+            style="padding:0; overflow:hidden; border:1px solid var(--border-light); display:none;"
+            data-agent-id="supporter-panel-delivery-modes-rates" data-testid="supporter-panel-delivery-modes-rates">
+            <button type="button" id="btn-toggle-panel-delivery-modes-rates"
+              onclick="toggleSupporterCollapsePanel('delivery-modes-rates')" aria-expanded="false"
+              aria-controls="supporter-delivery-modes-rates-subtab"
+              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
+              data-agent-id="btn-toggle-panel-delivery-modes-rates" data-testid="btn-toggle-panel-delivery-modes-rates"
+              aria-label="Toggle Delivery Modes & Custom Rates ($ AUD) Panel">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span
+                  style="width:36px; height:36px; border-radius:50%; background:#FFF7ED; color:var(--brand-orange); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fa-solid fa-sliders"></i>
+                </span>
+                <div>
+                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Delivery
+                    Modes &amp; Custom Rates ($ AUD)</strong>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Configure both Motor Vehicle (Van/Ute/Car)
+                    and Bicycle Courier custom per-km rates, fees &amp; parcel capacities ($ AUD)</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <span
+                  style="font-size:0.72rem; font-weight:800; background:#FFF7ED; color:#C2410C; padding:0.2rem 0.6rem; border-radius:999px; border:1px solid #FED7AA;">
+                  <i class="fa-solid fa-truck-fast"></i> Vehicle &amp; <i class="fa-solid fa-bicycle"></i> Bicycle
+                </span>
+                <i id="chevron-panel-delivery-modes-rates" class="fa-solid fa-chevron-down"
+                  style="color:var(--primary-navy); font-size:0.95rem;"></i>
+              </div>
+            </button>
+
+            <div id="supporter-delivery-modes-rates-subtab" class="supporter-subtab-view"
+              style="display:none; padding:1.35rem; border-top:1px solid var(--border-light); background:#FFFFFF;"
+              data-agent-id="supporter-delivery-modes-rates-subtab" data-testid="supporter-delivery-modes-rates-subtab">
+              <!-- Driver Rates, Capacities & Profile Form (Both Vehicle and Bicycle) -->
               <div class="courier-calc-card" style="padding:1.5rem; margin-bottom:0.25rem;">
                 <h3
                   style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-                  <i class="fa-solid fa-sliders" style="color:var(--brand-orange);"></i> Update Rates, Delivery Modes
-                  &amp; Capacities
+                  <i class="fa-solid fa-sliders" style="color:var(--brand-orange);"></i> Delivery Modes &amp; Custom
+                  Rates ($ AUD) — Vehicle &amp; Bicycle
                 </h3>
                 <div
                   style="background:rgba(255, 107, 0, 0.08); border-left:4px solid var(--brand-orange); padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1.25rem; font-size:0.84rem; color:var(--text-dark); line-height:1.45;">
                   <strong><i class="fa-solid fa-circle-check" style="color:var(--brand-orange);"></i> 100% AUD Only
-                    &amp; Direct PayID:</strong> Keep your Motor Vehicle and Bicycle courier rates, parcel dimensions,
-                  and PayID settlement details up-to-date.
+                    &amp; Direct PayID:</strong> Keep your Motor Vehicle and Bicycle courier rates and parcel dimensions
+                  up-to-date in this dedicated panel.
                 </div>
 
                 <!-- Driver Info Settings Form -->
@@ -1405,14 +1525,15 @@
                     </div>
                   </div>
 
-                  <!-- Username, PayID & Licence Details -->
+                  <!-- Synced Username (Read-only), PayID & Licence Details -->
                   <div class="form-row" style="margin-bottom:1rem;">
                     <div class="input-group">
-                      <label class="input-label" for="info-drv-username-input">Driver Username (@username):</label>
-                      <input type="text" id="info-drv-username-input" class="form-control" required
-                        placeholder="e.g. @callumevans" oninput="formatDriverUsernameInput(this)"
-                        data-agent-id="info-drv-username-input" data-testid="info-drv-username-input"
-                        aria-label="Driver Username (@username)">
+                      <label class="input-label" for="info-drv-username-input">Driver Username (@username — Cannot Be
+                        Changed):</label>
+                      <input type="text" id="info-drv-username-input" class="form-control" readonly aria-readonly="true"
+                        style="background:#F1F5F9; color:#475569; cursor:not-allowed; font-weight:700;"
+                        placeholder="e.g. @callumevans" data-agent-id="info-drv-username-input"
+                        data-testid="info-drv-username-input" aria-label="Driver Username (@username)">
                     </div>
                     <div class="input-group">
                       <label class="input-label" for="info-drv-payid-input">PayID Direct Settlement Account (Mobile /
@@ -1435,37 +1556,11 @@
                     <button type="submit" class="btn btn-primary"
                       style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem;"
                       data-agent-id="btn-save-driver-info" data-testid="btn-save-driver-info"
-                      aria-label="Save Driver Information">
-                      <i class="fa-solid fa-check"></i> Save Driver Information
+                      aria-label="Save Delivery Modes & Custom Rates">
+                      <i class="fa-solid fa-check"></i> Save Delivery Modes &amp; Custom Rates ($ AUD)
                     </button>
                   </div>
                 </form>
-              </div>
-
-              <!-- Recorded Customer Orders & Scheduled 9am–4pm Pickups (Inside Driver Information Panel) -->
-              <div id="driver-free-hour-active-banner"
-                style="display:none; background:#ECFDF5; border:2px solid #10B981; border-radius:var(--radius-sm); padding:0.85rem 1.1rem; margin-top:1rem; color:#065F46; font-weight:800; font-size:0.86rem;"
-                data-agent-id="driver-free-hour-active-banner" data-testid="driver-free-hour-active-banner">
-                <i class="fa-solid fa-gift" style="color:#059669;"></i>
-                <span id="driver-free-hour-banner-text">SuperAdmin 1-Hour Free Mode Active! All drivers pay 0 Tokens to
-                  SuperAdmin during this hour.</span>
-              </div>
-
-              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;">
-                <div
-                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
-                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
-                    <i class="fa-solid fa-clipboard-check" style="color:var(--brand-orange);"></i> Recorded Customer
-                    Orders &amp; Scheduled 9am–4pm Pickups
-                  </h3>
-                  <span id="driver-orders-count-badge" class="badge-pill-pill" style="background:var(--primary-navy);">
-                    1 Recorded Order
-                  </span>
-                </div>
-
-                <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
-                  <!-- Populated dynamically by renderDriverAdminDashboard() -->
-                </div>
               </div>
             </div>
           </div>
