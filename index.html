@@ -1322,20 +1322,38 @@
                   SuperAdmin during this hour.</span>
               </div>
 
-              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;">
+              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;"
+                data-agent-id="driver-recorded-orders-history-card" data-testid="driver-recorded-orders-history-card">
                 <div
-                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding-bottom:0.65rem; border-bottom:2px solid var(--bg-card-alt);">
-                  <h3 style="font-size:1.12rem; font-weight:800; color:var(--primary-navy); margin:0;">
-                    <i class="fa-solid fa-clipboard-check" style="color:var(--brand-orange);"></i> Recorded Customer
-                    Orders &amp; Scheduled 9am–4pm Pickups
-                  </h3>
-                  <span id="driver-orders-count-badge" class="badge-pill-pill" style="background:var(--primary-navy);">
-                    1 Recorded Order
-                  </span>
+                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
+                  <div>
+                    <h3
+                      style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
+                      <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings
+                      History &amp; Supporter ↔ Driver Messaging (Recorded Customer Orders &amp; Scheduled 9am–4pm
+                      Pickups)
+                    </h3>
+                    <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
+                      Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, PayID
+                      details, and message directly between the Supporter and Driver inside each booking card below.
+                    </p>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
+                    <span id="driver-orders-count-badge" class="badge-pill-pill"
+                      style="background:var(--primary-navy);">
+                      1 Recorded Order
+                    </span>
+                    <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+                      style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
+                      data-agent-id="btn-driver-new-booking-subtab" data-testid="btn-driver-new-booking-subtab"
+                      aria-label="Make a New Courier Booking">
+                      <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+                    </button>
+                  </div>
                 </div>
 
                 <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
-                  <!-- Populated dynamically by renderDriverAdminDashboard() -->
+                  <!-- Populated dynamically by renderDriverAdminDashboard() using the same My Bookings History & Supporter ↔ Driver Messaging card layout -->
                 </div>
               </div>
             </div>

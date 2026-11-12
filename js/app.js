@@ -5828,7 +5828,7 @@ function renderSupporterPanel() {
     const bookingsHistoryPanelCard = document.getElementById('supporter-panel-bookings-history');
     if (bookingsHistoryPanelCard) {
       bookingsHistoryPanelCard.style.order = '-1';
-      if (panelsStack && panelsStack.firstElementChild !== bookingsHistoryPanelCard) {
+      if (panelsStack && typeof panelsStack.insertBefore === 'function' && panelsStack.firstElementChild !== bookingsHistoryPanelCard) {
         panelsStack.insertBefore(bookingsHistoryPanelCard, panelsStack.firstElementChild);
       }
     }
@@ -5916,13 +5916,20 @@ function renderSupporterPanel() {
 }
 window.renderSupporterPanel = renderSupporterPanel;
 
-function renderBookingMessageBoxHtml(ord) {
+function renderBookingMessageBoxHtml(ord, prefix = '') {
   const messages = Array.isArray(ord.messages) ? ord.messages : [];
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const isDriverPerspective = appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
+  const isDriverPerspective = prefix === 'driver-' || appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
   const defaultSenderRole = isDriverPerspective ? 'driver' : 'supporter';
   const supporterName = ord.customerName || 'Supporter';
   const driverName = ord.driverName || 'Courier Driver';
+  const boxId = `${prefix}booking-message-box-${ord.orderId}`;
+  const countId = `${prefix}booking-msg-count-${ord.orderId}`;
+  const threadId = `${prefix}booking-messages-thread-${ord.orderId}`;
+  const formId = `${prefix}booking-message-form-${ord.orderId}`;
+  const senderId = `${prefix}booking-message-sender-${ord.orderId}`;
+  const inputId = `${prefix}booking-message-input-${ord.orderId}`;
+  const btnId = `${prefix}btn-send-booking-message-${ord.orderId}`;
 
   const messagesListHtml = messages.length === 0
     ? `
@@ -5939,7 +5946,7 @@ function renderBookingMessageBoxHtml(ord) {
         return `
           <div class="booking-chat-message ${isDriverMsg ? 'msg-from-driver' : 'msg-from-supporter'}"
             style="display:flex; flex-direction:column; align-items:${isDriverMsg ? 'flex-end' : 'flex-start'}; margin-bottom:0.55rem;"
-            data-agent-id="booking-msg-item-${msg.id}" data-testid="booking-msg-item-${msg.id}">
+            data-agent-id="${prefix}booking-msg-item-${msg.id}" data-testid="${prefix}booking-msg-item-${msg.id}">
             <div style="max-width:88%; background:${isDriverMsg ? '#EFF6FF' : '#ECFDF5'}; border:1px solid ${isDriverMsg ? '#BFDBFE' : '#A7F3D0'}; color:var(--primary-navy); border-radius:10px; padding:0.55rem 0.8rem;">
               <div style="display:flex; align-items:center; justify-content:space-between; gap:0.65rem; font-size:0.7rem; font-weight:800; color:${isDriverMsg ? '#1D4ED8' : '#047857'}; margin-bottom:0.2rem;">
                 <span>
@@ -5956,45 +5963,45 @@ function renderBookingMessageBoxHtml(ord) {
 
   return `
     <!-- Supporter & Driver Direct Message Box inside My Bookings History -->
-    <div id="booking-message-box-${ord.orderId}" class="booking-message-box"
+    <div id="${boxId}" class="booking-message-box"
       style="margin-top:0.95rem; background:#F8FAFC; border:1.5px solid #BFDBFE; border-radius:var(--radius-md); padding:0.95rem 1.05rem;"
-      data-agent-id="booking-message-box-${ord.orderId}" data-testid="booking-message-box-${ord.orderId}">
+      data-agent-id="${boxId}" data-testid="${boxId}">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.65rem; padding-bottom:0.5rem; border-bottom:1px solid #E2E8F0;">
         <div style="font-size:0.84rem; font-weight:800; color:var(--primary-navy); display:flex; align-items:center; gap:0.45rem;">
           <i class="fa-solid fa-comments" style="color:#2563EB;"></i>
           <span>Supporter &amp; Driver Messages (${supporterName} ↔ ${driverName})</span>
         </div>
-        <span id="booking-msg-count-${ord.orderId}"
+        <span id="${countId}"
           style="font-size:0.72rem; font-weight:800; background:#DBEAFE; color:#1E40AF; padding:0.18rem 0.55rem; border-radius:999px;"
-          data-agent-id="booking-msg-count-${ord.orderId}" data-testid="booking-msg-count-${ord.orderId}">
+          data-agent-id="${countId}" data-testid="${countId}">
           ${messages.length} Message${messages.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div id="booking-messages-thread-${ord.orderId}"
+      <div id="${threadId}"
         style="max-height:210px; overflow-y:auto; margin-bottom:0.7rem; padding:0.25rem 0.1rem;"
-        data-agent-id="booking-messages-thread-${ord.orderId}" data-testid="booking-messages-thread-${ord.orderId}">
+        data-agent-id="${threadId}" data-testid="${threadId}">
         ${messagesListHtml}
       </div>
 
-      <form id="booking-message-form-${ord.orderId}" onsubmit="handleSendBookingMessage(event, '${ord.orderId}')"
+      <form id="${formId}" onsubmit="handleSendBookingMessage(event, '${ord.orderId}', '${prefix}')"
         style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;"
-        data-agent-id="booking-message-form-${ord.orderId}" data-testid="booking-message-form-${ord.orderId}">
-        <select id="booking-message-sender-${ord.orderId}" class="form-control"
+        data-agent-id="${formId}" data-testid="${formId}">
+        <select id="${senderId}" class="form-control"
           style="width:auto; min-width:165px; max-width:210px; padding:0.45rem 0.6rem; font-size:0.78rem; font-weight:800; background:#FFFFFF;"
-          data-agent-id="booking-message-sender-${ord.orderId}" data-testid="booking-message-sender-${ord.orderId}"
+          data-agent-id="${senderId}" data-testid="${senderId}"
           aria-label="Send Message As Role">
           <option value="supporter" ${defaultSenderRole === 'supporter' ? 'selected' : ''}>🤝 Supporter (${supporterName})</option>
           <option value="driver" ${defaultSenderRole === 'driver' ? 'selected' : ''}>🚚 Driver (${driverName})</option>
         </select>
-        <input type="text" id="booking-message-input-${ord.orderId}" class="form-control" required
+        <input type="text" id="${inputId}" class="form-control" required
           placeholder="Write a message to ${defaultSenderRole === 'driver' ? supporterName : driverName}..."
           style="flex:1; min-width:180px; padding:0.48rem 0.75rem; font-size:0.84rem; background:#FFFFFF;"
-          data-agent-id="booking-message-input-${ord.orderId}" data-testid="booking-message-input-${ord.orderId}"
+          data-agent-id="${inputId}" data-testid="${inputId}"
           aria-label="Message text for booking ${ord.orderId}">
-        <button type="submit" id="btn-send-booking-message-${ord.orderId}" class="btn btn-primary btn-sm"
+        <button type="submit" id="${btnId}" class="btn btn-primary btn-sm"
           style="font-weight:800; padding:0.48rem 0.95rem; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap;"
-          data-agent-id="btn-send-booking-message-${ord.orderId}" data-testid="btn-send-booking-message-${ord.orderId}"
+          data-agent-id="${btnId}" data-testid="${btnId}"
           aria-label="Send Booking Message">
           <i class="fa-solid fa-paper-plane"></i> Send Message
         </button>
@@ -6004,15 +6011,21 @@ function renderBookingMessageBoxHtml(ord) {
 }
 window.renderBookingMessageBoxHtml = renderBookingMessageBoxHtml;
 
-function handleSendBookingMessage(event, orderId) {
+function handleSendBookingMessage(event, orderId, prefix = '') {
   if (event && event.preventDefault) event.preventDefault();
   if (!window.courierOrderDB || !orderId) return null;
 
   const ord = window.courierOrderDB.getOrderById(orderId);
   if (!ord) return null;
 
-  const inputEl = document.getElementById(`booking-message-input-${orderId}`);
-  const senderSelectEl = document.getElementById(`booking-message-sender-${orderId}`);
+  const primaryInputEl = document.getElementById(`${prefix}booking-message-input-${orderId}`);
+  const fallbackInputEl = document.getElementById(`booking-message-input-${orderId}`) || document.getElementById(`driver-booking-message-input-${orderId}`);
+  const inputEl = (primaryInputEl && primaryInputEl.value && primaryInputEl.value.trim()) ? primaryInputEl : (fallbackInputEl || primaryInputEl);
+
+  const primarySenderEl = document.getElementById(`${prefix}booking-message-sender-${orderId}`);
+  const fallbackSenderEl = document.getElementById(`booking-message-sender-${orderId}`) || document.getElementById(`driver-booking-message-sender-${orderId}`);
+  const senderSelectEl = primarySenderEl || fallbackSenderEl;
+
   const rawText = inputEl ? inputEl.value : '';
   const cleanText = String(rawText || '').replace(/[<>]/g, '').trim();
   if (!cleanText) {
@@ -6023,7 +6036,7 @@ function handleSendBookingMessage(event, orderId) {
   }
 
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const defaultRole = (appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver') ? 'driver' : 'supporter';
+  const defaultRole = (prefix === 'driver-' || appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver') ? 'driver' : 'supporter';
   const senderRole = senderSelectEl?.value === 'driver' ? 'driver' : (senderSelectEl?.value === 'supporter' ? 'supporter' : defaultRole);
   const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
   const senderName = senderRole === 'driver'
@@ -6052,6 +6065,112 @@ function handleSendBookingMessage(event, orderId) {
   return savedMsg;
 }
 window.handleSendBookingMessage = handleSendBookingMessage;
+
+function renderUnifiedBookingHistoryCardHtml(ord, options = {}) {
+  const prefix = options.prefix || '';
+  const includeDriverActions = Boolean(options.includeDriverActions);
+  const isSampleOrd = checkSampleProfileOrData(ord);
+  const statusStr = String(ord.status || 'Scheduled (9am–4pm Pickup)');
+  const isCompleted = statusStr.includes('Delivered');
+  const isScheduled = statusStr.includes('Scheduled') || statusStr.includes('9am');
+  const badgeBg = isCompleted ? '#ECFDF5' : (isScheduled ? '#EFF6FF' : '#FEF3C7');
+  const badgeColor = isCompleted ? '#065F46' : (isScheduled ? '#1E40AF' : '#92400E');
+  const badgeBorder = isCompleted ? '#A7F3D0' : (isScheduled ? '#BFDBFE' : '#FDE68A');
+
+  const cardIdAttr = includeDriverActions
+    ? `data-agent-id="driver-order-card-${ord.orderId}" data-testid="driver-order-card-${ord.orderId}"`
+    : `data-agent-id="booking-history-card-${ord.orderId}" data-testid="booking-history-card-${ord.orderId}"`;
+  const sampleBadgeTestId = includeDriverActions
+    ? `driver-sample-order-badge-${ord.orderId}`
+    : `sample-order-badge-${ord.orderId}`;
+
+  return `
+    <div class="booking-history-card" style="background:#ffffff; border:1px solid ${isCompleted ? '#A7F3D0' : 'var(--border-light)'}; border-left:4px solid ${isCompleted ? '#059669' : 'var(--brand-orange)'}; border-radius:var(--radius-md); padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.2s ease;" ${cardIdAttr} data-is-sample="${isSampleOrd ? 'true' : 'false'}">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <span style="font-size:0.74rem; font-weight:800; background:#0F172A; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; letter-spacing:0.5px;">${ord.orderId}</span>
+            ${isSampleOrd ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.68rem; font-weight:900; padding:0.15rem 0.5rem; border-radius:999px;" data-testid="${sampleBadgeTestId}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
+            <span style="font-size:0.78rem; color:var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Recent'}</span>
+          </div>
+          <div style="font-size:0.86rem; font-weight:800; color:var(--primary-navy); margin-top:0.35rem;">
+            <i class="fa-solid fa-clock" style="color:var(--brand-orange);"></i> Pickup Window: <strong>${ord.pickupDate || 'Today'} @ ${ord.pickupTime || '9:00 AM - 4:00 PM'}</strong>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <span style="display:inline-block; font-size:0.78rem; font-weight:800; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; padding:0.25rem 0.75rem; border-radius:999px;">
+            <i class="fa-solid fa-circle-dot" style="font-size:0.55rem; vertical-align:middle;"></i> ${statusStr}
+          </span>
+          <div style="font-size:1.25rem; font-weight:900; color:var(--primary-navy); margin-top:0.25rem;">
+            $${Number(ord.totalAud || 0).toFixed(2)} <span style="font-size:0.74rem; font-weight:700; color:var(--text-muted);">AUD</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.85rem; font-size:0.84rem; color:var(--primary-navy);">
+        <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+          <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-route"></i> Route (${ord.distanceKm || 0} km) &amp; Customer</div>
+          <div><strong>From:</strong> ${ord.originAddress || ord.pickupAddress || 'Origin'}</div>
+          <div style="margin-top:0.2rem;"><strong>To:</strong> ${ord.destAddress || ord.deliveryAddress || 'Destination'}</div>
+          <div style="margin-top:0.35rem; font-size:0.78rem; color:var(--text-muted);">
+            <strong>Customer:</strong> ${ord.customerName || 'Supporter'} • <a href="tel:${ord.customerPhone || ''}" style="color:#2563EB; text-decoration:none;">${ord.customerPhone || 'N/A'}</a>
+          </div>
+        </div>
+
+        <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+          <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-id-card-clip"></i> Assigned Driver &amp; PayID</div>
+          <div><strong>${ord.driverName || 'Driver'}</strong> (${ord.driverBusinessName || 'Express'})</div>
+          <div style="margin-top:0.25rem; color:#059669; font-weight:700;"><i class="fa-solid fa-money-bill-transfer"></i> PayID: ${ord.driverPayIdValue || ord.driverPhone || 'PayID'}</div>
+          <div style="font-size:0.76rem; color:var(--text-muted);">Tel: ${ord.driverPhone || 'N/A'} • <span style="color:#B45309; font-weight:700;"><i class="fa-solid fa-coins"></i> -${ord.tokensChargedToDriver ?? ord.tokensCharged ?? 0} Tokens</span></div>
+        </div>
+
+        <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
+          <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-box"></i> Package Spec</div>
+          <div><strong>Item:</strong> ${ord.packageContents || ord.packageContent || 'General Parcel'}</div>
+          <div style="margin-top:0.25rem;"><strong>Weight:</strong> ${ord.weightKg ?? ord.packageWeightKg ?? 1} kg • <strong>Size:</strong> ${ord.heightCm ?? ord.packageHeightCm ?? 20}×${ord.widthCm ?? ord.packageWidthCm ?? 20}×${ord.lengthCm ?? ord.packageLengthCm ?? 20} cm</div>
+          <div style="margin-top:0.2rem; font-size:0.76rem; color:var(--text-muted);"><strong>Speed Tier:</strong> ${(ord.speedTier || 'same_day').replace('_', ' ').toUpperCase()}</div>
+        </div>
+      </div>
+
+      ${renderBookingMessageBoxHtml(ord, prefix)}
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.85rem; padding-top:0.65rem; border-top:1px solid var(--bg-card-alt);">
+        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
+          ${includeDriverActions ? `
+            ${(!statusStr.includes('Accepted') && !statusStr.includes('Picked Up') && !statusStr.includes('Delivered')) ? `
+              <button type="button" class="btn btn-primary btn-sm" style="background:#2563EB; border-color:#2563EB; font-weight:800;" onclick="acceptDriverBooking('${ord.orderId}')" data-agent-id="btn-order-accept-${ord.orderId}" data-testid="btn-order-accept-${ord.orderId}" aria-label="Accept Booking">
+                <i class="fa-solid fa-handshake"></i> Accept Booking
+              </button>
+            ` : `
+              <span style="font-size:0.75rem; font-weight:800; color:#1E40AF; background:#DBEAFE; padding:0.25rem 0.55rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.25rem;">
+                <i class="fa-solid fa-check"></i> Accepted
+              </span>
+            `}
+            <button type="button" class="btn btn-outline btn-sm" style="color:#1E40AF; border-color:#BFDBFE; background:#EFF6FF; font-weight:800;" onclick="openBookingMessagesInHistory('${ord.orderId}')" data-agent-id="btn-order-messages-${ord.orderId}" data-testid="btn-order-messages-${ord.orderId}" aria-label="Open Booking Messages in My Bookings History">
+              <i class="fa-solid fa-comments"></i> Messages (${Array.isArray(ord.messages) ? ord.messages.length : 0})
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="updateDriverOrderStatus('${ord.orderId}', 'Picked Up & En Route')" data-agent-id="btn-order-enroute-${ord.orderId}" data-testid="btn-order-enroute-${ord.orderId}" aria-label="Mark Order Picked Up">
+              <i class="fa-solid fa-truck-fast"></i> Picked Up
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="updateDriverOrderStatus('${ord.orderId}', 'Delivered & Paid via PayID')" data-agent-id="btn-order-delivered-${ord.orderId}" data-testid="btn-order-delivered-${ord.orderId}" aria-label="Mark Order Delivered">
+              <i class="fa-solid fa-check"></i> Delivered (PayID Paid)
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" style="color:#DC2626; border-color:#FECACA;" onclick="deleteDriverOrder('${ord.orderId}', this)" data-agent-id="btn-order-delete-${ord.orderId}" data-testid="btn-order-delete-${ord.orderId}" aria-label="Delete Order">
+              <i class="fa-solid fa-trash-can"></i> Delete
+            </button>
+          ` : ''}
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
+          style="font-size:0.78rem; font-weight:800; ${isSampleOrd ? 'color:#64748B; border-color:#CBD5E1;' : ''}"
+          data-sample-blocked="${isSampleOrd ? 'true' : 'false'}"
+          data-agent-id="${prefix}btn-rebook-${ord.orderId}" data-testid="${prefix}btn-rebook-${ord.orderId}" aria-label="${isSampleOrd ? 'Sample Order Cannot Be Booked' : 'Re-book Similar Courier Job'}">
+          <i class="fa-solid ${isSampleOrd ? 'fa-ban' : 'fa-rotate-right'}"></i> ${isSampleOrd ? 'Sample Only (Cannot Be Booked)' : 'Book Similar Pickup'}
+        </button>
+      </div>
+    </div>
+  `;
+}
+window.renderUnifiedBookingHistoryCardHtml = renderUnifiedBookingHistoryCardHtml;
 
 function renderSupporterBookings() {
   const container = document.getElementById('supporter-bookings-list-container');
@@ -6103,71 +6222,10 @@ function renderSupporterBookings() {
     return;
   }
 
-  container.innerHTML = ordersToDisplay.map(ord => {
-    const isSampleOrd = checkSampleProfileOrData(ord);
-    const isCompleted = (ord.status || '').includes('Delivered');
-    const isScheduled = (ord.status || '').includes('Scheduled') || (ord.status || '').includes('9am');
-    const badgeBg = isCompleted ? '#ECFDF5' : (isScheduled ? '#EFF6FF' : '#FEF3C7');
-    const badgeColor = isCompleted ? '#065F46' : (isScheduled ? '#1E40AF' : '#92400E');
-    const badgeBorder = isCompleted ? '#A7F3D0' : (isScheduled ? '#BFDBFE' : '#FDE68A');
-
-    return `
-      <div class="booking-history-card" style="background:#ffffff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.2s ease;" data-is-sample="${isSampleOrd ? 'true' : 'false'}">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt);">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-              <span style="font-size:0.74rem; font-weight:800; background:#0F172A; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; letter-spacing:0.5px;">${ord.orderId}</span>
-              ${isSampleOrd ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.68rem; font-weight:900; padding:0.15rem 0.5rem; border-radius:999px;" data-testid="sample-order-badge-${ord.orderId}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
-              <span style="font-size:0.78rem; color:var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Recent'}</span>
-            </div>
-            <div style="font-size:0.86rem; font-weight:800; color:var(--primary-navy); margin-top:0.35rem;">
-              <i class="fa-solid fa-clock" style="color:var(--brand-orange);"></i> Pickup Window: <strong>${ord.pickupDate || 'Today'} @ ${ord.pickupTime || '9:00 AM - 4:00 PM'}</strong>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <span style="display:inline-block; font-size:0.78rem; font-weight:800; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; padding:0.25rem 0.75rem; border-radius:999px;">
-              <i class="fa-solid fa-circle-dot" style="font-size:0.55rem; vertical-align:middle;"></i> ${ord.status || 'Scheduled (9am–4pm Pickup)'}
-            </span>
-            <div style="font-size:1.25rem; font-weight:900; color:var(--primary-navy); margin-top:0.25rem;">
-              $${Number(ord.totalAud || 0).toFixed(2)} <span style="font-size:0.74rem; font-weight:700; color:var(--text-muted);">AUD</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.85rem; font-size:0.84rem; color:var(--primary-navy);">
-          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
-            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-route"></i> Route (${ord.distanceKm || 0} km)</div>
-            <div><strong>From:</strong> ${ord.originAddress || 'Origin'}</div>
-            <div style="margin-top:0.25rem;"><strong>To:</strong> ${ord.destAddress || 'Destination'}</div>
-          </div>
-
-          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
-            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-id-card-clip"></i> Assigned Driver &amp; PayID</div>
-            <div><strong>${ord.driverName || 'Driver'}</strong> (${ord.driverBusinessName || 'Express'})</div>
-            <div style="margin-top:0.25rem; color:#059669; font-weight:700;"><i class="fa-solid fa-money-bill-transfer"></i> PayID: ${ord.driverPayIdValue || ord.driverPhone || 'PayID'}</div>
-            <div style="font-size:0.76rem; color:var(--text-muted);">Tel: ${ord.driverPhone || 'N/A'}</div>
-          </div>
-
-          <div style="background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem;">
-            <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.3rem;"><i class="fa-solid fa-box"></i> Package Spec</div>
-            <div><strong>Item:</strong> ${ord.packageContents || 'General Parcel'}</div>
-            <div style="margin-top:0.25rem;"><strong>Weight:</strong> ${ord.weightKg || 1} kg • <strong>Size:</strong> ${ord.heightCm || 20}×${ord.widthCm || 20}×${ord.lengthCm || 20} cm</div>
-          </div>
-        </div>
-
-        ${renderBookingMessageBoxHtml(ord)}
-
-        <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.5rem; margin-top:0.85rem; padding-top:0.65rem; border-top:1px solid var(--bg-card-alt);">
-          <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
-            style="font-size:0.78rem; font-weight:800; ${isSampleOrd ? 'color:#64748B; border-color:#CBD5E1;' : ''}"
-            data-sample-blocked="${isSampleOrd ? 'true' : 'false'}"
-            data-agent-id="btn-rebook-${ord.orderId}" data-testid="btn-rebook-${ord.orderId}" aria-label="${isSampleOrd ? 'Sample Order Cannot Be Booked' : 'Re-book Similar Courier Job'}">
-            <i class="fa-solid ${isSampleOrd ? 'fa-ban' : 'fa-rotate-right'}"></i> ${isSampleOrd ? 'Sample Only (Cannot Be Booked)' : 'Book Similar Pickup'}
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  container.innerHTML = ordersToDisplay.map(ord => renderUnifiedBookingHistoryCardHtml(ord, {
+    prefix: '',
+    includeDriverActions: isDriverMode || activeRole === 'superadmin'
+  })).join('');
 }
 window.renderSupporterBookings = renderSupporterBookings;
 
@@ -7320,12 +7378,10 @@ function renderDriverAdminDashboard() {
   }
   try { syncDriverBookingNotificationUI(); } catch (e) {}
 
-  // Render Recorded Customer Orders for this Driver (non-superadmin drivers strictly see ONLY their own orders)
+  // Render Recorded Customer Orders for this Driver (matching My Bookings History & Supporter ↔ Driver Messaging)
   const allOrders = window.courierOrderDB.getAll();
   const driverOrders = allOrders.filter(o => o.driverId === activeDriver.id);
-  const ordersToDisplay = activeRole === 'superadmin'
-    ? (driverOrders.length > 0 ? driverOrders : allOrders)
-    : driverOrders;
+  const ordersToDisplay = driverOrders.length > 0 ? driverOrders : allOrders;
 
   const pillBadge = document.getElementById('pill-orders-badge');
   if (pillBadge) pillBadge.textContent = String(activeRole === 'superadmin' ? allOrders.length : driverOrders.length);
@@ -7342,96 +7398,26 @@ function renderDriverAdminDashboard() {
 
   if (ordersToDisplay.length === 0) {
     ordersContainer.innerHTML = `
-      <div style="text-align:center; padding:2rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md); color:var(--text-muted);">
-        <i class="fa-solid fa-box-open" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
-        No customer courier orders recorded yet. Book a courier on the "Book Courier" tab!
+      <div style="text-align:center; padding:3rem 1.5rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
+        <i class="fa-solid fa-box-open" style="font-size:2.8rem; color:#94A3B8; margin-bottom:0.85rem; display:block;"></i>
+        <h4 style="font-size:1.1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">No Bookings Recorded Yet</h4>
+        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto 1.25rem;">
+          No customer courier orders recorded yet. Book a short-haul pickup between 9:00 AM and 4:00 PM with your closest driver!
+        </p>
+        <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+          style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
+          data-agent-id="driver-btn-empty-make-booking" data-testid="driver-btn-empty-make-booking" aria-label="Make a New Booking Now">
+          <i class="fa-solid fa-truck-fast"></i> Make a New Booking Now
+        </button>
       </div>
     `;
     return;
   }
 
-  ordersContainer.innerHTML = ordersToDisplay.map(ord => {
-    const isCompleted = ord.status.includes('Delivered');
-    const isSampleOrd = checkSampleProfileOrData(ord);
-    return `
-      <div style="background:#fff; border:1px solid ${isCompleted ? '#A7F3D0' : 'var(--border-light)'}; border-left:4px solid ${isCompleted ? '#059669' : 'var(--brand-orange)'}; border-radius:var(--radius-md); padding:1.1rem;" data-agent-id="driver-order-card-${ord.orderId}" data-testid="driver-order-card-${ord.orderId}" data-is-sample="${isSampleOrd ? 'true' : 'false'}">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem; padding-bottom:0.55rem; border-bottom:1px solid var(--border-light);">
-          <div>
-            <strong style="font-size:1rem; color:var(--primary-navy);">${ord.orderId}</strong>
-            ${isSampleOrd ? `<span style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-size:0.68rem; font-weight:900; padding:0.15rem 0.5rem; border-radius:999px; margin-left:0.35rem;" data-testid="driver-sample-order-badge-${ord.orderId}"><i class="fa-solid fa-flask"></i> SAMPLE ONLY • CANNOT BE BOOKED</span>` : ''}
-            <span style="font-size:0.76rem; color:var(--text-muted); margin-left:0.4rem;">Driver: <strong>${ord.driverName}</strong></span>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-            <!-- Recorded 9am-4pm Pickup Time Badge -->
-            <span style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; font-size:0.76rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:999px;">
-              <i class="fa-regular fa-clock"></i> Pickup: ${ord.pickupDate} @ ${ord.pickupTime} (9am–4pm)
-            </span>
-            <span style="background:${isCompleted ? '#ECFDF5' : '#EFF6FF'}; color:${isCompleted ? '#065F46' : '#1E40AF'}; font-size:0.72rem; font-weight:800; padding:0.2rem 0.55rem; border-radius:999px;">
-              ${ord.status}
-            </span>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; font-size:0.81rem; color:var(--primary-navy); margin-bottom:0.75rem;">
-          <div style="background:#F8FAFC; padding:0.65rem 0.8rem; border-radius:6px; border:1px solid var(--border-light);">
-            <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.25rem;">Customer Contact Details</div>
-            <div><strong>Name:</strong> ${ord.customerName}</div>
-            <div><strong>Phone:</strong> <a href="tel:${ord.customerPhone}" style="color:#2563EB; text-decoration:none;">${ord.customerPhone}</a></div>
-            <div><strong>Email:</strong> ${ord.customerEmail}</div>
-            <div><strong>Address:</strong> ${ord.customerAddress}</div>
-          </div>
-
-          <div style="background:#F8FAFC; padding:0.65rem 0.8rem; border-radius:6px; border:1px solid var(--border-light);">
-            <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.25rem;">Package Content, Size &amp; Weight</div>
-            <div><strong>Contents:</strong> ${ord.packageContents || ord.packageContent}</div>
-            <div><strong>Weight:</strong> ${ord.weightKg ?? ord.packageWeightKg} kg</div>
-            <div><strong>Dimensions (H×W×L):</strong> ${ord.heightCm ?? ord.packageHeightCm} × ${ord.widthCm ?? ord.packageWidthCm} × ${ord.lengthCm ?? ord.packageLengthCm} cm</div>
-            <div><strong>Speed Tier:</strong> ${(ord.speedTier || 'same_day').replace('_', ' ').toUpperCase()}</div>
-          </div>
-        </div>
-
-        <div style="font-size:0.8rem; color:var(--primary-navy); margin-bottom:0.75rem; background:#FFFDF9; border:1px solid #FED7AA; padding:0.55rem 0.8rem; border-radius:6px;">
-          <div><i class="fa-solid fa-circle-dot" style="color:#10B981;"></i> <strong>Pickup Origin:</strong> ${ord.originAddress || ord.pickupAddress}</div>
-          <div style="margin-top:0.2rem;"><i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> <strong>Delivery Destination:</strong> ${ord.destAddress || ord.deliveryAddress} (<strong>${ord.distanceKm} km</strong>)</div>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; padding-top:0.6rem; border-top:1px solid var(--border-light);">
-          <div style="font-size:0.8rem;">
-            <span style="color:#047857; font-weight:800;">
-              <i class="fa-solid fa-money-bill-transfer"></i> Customer Pays Driver PayID (${ord.driverPayIdValue}): <strong>$${Number(ord.totalAud).toFixed(2)} AUD</strong>
-            </span>
-            <span style="color:#B45309; font-weight:700; margin-left:0.6rem;">
-              <i class="fa-solid fa-coins"></i> -${ord.tokensChargedToDriver ?? ord.tokensCharged} Tokens (${ord.tokenTierLabel || ord.distanceTierLabel || 'Distance Bracket'})
-            </span>
-          </div>
-
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
-            ${(!ord.status.includes('Accepted') && !ord.status.includes('Picked Up') && !ord.status.includes('Delivered')) ? `
-              <button type="button" class="btn btn-primary btn-sm" style="background:#2563EB; border-color:#2563EB; font-weight:800;" onclick="acceptDriverBooking('${ord.orderId}')" data-agent-id="btn-order-accept-${ord.orderId}" data-testid="btn-order-accept-${ord.orderId}" aria-label="Accept Booking">
-                <i class="fa-solid fa-handshake"></i> Accept Booking
-              </button>
-            ` : `
-              <span style="font-size:0.75rem; font-weight:800; color:#1E40AF; background:#DBEAFE; padding:0.25rem 0.55rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.25rem;">
-                <i class="fa-solid fa-check"></i> Accepted
-              </span>
-            `}
-            <button type="button" class="btn btn-outline btn-sm" style="color:#1E40AF; border-color:#BFDBFE; background:#EFF6FF; font-weight:800;" onclick="openBookingMessagesInHistory('${ord.orderId}')" data-agent-id="btn-order-messages-${ord.orderId}" data-testid="btn-order-messages-${ord.orderId}" aria-label="Open Booking Messages in My Bookings History">
-              <i class="fa-solid fa-comments"></i> Messages (${Array.isArray(ord.messages) ? ord.messages.length : 0})
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="updateDriverOrderStatus('${ord.orderId}', 'Picked Up & En Route')" data-agent-id="btn-order-enroute-${ord.orderId}" data-testid="btn-order-enroute-${ord.orderId}" aria-label="Mark Order Picked Up">
-              <i class="fa-solid fa-truck-fast"></i> Picked Up
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="updateDriverOrderStatus('${ord.orderId}', 'Delivered & Paid via PayID')" data-agent-id="btn-order-delivered-${ord.orderId}" data-testid="btn-order-delivered-${ord.orderId}" aria-label="Mark Order Delivered">
-              <i class="fa-solid fa-check"></i> Delivered (PayID Paid)
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" style="color:#DC2626; border-color:#FECACA;" onclick="deleteDriverOrder('${ord.orderId}', this)" data-agent-id="btn-order-delete-${ord.orderId}" data-testid="btn-order-delete-${ord.orderId}" aria-label="Delete Order">
-              <i class="fa-solid fa-trash-can"></i> Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  ordersContainer.innerHTML = ordersToDisplay.map(ord => renderUnifiedBookingHistoryCardHtml(ord, {
+    prefix: 'driver-',
+    includeDriverActions: true
+  })).join('');
 }
 window.renderDriverAdminDashboard = renderDriverAdminDashboard;
 
