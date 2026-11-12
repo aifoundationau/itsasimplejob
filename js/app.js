@@ -5877,6 +5877,21 @@ function renderSupporterPanel() {
     if (saCard) {
       saCard.style.display = (checkIsSuperadmin() || activeRole === 'superadmin') ? 'block' : 'none';
     }
+    const saMakeBookingBtn = document.getElementById('btn-superadmin-make-new-booking');
+    if (saMakeBookingBtn) {
+      saMakeBookingBtn.style.display = (checkIsSuperadmin() || activeRole === 'superadmin') ? 'inline-flex' : 'none';
+    }
+
+    // Driver Admin Panel must NOT have "Make a New Booking" — only Supporter Panel and SuperAdmin Panel have it
+    const showSupporterMakeBooking = !isDriverAdminMode;
+    const btnSupNewBookingSubtab = document.getElementById('btn-supporter-new-booking-subtab');
+    if (btnSupNewBookingSubtab) {
+      btnSupNewBookingSubtab.style.display = showSupporterMakeBooking ? 'inline-flex' : 'none';
+    }
+    const btnSupMakeBookingTop = document.getElementById('btn-supporter-make-booking-top');
+    if (btnSupMakeBookingTop) {
+      btnSupMakeBookingTop.style.display = showSupporterMakeBooking ? 'inline-flex' : 'none';
+    }
     if (avatarImg && supporter.photoURL) {
       avatarImg.src = supporter.photoURL;
     }
@@ -6069,6 +6084,7 @@ window.handleSendBookingMessage = handleSendBookingMessage;
 function renderUnifiedBookingHistoryCardHtml(ord, options = {}) {
   const prefix = options.prefix || '';
   const includeDriverActions = Boolean(options.includeDriverActions);
+  const showMakeBooking = options.showMakeBooking !== undefined ? Boolean(options.showMakeBooking) : !includeDriverActions;
   const isSampleOrd = checkSampleProfileOrData(ord);
   const statusStr = String(ord.status || 'Scheduled (9am–4pm Pickup)');
   const isCompleted = statusStr.includes('Delivered');
@@ -6160,12 +6176,14 @@ function renderUnifiedBookingHistoryCardHtml(ord, options = {}) {
             </button>
           ` : ''}
         </div>
+        ${showMakeBooking ? `
         <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
           style="font-size:0.78rem; font-weight:800; ${isSampleOrd ? 'color:#64748B; border-color:#CBD5E1;' : ''}"
           data-sample-blocked="${isSampleOrd ? 'true' : 'false'}"
           data-agent-id="${prefix}btn-rebook-${ord.orderId}" data-testid="${prefix}btn-rebook-${ord.orderId}" aria-label="${isSampleOrd ? 'Sample Order Cannot Be Booked' : 'Re-book Similar Courier Job'}">
           <i class="fa-solid ${isSampleOrd ? 'fa-ban' : 'fa-rotate-right'}"></i> ${isSampleOrd ? 'Sample Only (Cannot Be Booked)' : 'Book Similar Pickup'}
         </button>
+        ` : ''}
       </div>
     </div>
   `;
@@ -6180,8 +6198,18 @@ function renderSupporterBookings() {
   const supporter = getCurrentSupporter();
   const allOrders = window.courierOrderDB.getAll() || [];
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const isDriverMode = appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
+  const isDriverMode = appState.activePortalPanelMode === 'driver-admin' || (appState.activePortalPanelMode !== 'supporter' && activeRole === 'driver');
   const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+
+  // Hide Make a New Booking buttons when in Driver Admin Panel mode; show on Supporter Panel and SuperAdmin Panel
+  const btnSupNewBookingSubtab = document.getElementById('btn-supporter-new-booking-subtab');
+  if (btnSupNewBookingSubtab) {
+    btnSupNewBookingSubtab.style.display = !isDriverMode ? 'inline-flex' : 'none';
+  }
+  const btnSupMakeBookingTop = document.getElementById('btn-supporter-make-booking-top');
+  if (btnSupMakeBookingTop) {
+    btnSupMakeBookingTop.style.display = !isDriverMode ? 'inline-flex' : 'none';
+  }
 
   let matchingOrders = [];
   if (isDriverMode && ownedDriver) {
@@ -6209,14 +6237,16 @@ function renderSupporterBookings() {
       <div style="text-align:center; padding:3rem 1.5rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
         <i class="fa-solid fa-box-open" style="font-size:2.8rem; color:#94A3B8; margin-bottom:0.85rem; display:block;"></i>
         <h4 style="font-size:1.1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">No Bookings Recorded Yet</h4>
-        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto 1.25rem;">
-          You haven't placed any courier delivery orders yet. Book a short-haul pickup between 9:00 AM and 4:00 PM with your closest driver!
+        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto ${!isDriverMode ? '1.25rem' : '0'};">
+          No courier delivery orders recorded yet between 9:00 AM and 4:00 PM.
         </p>
+        ${!isDriverMode ? `
         <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
           style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
           data-agent-id="btn-empty-make-booking" data-testid="btn-empty-make-booking" aria-label="Make a New Booking Now">
           <i class="fa-solid fa-truck-fast"></i> Make a New Booking Now
         </button>
+        ` : ''}
       </div>
     `;
     return;
@@ -6224,7 +6254,8 @@ function renderSupporterBookings() {
 
   container.innerHTML = ordersToDisplay.map(ord => renderUnifiedBookingHistoryCardHtml(ord, {
     prefix: '',
-    includeDriverActions: isDriverMode || activeRole === 'superadmin'
+    includeDriverActions: isDriverMode || activeRole === 'superadmin',
+    showMakeBooking: !isDriverMode
   })).join('');
 }
 window.renderSupporterBookings = renderSupporterBookings;
@@ -7401,14 +7432,9 @@ function renderDriverAdminDashboard() {
       <div style="text-align:center; padding:3rem 1.5rem; background:#F8FAFC; border:1px dashed var(--border-light); border-radius:var(--radius-md);">
         <i class="fa-solid fa-box-open" style="font-size:2.8rem; color:#94A3B8; margin-bottom:0.85rem; display:block;"></i>
         <h4 style="font-size:1.1rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.35rem;">No Bookings Recorded Yet</h4>
-        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto 1.25rem;">
-          No customer courier orders recorded yet. Book a short-haul pickup between 9:00 AM and 4:00 PM with your closest driver!
+        <p style="font-size:0.86rem; color:var(--text-muted); max-width:440px; margin:0 auto;">
+          No customer courier orders recorded yet between 9:00 AM and 4:00 PM.
         </p>
-        <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
-          style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
-          data-agent-id="driver-btn-empty-make-booking" data-testid="driver-btn-empty-make-booking" aria-label="Make a New Booking Now">
-          <i class="fa-solid fa-truck-fast"></i> Make a New Booking Now
-        </button>
       </div>
     `;
     return;
@@ -7416,7 +7442,8 @@ function renderDriverAdminDashboard() {
 
   ordersContainer.innerHTML = ordersToDisplay.map(ord => renderUnifiedBookingHistoryCardHtml(ord, {
     prefix: 'driver-',
-    includeDriverActions: true
+    includeDriverActions: true,
+    showMakeBooking: false
   })).join('');
 }
 window.renderDriverAdminDashboard = renderDriverAdminDashboard;

@@ -885,7 +885,8 @@
                     details, and message directly between the Supporter and Driver inside each booking card below.
                   </p>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
+                <button type="button" id="btn-supporter-new-booking-subtab" class="btn btn-primary"
+                  onclick="makeNewBookingAsSupporter()"
                   style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
                   data-agent-id="btn-supporter-new-booking-subtab" data-testid="btn-supporter-new-booking-subtab"
                   aria-label="Make a New Courier Booking">
@@ -958,7 +959,8 @@
                     </div>
                   </div>
                   <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                    <button type="button" class="btn btn-sm" onclick="makeNewBookingAsSupporter()"
+                    <button type="button" id="btn-supporter-make-booking-top" class="btn btn-sm"
+                      onclick="makeNewBookingAsSupporter()"
                       style="background:var(--brand-orange); color:#ffffff; font-weight:800; border:none; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem; border-radius:var(--radius-sm); box-shadow:0 2px 8px rgba(234,88,12,0.35);"
                       data-agent-id="btn-supporter-make-booking-top" data-testid="btn-supporter-make-booking-top"
                       aria-label="Make a New Courier Booking">
@@ -1343,12 +1345,6 @@
                       style="background:var(--primary-navy);">
                       1 Recorded Order
                     </span>
-                    <button type="button" class="btn btn-primary" onclick="makeNewBookingAsSupporter()"
-                      style="font-weight:800; display:inline-flex; align-items:center; gap:0.45rem;"
-                      data-agent-id="btn-driver-new-booking-subtab" data-testid="btn-driver-new-booking-subtab"
-                      aria-label="Make a New Courier Booking">
-                      <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
-                    </button>
                   </div>
                 </div>
 
@@ -2126,6 +2122,14 @@
                   <i class="fa-solid fa-trash-can"></i> Wipe Tokens
                 </button>
               </div>
+
+              <button type="button" id="btn-superadmin-make-new-booking" class="btn btn-primary btn-sm"
+                onclick="event.stopPropagation(); makeNewBookingAsSupporter();"
+                style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem;"
+                data-agent-id="btn-superadmin-make-new-booking" data-testid="btn-superadmin-make-new-booking"
+                aria-label="Make a New Courier Booking from SuperAdmin Panel">
+                <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+              </button>
 
               <button type="button" id="btn-toggle-superadmin-console"
                 onclick="event.stopPropagation(); toggleSuperadminConsoleCollapse();" aria-expanded="false"

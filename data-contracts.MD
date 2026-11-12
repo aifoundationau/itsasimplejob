@@ -3382,6 +3382,10 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "boolean",
       "const": true
     },
+    "makeNewBookingOnSupporterAndSuperadminPanelsOnly": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {
