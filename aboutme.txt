@@ -1,0 +1,238 @@
+================================================================================
+IT'S A SIMPLE JOB — COMPLETE APPLICATION GUIDE (aboutme.txt)
+Website: https://itsasimplejob.com.au
+Operator: AI Foundation Australia (ABN 36 339 516 584)
+Support: 0495 019 791 | Email: support@aifoundation.net.au
+Copyright, all rights reserved, David Robertson
+================================================================================
+
+1. EXECUTIVE OVERVIEW & CORE PURPOSE
+--------------------------------------------------------------------------------
+"It's A Simple Job" is a direct peer-to-peer short-haul courier and express
+delivery web application operating across South Brisbane to the Gold Coast and
+Coolangatta in 100% Australian Dollars ($ AUD).
+
+Unlike traditional delivery platforms that take a 20%–30% commission from every
+job and mark up customer prices, "It's A Simple Job" connects Clients directly
+with independent Motor Vehicle Courier Drivers and Bicycle Couriers:
+- Clients pay 100% of the delivery fare directly to their chosen courier via
+  the courier's registered PayID (Mobile, Email, or ABN) in $ AUD.
+- Couriers set their own custom per-kilometre ($/km), Same-Day, and Urgent
+  2-Hour Express rates, plus their own maximum package weight (kg) and
+  dimensions (Height × Width × Length in cm).
+- Instead of percentage commissions, approved couriers use whole-number
+  Platform Tokens ($1 AUD per token default) deducted by road-distance bracket
+  when receiving a customer booking (or 0 tokens during a SuperAdmin 1-Hour
+  Free Mode window).
+
+================================================================================
+2. FIRST-VISIT WELCOME POPUP ("About It's a Simple Job")
+--------------------------------------------------------------------------------
+When visitors first enter the web app, a centered responsive modal dialog
+(`#welcome-intro-popup`) titled "About It's a Simple Job" introduces the three
+core groups on the platform:
+
+1. 🚗 Driver Couriers
+   - Deliver parcels up to 50 kg using your own car, ute, or van.
+   - Set your own custom delivery rates with zero commission taken.
+   - Toggle your GPS pin online anytime to receive instant local bookings.
+   - Get paid 100% directly by clients straight to your PayID.
+
+2. 🚲 Bicycle Couriers
+   - Deliver letters, documents, and food up to 8 kg by bike or e-bike.
+   - Set your own rates with automatic protection against oversized cargo.
+   - Take fast, short-haul express deliveries on your own schedule.
+   - Get paid 100% directly by clients straight to your PayID.
+
+3. 📦 Clients
+   - Book reliable point-to-point deliveries between 9:00 AM and 4:00 PM.
+   - View available couriers on the live map and pick who delivers.
+   - Search directly for your preferred driver or rider by their @username.
+   - Pay couriers 100% directly via PayID with zero platform markups.
+
+================================================================================
+3. USER ROLES, ONBOARDING WORKFLOW & RBAC PERMISSIONS
+--------------------------------------------------------------------------------
+The platform enforces a strict Role-Based Access Control (RBAC) lifecycle:
+
+A. Logged-Out Visitor
+   - Sees "Register / Login" on the top-right Google button.
+   - Can browse the "Closest Drivers" live GPS radar map, inspect the "Booking
+     Form", and search drivers by `@username` or suburb.
+   - Cannot submit a booking or apply as a driver until they sign in with
+     Google and complete their Community Supporter registration first.
+   - Signing out clears all active session keys so a logged-out visitor is
+     never falsely shown as logged in.
+
+B. Community Supporter / Client (`role: 'supporter'`)
+   - Every first-time user who signs in with Google must register as a
+     Community Supporter first by saving their Full Name, Email, Mobile Phone,
+     and Suburb/Address in the Supporter Panel.
+   - Once registered as a Supporter:
+     * Their contact details automatically sync into Step 3 of the Booking Form
+       so they can verify or edit their details before selecting a driver.
+     * They can view their past and active deliveries in "My Bookings History"
+       and exchange 2-way messages with their assigned courier.
+     * They can apply to become a Courier Driver via the "Register as a Driver"
+       form (located directly under "Buy Tokens" in the Supporter Panel or via
+       the footer link). While their driver application is pending, they remain
+       a Community Supporter until approved by SuperAdmin.
+
+C. Approved Courier Driver / Bicycle Courier (`role: 'driver'`)
+   - Once SuperAdmin approves a Supporter's driver application in the Super
+     Admin Panel, the user gains access to the Driver Admin Panel:
+     * Toggle their live map profile ON or OFF at any time.
+     * Choose and update their unique `@username` handle (e.g., `@callumevans`).
+     * Auto-geolocate their live GPS position so they rank accurately by
+       distance to the client's pickup address.
+     * Configure Motor Vehicle Courier mode, Bicycle Courier mode, or BOTH,
+       with independent $/km, Same-Day, and Urgent rates and cargo dimension/
+       weight limits.
+     * Top up their Driver Token Wallet via Stripe Checkout in AUD.
+     * View incoming customer orders, verify direct PayID payments, update job
+       dispatch statuses, and message clients.
+   - Privacy Guard: A driver can only view and edit their own driver profile;
+     driver licence numbers are never exposed publicly and are visible only to
+     SuperAdmin.
+
+D. SuperAdmin (`role: 'superadmin'`)
+   - Authorized emails: `support@aifoundation.net.au` and
+     `davidrobertson.info@gmail.com`.
+   - SuperAdmin is always unrestricted across the entire application and has a
+     "View Site As Role" switcher (SuperAdmin / Driver / Supporter) inside the
+     Google profile menu.
+   - Exclusive SuperAdmin capabilities in the Super Admin Panel:
+     * Approve individual or all pending driver applications (`Approve All
+       Pending Drivers`) so vetted drivers go live on customer maps.
+     * Revoke or delete driver profiles with a two-step confirmation guard.
+     * Set the AUD price per token and the 4 distance-bracket token charges
+       (0–20 km, 21–50 km, 51–100 km, 101+ km).
+     * Activate the "1-Hour Free Driver Mode" countdown (0 tokens deducted per
+       booking during the active promotional hour).
+     * Credit or adjust token balances for any user or driver.
+
+================================================================================
+4. NAVIGATION & WORKSPACE VIEWS
+--------------------------------------------------------------------------------
+1. Top Navbar Menu (`index.html`):
+   - Tab 1: "Closest Drivers" (`#tab-btn-find-contractors` / `#pill-find-contractors`)
+     * Displays the interactive OpenStreetMap & Leaflet live radar map showing
+       the customer's pickup pin (Green) and nearby courier pins (Pink & Blue).
+     * Lets users filter by pickup address/suburb, search radius (5–200 km),
+       and minimum weight capacity (kg), ranking verified drivers closest-first.
+   - Tab 2: "Book Courier" (`#tab-btn-courier` / `#pill-courier`)
+     * Places the "Booking Form" box first on all devices (Android, iPhone,
+       tablet, laptop, desktop) with 3 collapsible steps collapsed at start:
+       - Step 1: Route & 9:00 AM – 4:00 PM Pickup Window (Origin, Destination,
+         Date, Pickup Time strictly between 9:00 AM and 4:00 PM, Same-Day vs.
+         Urgent 2-Hour Express, and Delivery Mode selector).
+       - Step 2: Package Content Details, Size (H × W × L cm) & Weight (kg)
+         (Letters/Documents, Food/Takeaway, Parcels/Boxes, or General Courier,
+         up to 50 kg max per single item, or 8 kg / 35×30×40 cm for Bicycle
+         Couriers).
+       - Step 3: Customer Contact Details (All Required — synced from the
+         Supporter profile and editable before selecting a driver).
+     * Places "Available Drivers (Closest to Pickup)" directly after the
+       Booking Form. Each driver card displays Vehicle (`fa-truck`) and/or
+       Bicycle (`fa-bicycle`) symbol buttons, their `@username` pill, distance
+       to pickup, custom AUD quote breakdown, and an expandable live route map.
+     * Note on Sample Profiles: Built-in demonstration profiles (`drv-101` to
+       `drv-105`, marked `SAMPLE ONLY`) allow visitors to preview pricing and
+       maps, but are strictly blocked from being booked.
+   - Top Navbar Preferred Driver Search Bar (`#navbar-driver-search-input`):
+     * Lets users search any driver by `@username`, name, business name, or
+       suburb from anywhere in the app and jump straight to that driver.
+   - Right Action Bar:
+     * Driver Red Booking Alert badge (when a driver receives a new booking).
+     * Driver Token Wallet button.
+     * Google "Register / Login" button (when logged out) or Google User Chip
+       & Dropdown Menu (when logged in, providing access to Geo Location Update,
+       Supporter Panel, Driver Admin Panel, and Sign Out).
+
+2. Supporter Panel & Driver Admin Panel (`#driver-admin-tab`):
+   - Accessed securely via the Google User Dropdown Menu:
+     * My Registration Details
+     * Register / Update My Details
+     * My Bookings History (with live 2-way Driver <-> Client messaging)
+     * Buy Tokens (Stripe Checkout in AUD)
+     * Register as a Driver (inline application form directly under Buy Tokens)
+     * Driver Admin Console & SuperAdmin Control Console (role-gated)
+
+3. Footer & Legal / Compliance Pages (`terms.html`):
+   - Footer links on every page:
+     * Privacy Policy (`/terms.html#privacy-policy` — Australian Privacy Act
+       1988 & APPs compliance)
+     * Terms of Service (`/terms.html` — includes Section 2: "How It Works")
+     * AI Policy (ISO/IEC 42001) (`/terms.html#ai-policy` — AI Management
+       System governance, human-in-the-loop oversight, and cross-model safety)
+     * Register as a Driver (`#driver-application`)
+   - Regional Geo & Time Footer Bar (`#geo-time-modal`):
+     * Displays active Australian suburb, local weather, and live time, with a
+       centered configuration popup for 12h/24h time and AU date formats.
+
+================================================================================
+5. PRICING, DIRECT PAYID SETTLEMENT & INTEGER TOKEN ECONOMY
+--------------------------------------------------------------------------------
+1. 100% Australian Dollars (AUD) & Whole-Number Rounding:
+   - All quotes, rates, token packs, and Stripe charges are in $ AUD.
+   - Quotes are calculated from real OSRM road distance (km) between pickup and
+     delivery addresses:
+     `Total Quote ($ AUD) = ceil(Road Distance km × Driver $/km Rate + Speed Fee)`
+
+2. Direct Customer-to-Driver PayID Settlement:
+   - When a client confirms a booking with a live approved driver, the app
+     generates a Booking Reference and displays the driver's verified PayID
+     (Phone, Email, or ABN) and account name so the client pays the driver
+     100% directly.
+
+3. Distance-Bracket Driver Token Deduction:
+   - When a booking is placed, integer tokens are deducted from the driver's
+     Token Wallet according to the road distance of the delivery:
+     * 0 – 20 km:   Default 2 Tokens
+     * 21 – 50 km:  Default 5 Tokens
+     * 51 – 100 km: Default 10 Tokens
+     * 101+ km:     Default 15 Tokens
+   - SuperAdmin can customize these brackets in real time or activate 1-Hour
+     Free Driver Mode (0 tokens deducted).
+   - Token purchases via `/api/stripe-checkout` enforce Australian GST (10% GST
+     added on ex-GST base price in integer cents for Stripe Checkout).
+
+================================================================================
+6. TECHNICAL ARCHITECTURE & KEY FILES
+--------------------------------------------------------------------------------
+- `index.html`              : Single-page application shell, navbar menu,
+                              Welcome Popup (`#welcome-intro-popup`), Closest
+                              Drivers map view, Book Courier view, Supporter &
+                              Driver Admin panels, and modals.
+- `terms.html`              : Terms of Service, How It Works (Section 2),
+                              Privacy Policy (Section 8), and ISO/IEC 42001 AI
+                              Policy (Section 9).
+- `css/style.css`           : Complete styling + scoped Android, iPhone, tablet,
+                              touch, landscape, and foldable responsive layer.
+- `js/main.js`              : Vite ES module entry point loading providers data,
+                              Firebase service, and core application logic.
+- `js/app.js`               : Core client controller (Leaflet/OSRM routing,
+                              address autocomplete, quote engine, Supporter &
+                              Driver registration flows, RBAC guards, SuperAdmin
+                              consoles, and responsive viewport sync).
+- `js/providers-data.js`    : `ProviderDatabase` & `SupporterDatabase` state
+                              managers, `@username` normalization and search,
+                              sample-profile guards, and approval helpers.
+- `js/firebase-service.js`  : Firebase Auth (Google Sign-In / Sign-Out) and
+                              Firestore real-time synchronization with offline
+                              `localStorage` fallback.
+- `shared/pricing.js`       : Shared isomorphic AUD pricing constants, 9:00 AM –
+                              4:00 PM pickup slots, token distance tiers, and
+                              whole-dollar / cent rounding utilities.
+- `api/`                    : Vercel Serverless Functions (`stripe-checkout.js`,
+                              `stripe-webhook.js`, `pricing.js`, `wallet.js`,
+                              `messages.js`, `geo.js`, `fx.js`, `_lib/`).
+- `firestore.rules`         : Production Cloud Firestore Security Rules.
+- `data-contracts.MD`       : Strict JSON/Zod data contracts for all UI, API,
+                              and database schemas.
+- `whatitsabout.txt`        : Summary written from the 3 user perspectives
+                              (Courier Driver, Bicycle Courier, Client).
+- `aboutme.txt`             : This comprehensive architectural & functional
+                              explanation of the entire web application.
+- `licence.txt`             : Copyright, all rights reserved, David Robertson.
+================================================================================
