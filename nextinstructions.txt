@@ -698,3 +698,7 @@ CURRENT TASK: VERIFY SUPPORTER PANEL & 4 COLLAPSED PANELS IN BROWSER
 [2026-11-12] Task 94: Place "My Bookings History" Always as the First Item in the Driver Admin Panel:
 - Reordered `#supporter-collapsed-panels-stack` in `index.html` and added a DOM/flex-order guard in `renderSupporterPanel()` in `js/app.js` so **My Bookings History** (`#supporter-panel-bookings-history`) is always the first item in the Driver Admin Panel (followed by `Register Details`, `Driver Information`, `Buy Tokens`, and `Register as a Driver`).
 - Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).
+
+[2026-11-12] Task 95: Hide "Register as a Driver" at the Bottom of the Driver Admin Panel Once a Driver Has Registered:
+- Updated `renderSupporterPanel()`, `openDriverAdminPanelFromGoogleMenu()`, `handleDriverRegistrationSubmit()`, and `handleSupporterDriverRegistrationSubmit()` in `js/app.js` so once a driver registers (or when viewing the Driver Admin Panel), `#supporter-panel-register-driver` ("Register as a Driver") and `#supporter-register-driver-subtab` are hidden (`style.display = 'none'`).
+- Verified with `node scratch/verify_mobile_android_iphone_responsive.mjs` and `npm run build` (0 errors).

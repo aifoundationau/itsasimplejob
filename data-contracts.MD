@@ -3359,6 +3359,10 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
       "type": "string",
       "const": "My Bookings History"
     },
+    "hideRegisterAsDriverPanelOnceRegisteredOrInDriverAdminPanel": {
+      "type": "boolean",
+      "const": true
+    },
     "supportedMobileBreakpointsPx": {
       "type": "array",
       "items": {

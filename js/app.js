@@ -5015,9 +5015,11 @@ function openDriverAdminPanelFromGoogleMenu() {
     appState.activePortalPanelMode = 'supporter';
     switchTab('driver-admin-tab');
     collapseAllSupporterPanels();
-    toggleSupporterCollapsePanel('register-driver', true);
-    try { renderSupporterPanel(); } catch (e) {}
     const owned = getOwnedDriverProfile();
+    if (!owned) {
+      toggleSupporterCollapsePanel('register-driver', true);
+    }
+    try { renderSupporterPanel(); } catch (e) {}
     if (owned && !isDriverApproved(owned)) {
       showToast('⏳ Your driver application is waiting for SuperAdmin approval. You remain a Community Supporter until approved.');
     } else {
@@ -5750,6 +5752,23 @@ function renderSupporterPanel() {
     }
     if (!isDriverAdminMode && driverInfoSubtabView) {
       driverInfoSubtabView.style.display = 'none';
+    }
+
+    // Hide 'Register as a Driver' (#supporter-panel-register-driver) in the Driver Admin Panel or once the driver has registered
+    const ownedDriverProfile = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+    const supporterEmailLower = String(supporter?.email || '').toLowerCase().trim();
+    const matchedDriverByEmail = (!ownedDriverProfile && supporterEmailLower && window.providerDB?.getAll)
+      ? window.providerDB.getAll().find(d => !checkSampleProfileOrData(d) && String(d.email || '').toLowerCase().trim() === supporterEmailLower)
+      : null;
+    const hasRegisteredAsDriver = Boolean(ownedDriverProfile || matchedDriverByEmail || supporter?.driverId || activeRole === 'driver');
+    const shouldHideRegisterAsDriverPanel = isDriverAdminMode || hasRegisteredAsDriver;
+    const registerDriverPanelCard = document.getElementById('supporter-panel-register-driver');
+    const registerDriverSubtabView = document.getElementById('supporter-register-driver-subtab');
+    if (registerDriverPanelCard) {
+      registerDriverPanelCard.style.display = shouldHideRegisterAsDriverPanel ? 'none' : 'block';
+    }
+    if (shouldHideRegisterAsDriverPanel && registerDriverSubtabView) {
+      registerDriverSubtabView.style.display = 'none';
     }
 
     // SuperAdmin console gating — SuperAdmin is always superadmin and can always access SuperAdmin controls
@@ -6567,9 +6586,13 @@ function handleDriverRegistrationSubmit(event) {
   } else {
     appState.activePortalPanelMode = 'supporter';
     switchTab('driver-admin-tab');
+    collapseAllSupporterPanels();
     try { renderSupporterPanel(); } catch (e) {}
-    toggleSupporterCollapsePanel('register-driver', true);
   }
+  const registerDriverPanelCard = document.getElementById('supporter-panel-register-driver');
+  const registerDriverSubtabView = document.getElementById('supporter-register-driver-subtab');
+  if (registerDriverPanelCard) registerDriverPanelCard.style.display = 'none';
+  if (registerDriverSubtabView) registerDriverSubtabView.style.display = 'none';
   showToast(`🎉 Driver application submitted for ${savedDriver.name}! You remain a Community Supporter while waiting for SuperAdmin to approve your driver application.`);
   return savedDriver;
 }
@@ -6817,8 +6840,10 @@ function handleSupporterDriverRegistrationSubmit(event) {
   if (savedDriver) {
     try { renderSuperadminDriverApprovals(); } catch (e) {}
     try { renderSupporterPanel(); } catch (e) {}
-    try { prefillSupporterDriverRegistrationForm(); } catch (e) {}
-    toggleSupporterCollapsePanel('register-driver', true);
+    const registerDriverPanelCard = document.getElementById('supporter-panel-register-driver');
+    const registerDriverSubtabView = document.getElementById('supporter-register-driver-subtab');
+    if (registerDriverPanelCard) registerDriverPanelCard.style.display = 'none';
+    if (registerDriverSubtabView) registerDriverSubtabView.style.display = 'none';
   }
   return savedDriver;
 }
