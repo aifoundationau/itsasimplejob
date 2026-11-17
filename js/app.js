@@ -4347,17 +4347,17 @@ function handleDriverBookingAlertClick() {
   }
 
   openDriverAdminPanelFromGoogleMenu();
-  toggleSupporterCollapsePanel('driver-information', true);
+  toggleSupporterCollapsePanel('bookings-history', true);
   renderDriverInformationView();
   renderDriverAdminDashboard();
 
-  const ordersContainer = document.getElementById('driver-admin-orders-container');
-  if (ordersContainer && typeof ordersContainer.scrollIntoView === 'function') {
+  const bookingsContainer = document.getElementById('supporter-bookings-list-container');
+  if (bookingsContainer && typeof bookingsContainer.scrollIntoView === 'function') {
     try {
-      ordersContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      bookingsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {}
   }
-  showToast('🔔 New Courier Booking opened in Driver Information — click "Accept Booking" to confirm!');
+  showToast('🔔 New Courier Booking opened in My Bookings History — click "Accept Booking" to confirm!');
 }
 window.handleDriverBookingAlertClick = handleDriverBookingAlertClick;
 
@@ -4927,6 +4927,7 @@ window.collapseAllSupporterPanels = collapseAllSupporterPanels;
 
 function toggleSupporterCollapsePanel(panelKey, forceOpen = null) {
   let normalizedKey = panelKey;
+  if (panelKey === 'driver-information') normalizedKey = 'bookings-history';
   if (panelKey === 'register-details') normalizedKey = 'registration-details';
   if (panelKey === 'rates' || panelKey === 'delivery-modes' || panelKey === 'custom-rates') normalizedKey = 'delivery-modes-rates';
   if (panelKey === 'register-as-driver' || panelKey === 'driver-application') normalizedKey = 'register-driver';
@@ -5133,7 +5134,7 @@ function switchSupporterSubTab(subtabId) {
   if (subtabId === 'supporter-driver-info-subtab' || subtabId === 'supporter-dispatch-subtab') {
     appState.activePortalPanelMode = 'driver-admin';
     try { renderSupporterPanel(); } catch (e) {}
-    toggleSupporterCollapsePanel('driver-information', true);
+    toggleSupporterCollapsePanel('bookings-history', true);
     return;
   }
 
@@ -5270,10 +5271,86 @@ function syncDriverProfileTurnOnUI(activeDriver) {
   };
   applyBtnStyle(toggleBtn);
   applyBtnStyle(infoToggleBtn);
+
+  // Sync Top Driver Profile Active Status & Geolocation Card
+  const topName = document.getElementById('driver-top-name-display');
+  if (topName) topName.textContent = activeDriver.name || 'Driver Profile';
+
+  const topUser = document.getElementById('driver-top-username-badge');
+  if (topUser) {
+    const normUser = typeof window.normalizeDriverUsername === 'function'
+      ? window.normalizeDriverUsername(activeDriver.username, activeDriver.name, activeDriver.id)
+      : (activeDriver.username || '@driver');
+    topUser.textContent = normUser;
+  }
+
+  const topBadge = document.getElementById('driver-top-status-badge');
+  if (topBadge) {
+    if (isVisibleOnMap) {
+      topBadge.style.background = '#DCFCE7';
+      topBadge.style.color = '#15803D';
+      topBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Active • Visible on Map';
+    } else if (isProfileOn && !isApproved) {
+      topBadge.style.background = '#FFFBEB';
+      topBadge.style.color = '#92400E';
+      topBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Profile ON • Pending Approval';
+    } else {
+      topBadge.style.background = '#F1F5F9';
+      topBadge.style.color = '#475569';
+      topBadge.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Inactive • Off Map';
+    }
+  }
+
+  const topSuburb = document.getElementById('driver-top-suburb-display');
+  if (topSuburb) {
+    topSuburb.textContent = activeDriver.baseSuburb || activeDriver.address || 'Southport QLD';
+  }
+
+  const topGeoStatus = document.getElementById('driver-top-geo-status');
+  if (topGeoStatus) {
+    if (isProfileOn) {
+      topGeoStatus.style.color = '#059669';
+      topGeoStatus.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Live GPS Active';
+    } else {
+      topGeoStatus.style.color = '#94A3B8';
+      topGeoStatus.innerHTML = '<i class="fa-solid fa-location-slash"></i> GPS Inactive';
+    }
+  }
+
+  const topTokens = document.getElementById('driver-top-tokens-display');
+  if (topTokens) {
+    topTokens.textContent = `${activeDriver.tokenBalance ?? 25} Tokens`;
+  }
+
+  const topIconWrap = document.getElementById('driver-top-status-icon-wrap');
+  if (topIconWrap) {
+    topIconWrap.style.background = isVisibleOnMap ? '#ECFDF5' : '#F1F5F9';
+    topIconWrap.style.color = isVisibleOnMap ? '#059669' : '#64748B';
+    topIconWrap.style.borderColor = isVisibleOnMap ? '#A7F3D0' : '#CBD5E1';
+  }
+
+  const topToggleBtn = document.getElementById('btn-driver-top-profile-toggle');
+  if (topToggleBtn) {
+    if (isProfileOn) {
+      topToggleBtn.style.background = '#059669';
+      topToggleBtn.style.borderColor = '#059669';
+      topToggleBtn.style.color = '#FFFFFF';
+      topToggleBtn.innerHTML = '<i class="fa-solid fa-toggle-on"></i> Profile ON';
+      topToggleBtn.setAttribute('aria-pressed', 'true');
+      topToggleBtn.title = 'Driver is Active and Visible on Map (Click to turn OFF)';
+    } else {
+      topToggleBtn.style.background = '#475569';
+      topToggleBtn.style.borderColor = '#475569';
+      topToggleBtn.style.color = '#FFFFFF';
+      topToggleBtn.innerHTML = '<i class="fa-solid fa-toggle-off"></i> Profile OFF';
+      topToggleBtn.setAttribute('aria-pressed', 'false');
+      topToggleBtn.title = 'Driver is Inactive and Hidden from Map (Click to turn ON)';
+    }
+  }
 }
 window.syncDriverProfileTurnOnUI = syncDriverProfileTurnOnUI;
 
-function toggleActiveDriverProfileOn(explicitState) {
+function toggleActiveDriverProfileOnWithGeo(explicitState) {
   if (!window.providerDB) return;
   const accessible = getAccessibleDriverProfilesForCurrentUser();
   if (accessible.length === 0) {
@@ -5304,10 +5381,15 @@ function toggleActiveDriverProfileOn(explicitState) {
     window.providerDB.save();
   }
 
+  if (!nextState && appState.selectedCourierDriverId === activeDriver.id) {
+    appState.selectedCourierDriverId = null;
+  }
+
+  // Immediately synchronize UI, bookings, and maps for both ON and OFF transitions
+  syncDriverProfileTurnOnUI(activeDriver);
   renderDriverAdminDashboard();
   renderDriverInformationView();
   if (typeof renderSuperadminDriverApprovals === 'function') renderSuperadminDriverApprovals();
-  calculateCourierQuote();
   filterContractors();
   if (appState.osmMap && window.L) {
     try { updateOsmContractorMarkers(); } catch (e) {}
@@ -5315,15 +5397,20 @@ function toggleActiveDriverProfileOn(explicitState) {
   if (appState.osmCourierMap && window.L) {
     try { renderOsmCourierRouteMap(); } catch (e) {}
   }
+  calculateCourierQuote();
 
-  const isApproved = typeof isDriverApproved === 'function' ? isDriverApproved(activeDriver) : (activeDriver.approved !== false);
-  if (nextState && isApproved) {
-    showToast(`🟢 ${activeDriver.name}'s Driver Profile is Turned ON and SuperAdmin Approved — now visible on all maps!`);
-  } else if (nextState && !isApproved) {
-    showToast(`🟡 ${activeDriver.name}'s Driver Profile is Turned ON — will appear on maps once approved by SuperAdmin.`);
+  // Trigger live geolocation when turning ON; notify cleanly without overlapping toasts
+  if (nextState) {
+    try { triggerDriverAdminGeolocate({ silentStart: true }); } catch (e) {}
+    showToast(`🟢 ${activeDriver.name}'s Profile is ON — Active on map & updating live GPS...`);
   } else {
-    showToast(`⚪ ${activeDriver.name}'s Driver Profile is Turned OFF — hidden from all customer maps.`);
+    showToast(`⚪ ${activeDriver.name}'s Profile is OFF — Inactive & hidden from map.`);
   }
+}
+window.toggleActiveDriverProfileOnWithGeo = toggleActiveDriverProfileOnWithGeo;
+
+function toggleActiveDriverProfileOn(explicitState) {
+  return toggleActiveDriverProfileOnWithGeo(explicitState);
 }
 window.toggleActiveDriverProfileOn = toggleActiveDriverProfileOn;
 
@@ -5819,7 +5906,7 @@ function renderSupporterPanel() {
     const mainDescEl = document.getElementById('portal-panel-main-desc');
     if (mainDescEl) {
       mainDescEl.textContent = isDriverAdminMode
-        ? 'Select any panel below to manage your bookings history, register details, driver information, delivery modes & custom rates ($ AUD), or buy tokens in Australian Dollars ($ AUD).'
+        ? 'Select any panel below to manage your bookings history, register details, delivery modes & custom rates ($ AUD), or buy tokens in Australian Dollars ($ AUD).'
         : 'Select any panel below to check your bookings history, view or update your registration details, or buy tokens in Australian Dollars ($ AUD).';
     }
 
@@ -5839,13 +5926,17 @@ function renderSupporterPanel() {
       regTitleEl.textContent = isDriverAdminMode ? 'Register Details' : 'Registration Details';
     }
 
-    // Show or hide the 'Driver Information' collapsed panel (#supporter-panel-driver-information)
+    // Show or hide the top 'Profile ON' status card and ensure Driver Information panel remains hidden
+    const topStatusCard = document.getElementById('driver-admin-top-status-card');
+    if (topStatusCard) {
+      topStatusCard.style.display = isDriverAdminMode ? 'block' : 'none';
+    }
     const driverInfoPanelCard = document.getElementById('supporter-panel-driver-information');
     const driverInfoSubtabView = document.getElementById('supporter-driver-info-subtab');
     if (driverInfoPanelCard) {
-      driverInfoPanelCard.style.display = isDriverAdminMode ? 'block' : 'none';
+      driverInfoPanelCard.style.display = 'none';
     }
-    if (!isDriverAdminMode && driverInfoSubtabView) {
+    if (driverInfoSubtabView) {
       driverInfoSubtabView.style.display = 'none';
     }
 
@@ -6198,8 +6289,11 @@ function renderSupporterBookings() {
   const supporter = getCurrentSupporter();
   const allOrders = window.courierOrderDB.getAll() || [];
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
-  const isDriverMode = appState.activePortalPanelMode === 'driver-admin' || (appState.activePortalPanelMode !== 'supporter' && activeRole === 'driver');
+  const isDriverMode = appState.activePortalPanelMode === 'driver-admin' || (appState.activePortalPanelMode !== 'supporter' && (activeRole === 'driver' || activeRole === 'superadmin'));
   const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+  const managedDriver = (isDriverMode && appState.activeAdminDriverId && window.providerDB?.findById)
+    ? (window.providerDB.findById(appState.activeAdminDriverId) || ownedDriver)
+    : ownedDriver;
 
   // Hide Make a New Booking buttons when in Driver Admin Panel mode; show on Supporter Panel and SuperAdmin Panel
   const btnSupNewBookingSubtab = document.getElementById('btn-supporter-new-booking-subtab');
@@ -6212,8 +6306,8 @@ function renderSupporterBookings() {
   }
 
   let matchingOrders = [];
-  if (isDriverMode && ownedDriver) {
-    matchingOrders = allOrders.filter(o => o.driverId === ownedDriver.id);
+  if (isDriverMode && managedDriver) {
+    matchingOrders = allOrders.filter(o => o.driverId === managedDriver.id);
   }
   if (matchingOrders.length === 0 && supporter && supporter.email) {
     const sEmail = supporter.email.toLowerCase().trim();
@@ -6345,21 +6439,28 @@ function quickAccessDriverConsole() {
   }
   supporter.role = 'driver';
   supporter.approved = true;
+  if (!supporter.driverId && window.providerDB?.getAll()?.[0]) {
+    supporter.driverId = window.providerDB.getAll()[0].id;
+  }
   window.supporterDB.save();
 
   const gUser = window.firebaseService?.getCurrentGoogleUser?.();
   if (gUser) {
     gUser.role = 'driver';
     gUser.isDriver = true;
+    gUser.approved = true;
     try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
   }
 
+  if (supporter.driverId) {
+    appState.activeAdminDriverId = supporter.driverId;
+  }
   appState.activePortalPanelMode = 'driver-admin';
   renderSupporterPanel();
-  toggleSupporterCollapsePanel('driver-information', true);
+  toggleSupporterCollapsePanel('bookings-history', true);
   renderDriverInformationView();
   renderDriverAdminDashboard();
-  showToast('🔑 Driver Admin Panel (Driver Information) unlocked.');
+  showToast('🔑 Driver Admin Panel unlocked.');
 }
 window.quickAccessDriverConsole = quickAccessDriverConsole;
 
@@ -6782,7 +6883,7 @@ function handleDriverRegistrationSubmit(event) {
 
   if (isDriverApproved(savedDriver) || checkIsSuperadmin()) {
     openDriverAdminPanelFromGoogleMenu();
-    toggleSupporterCollapsePanel('driver-information', true);
+    toggleSupporterCollapsePanel('bookings-history', true);
   } else {
     appState.activePortalPanelMode = 'supporter';
     switchTab('driver-admin-tab');
@@ -7064,6 +7165,19 @@ window.formatDriverUsernameInput = formatDriverUsernameInput;
 /**
  * Top Navbar Preferred Driver Search Bar (@username, name, suburb)
  */
+function isDriverVisibleOnCustomerMap(driver) {
+  if (!driver) return false;
+  if (typeof isDriverVisibleOnMap === 'function') return isDriverVisibleOnMap(driver);
+  const approved = typeof isDriverApproved === 'function'
+    ? isDriverApproved(driver)
+    : (driver.approved !== false && driver.status !== 'pending_approval' && driver.status !== 'revoked');
+  const profileOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(driver)
+    : (driver.profileTurnedOn !== false && driver.profileActive !== false && driver.status !== 'paused');
+  return Boolean(approved && profileOn);
+}
+window.isDriverVisibleOnCustomerMap = isDriverVisibleOnCustomerMap;
+
 function renderNavbarDriverSearchResults(rawQuery) {
   const resultsEl = document.getElementById('navbar-driver-search-results');
   const clearBtn = document.getElementById('navbar-driver-search-clear');
@@ -7264,7 +7378,9 @@ function renderDriverAdminDashboard() {
     return;
   }
 
-  if (selectorWrap) selectorWrap.style.display = 'block';
+  if (selectorWrap) {
+    selectorWrap.style.display = (activeRole === 'superadmin' || checkIsSuperadmin() || accessibleDrivers.length > 1) ? 'block' : 'none';
+  }
   if (notDriverNotice) notDriverNotice.style.display = 'none';
   if (dispatchConsole) dispatchConsole.style.display = 'none';
 
@@ -7479,12 +7595,16 @@ function onDriverAdminSelectionChange(driverId) {
   appState.selectedCourierDriverId = driverId;
   renderDriverAdminDashboard();
   try { renderDriverInformationView(); } catch (e) {}
+  try { renderSupporterBookings(); } catch (e) {}
   calculateCourierQuote();
 }
 window.onDriverAdminSelectionChange = onDriverAdminSelectionChange;
 
-function triggerDriverAdminGeolocate() {
-  const activeDriver = window.providerDB?.findById(appState.activeAdminDriverId);
+function triggerDriverAdminGeolocate(options = {}) {
+  const accessible = getAccessibleDriverProfilesForCurrentUser();
+  const activeDriver = accessible.find(d => d.id === appState.activeAdminDriverId)
+    || accessible[0]
+    || window.providerDB?.findById(appState.activeAdminDriverId);
   if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
     if (typeof showToast === 'function') {
       showToast('🔒 Access denied: You can only geolocate your own Active Driver Profile.');
@@ -7492,7 +7612,23 @@ function triggerDriverAdminGeolocate() {
     return;
   }
 
-  showToast(`📍 Auto-geolocating live GPS position for ${activeDriver.name}...`);
+  appState.activeAdminDriverId = activeDriver.id;
+
+  if (!options?.silentStart) {
+    showToast(`📍 Auto-geolocating live GPS position for ${activeDriver.name}...`);
+  }
+
+  const topGeoStatus = document.getElementById('driver-top-geo-status');
+  const isProfileOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(activeDriver)
+    : (activeDriver.profileTurnedOn !== false && activeDriver.profileActive !== false);
+  if (topGeoStatus && isProfileOn) {
+    topGeoStatus.style.color = '#D97706';
+    topGeoStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Locating GPS...';
+  }
+
+  const fallbackLat = Number.isFinite(Number(activeDriver.lat)) ? Number(activeDriver.lat) : (appState.userCoords?.lat || -27.9635);
+  const fallbackLng = Number.isFinite(Number(activeDriver.lng)) ? Number(activeDriver.lng) : (appState.userCoords?.lng || 153.4064);
 
   const saveGps = async (lat, lng) => {
     let suburbLabel = activeDriver.baseSuburb || 'Southport QLD';
@@ -7502,21 +7638,32 @@ function triggerDriverAdminGeolocate() {
     } catch (e) {}
 
     window.providerDB.updateDriverLocation(activeDriver.id, lat, lng, suburbLabel);
+    syncDriverProfileTurnOnUI(activeDriver);
     renderDriverAdminDashboard();
     try { renderDriverInformationView(); } catch (e) {}
     calculateCourierQuote();
     filterContractors();
-    showToast(`✅ ${activeDriver.name} auto-geolocated at ${suburbLabel}!`);
+    if (appState.osmMap && window.L) {
+      try { updateOsmContractorMarkers(); } catch (e) {}
+    }
+    if (appState.osmCourierMap && window.L) {
+      try { renderOsmCourierRouteMap(); } catch (e) {}
+    }
+    if (!options?.silentStart) {
+      showToast(`✅ ${activeDriver.name} auto-geolocated at ${suburbLabel}!`);
+    } else {
+      showToast(`📍 ${activeDriver.name} is active on map at ${suburbLabel}.`);
+    }
   };
 
   if (!navigator.geolocation) {
-    saveGps(-27.9635, 153.4064);
+    saveGps(fallbackLat, fallbackLng);
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
     (pos) => saveGps(pos.coords.latitude, pos.coords.longitude),
-    () => saveGps(-27.9635, 153.4064),
+    () => saveGps(fallbackLat, fallbackLng),
     { enableHighAccuracy: true, timeout: 6000 }
   );
 }
@@ -7641,7 +7788,11 @@ function getActiveUserRole() {
     }
     return 'superadmin';
   }
-  if (!gUser) return 'supporter';
+  if (!gUser) {
+    const localSup = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+    if (localSup && localSup.role === 'driver' && localSup.approved === true) return 'driver';
+    return 'supporter';
+  }
 
   if (window.providerDB) {
     const cleanEmail = (gUser.email || '').toLowerCase().trim();
@@ -7734,6 +7885,7 @@ function deleteDriverOrder(orderId, btnEl) {
   const performDelete = () => {
     window.courierOrderDB?.deleteOrder(orderId);
     renderDriverAdminDashboard();
+    try { renderSupporterBookings(); } catch (e) {}
     try { syncDriverBookingNotificationUI(); } catch (e) {}
     showToast(`🗑️ Order ${orderId} deleted.`);
   };
@@ -9734,12 +9886,9 @@ async function handleCustomerRegistrationSubmit(event, isInline = false) {
   if (notesField) notesField.value = notes;
 
   // Save to Firestore if available
-  if (window.firebaseService?.db && window.firebaseService?.isConnected) {
+  if (window.firebaseService?.saveCustomerToFirestore) {
     try {
-      const { doc, setDoc, collection } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
-      const docRef = doc(collection(window.firebaseService.db, 'customers'), crn);
-      await setDoc(docRef, customerRecord, { merge: true });
-      console.log(`✅ [Firestore] Customer saved under CRN: ${crn}`);
+      await window.firebaseService.saveCustomerToFirestore(customerRecord);
     } catch (e) {
       console.warn("⚠️ [Firestore] Customer cached locally:", e);
     }

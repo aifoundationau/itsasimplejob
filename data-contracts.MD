@@ -3396,3 +3396,71 @@ Enforces an ultra-responsive Android and iPhone web app experience across all mo
   }
 }
 ```
+
+---
+
+## 21. Driver Admin Top Profile Status & Geolocation Contract
+
+### 21.1 Architectural Specification
+The **Driver Information** panel (`#supporter-panel-driver-information`) has been retired from the Driver Admin Panel. In its place, a dedicated **Top Driver Profile Status & Geolocation Card** (`#driver-admin-top-status-card`) is positioned at the top of the Driver Admin view stack.
+
+1. **Profile ON (Active State):**
+   - Driver profile active status set to `true` (`profileTurnedOn: true`, `profileActive: true`).
+   - Device Geolocation is automatically initiated (`triggerDriverAdminGeolocate()` / `toggleActiveDriverProfileOnWithGeo()`).
+   - GPS coordinates and reverse-geocoded Australian suburb are updated in `providerDB` and synchronized to Firestore.
+   - Driver marker renders as **Active & Visible** on the OpenStreetMap contractor directory and courier route maps.
+   - Toggle button renders emerald green with text `<i class="fa-solid fa-toggle-on"></i> Profile ON`.
+
+2. **Profile OFF (Inactive State):**
+   - Driver profile active status set to `false` (`profileTurnedOn: false`, `profileActive: false`).
+   - Driver is marked inactive / off map and immediately filtered out from all customer maps.
+   - Toggle button renders neutral slate with text `<i class="fa-solid fa-toggle-off"></i> Profile OFF`.
+
+### 21.2 JSON Schema Contract
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverAdminTopProfileStatusContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "topCardId",
+    "toggleButtonId",
+    "geolocateButtonId",
+    "statusBadgeId",
+    "driverInformationPanelRemoved",
+    "autoGeolocateOnProfileTurnOn",
+    "hiddenFromMapsWhenProfileOff"
+  ],
+  "properties": {
+    "topCardId": {
+      "type": "string",
+      "const": "driver-admin-top-status-card"
+    },
+    "toggleButtonId": {
+      "type": "string",
+      "const": "btn-driver-top-profile-toggle"
+    },
+    "geolocateButtonId": {
+      "type": "string",
+      "const": "btn-driver-top-geolocate"
+    },
+    "statusBadgeId": {
+      "type": "string",
+      "const": "driver-top-status-badge"
+    },
+    "driverInformationPanelRemoved": {
+      "type": "boolean",
+      "const": true
+    },
+    "autoGeolocateOnProfileTurnOn": {
+      "type": "boolean",
+      "const": true
+    },
+    "hiddenFromMapsWhenProfileOff": {
+      "type": "boolean",
+      "const": true
+    }
+  }
+}
+```

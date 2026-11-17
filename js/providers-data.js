@@ -721,8 +721,12 @@ class ProviderDatabase {
         p.baseSuburb = addressText.split(',')[0] || p.baseSuburb;
       }
     }
+    p.coords = { lat: p.lat, lng: p.lng };
     p.lastGeolocatedAt = new Date().toISOString();
     this.save();
+    if (window.firebaseService?.saveProviderToFirestore) {
+      try { window.firebaseService.saveProviderToFirestore(p); } catch (e) {}
+    }
     return p;
   }
 
@@ -783,11 +787,17 @@ class ProviderDatabase {
     const p = this.findById(idOrSpn);
     if (!p) return null;
     const nextState = Boolean(isTurnedOn);
+    const wasApproved = isDriverApproved(p);
+    p.approved = wasApproved;
     p.profileTurnedOn = nextState;
     p.profileActive = nextState;
+    p.isActive = nextState && wasApproved;
     if (nextState && p.status === "paused") {
-      p.status = p.approved !== false ? "active" : "pending_approval";
+      p.status = wasApproved ? "active" : "pending_approval";
       p.pausedReason = "";
+    } else if (!nextState && p.status === "active") {
+      p.status = "paused";
+      p.pausedReason = "Driver turned profile OFF";
     }
     this.save();
     if (window.firebaseService?.saveProviderToFirestore) {

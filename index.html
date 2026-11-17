@@ -318,7 +318,7 @@
                 Alert</span>
             </div>
             <div id="frontpage-driver-booking-summary" style="font-size:0.82rem; color:#FEE2E2; margin-top:0.15rem;">
-              Click here to open Driver Information and accept your new 9am–4pm courier booking.
+              Click here to open My Bookings History and accept your new 9am–4pm courier booking.
             </div>
           </div>
         </div>
@@ -834,6 +834,82 @@
       <!-- Supporter Panel & Collapsed Panels Stack (Active when logged in with Google) -->
       <div id="supporter-panel-wrapper" style="display:none;">
 
+        <!-- TOP DRIVER PROFILE ACTIVE STATUS & GEOLOCATION CARD (DRIVER ADMIN PANEL ONLY) -->
+        <div id="driver-admin-top-status-card" class="courier-calc-card"
+          style="display:none; padding:1.25rem 1.5rem; margin-bottom:1.25rem; border-top:4px solid var(--brand-orange); background:#FFFFFF; border:1px solid var(--border-light); border-radius:var(--radius-md); box-shadow:var(--shadow-sm);"
+          data-agent-id="driver-admin-top-status-card" data-testid="driver-admin-top-status-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <!-- Driver Profile & Telemetry Left Column -->
+            <div style="display:flex; align-items:center; gap:0.9rem; min-width:240px; flex:1;">
+              <div id="driver-top-status-icon-wrap"
+                style="width:48px; height:48px; border-radius:50%; background:#ECFDF5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:1.35rem; border:2px solid #A7F3D0; flex-shrink:0;">
+                <i id="driver-top-status-icon" class="fa-solid fa-truck-fast"></i>
+              </div>
+              <div style="min-width:0;">
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <h3 id="driver-top-name-display"
+                    style="margin:0; font-size:1.18rem; font-weight:800; color:var(--primary-navy);">
+                    Driver Profile
+                  </h3>
+                  <span id="driver-top-username-badge"
+                    style="font-size:0.78rem; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-weight:800; padding:0.15rem 0.55rem; border-radius:999px;">
+                    @driver
+                  </span>
+                  <span id="driver-top-status-badge"
+                    style="font-size:0.75rem; font-weight:800; padding:0.2rem 0.65rem; border-radius:999px; background:#DCFCE7; color:#15803D;">
+                    <i class="fa-solid fa-circle-check"></i> Active • Visible on Map
+                  </span>
+                </div>
+                <div id="driver-top-geo-line" style="font-size:0.83rem; color:var(--text-muted); margin-top:0.25rem; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <span><i class="fa-solid fa-location-dot" style="color:var(--brand-orange);"></i> <strong id="driver-top-suburb-display" style="color:var(--primary-navy);">Southport QLD</strong></span>
+                  <span style="color:#CBD5E1;">•</span>
+                  <span id="driver-top-geo-status" style="color:#059669; font-weight:700;"><i class="fa-solid fa-satellite-dish"></i> Live GPS Active</span>
+                  <span style="color:#CBD5E1;">•</span>
+                  <span><i class="fa-solid fa-coins" style="color:#F59E0B;"></i> <span id="driver-top-tokens-display" style="font-weight:700; color:#B45309;">25 Tokens</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile ON / OFF & Geolocation Controls Right Column -->
+            <div style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
+              <button type="button" id="btn-driver-top-profile-toggle" class="btn btn-primary"
+                onclick="toggleActiveDriverProfileOnWithGeo()"
+                style="background:#059669; border-color:#059669; font-weight:800; font-size:0.92rem; padding:0.6rem 1.25rem; display:inline-flex; align-items:center; gap:0.5rem; box-shadow:0 2px 8px rgba(5,150,105,0.25);"
+                data-agent-id="btn-driver-top-profile-toggle" data-testid="btn-driver-top-profile-toggle"
+                aria-label="Toggle Driver Profile Active Status and Geolocation">
+                <i class="fa-solid fa-toggle-on"></i> Profile ON
+              </button>
+              <button type="button" id="btn-driver-top-geolocate" class="btn btn-outline"
+                onclick="triggerDriverAdminGeolocate()"
+                style="font-weight:800; font-size:0.85rem; padding:0.6rem 0.95rem; display:inline-flex; align-items:center; gap:0.4rem; background:#FFFFFF;"
+                data-agent-id="btn-driver-top-geolocate" data-testid="btn-driver-top-geolocate"
+                aria-label="Auto Geolocate Driver Live GPS">
+                <i class="fa-solid fa-location-crosshairs" style="color:var(--brand-orange);"></i> GPS
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Driver Profile Selector (For SuperAdmin / Multi-Profile Owners) -->
+          <div id="active-driver-profile-selector-wrap" data-agent-id="active-driver-profile-selector-wrap"
+            data-testid="active-driver-profile-selector-wrap"
+            style="display:none; margin-top:1rem; padding-top:0.85rem; border-top:1px dashed var(--border-light); background:#F8FAFC; border-radius:var(--radius-sm); padding:0.75rem 1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.35rem; flex-wrap:wrap;">
+              <label class="input-label" for="driver-admin-select" style="margin:0; font-size:0.82rem;">
+                <i class="fa-solid fa-id-badge" style="color:var(--brand-orange);"></i> Switch Managed Driver Profile:
+              </label>
+              <span id="active-driver-ownership-badge"
+                style="font-size:0.68rem; font-weight:800; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; padding:0.1rem 0.45rem; border-radius:999px;">
+                <i class="fa-solid fa-user-lock"></i> Owner &amp; SuperAdmin Only
+              </span>
+            </div>
+            <select id="driver-admin-select" class="form-control"
+              onchange="onDriverAdminSelectionChange(this.value)" data-agent-id="driver-admin-select"
+              data-testid="driver-admin-select" aria-label="Select Active Driver Profile">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
         <!-- Collapsed Panels Stack: My Bookings History is ALWAYS the First Item -->
         <div id="supporter-collapsed-panels-stack"
           style="display:flex; flex-direction:column; gap:0.95rem; margin-bottom:1.5rem;"
@@ -1128,232 +1204,7 @@
             </div>
           </div>
 
-          <!-- COLLAPSED PANEL 2 (Driver Admin Panel): Driver Information -->
-          <div id="supporter-panel-driver-information"
-            class="courier-calc-card supporter-collapsible-card driver-and-superadmin-only"
-            style="padding:0; overflow:hidden; border:1px solid var(--border-light); display:none;"
-            data-agent-id="supporter-panel-driver-information" data-testid="supporter-panel-driver-information">
-            <button type="button" id="btn-toggle-panel-driver-information"
-              onclick="toggleSupporterCollapsePanel('driver-information')" aria-expanded="false"
-              aria-controls="supporter-driver-info-subtab"
-              style="width:100%; background:#F8FAFC; border:none; padding:1.1rem 1.35rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; gap:1rem;"
-              data-agent-id="btn-toggle-panel-driver-information" data-testid="btn-toggle-panel-driver-information"
-              aria-label="Toggle Driver Information Panel">
-              <div style="display:flex; align-items:center; gap:0.75rem;">
-                <span
-                  style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
-                  <i class="fa-solid fa-id-card-clip"></i>
-                </span>
-                <div>
-                  <strong style="font-size:1.05rem; font-weight:800; color:var(--primary-navy); display:block;">Driver
-                    Information</strong>
-                  <span style="font-size:0.78rem; color:var(--text-muted);">Manage your active driver profile, map
-                    visibility, delivery modes, AUD rates &amp; PayID</span>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; gap:0.65rem;">
-                <span id="driver-info-new-booking-badge"
-                  style="display:none; font-size:0.74rem; font-weight:900; background:#DC2626; color:#FFFFFF; padding:0.2rem 0.65rem; border-radius:999px; box-shadow:0 0 0 2px rgba(220,38,38,0.2);">
-                  <i class="fa-solid fa-envelope"></i> <span id="driver-info-new-booking-count">1</span> New
-                </span>
-                <span id="driver-info-collapse-status-pill"
-                  style="font-size:0.74rem; font-weight:800; background:#DCFCE7; color:#15803D; padding:0.2rem 0.65rem; border-radius:999px;">
-                  <i class="fa-solid fa-truck-fast"></i> Driver Profile
-                </span>
-                <i id="chevron-panel-driver-information" class="fa-solid fa-chevron-down"
-                  style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s ease;"></i>
-              </div>
-            </button>
-            <div id="supporter-driver-info-subtab" class="supporter-subview supporter-collapse-body"
-              style="display:none; padding:1.35rem; border-top:1px solid var(--border-light);"
-              data-agent-id="supporter-driver-info-subtab" data-testid="supporter-driver-info-subtab">
 
-              <!-- Driver Approval Status Banner (Awaiting vs Approved) -->
-              <div id="driver-admin-approval-status-banner"
-                style="display:none; margin-bottom:1.15rem; padding:0.85rem 1.15rem; border-radius:var(--radius-md); font-size:0.86rem; border:1px solid transparent;">
-              </div>
-
-              <!-- Active Driver Profile Selector & Map Visibility Control (Owner & SuperAdmin Only) -->
-              <div
-                style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1rem; margin-bottom:1.25rem; align-items:center;">
-                <div id="active-driver-profile-selector-wrap" data-agent-id="active-driver-profile-selector-wrap"
-                  data-testid="active-driver-profile-selector-wrap"
-                  style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:var(--radius-md); padding:0.75rem 1rem;">
-                  <div
-                    style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.35rem; flex-wrap:wrap;">
-                    <label class="input-label" for="driver-admin-select" style="margin:0;">
-                      <i class="fa-solid fa-id-badge" style="color:var(--brand-orange);"></i> Active Driver Profile
-                    </label>
-                    <span id="active-driver-ownership-badge"
-                      style="font-size:0.68rem; font-weight:800; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; padding:0.1rem 0.45rem; border-radius:999px;">
-                      <i class="fa-solid fa-user-lock"></i> Owner &amp; SuperAdmin Only
-                    </span>
-                  </div>
-                  <select id="driver-admin-select" class="form-control"
-                    onchange="onDriverAdminSelectionChange(this.value)" data-agent-id="driver-admin-select"
-                    data-testid="driver-admin-select" aria-label="Select Active Driver Profile">
-                    <!-- Populated dynamically: only owned profile for registered driver, or all profiles for SuperAdmin -->
-                  </select>
-                </div>
-
-                <!-- Driver Profile Turn ON / OFF for Maps Card -->
-                <div id="driver-profile-turn-on-card"
-                  style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-md); padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; min-width:0;"
-                  data-agent-id="driver-profile-turn-on-card" data-testid="driver-profile-turn-on-card">
-                  <div style="min-width:0; flex:1;">
-                    <div
-                      style="font-size:0.72rem; font-weight:800; color:#065F46; text-transform:uppercase; letter-spacing:0.02em;">
-                      <i class="fa-solid fa-power-off"></i> Driver Profile Status (Maps)
-                    </div>
-                    <div id="driver-profile-map-visibility-badge"
-                      style="font-size:0.82rem; font-weight:800; color:#047857; margin-top:0.15rem;">
-                      Profile ON • Visible on Maps
-                    </div>
-                  </div>
-                  <button type="button" id="btn-toggle-driver-profile-on" class="btn btn-primary btn-sm"
-                    onclick="toggleActiveDriverProfileOn()"
-                    style="background:#059669; border-color:#059669; white-space:nowrap; flex-shrink:0; font-size:0.78rem; font-weight:800; padding:0.4rem 0.75rem;"
-                    data-agent-id="btn-toggle-driver-profile-on" data-testid="btn-toggle-driver-profile-on"
-                    aria-label="Toggle Driver Profile On or Off for Maps">
-                    <i class="fa-solid fa-toggle-on"></i> Profile ON
-                  </button>
-                </div>
-              </div>
-
-              <!-- Top Info Card: Verified Driver Profile & Telemetry -->
-              <div class="courier-calc-card" style="padding:1.5rem; margin-bottom:1.5rem;">
-                <div
-                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:2px solid var(--bg-card-alt);">
-                  <div style="display:flex; align-items:center; gap:0.85rem;">
-                    <div
-                      style="width:48px; height:48px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:2px solid #BFDBFE;">
-                      <i class="fa-solid fa-id-card-clip"></i>
-                    </div>
-                    <div>
-                      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                        <h3 id="driver-info-name"
-                          style="font-size:1.25rem; font-weight:800; color:var(--primary-navy); margin:0;">
-                          Driver Information
-                        </h3>
-                        <span id="driver-info-username-badge"
-                          style="font-size:0.8rem; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-weight:800; padding:0.18rem 0.6rem; border-radius:999px;"
-                          data-agent-id="driver-info-username-badge" data-testid="driver-info-username-badge">
-                          @callumevans
-                        </span>
-                        <span id="driver-info-status-badge"
-                          style="font-size:0.75rem; background:#DCFCE7; color:#15803D; font-weight:800; padding:0.2rem 0.65rem; border-radius:999px;">
-                          <i class="fa-solid fa-circle-check"></i> Approved Driver • Shown on Map
-                        </span>
-                      </div>
-                      <div id="driver-info-contact-line"
-                        style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
-                        Active courier profile details and rates
-                      </div>
-                    </div>
-                  </div>
-                  <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
-                    <button type="button" id="btn-info-toggle-driver-profile-on" class="btn btn-primary btn-sm"
-                      onclick="toggleActiveDriverProfileOn()"
-                      style="background:#059669; border-color:#059669; display:inline-flex; align-items:center; gap:0.4rem; font-weight:800;"
-                      data-agent-id="btn-info-toggle-driver-profile-on" data-testid="btn-info-toggle-driver-profile-on"
-                      aria-label="Toggle Driver Profile On or Off for Maps">
-                      <i class="fa-solid fa-toggle-on"></i> Profile ON
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Quick Telemetry Grid: PayID, Geolocation, Token Balance -->
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
-                  <div
-                    style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-md); padding:0.85rem 1rem;">
-                    <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">
-                      <i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i> Direct PayID
-                    </div>
-                    <div id="driver-info-payid"
-                      style="font-size:1rem; font-weight:800; color:var(--primary-navy); margin-top:0.25rem;">
-                      payid@driver.com.au
-                    </div>
-                  </div>
-
-                  <div
-                    style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <div style="font-size:0.72rem; font-weight:800; color:#065F46; text-transform:uppercase;">
-                        <i class="fa-solid fa-location-dot"></i> Base Suburb / Live Location
-                      </div>
-                      <div id="driver-info-location"
-                        style="font-size:1rem; font-weight:800; color:#047857; margin-top:0.25rem;">
-                        Southport QLD
-                      </div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="triggerDriverAdminGeolocate()"
-                      style="background:#059669; border-color:#059669; font-size:0.75rem; padding:0.35rem 0.65rem;"
-                      data-agent-id="btn-driver-admin-geolocate" data-testid="btn-driver-admin-geolocate"
-                      aria-label="Auto Geolocate Now">
-                      <i class="fa-solid fa-location-crosshairs"></i> GPS
-                    </button>
-                  </div>
-
-                  <div
-                    style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <div style="font-size:0.72rem; font-weight:800; color:#92400E; text-transform:uppercase;">
-                        <i class="fa-solid fa-coins" style="color:#F59E0B;"></i> Token Balance
-                      </div>
-                      <div id="driver-info-tokens"
-                        style="font-size:1rem; font-weight:800; color:#B45309; margin-top:0.25rem;">
-                        45 Tokens
-                      </div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="openDriverTokenTopupModal()"
-                      style="background:#D97706; border-color:#D97706; font-size:0.75rem; padding:0.35rem 0.65rem;"
-                      data-agent-id="btn-driver-buy-tokens" data-testid="btn-driver-buy-tokens"
-                      aria-label="Buy Tokens in AUD">
-                      <i class="fa-solid fa-plus"></i> Buy
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Recorded Customer Orders & Scheduled 9am–4pm Pickups (Inside Driver Information Panel) -->
-              <div id="driver-free-hour-active-banner"
-                style="display:none; background:#ECFDF5; border:2px solid #10B981; border-radius:var(--radius-sm); padding:0.85rem 1.1rem; margin-top:1rem; color:#065F46; font-weight:800; font-size:0.86rem;"
-                data-agent-id="driver-free-hour-active-banner" data-testid="driver-free-hour-active-banner">
-                <i class="fa-solid fa-gift" style="color:#059669;"></i>
-                <span id="driver-free-hour-banner-text">SuperAdmin 1-Hour Free Mode Active! All drivers pay 0 Tokens to
-                  SuperAdmin during this hour.</span>
-              </div>
-
-              <div class="courier-calc-card" style="padding:1.5rem; margin-top:1.25rem;"
-                data-agent-id="driver-recorded-orders-history-card" data-testid="driver-recorded-orders-history-card">
-                <div
-                  style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-light);">
-                  <div>
-                    <h3
-                      style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:0 0 0.25rem 0; display:flex; align-items:center; gap:0.5rem;">
-                      <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-orange);"></i> My Bookings
-                      History &amp; Supporter ↔ Driver Messaging (Recorded Customer Orders &amp; Scheduled 9am–4pm
-                      Pickups)
-                    </h3>
-                    <p style="font-size:0.84rem; color:var(--text-muted); margin:0;">
-                      Review all your past and active courier delivery bookings, scheduled 9am–4pm pickup times, PayID
-                      details, and message directly between the Supporter and Driver inside each booking card below.
-                    </p>
-                  </div>
-                  <div style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
-                    <span id="driver-orders-count-badge" class="badge-pill-pill"
-                      style="background:var(--primary-navy);">
-                      1 Recorded Order
-                    </span>
-                  </div>
-                </div>
-
-                <div id="driver-admin-orders-container" style="display:flex; flex-direction:column; gap:1rem;">
-                  <!-- Populated dynamically by renderDriverAdminDashboard() using the same My Bookings History & Supporter ↔ Driver Messaging card layout -->
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- COLLAPSED PANEL 3B: Delivery Modes & Custom Rates ($ AUD) (Separate Panel for Vehicle & Bicycle) -->
           <div id="supporter-panel-delivery-modes-rates" class="courier-calc-card supporter-collapsible-card"

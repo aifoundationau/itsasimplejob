@@ -125,7 +125,7 @@ export async function saveProviderToFirestore(provider) {
   const payload = {
     ...provider,
     businessId: BUSINESS_ID,
-    isActive: true,
+    isActive: (provider.profileTurnedOn === false || provider.profileActive === false) ? false : (provider.isActive !== false),
     updatedAt: new Date().toISOString()
   };
 
