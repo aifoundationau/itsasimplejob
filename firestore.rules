@@ -269,21 +269,23 @@ service cloud.firestore {
     // Booking customer ownership helper
     function isBookingCustomer() {
       return isAuthenticated() && (
-        (request.auth.uid == resource.data.customerUid) ||
-        (request.auth.uid == resource.data.uid) ||
+        (('customerUid' in resource.data) && request.auth.uid == resource.data.customerUid) ||
+        (('uid' in resource.data) && request.auth.uid == resource.data.uid) ||
         (('customer' in resource.data) && ('uid' in resource.data.customer) && request.auth.uid == resource.data.customer.uid) ||
         (('custPhone' in resource.data) && ('phone_number' in request.auth.token) && request.auth.token.phone_number == resource.data.custPhone) ||
-        (('customer' in resource.data) && ('phone' in resource.data.customer) && ('phone_number' in request.auth.token) && request.auth.token.phone_number == resource.data.customer.phone)
+        (('customer' in resource.data) && ('phone' in resource.data.customer) && ('phone_number' in request.auth.token) && request.auth.token.phone_number == resource.data.customer.phone) ||
+        (('email' in request.auth.token) && request.auth.token.email_verified == true && (('customerEmail' in resource.data && resource.data.customerEmail == request.auth.token.email) || ('custEmail' in resource.data && resource.data.custEmail == request.auth.token.email)))
       );
     }
 
     // Booking assigned provider ownership helper
     function isBookingProvider() {
       return isAuthenticated() && (
-        (request.auth.uid == resource.data.providerUid) ||
-        (request.auth.uid == resource.data.assignedProviderId) ||
+        (('providerUid' in resource.data) && request.auth.uid == resource.data.providerUid) ||
+        (('assignedProviderId' in resource.data) && request.auth.uid == resource.data.assignedProviderId) ||
         (('provider' in resource.data) && ('uid' in resource.data.provider) && request.auth.uid == resource.data.provider.uid) ||
-        (('providerId' in resource.data) && request.auth.uid == resource.data.providerId)
+        (('providerId' in resource.data) && request.auth.uid == resource.data.providerId) ||
+        (('email' in request.auth.token) && request.auth.token.email_verified == true && (('driverEmail' in resource.data && resource.data.driverEmail == request.auth.token.email) || ('providerEmail' in resource.data && resource.data.providerEmail == request.auth.token.email)))
       );
     }
 
@@ -298,7 +300,16 @@ service cloud.firestore {
              (!('jobPhotos' in data) || (data.jobPhotos is list && data.jobPhotos.size() <= 10)) &&
              (!('supporterBookingFeeTokens' in data) || (data.supporterBookingFeeTokens is int && data.supporterBookingFeeTokens >= 0 && data.supporterBookingFeeTokens <= 100)) &&
              (!('tokensChargedToDriver' in data) || (data.tokensChargedToDriver is int && data.tokensChargedToDriver >= 0 && data.tokensChargedToDriver <= 1000)) &&
-             (!('businessId' in data) || data.businessId == 'its-a-simple-job');
+             (!('businessId' in data) || data.businessId == 'its-a-simple-job') &&
+             (!('messages' in data) || (data.messages is list && data.messages.size() <= 200)) &&
+             (!('unreadByDriver' in data) || data.unreadByDriver is bool) &&
+             (!('unreadByCustomer' in data) || data.unreadByCustomer is bool) &&
+             (!('lastMessageAt' in data) || (data.lastMessageAt is string && data.lastMessageAt.size() <= 40)) &&
+             (!('customerEmail' in data) || data.customerEmail == null || (data.customerEmail is string && data.customerEmail.size() <= 120)) &&
+             (!('custEmail' in data) || data.custEmail == null || (data.custEmail is string && data.custEmail.size() <= 120)) &&
+             (!('driverEmail' in data) || data.driverEmail == null || (data.driverEmail is string && data.driverEmail.size() <= 120)) &&
+             (!('providerEmail' in data) || data.providerEmail == null || (data.providerEmail is string && data.providerEmail.size() <= 120)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40) || data.updatedAt is timestamp);
     }
 
     // Candidate application validator
@@ -403,9 +414,10 @@ service cloud.firestore {
       allow read: if isBookingCustomer() || isBookingProvider();
       allow create: if isAuthenticated() &&
                        (
-                         request.resource.data.customerUid == request.auth.uid ||
-                         request.resource.data.uid == request.auth.uid ||
-                         (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid)
+                         ('customerUid' in request.resource.data && request.resource.data.customerUid == request.auth.uid) ||
+                         ('uid' in request.resource.data && request.resource.data.uid == request.auth.uid) ||
+                         (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid) ||
+                         (('email' in request.auth.token) && request.auth.token.email_verified == true && (('customerEmail' in request.resource.data && request.resource.data.customerEmail == request.auth.token.email) || ('custEmail' in request.resource.data && request.resource.data.custEmail == request.auth.token.email)))
                        ) &&
                        (request.resource.data.status in ['pending', 'Confirmed & Dispatched', 'Scheduled (9am–4pm Pickup)']) &&
                        (!('paid' in request.resource.data) || request.resource.data.paid == false) &&
@@ -415,11 +427,17 @@ service cloud.firestore {
                        isValidBooking(request.resource.data);
       allow update: if isAuthenticated() &&
                        (isBookingCustomer() || isBookingProvider()) &&
-                       request.resource.data.status != 'completed' &&
-                       request.resource.data.status != 'paid' &&
-                       request.resource.data.status != 'settled' &&
-                       request.resource.data.status != 'refunded' &&
+                       (!('status' in request.resource.data) || (
+                         request.resource.data.status != 'completed' &&
+                         request.resource.data.status != 'paid' &&
+                         request.resource.data.status != 'settled' &&
+                         request.resource.data.status != 'refunded'
+                       )) &&
                        areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens', 'supporterBookingFeeTokens', 'tokensChargedToDriver', 'totalAud', 'payoutCompleted', 'uid', 'providerUid', 'assignedProviderId', 'providerId']) &&
+                       ((!('customerEmail' in resource.data) && (!('customerEmail' in request.resource.data) || isBookingCustomer())) || (('customerEmail' in resource.data) && ('customerEmail' in request.resource.data) && request.resource.data.customerEmail == resource.data.customerEmail)) &&
+                       ((!('custEmail' in resource.data) && (!('custEmail' in request.resource.data) || isBookingCustomer())) || (('custEmail' in resource.data) && ('custEmail' in request.resource.data) && request.resource.data.custEmail == resource.data.custEmail)) &&
+                       (!('driverEmail' in resource.data) || (('driverEmail' in request.resource.data) && request.resource.data.driverEmail == resource.data.driverEmail)) &&
+                       (!('providerEmail' in resource.data) || (('providerEmail' in request.resource.data) && request.resource.data.providerEmail == resource.data.providerEmail)) &&
                        isValidBooking(request.resource.data);
     }
 

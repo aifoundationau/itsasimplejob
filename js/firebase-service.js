@@ -199,6 +199,135 @@ export async function updateBookingStatusInFirestore(docketNumber, status, extra
 }
 
 /**
+ * Sync Courier Booking record (with initial metadata & messages array) to Firestore bookings/{orderId}
+ */
+export async function syncCourierBookingToFirestore(orderData) {
+  if (!orderData?.orderId || !db || !isConnected) return false;
+  const user = auth?.currentUser || null;
+  const now = new Date().toISOString();
+  const supTokens = Number(orderData.supporterBookingFeeTokens);
+  const drvTokens = Number(orderData.tokensChargedToDriver);
+
+  const payload = {
+    docketNumber: orderData.orderId,
+    orderId: orderData.orderId,
+    businessId: BUSINESS_ID,
+    customerUid: orderData.customerUid || user?.uid || null,
+    uid: orderData.uid || orderData.customerUid || user?.uid || null,
+    customerName: String(orderData.customerName || 'Supporter').slice(0, 100),
+    custName: String(orderData.customerName || 'Supporter').slice(0, 100),
+    customerPhone: String(orderData.customerPhone || '').slice(0, 25),
+    customerEmail: String(orderData.customerEmail || user?.email || '').trim().toLowerCase(),
+    customerAddress: String(orderData.customerAddress || orderData.originAddress || 'Gold Coast QLD').slice(0, 250),
+    custAddress: String(orderData.customerAddress || orderData.originAddress || 'Gold Coast QLD').slice(0, 250),
+    originAddress: String(orderData.originAddress || '').slice(0, 250),
+    destAddress: String(orderData.destAddress || '').slice(0, 250),
+    driverId: orderData.driverId || '',
+    assignedProviderId: orderData.driverId || '',
+    providerId: orderData.driverId || '',
+    driverName: orderData.driverName || '',
+    driverEmail: String(orderData.driverEmail || '').trim().toLowerCase(),
+    providerUid: orderData.providerUid || null,
+    pickupDate: orderData.pickupDate || '',
+    pickupTime: orderData.pickupTime || '',
+    speedTier: orderData.speedTier || 'standard',
+    distanceKm: Number(orderData.distanceKm || 0),
+    totalAud: Number(orderData.totalAud || 0),
+    supporterBookingFeeTokens: Number.isInteger(supTokens) && supTokens >= 0 ? supTokens : 1,
+    tokensChargedToDriver: Number.isInteger(drvTokens) && drvTokens >= 0 ? drvTokens : 1,
+    status: orderData.status || 'Scheduled (9am–4pm Pickup)',
+    messages: Array.isArray(orderData.messages) ? orderData.messages.slice(-200) : [],
+    unreadByDriver: Boolean(orderData.unreadByDriver),
+    unreadByCustomer: Boolean(orderData.unreadByCustomer),
+    createdAt: orderData.createdAt || now,
+    updatedAt: now
+  };
+
+  try {
+    const docRef = doc(collection(db, 'bookings'), orderData.orderId);
+    await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
+    return true;
+  } catch (e) {
+    console.warn('⚠️ [Firestore] Could not sync courier booking:', e.message);
+    return false;
+  }
+}
+
+/**
+ * Append/merge a Customer <-> Courier chat message onto Firestore bookings/{orderId}
+ */
+export async function appendBookingMessageToFirestore(orderId, messageRecord, orderData = null) {
+  if (!orderId || !messageRecord || !db || !isConnected) return false;
+  const now = new Date().toISOString();
+  const messagesList = Array.isArray(orderData?.messages) && orderData.messages.length > 0
+    ? orderData.messages.slice(-200)
+    : [messageRecord];
+
+  const payload = {
+    docketNumber: orderId,
+    orderId,
+    businessId: BUSINESS_ID,
+    messages: messagesList,
+    lastMessageAt: messageRecord.createdAt || now,
+    unreadByDriver: messageRecord.senderRole === 'supporter',
+    unreadByCustomer: messageRecord.senderRole === 'driver',
+    updatedAt: now
+  };
+
+  if (orderData) {
+    const user = auth?.currentUser || null;
+    if (orderData.customerUid || user?.uid) {
+      payload.customerUid = orderData.customerUid || user?.uid;
+      payload.uid = orderData.uid || orderData.customerUid || user?.uid;
+    }
+    if (orderData.driverId) {
+      payload.driverId = orderData.driverId;
+      payload.assignedProviderId = orderData.driverId;
+      payload.providerId = orderData.driverId;
+    }
+    if (orderData.driverName) payload.driverName = orderData.driverName;
+    if (orderData.driverEmail) payload.driverEmail = String(orderData.driverEmail).trim().toLowerCase();
+    if (orderData.customerName) {
+      payload.customerName = String(orderData.customerName).slice(0, 100);
+      payload.custName = String(orderData.customerName).slice(0, 100);
+    }
+    if (orderData.customerEmail || user?.email) {
+      payload.customerEmail = String(orderData.customerEmail || user?.email || '').trim().toLowerCase();
+    }
+    if (orderData.status) payload.status = orderData.status;
+  }
+
+  try {
+    const docRef = doc(collection(db, 'bookings'), orderId);
+    await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
+    return true;
+  } catch (e) {
+    console.warn('⚠️ [Firestore] Could not sync booking chat message:', e.message);
+    return false;
+  }
+}
+
+/**
+ * Subscribe in real time to a single booking's live chat thread (bookings/{orderId})
+ */
+export function subscribeToBookingChat(orderId, callback) {
+  if (!db || !isConnected || !orderId || typeof callback !== 'function') return () => {};
+  try {
+    const docRef = doc(collection(db, 'bookings'), orderId);
+    return onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data());
+      }
+    }, (error) => {
+      console.warn('⚠️ [Firestore Booking Chat]:', error.message);
+    });
+  } catch (err) {
+    console.warn('⚠️ [Firestore Booking Chat] Listener setup:', err.message);
+    return () => {};
+  }
+}
+
+/**
  * Update Supporter Profile in Firestore users collection
  */
 export async function updateSupporterProfileInFirestore(uid, profileData) {
@@ -1025,6 +1154,9 @@ window.firebaseService = {
   saveProviderToFirestore,
   saveBookingToFirestore,
   updateBookingStatusInFirestore,
+  syncCourierBookingToFirestore,
+  appendBookingMessageToFirestore,
+  subscribeToBookingChat,
   updateSupporterProfileInFirestore,
   saveCustomerToFirestore,
   saveCandidateToFirestore,

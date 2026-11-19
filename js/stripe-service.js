@@ -5,10 +5,11 @@
  */
 
 const STRIPE_PUBLISHABLE_KEY = (typeof window !== 'undefined' && window.ENV?.STRIPE_PUBLISHABLE_KEY) || "pk_test_51UKnKUI8bClhBF4Pl59doST5JkSHIg47DaHs5bicuWUEM0iuyT6BtcVV2zlvZUAAL5HjnRNt5PAzJQETRIckLarb00o6jAlzpi";
+const IS_STRIPE_TEST_MODE = STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_');
 
 const STRIPE_CONFIG = {
-  accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || "acct_1UKnKUI8bClhBF4P",
-  accountName: "AI Foundation sandbox",
+  accountId: (typeof window !== 'undefined' && window.ENV?.STRIPE_ACCOUNT_ID) || (IS_STRIPE_TEST_MODE ? "acct_1UKnKUI8bClhBF4P" : "acct_1UKnKJRBuANNU7hY"),
+  accountName: IS_STRIPE_TEST_MODE ? "AI Foundation sandbox" : "It's A Simple Job (Live)",
   publishableKey: STRIPE_PUBLISHABLE_KEY,
   currency: "aud",
   currencyLabel: "AUD Only",
@@ -16,30 +17,30 @@ const STRIPE_CONFIG = {
   automaticTax: { enabled: true },
   taxBehavior: "exclusive",
   taxCode: "txcd_10000000",
-  taxRegistrationId: "taxreg_1UXyhEI8bClhBF4PvgDdffXg",
+  taxRegistrationId: IS_STRIPE_TEST_MODE ? "taxreg_1UXyhEI8bClhBF4PvgDdffXg" : null,
   gstAppliesToCountry: "AU",
   gstRule: "GST is only charged for Australians (country === AU)",
   gstRate: 0.10,
   popupSize: "small",
-  productId: "prod_VaqooBzIgPduQC",
+  productId: IS_STRIPE_TEST_MODE ? "prod_VaqooBzIgPduQC" : null,
   defaultPricePerTokenAud: 1.00,
   defaultUnitAmountCents: 100,
-  unitPriceId: "price_1UZgMSI8bClhBF4PKywysjAj",
-  tokenPriceIds: {
+  unitPriceId: IS_STRIPE_TEST_MODE ? "price_1UZgMSI8bClhBF4PKywysjAj" : null,
+  tokenPriceIds: IS_STRIPE_TEST_MODE ? {
     10: "price_1UZgMSI8bClhBF4PKywysjAj",
     50: "price_1UZgMSI8bClhBF4PKywysjAj",
     100: "price_1UZgMSI8bClhBF4PKywysjAj"
-  },
-  tokenPaymentLinkIds: {
+  } : {},
+  tokenPaymentLinkIds: IS_STRIPE_TEST_MODE ? {
     10: "plink_1UZgMsI8bClhBF4PS4h9mV35",
     50: "plink_1UZgMwI8bClhBF4PYU5fjcK3",
     100: "plink_1UZgMzI8bClhBF4PcgVPyBwQ"
-  },
-  tokenPaymentLinks: {
+  } : {},
+  tokenPaymentLinks: IS_STRIPE_TEST_MODE ? {
     10: "https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07",
     50: "https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08",
     100: "https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09"
-  },
+  } : {},
   defaultTokenPackQuotes: {
     10: {
       tokens: 10,
@@ -155,8 +156,8 @@ class StripePaymentService {
       isAustralianCustomer,
       taxabilityReason,
       taxLabel: isAustralianCustomer ? 'Tax (Exclusive 10% GST):' : 'Tax (0% Non-AU — GST Charged to Australians Only):',
-      productId: this.config.productId || 'prod_VaqooBzIgPduQC',
-      priceId: this.config.unitPriceId || this.config.tokenPriceIds?.[cleanTokens] || 'price_1UZgMSI8bClhBF4PKywysjAj',
+      productId: this.config.productId || null,
+      priceId: this.config.unitPriceId || this.config.tokenPriceIds?.[cleanTokens] || null,
       paymentLinkId: this.config.tokenPaymentLinkIds?.[cleanTokens] || null,
       paymentLinkUrl: this.config.tokenPaymentLinks?.[cleanTokens] || null,
       taxRate,

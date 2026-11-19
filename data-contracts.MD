@@ -3681,3 +3681,36 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   }
 }
 ```
+
+---
+
+## 25. Real-Time Customer ↔ Courier Booking Chat & Live Map Chat Contract
+
+> Added to synchronize per-booking Customer ↔ Courier messages (`ORD-XXXXXX`) in real time across devices via Cloud Firestore (`bookings/{orderId}`), embed live chat inside `#live-driver-tracking-modal`, broadcast cross-tab chat updates via `iasj_live_booking_chat_v1`, and keep client Stripe fallback config strictly scoped to test mode.
+
+### 25.1 Architecture & Security Rules
+- **Firestore Sync (`bookings/{orderId}`):** `syncCourierBookingToFirestore` persists booking ownership fields (`customerUid`, `uid`, `customerEmail`, `driverId`, `assignedProviderId`, `providerId`, `driverEmail`, `providerUid`) alongside `messages[]`. Every sent message calls `appendBookingMessageToFirestore` and emits `iasj_live_booking_chat_v1` in `localStorage`.
+- **Real-Time Subscriptions:** `subscribeToBookingChat(orderId, callback)` attaches `onSnapshot` while `#live-driver-tracking-modal` is open; `subscribeToLiveBookings` merges incoming messages across tabs/devices via `courierOrderDB.mergeOrderMessages` deduplicated by message `id`.
+- **Security Rules (`firestore.rules`):** `isBookingCustomer()` and `isBookingProvider()` enforce UID/assignedProviderId checks plus verified Google email matching (`request.auth.token.email_verified == true`). `messages` is capped at 200 items, `lastMessageAt` at 40 chars, and `unreadByDriver` / `unreadByCustomer` are validated booleans.
+
+### 25.2 Strict JSON Schema (`additionalProperties: false`)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BookingChatMessageRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "orderId", "senderRole", "senderName", "text", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "minLength": 4, "maxLength": 100 },
+    "orderId": { "type": "string", "pattern": "^ORD-\\d{6}$" },
+    "senderRole": { "type": "string", "enum": ["supporter", "driver"] },
+    "senderName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "senderUid": { "type": "string", "maxLength": 128 },
+    "senderEmail": { "type": "string", "format": "email", "maxLength": 200 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "createdAt": { "type": "string", "format": "date-time", "maxLength": 40 }
+  }
+}
+```

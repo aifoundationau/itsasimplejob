@@ -1003,6 +1003,8 @@ class CourierOrderDatabase {
       orderId: ord.orderId,
       senderRole,
       senderName,
+      ...(msgData.senderUid ? { senderUid: String(msgData.senderUid) } : {}),
+      ...(msgData.senderEmail ? { senderEmail: String(msgData.senderEmail).trim().toLowerCase() } : {}),
       text: cleanText,
       createdAt: msgData.createdAt || new Date().toISOString()
     };
@@ -1010,9 +1012,89 @@ class CourierOrderDatabase {
     ord.messages.push(messageRecord);
     if (senderRole === 'supporter') {
       ord.unreadByDriver = true;
+    } else {
+      ord.unreadByCustomer = true;
     }
+    ord.lastMessageAt = messageRecord.createdAt;
     this.save();
     return messageRecord;
+  }
+
+  mergeOrderMessages(orderId, incomingMessages = [], extraFields = {}, options = {}) {
+    let ord = this.getOrderById(orderId);
+    let createdNewOrder = false;
+
+    if (!ord && extraFields && extraFields.orderId) {
+      const normalizedNew = {
+        unreadByDriver: false,
+        unreadByCustomer: false,
+        messages: [],
+        ...extraFields,
+        orderId: extraFields.orderId
+      };
+      this.orders.unshift(normalizedNew);
+      ord = normalizedNew;
+      createdNewOrder = true;
+    }
+
+    if (!ord) {
+      return { addedCount: 0, totalCount: 0, order: null };
+    }
+
+    if (!Array.isArray(ord.messages)) {
+      ord.messages = [];
+    }
+
+    const existingIds = new Set(ord.messages.map(m => m.id).filter(Boolean));
+    let addedCount = 0;
+
+    for (const rawMsg of (Array.isArray(incomingMessages) ? incomingMessages : [])) {
+      if (!rawMsg || !rawMsg.id || !rawMsg.text || existingIds.has(rawMsg.id)) continue;
+      const cleanText = String(rawMsg.text || '').replace(/[<>]/g, '').trim();
+      if (!cleanText) continue;
+
+      const senderRole = rawMsg.senderRole === 'driver' ? 'driver' : 'supporter';
+      const normalizedMsg = {
+        id: String(rawMsg.id),
+        orderId: ord.orderId,
+        senderRole,
+        senderName: String(rawMsg.senderName || (senderRole === 'driver' ? (ord.driverName || 'Courier Driver') : (ord.customerName || 'Supporter'))).replace(/[<>]/g, '').trim(),
+        ...(rawMsg.senderUid ? { senderUid: String(rawMsg.senderUid) } : {}),
+        ...(rawMsg.senderEmail ? { senderEmail: String(rawMsg.senderEmail).trim().toLowerCase() } : {}),
+        text: cleanText,
+        createdAt: rawMsg.createdAt || new Date().toISOString()
+      };
+      ord.messages.push(normalizedMsg);
+      existingIds.add(normalizedMsg.id);
+      addedCount++;
+    }
+
+    if (addedCount > 0) {
+      ord.messages.sort((a, b) => (Date.parse(a.createdAt) || 0) - (Date.parse(b.createdAt) || 0));
+    }
+
+    if (typeof extraFields?.unreadByDriver === 'boolean') {
+      ord.unreadByDriver = extraFields.unreadByDriver;
+    }
+    if (typeof extraFields?.unreadByCustomer === 'boolean') {
+      ord.unreadByCustomer = extraFields.unreadByCustomer;
+    }
+    if (extraFields?.status) {
+      ord.status = extraFields.status;
+    }
+    if (extraFields?.lastMessageAt) {
+      ord.lastMessageAt = extraFields.lastMessageAt;
+    }
+
+    if ((addedCount > 0 || createdNewOrder || extraFields?.forceSave) && options.persist !== false) {
+      this.save();
+    }
+
+    return {
+      addedCount,
+      totalCount: ord.messages.length,
+      order: ord
+    };
   }
 
   markOrderReadByDriver(orderId) {

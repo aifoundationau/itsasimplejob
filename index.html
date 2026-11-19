@@ -2557,9 +2557,80 @@
         </div>
 
         <div id="live-tracking-leaflet-map"
-          style="height:340px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"
+          style="height:300px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"
           data-agent-id="live-tracking-leaflet-map" data-testid="live-tracking-leaflet-map"
           aria-label="Live Driver Location Map"></div>
+
+        <!-- Customer <-> Courier Real-Time Chat Inside Live Driver Map Modal -->
+        <div id="live-tracking-chat-section"
+          style="margin-top:0.85rem; background:#F8FAFC; border:1.5px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.75rem 0.9rem;"
+          data-agent-id="live-tracking-chat-section" data-testid="live-tracking-chat-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.45rem; margin-bottom:0.5rem;">
+            <div style="font-size:0.82rem; font-weight:800; color:var(--primary-navy); display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <i class="fa-solid fa-comments" style="color:#2563EB;"></i>
+              <span>💬 Live Chat with <span id="live-tracking-chat-driver-name">Courier Driver</span></span>
+              <span id="live-tracking-chat-order-badge"
+                style="font-size:0.68rem; font-weight:800; background:#E2E8F0; color:#334155; padding:0.12rem 0.45rem; border-radius:999px;"
+                data-agent-id="live-tracking-chat-order-badge" data-testid="live-tracking-chat-order-badge">—</span>
+            </div>
+            <span id="live-tracking-chat-count"
+              style="font-size:0.7rem; font-weight:800; background:#DBEAFE; color:#1E40AF; padding:0.15rem 0.5rem; border-radius:999px;"
+              data-agent-id="live-tracking-chat-count" data-testid="live-tracking-chat-count">0 Messages</span>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.55rem;"
+            role="group" aria-label="Quick replies to courier">
+            <button type="button" id="btn-live-chat-chip-pickup" class="btn btn-outline btn-sm"
+              style="font-size:0.72rem; padding:0.25rem 0.55rem; font-weight:700;"
+              onclick="sendQuickLiveTrackingMessage('📍 I am at the pickup spot')"
+              data-agent-id="btn-live-chat-chip-pickup" data-testid="btn-live-chat-chip-pickup"
+              aria-label="Send quick reply: I'm at pickup">
+              📍 I'm at pickup
+            </button>
+            <button type="button" id="btn-live-chat-chip-eta" class="btn btn-outline btn-sm"
+              style="font-size:0.72rem; padding:0.25rem 0.55rem; font-weight:700;"
+              onclick="sendQuickLiveTrackingMessage('⏱️ Hi! What is your current ETA?')"
+              data-agent-id="btn-live-chat-chip-eta" data-testid="btn-live-chat-chip-eta"
+              aria-label="Send quick reply: What's your ETA?">
+              ⏱️ What's your ETA?
+            </button>
+            <button type="button" id="btn-live-chat-chip-bell" class="btn btn-outline btn-sm"
+              style="font-size:0.72rem; padding:0.25rem 0.55rem; font-weight:700;"
+              onclick="sendQuickLiveTrackingMessage('🚪 Please ring the bell on arrival')"
+              data-agent-id="btn-live-chat-chip-bell" data-testid="btn-live-chat-chip-bell"
+              aria-label="Send quick reply: Ring bell on arrival">
+              🚪 Ring bell on arrival
+            </button>
+          </div>
+
+          <div id="live-tracking-chat-thread"
+            style="max-height:150px; overflow-y:auto; margin-bottom:0.6rem; padding:0.35rem; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px;"
+            data-agent-id="live-tracking-chat-thread" data-testid="live-tracking-chat-thread"
+            aria-live="polite"></div>
+
+          <form id="live-tracking-chat-form" onsubmit="handleSendLiveTrackingChatMessage(event)"
+            style="display:flex; gap:0.45rem; align-items:center; flex-wrap:wrap;"
+            data-agent-id="live-tracking-chat-form" data-testid="live-tracking-chat-form">
+            <select id="live-tracking-chat-sender" class="form-control"
+              style="width:auto; min-width:140px; max-width:190px; padding:0.4rem 0.55rem; font-size:0.76rem; font-weight:800; background:#FFFFFF;"
+              data-agent-id="live-tracking-chat-sender" data-testid="live-tracking-chat-sender"
+              aria-label="Send Live Map Chat As Role">
+              <option value="supporter">🤝 Supporter</option>
+              <option value="driver">🚚 Driver</option>
+            </select>
+            <input type="text" id="live-tracking-chat-input" class="form-control"
+              placeholder="Write a message to your courier driver..."
+              style="flex:1; min-width:160px; padding:0.44rem 0.7rem; font-size:0.82rem; background:#FFFFFF;"
+              data-agent-id="live-tracking-chat-input" data-testid="live-tracking-chat-input"
+              aria-label="Message your courier driver">
+            <button type="submit" id="btn-live-tracking-chat-send" class="btn btn-primary btn-sm"
+              style="font-weight:800; padding:0.44rem 0.85rem; white-space:nowrap;"
+              data-agent-id="btn-live-tracking-chat-send" data-testid="btn-live-tracking-chat-send"
+              aria-label="Send Message to Courier">
+              <i class="fa-solid fa-paper-plane"></i> Send
+            </button>
+          </form>
+        </div>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; padding:0.85rem 1.25rem; border-top:1px solid var(--border-light);">
         <button type="button" id="btn-live-track-center" class="btn btn-outline btn-sm"
