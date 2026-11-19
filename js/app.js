@@ -626,6 +626,11 @@ function updateOsmContractorMarkers() {
           <strong>Max Capacity:</strong> ${weightVal} (${dimsVal})<br>
           <strong>PayID:</strong> ${provider.payIdValue || provider.phone}
         </div>
+        ${!isSample ? `
+          <button type="button" class="btn btn-outline btn-sm" onclick="openDirectCourierChatWithoutBooking('${provider.id}')" style="width:100%; font-size:0.75rem; padding:4px 8px; font-weight:800; margin-bottom:4px; border-color:#2563EB; color:#1E40AF; background:#EFF6FF;" data-agent-id="btn-popup-message-courier-${provider.id}" data-testid="btn-popup-message-courier-${provider.id}" aria-label="Message ${escapeAttr(provider.name)} without booking">
+            💬 Message Courier (No Booking Required)
+          </button>
+        ` : ''}
         <button type="button" class="btn btn-primary btn-sm" onclick="bookProviderDirectly('${provider.id}')" style="width:100%; font-size:0.78rem; padding:5px 10px; font-weight:700; ${isSample ? 'background:#64748B; border-color:#475569;' : ''}" data-sample-blocked="${isSample ? 'true' : 'false'}">
           <i class="fa-solid ${isSample ? 'fa-ban' : (isBicyclePopup ? 'fa-bicycle' : 'fa-truck-fast')}"></i> ${isSample ? 'Sample Only (Cannot Be Booked)' : 'Select Driver (9am–4pm Pickup)'}
         </button>
@@ -1637,6 +1642,13 @@ function renderContractorCards(contractors) {
           </div>
           <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
             ${!isSample ? `
+            <button type="button" class="btn btn-outline btn-sm"
+              onclick="event.stopPropagation(); openDirectCourierChatWithoutBooking('${c.id}')"
+              style="font-weight:800; border-color:#059669; color:#065F46; background:#ECFDF5;"
+              data-agent-id="btn-map-message-courier-only-${c.id}" data-testid="btn-map-message-courier-only-${c.id}"
+              aria-label="Message ${escapeAttr(c.name)} without booking">
+              💬 Message Courier
+            </button>
             <button type="button" class="btn btn-outline btn-sm"
               onclick="event.stopPropagation(); openDriverMessageBoxToBook('${c.id}')"
               style="font-weight:800; border-color:#2563EB; color:#1E40AF; background:#EFF6FF;"
@@ -4075,6 +4087,17 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
                 ${!isSampleDriver ? `
                 <button
                   type="button"
+                  id="btn-message-courier-only-${d.id}"
+                  class="btn btn-outline btn-sm"
+                  onclick="event.stopPropagation(); openDirectCourierChatWithoutBooking('${d.id}')"
+                  style="padding:0.25rem 0.7rem; font-size:0.74rem; font-weight:800; border-color:#059669; color:#065F46; background:#ECFDF5;"
+                  data-agent-id="btn-message-courier-only-${d.id}"
+                  data-testid="btn-message-courier-only-${d.id}"
+                  aria-label="Message ${escapeAttr(d.name)} without booking">
+                  💬 Message Courier
+                </button>
+                <button
+                  type="button"
                   id="btn-message-book-driver-${d.id}"
                   class="btn btn-outline btn-sm"
                   onclick="event.stopPropagation(); openDriverMessageBoxToBook('${d.id}')"
@@ -4397,9 +4420,9 @@ function submitCourierBooking(inlineOverrides = null) {
     renderSuperadminTokenBalance();
   }
 
-  // 2. Record the order in CourierOrderDatabase (shown on Driver Admin Page)
+  // 2. Record (or upgrade any existing pre-booking enquiry thread for this driver) in CourierOrderDatabase
   const signedInUser = window.firebaseService?.getCurrentGoogleUser?.() || null;
-  const newOrder = window.courierOrderDB.addOrder({
+  const bookingPayloadFields = {
     driverId: drv.id,
     driverName: drv.name,
     driverBusinessName: drv.businessName,
@@ -4436,8 +4459,21 @@ function submitCourierBooking(inlineOverrides = null) {
     deliveryMode: calc.deliveryMode || calc.quote?.deliveryMode || 'vehicle',
     deliveryModeLabel: calc.quote?.deliveryModeLabel || (calc.deliveryMode === 'bicycle' ? 'Bicycle Courier (Letters, Food & Small Items)' : 'Motor Vehicle Courier'),
     paymentMethod: 'Direct to Driver PayID (AUD)',
+    isPreBookingEnquiry: false,
     status: 'Scheduled (9am–4pm Pickup)'
-  });
+  };
+  const existingEnquiry = (window.courierOrderDB.getByDriver?.(drv.id) || []).find(
+    o => o.isPreBookingEnquiry === true && !checkSampleProfileOrData(o)
+  );
+  let newOrder;
+  if (existingEnquiry) {
+    Object.assign(existingEnquiry, bookingPayloadFields);
+    if (!Array.isArray(existingEnquiry.messages)) existingEnquiry.messages = [];
+    window.courierOrderDB.save();
+    newOrder = existingEnquiry;
+  } else {
+    newOrder = window.courierOrderDB.addOrder(bookingPayloadFields);
+  }
 
   const initialBookingChatMsg = window.courierOrderDB.addOrderMessage(newOrder.orderId, {
     senderRole: 'supporter',
@@ -6785,11 +6821,171 @@ window.copyPayIdFromMessageBox = function copyPayIdFromMessageBox(payIdText) {
   showToast(`💳 Copied Driver PayID (${clean})! Transfer AUD via your banking app, then click Confirm Paid below.`);
 };
 
+function getOrCreateDirectCourierChatThread(driverIdOrObj = null, options = {}) {
+  if (!window.courierOrderDB || !window.providerDB) return null;
+  const rawDrvs = window.providerDB.getAll?.() || [];
+  const candidateId = (typeof driverIdOrObj === 'object' && driverIdOrObj)
+    ? (driverIdOrObj.id || driverIdOrObj.serviceProviderNumber)
+    : (driverIdOrObj || liveTrackingMapState.driverId || appState.selectedCourierDriverId);
+
+  let drv = (candidateId ? window.providerDB.findById?.(candidateId) : null)
+    || window.providerDB.findById?.('drv-72171')
+    || rawDrvs.find(d => !checkSampleProfileOrData(d))
+    || null;
+  if (!drv || checkSampleProfileOrData(drv)) {
+    drv = rawDrvs.find(d => !checkSampleProfileOrData(d)) || null;
+  }
+  if (!drv) return null;
+
+  if (liveTrackingMapState.modalOrderId) {
+    const activeOrd = window.courierOrderDB.getOrderById?.(liveTrackingMapState.modalOrderId);
+    if (activeOrd && activeOrd.driverId === drv.id && !checkSampleProfileOrData(activeOrd)) {
+      return activeOrd;
+    }
+  }
+
+  const existingThread = (window.courierOrderDB.getByDriver?.(drv.id) || []).find(
+    o => !checkSampleProfileOrData(o)
+  );
+  if (existingThread) return existingThread;
+  if (options.createIfMissing === false) return null;
+
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const gUser = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  const customerName = String(
+    supporter?.name
+    || gUser?.displayName
+    || gUser?.name
+    || document.getElementById('courier-cust-name')?.value
+    || 'Prospective Customer'
+  ).trim() || 'Prospective Customer';
+  const customerPhone = String(
+    supporter?.phone
+    || gUser?.phoneNumber
+    || document.getElementById('courier-cust-phone')?.value
+    || 'Enquiry via Direct Chat'
+  ).trim();
+  const customerEmail = String(
+    supporter?.email
+    || gUser?.email
+    || document.getElementById('courier-cust-email')?.value
+    || ''
+  ).trim();
+  const originAddress = String(
+    document.getElementById('courier-origin')?.value
+    || supporter?.suburb
+    || 'Pre-Booking Enquiry (Origin TBD)'
+  ).trim();
+  const destAddress = String(
+    document.getElementById('courier-dest')?.value
+    || 'Pre-Booking Enquiry (Destination TBD)'
+  ).trim();
+  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
+  const pickupTime = document.getElementById('courier-pickup-time')?.value || '10:30 AM';
+  const speedTier = document.getElementById('courier-urgency')?.value || 'same_day';
+  const packageContents = String(
+    document.getElementById('courier-desc')?.value
+    || 'Pre-Booking Courier Enquiry'
+  ).trim();
+  const weightKg = parseFloat(document.getElementById('courier-weight')?.value) || 5;
+
+  const newThread = window.courierOrderDB.addOrder({
+    isSample: false,
+    canBeBooked: true,
+    isPreBookingEnquiry: true,
+    status: 'Pre-Booking Enquiry — Direct Chat (No Booking Yet)',
+    driverId: drv.id,
+    driverName: drv.name,
+    driverBusinessName: drv.businessName,
+    driverPhone: drv.phone,
+    driverEmail: drv.email || '',
+    driverPayIdType: drv.payIdType || 'phone',
+    driverPayIdValue: drv.payIdValue || drv.phone,
+    driverPayIdAccountName: drv.payIdAccountName || drv.businessName,
+    pickupDate,
+    pickupTime,
+    speedTier,
+    originAddress,
+    destAddress,
+    distanceKm: appState.lastCourierRoute?.distanceKm || 0,
+    customerUid: gUser?.uid || null,
+    customerName,
+    customerPhone,
+    customerEmail,
+    customerAddress: supporter?.suburb || originAddress,
+    supporterId: supporter?.id || null,
+    supporterBookingFeeTokens: 0,
+    packageContents,
+    weightKg,
+    perKmRateAud: Number(drv.perKmRateAud ?? 2.20),
+    distanceFeeAud: 0,
+    sameDayFeeAud: 0,
+    urgentFeeAud: 0,
+    totalAud: 0,
+    tokensChargedToDriver: 0,
+    tokenTierLabel: 'Pre-Booking Chat (0 Tokens)',
+    deliveryMode: drv.hasVehicleCourier !== false ? 'vehicle' : 'bicycle',
+    deliveryModeLabel: drv.hasVehicleCourier !== false ? 'Motor Vehicle Courier' : 'Bicycle Courier',
+    paymentMethod: 'No Booking Yet (Direct Pre-Booking Chat)'
+  });
+
+  if (window.firebaseService?.syncCourierBookingToFirestore) {
+    window.firebaseService.syncCourierBookingToFirestore(newThread).catch(() => {});
+  }
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { renderSupporterBookings(); } catch (e) {}
+  return newThread;
+}
+window.getOrCreateDirectCourierChatThread = getOrCreateDirectCourierChatThread;
+
+function openDirectCourierChatWithoutBooking(driverId = null) {
+  const rawDrvs = window.providerDB?.getAll?.() || [];
+  let drv = driverId
+    ? window.providerDB?.findById?.(driverId)
+    : (appState.selectedCourierDriverId ? window.providerDB?.findById?.(appState.selectedCourierDriverId) : null);
+
+  if (drv && checkSampleProfileOrData(drv)) {
+    if (driverId) {
+      showToast('🔒 Sample driver profiles are for demonstration only. Please message a live registered courier.');
+      return null;
+    }
+    drv = null;
+  }
+  if (!drv) {
+    drv = window.providerDB?.findById?.('drv-72171')
+      || rawDrvs.find(d => !checkSampleProfileOrData(d))
+      || null;
+  }
+  if (!drv) {
+    showToast('⚠️ No live courier drivers available right now.');
+    return null;
+  }
+
+  appState.selectedCourierDriverId = drv.id;
+  liveTrackingMapState.forceOpenInlineBookForm = false;
+  openLiveDriverTrackingModal(drv.id);
+  setTimeout(() => {
+    const inlineFormEl = document.getElementById('live-map-chat-inline-book-form');
+    if (inlineFormEl) inlineFormEl.style.display = 'none';
+    const sectionEl = document.getElementById('live-tracking-chat-section');
+    if (sectionEl && typeof sectionEl.scrollIntoView === 'function') {
+      try { sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+    }
+    const chatInput = document.getElementById('live-tracking-chat-input');
+    if (chatInput && typeof chatInput.focus === 'function') {
+      try { chatInput.focus(); } catch (e) {}
+    }
+  }, 60);
+  return drv;
+}
+window.openDirectCourierChatWithoutBooking = openDirectCourierChatWithoutBooking;
+
 window.openDriverMessageBoxToBook = function openDriverMessageBoxToBook(driverId) {
   const drv = driverId ? window.providerDB?.findById?.(driverId) : null;
   if (drv && !checkSampleProfileOrData(drv)) {
     appState.selectedCourierDriverId = drv.id;
   }
+  liveTrackingMapState.forceOpenInlineBookForm = true;
   openLiveDriverTrackingModal(driverId);
   setTimeout(() => {
     const formEl = document.getElementById('live-map-chat-inline-book-form');
@@ -10008,12 +10204,26 @@ function renderLiveTrackingModalChat() {
   const orderId = liveTrackingMapState.modalOrderId;
   const ord = orderId ? window.courierOrderDB?.getOrderById?.(orderId) : null;
   const drv = liveTrackingMapState.driverId ? window.providerDB?.findById?.(liveTrackingMapState.driverId) : null;
+  const activeDriverName = ord?.driverName || drv?.name || 'Courier Driver';
+  const isEnquiryMode = !ord || ord.isPreBookingEnquiry === true;
 
   const driverNameEl = document.getElementById('live-tracking-chat-driver-name');
-  if (driverNameEl) driverNameEl.textContent = ord?.driverName || drv?.name || 'Courier Driver';
+  if (driverNameEl) driverNameEl.textContent = activeDriverName;
 
   const orderBadgeEl = document.getElementById('live-tracking-chat-order-badge');
-  if (orderBadgeEl) orderBadgeEl.textContent = ord?.orderId || 'No Active Order';
+  if (orderBadgeEl) {
+    if (isEnquiryMode) {
+      orderBadgeEl.style.background = '#DCFCE7';
+      orderBadgeEl.style.color = '#065F46';
+      orderBadgeEl.textContent = ord?.orderId
+        ? `💬 Direct Chat • No Booking Required (${ord.orderId})`
+        : '💬 Direct Chat • No Booking Required';
+    } else {
+      orderBadgeEl.style.background = '#DBEAFE';
+      orderBadgeEl.style.color = '#1E40AF';
+      orderBadgeEl.textContent = ord.orderId;
+    }
+  }
 
   const countEl = document.getElementById('live-tracking-chat-count');
   const senderEl = document.getElementById('live-tracking-chat-sender');
@@ -10022,34 +10232,46 @@ function renderLiveTrackingModalChat() {
   const bookingControlsEl = document.getElementById('live-tracking-chat-booking-controls');
 
   if (bookingControlsEl) {
-    bookingControlsEl.innerHTML = renderMessageBoxBookingAndPayIdHtml('live-map-chat', ord, drv, { openFormByDefault: !ord });
-  }
-
-  if (!ord) {
-    if (countEl) countEl.textContent = '0 Messages';
-    threadEl.innerHTML = `<div style="text-align:center; padding:0.75rem; color:var(--text-muted); font-size:0.8rem;">Select or place a courier booking to chat directly with ${escapeAttr(drv?.name || 'your driver')}.</div>`;
-    if (formEl) formEl.style.opacity = '0.6';
-    return;
+    bookingControlsEl.innerHTML = renderMessageBoxBookingAndPayIdHtml('live-map-chat', ord, drv, {
+      openFormByDefault: Boolean(liveTrackingMapState.forceOpenInlineBookForm)
+    });
   }
 
   if (formEl) formEl.style.opacity = '1';
-  const messages = Array.isArray(ord.messages) ? ord.messages : [];
-  if (countEl) {
-    countEl.textContent = `${messages.length} Message${messages.length === 1 ? '' : 's'}`;
-  }
+
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const gUser = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  const customerLabel = ord?.customerName || supporter?.name || gUser?.displayName || 'Customer';
 
   if (senderEl && senderEl.options.length >= 2) {
     const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
     const isDriverView = appState.activePortalPanelMode === 'driver-admin' || activeRole === 'driver';
-    senderEl.options[0].textContent = `🤝 Supporter (${ord.customerName || 'Supporter'})`;
-    senderEl.options[1].textContent = `🚚 Driver (${ord.driverName || 'Courier Driver'})`;
+    senderEl.options[0].textContent = `🤝 Supporter (${customerLabel})`;
+    senderEl.options[1].textContent = `🚚 Driver (${activeDriverName})`;
     if (!senderEl.dataset.userChanged) {
       senderEl.value = isDriverView ? 'driver' : 'supporter';
     }
   }
   if (inputEl) {
     const isDrvSender = senderEl?.value === 'driver';
-    inputEl.placeholder = `Write a message to ${isDrvSender ? (ord.customerName || 'Customer') : (ord.driverName || 'Courier Driver')}...`;
+    inputEl.placeholder = isDrvSender
+      ? `Write a reply to ${customerLabel}...`
+      : `Message ${activeDriverName} directly (no booking required)...`;
+  }
+
+  const messages = Array.isArray(ord?.messages) ? ord.messages : [];
+  if (countEl) {
+    countEl.textContent = `${messages.length} Message${messages.length === 1 ? '' : 's'}`;
+  }
+
+  if (!ord || messages.length === 0) {
+    threadEl.innerHTML = `
+      <div style="text-align:center; padding:0.75rem; color:#065F46; background:#ECFDF5; border:1px dashed #6EE7B7; border-radius:6px; font-size:0.8rem;">
+        <i class="fa-regular fa-comments" style="color:#059669; margin-right:0.35rem;"></i>
+        <strong>Direct Chat with ${escapeAttr(activeDriverName)} (No Booking Required):</strong> Send a message below to ask about availability, pickup times, or parcel details before booking.
+      </div>
+    `;
+    return;
   }
 
   threadEl.innerHTML = renderBookingChatBubbleListHtml(ord, messages, 'live-tracking-');
@@ -10059,10 +10281,24 @@ window.renderLiveTrackingModalChat = renderLiveTrackingModalChat;
 
 function handleSendLiveTrackingChatMessage(event, textOverride = null) {
   if (event && event.preventDefault) event.preventDefault();
-  const orderId = liveTrackingMapState.modalOrderId;
+  let orderId = liveTrackingMapState.modalOrderId;
   if (!orderId) {
-    showToast('⚠️ Book or select an active order first to chat with your courier.');
-    return null;
+    const thread = getOrCreateDirectCourierChatThread(
+      liveTrackingMapState.driverId || appState.selectedCourierDriverId,
+      { createIfMissing: true }
+    );
+    if (!thread || !thread.orderId) {
+      showToast('⚠️ Please select a live courier driver first.');
+      return null;
+    }
+    orderId = thread.orderId;
+    liveTrackingMapState.modalOrderId = orderId;
+    if (!liveTrackingMapState.chatUnsubscribe && window.firebaseService?.subscribeToBookingChat) {
+      liveTrackingMapState.chatUnsubscribe = window.firebaseService.subscribeToBookingChat(
+        orderId,
+        (remoteBooking) => applyIncomingBookingChatSync(remoteBooking, { persist: true })
+      );
+    }
   }
   const inputEl = document.getElementById('live-tracking-chat-input');
   const senderEl = document.getElementById('live-tracking-chat-sender');

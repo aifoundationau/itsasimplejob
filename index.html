@@ -672,6 +672,14 @@
                 data-testid="btn-submit-courier-booking" aria-label="Check Booking Form Details and Select Driver">
                 <i class="fa-solid fa-clipboard-check"></i> Check Details &amp; Select an Available Driver Below to Book
               </button>
+              <button type="button" class="btn btn-outline btn-lg" id="btn-message-courier-without-booking"
+                onclick="openDirectCourierChatWithoutBooking()"
+                style="width:100%; margin-top:0.55rem; font-weight:800; border-color:#2563EB; color:#1E40AF; background:#EFF6FF; display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                data-agent-id="btn-message-courier-without-booking"
+                data-testid="btn-message-courier-without-booking"
+                aria-label="Message Courier Without Booking First">
+                <i class="fa-solid fa-comments" style="color:#2563EB;"></i> 💬 Message Courier Without Booking (Ask a Question First — Free)
+              </button>
             </form>
           </div>
 
@@ -2833,8 +2841,8 @@
               <i class="fa-solid fa-comments" style="color:#2563EB;"></i>
               <span>💬 Live Chat with <span id="live-tracking-chat-driver-name">Courier Driver</span></span>
               <span id="live-tracking-chat-order-badge"
-                style="font-size:0.68rem; font-weight:800; background:#E2E8F0; color:#334155; padding:0.12rem 0.45rem; border-radius:999px;"
-                data-agent-id="live-tracking-chat-order-badge" data-testid="live-tracking-chat-order-badge">—</span>
+                style="font-size:0.68rem; font-weight:800; background:#DCFCE7; color:#065F46; padding:0.12rem 0.45rem; border-radius:999px;"
+                data-agent-id="live-tracking-chat-order-badge" data-testid="live-tracking-chat-order-badge">💬 Direct Chat • No Booking Required</span>
             </div>
             <span id="live-tracking-chat-count"
               style="font-size:0.7rem; font-weight:800; background:#DBEAFE; color:#1E40AF; padding:0.15rem 0.5rem; border-radius:999px;"
@@ -2843,6 +2851,13 @@
 
           <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.55rem;"
             role="group" aria-label="Quick replies to courier">
+            <button type="button" id="btn-live-chat-chip-available" class="btn btn-outline btn-sm"
+              style="font-size:0.72rem; padding:0.25rem 0.55rem; font-weight:700; border-color:#2563EB; color:#1E40AF; background:#EFF6FF;"
+              onclick="sendQuickLiveTrackingMessage('👋 Hi! Are you available for a courier pickup today?')"
+              data-agent-id="btn-live-chat-chip-available" data-testid="btn-live-chat-chip-available"
+              aria-label="Send quick enquiry: Are you available for a pickup?">
+              👋 Are you available?
+            </button>
             <button type="button" id="btn-live-chat-chip-pickup" class="btn btn-outline btn-sm"
               style="font-size:0.72rem; padding:0.25rem 0.55rem; font-weight:700;"
               onclick="sendQuickLiveTrackingMessage('📍 I am at the pickup spot')"

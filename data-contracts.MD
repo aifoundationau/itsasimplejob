@@ -3778,6 +3778,59 @@ SuperAdmin (`support@aifoundation.net.au` / `davidrobertson.info@gmail.com`) can
 
 ---
 
+### 25.5 Pre-Booking Direct Courier Enquiry Chat Contract (Message Without Booking)
+Customers can message any live courier directly without creating or paying for a booking first (`#btn-message-courier-without-booking`, `#btn-message-courier-only-${driverId}`, `#btn-map-message-courier-only-${driverId}`, or `#live-tracking-chat-form`). Sending a message without an active booking provisions a zero-cost pre-booking enquiry thread (`isPreBookingEnquiry: true`, `supporterBookingFeeTokens: 0`, `tokensChargedToDriver: 0`, `totalAud: 0`) synced to Cloud Firestore (`bookings/{orderId}`). If the customer later submits a booking for that courier, the thread upgrades in-place to `isPreBookingEnquiry: false` while retaining all pre-booking messages.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PreBookingCourierChatEnquiryContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "orderId",
+    "isPreBookingEnquiry",
+    "driverId",
+    "driverName",
+    "customerName",
+    "status",
+    "supporterBookingFeeTokens",
+    "tokensChargedToDriver",
+    "totalAud",
+    "messages"
+  ],
+  "properties": {
+    "orderId": { "type": "string", "pattern": "^ORD-\\d{6}$" },
+    "isPreBookingEnquiry": { "type": "boolean", "const": true },
+    "driverId": { "type": "string", "minLength": 3, "maxLength": 64 },
+    "driverName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "customerName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "status": { "type": "string", "const": "Pre-Booking Enquiry — Direct Chat (No Booking Yet)" },
+    "supporterBookingFeeTokens": { "type": "integer", "const": 0 },
+    "tokensChargedToDriver": { "type": "integer", "const": 0 },
+    "totalAud": { "type": "number", "const": 0 },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "orderId", "senderRole", "senderName", "text", "createdAt"],
+        "properties": {
+          "id": { "type": "string", "minLength": 4, "maxLength": 100 },
+          "orderId": { "type": "string", "pattern": "^ORD-\\d{6}$" },
+          "senderRole": { "type": "string", "enum": ["supporter", "driver"] },
+          "senderName": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "createdAt": { "type": "string", "format": "date-time", "maxLength": 40 }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
 ## 26. Ephemeral AI Driver Licence Front & Back Verification Contract
 
 > Added to support front and back Driver Licence photo uploads inside the Courier Driver Application (`#supporter-register-driver-subtab`, `#driver-application-modal`) and Driver Registration Profile (`#supporter-registration-form`). Images are processed strictly in memory via `POST /api/verify-driver-licence`, never saved to disk, `localStorage`, ImgBB, or Cloud Firestore/Storage (`"imageStored": false`, `"imagesDiscarded": true`), and extracted licence fields populate the applicant/driver profile where every field remains editable by the driver.
