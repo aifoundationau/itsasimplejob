@@ -3566,3 +3566,39 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   - `providers/{providerId}` public reads strictly require BOTH `approved == true && isActive == true` (owners/SuperAdmin retain scoped read).
   - `users/{uid}` blocks self-assignment or mutation of `tokenBalance`, `tokens`, `role`, `approved`, `isDriver`, `isSuperAdmin`, and `isSuperadmin`.
   - `bookings/{bookingId}` accepts `'Scheduled (9am–4pm Pickup)'` on create, freezes `supporterBookingFeeTokens`, `tokensChargedToDriver`, `totalAud`, `payoutCompleted`, `uid`, `providerUid`, `assignedProviderId`, `providerId` on update, and validates token fee integer bounds (`0–100` supporter, `0–1000` driver).
+
+---
+
+## 23. Live Driver GPS Telemetry, Screen Wake Lock & Customer Live Map Tracking Contract
+
+> Added to support continuous real-time driver location sharing while a courier driver leaves the app open and screen awake (`navigator.geolocation.watchPosition` + `navigator.wakeLock`), throttled Firestore telemetry synchronization (`providers/{serviceProviderNumber}`), Firestore `onSnapshot` live map subscriptions (`subscribeToLiveProviders`), cross-tab telemetry sync (`iasj_live_driver_telemetry_v1`), smoothly animated Leaflet driver pins across all maps, and the Customer `#live-driver-tracking-modal` live map view.
+
+### 23.1 Architecture & Throttling Rules
+- **Driver Controls (`#btn-driver-live-tracking`):** Available to approved drivers and SuperAdmin in the Driver Admin header (`startDriverLiveTracking`, `stopDriverLiveTracking`, `toggleDriverLiveTracking`). Enabling requests `navigator.wakeLock.request('screen')` (re-acquired on `visibilitychange` while tracking remains ON).
+- **Write Throttling:** GPS updates to Firestore (`updateDriverLiveLocationToFirestore`) emit only when `>= 4,500 ms` have elapsed or the driver moves `>= 15 m`. OSM reverse-geocoding runs at most once every `45,000 ms` or `>= 250 m` movement.
+- **Customer Real-Time Map Gliding:** Incoming updates via `subscribeToLiveProviders` (`onSnapshot`) or cross-tab `storage` (`iasj_live_driver_telemetry_v1`) invoke `applyIncomingLiveDriverPosition(driverId, telemetry, { persist: false })`, sliding markers smoothly via `animateLeafletMarkerTo` across `#contractor-map`, `#courier-route-map`, `#driver-leaflet-map-*`, and `#live-driver-tracking-modal` (`#live-tracking-leaflet-map`) without resetting user zoom.
+
+### 23.2 Strict JSON Schema (`additionalProperties: false`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DriverLiveGpsTelemetryPayload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lat", "lng", "isLiveTracking", "lastLocationAt"],
+  "properties": {
+    "driverId": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "serviceProviderNumber": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+    "heading": { "type": ["number", "null"], "minimum": -1, "maximum": 360 },
+    "speedKmh": { "type": "integer", "minimum": 0, "maximum": 300 },
+    "accuracyM": { "type": ["integer", "null"], "minimum": 0, "maximum": 50000 },
+    "isLiveTracking": { "type": "boolean" },
+    "lastLocationAt": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "baseSuburb": { "type": "string", "maxLength": 120 },
+    "currentLocationText": { "type": "string", "maxLength": 250 }
+  }
+}
+```

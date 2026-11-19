@@ -704,31 +704,127 @@ class ProviderDatabase {
     return p;
   }
 
-  updateDriverLocation(idOrSpn, latOrObj, lng, addressText) {
+  updateDriverLocation(idOrSpn, latOrObj, lng, addressText, extraTelemetry = {}) {
     const p = this.findById(idOrSpn);
     if (!p) return null;
-    if (latOrObj && typeof latOrObj === 'object') {
-      p.lat = Number(latOrObj.lat);
-      p.lng = Number(latOrObj.lng);
-      if (latOrObj.addressText) {
-        p.currentLocationText = latOrObj.addressText;
-        p.baseSuburb = latOrObj.addressText.split(',')[0] || p.baseSuburb;
-      }
-    } else {
-      p.lat = Number(latOrObj);
-      p.lng = Number(lng);
-      if (addressText) {
-        p.currentLocationText = addressText;
-        p.baseSuburb = addressText.split(',')[0] || p.baseSuburb;
-      }
-    }
+    const isObj = latOrObj && typeof latOrObj === 'object';
+    const nextLat = Number(isObj ? latOrObj.lat : latOrObj);
+    const nextLng = Number(isObj ? latOrObj.lng : lng);
+    if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) return null;
+
+    const meta = isObj ? { ...latOrObj, ...(extraTelemetry || {}) } : (extraTelemetry || {});
+    p.lat = nextLat;
+    p.lng = nextLng;
     p.coords = { lat: p.lat, lng: p.lng };
-    p.lastGeolocatedAt = new Date().toISOString();
+
+    const resolvedAddr = meta.addressText || meta.currentLocationText || addressText;
+    if (resolvedAddr && typeof resolvedAddr === 'string') {
+      p.currentLocationText = resolvedAddr.slice(0, 250);
+      p.baseSuburb = (meta.baseSuburb || resolvedAddr.split(',')[0] || p.baseSuburb || 'Southport QLD').slice(0, 120);
+    } else if (meta.baseSuburb && typeof meta.baseSuburb === 'string') {
+      p.baseSuburb = meta.baseSuburb.slice(0, 120);
+    }
+
+    if (meta.heading !== undefined && Number.isFinite(Number(meta.heading))) {
+      p.heading = Number(meta.heading);
+    }
+    if (meta.speedKmh !== undefined && Number.isFinite(Number(meta.speedKmh))) {
+      p.speedKmh = Math.max(0, Math.min(300, Math.round(Number(meta.speedKmh))));
+    }
+    if (meta.accuracyM !== undefined && Number.isFinite(Number(meta.accuracyM))) {
+      p.accuracyM = Math.max(0, Math.round(Number(meta.accuracyM)));
+    }
+    if (typeof meta.isLiveTracking === 'boolean') {
+      p.isLiveTracking = meta.isLiveTracking;
+    }
+
+    const nowIso = meta.lastLocationAt || new Date().toISOString();
+    p.lastLocationAt = nowIso;
+    p.lastGeolocatedAt = nowIso;
     this.save();
-    if (window.firebaseService?.saveProviderToFirestore) {
-      try { window.firebaseService.saveProviderToFirestore(p); } catch (e) {}
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('iasj_live_driver_telemetry_v1', JSON.stringify({
+          driverId: p.id,
+          serviceProviderNumber: p.serviceProviderNumber || p.id,
+          lat: p.lat,
+          lng: p.lng,
+          heading: Number.isFinite(Number(p.heading)) ? Number(p.heading) : null,
+          speedKmh: Number.isFinite(Number(p.speedKmh)) ? Number(p.speedKmh) : 0,
+          accuracyM: Number.isFinite(Number(p.accuracyM)) ? Number(p.accuracyM) : null,
+          isLiveTracking: Boolean(p.isLiveTracking),
+          lastLocationAt: nowIso,
+          baseSuburb: p.baseSuburb || '',
+          currentLocationText: p.currentLocationText || ''
+        }));
+      } catch (e) {}
+    }
+
+    if (meta.skipRemote !== true && window.firebaseService?.updateDriverLiveLocationToFirestore) {
+      try {
+        window.firebaseService.updateDriverLiveLocationToFirestore(p.serviceProviderNumber || p.id, {
+          lat: p.lat,
+          lng: p.lng,
+          heading: p.heading,
+          speedKmh: p.speedKmh,
+          accuracyM: p.accuracyM,
+          isLiveTracking: Boolean(p.isLiveTracking),
+          lastLocationAt: nowIso,
+          baseSuburb: p.baseSuburb,
+          currentLocationText: p.currentLocationText
+        });
+      } catch (e) {}
     }
     return p;
+  }
+
+  mergeRemoteLiveProviders(remoteProviders = []) {
+    if (!Array.isArray(remoteProviders) || remoteProviders.length === 0) return [];
+    const changed = [];
+    let touched = false;
+
+    remoteProviders.forEach(rp => {
+      if (!rp) return;
+      const lat = Number(rp.lat);
+      const lng = Number(rp.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const local = this.findById(rp.serviceProviderNumber || rp.id) || (rp.id ? this.findById(rp.id) : null);
+      if (!local) return;
+
+      const remoteTs = Date.parse(rp.lastLocationAt || rp.updatedAt || '') || 0;
+      const localTs = Date.parse(local.lastLocationAt || local.lastGeolocatedAt || '') || 0;
+      if (localTs > 0 && remoteTs > 0 && remoteTs < localTs) return;
+
+      const latChanged = Math.abs((Number(local.lat) || 0) - lat) > 0.000001;
+      const lngChanged = Math.abs((Number(local.lng) || 0) - lng) > 0.000001;
+      const trackingChanged = typeof rp.isLiveTracking === 'boolean' && local.isLiveTracking !== rp.isLiveTracking;
+      const timeChanged = Boolean(rp.lastLocationAt && rp.lastLocationAt !== local.lastLocationAt);
+
+      if (latChanged || lngChanged || trackingChanged || timeChanged) {
+        local.lat = lat;
+        local.lng = lng;
+        local.coords = { lat, lng };
+        if (Number.isFinite(Number(rp.heading))) local.heading = Number(rp.heading);
+        if (Number.isFinite(Number(rp.speedKmh))) local.speedKmh = Number(rp.speedKmh);
+        if (Number.isFinite(Number(rp.accuracyM))) local.accuracyM = Number(rp.accuracyM);
+        if (typeof rp.isLiveTracking === 'boolean') local.isLiveTracking = rp.isLiveTracking;
+        if (rp.lastLocationAt) {
+          local.lastLocationAt = rp.lastLocationAt;
+          local.lastGeolocatedAt = rp.lastLocationAt;
+        }
+        if (rp.baseSuburb) local.baseSuburb = rp.baseSuburb;
+        if (rp.currentLocationText) local.currentLocationText = rp.currentLocationText;
+        touched = true;
+        changed.push(local);
+      }
+    });
+
+    if (touched) {
+      this.save();
+    }
+    return changed;
   }
 
   deductDriverTokens(idOrSpn, tokensToDeduct) {

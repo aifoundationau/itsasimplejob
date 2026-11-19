@@ -393,6 +393,81 @@ export async function fetchRemoteProviders() {
 }
 
 /**
+ * Persist lightweight real-time GPS telemetry fields for a moving driver profile
+ */
+export async function updateDriverLiveLocationToFirestore(providerDocId, telemetry = {}) {
+  if (!db || !isConnected || !providerDocId) return { ok: false, error: 'Database not connected' };
+
+  const lat = Number(telemetry.lat);
+  const lng = Number(telemetry.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return { ok: false, error: 'Invalid GPS coordinates' };
+  }
+
+  const nowIso = new Date().toISOString();
+  const payload = {
+    lat,
+    lng,
+    isLiveTracking: telemetry.isLiveTracking === true,
+    lastLocationAt: String(telemetry.lastLocationAt || nowIso).slice(0, 40),
+    updatedAt: nowIso
+  };
+  if (Number.isFinite(Number(telemetry.heading)) && Number(telemetry.heading) >= -1 && Number(telemetry.heading) <= 360) {
+    payload.heading = Number(telemetry.heading);
+  }
+  if (Number.isFinite(Number(telemetry.speedKmh)) && Number(telemetry.speedKmh) >= 0 && Number(telemetry.speedKmh) <= 300) {
+    payload.speedKmh = Number(telemetry.speedKmh);
+  }
+  if (Number.isFinite(Number(telemetry.accuracyM)) && Number(telemetry.accuracyM) >= 0 && Number(telemetry.accuracyM) <= 50000) {
+    payload.accuracyM = Number(telemetry.accuracyM);
+  }
+  if (telemetry.baseSuburb && typeof telemetry.baseSuburb === 'string') {
+    payload.baseSuburb = telemetry.baseSuburb.slice(0, 120);
+  }
+  if (telemetry.currentLocationText && typeof telemetry.currentLocationText === 'string') {
+    payload.currentLocationText = telemetry.currentLocationText.slice(0, 250);
+  }
+
+  try {
+    const docRef = doc(collection(db, 'providers'), String(providerDocId));
+    await withTimeout(setDoc(docRef, payload, { merge: true }), 3500);
+    return { ok: true, docId: String(providerDocId), updatedAt: nowIso };
+  } catch (e) {
+    console.warn("⚠️ [Firestore Live GPS] Telemetry update notice:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * Subscribe in real time to approved, active drivers for live map pin updates
+ */
+export function subscribeToLiveProviders(callback) {
+  if (!db || !isConnected || typeof callback !== 'function') return () => {};
+
+  try {
+    const q = query(
+      collection(db, 'providers'),
+      where('businessId', '==', BUSINESS_ID),
+      where('approved', '==', true),
+      where('isActive', '==', true)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const providers = [];
+      snapshot.forEach(docSnap => {
+        providers.push(docSnap.data());
+      });
+      callback(providers);
+    }, (error) => {
+      console.warn("⚠️ [Firestore Live GPS] Provider subscription notice:", error.message);
+    });
+  } catch (err) {
+    console.warn("⚠️ [Firestore Live GPS] Subscription setup:", err.message);
+    return () => {};
+  }
+}
+
+/**
  * Seed Initial Providers to Firestore
  */
 export async function seedProvidersIfEmpty(initialProviders) {
@@ -964,7 +1039,9 @@ window.firebaseService = {
   saveFreeHourToFirestore,
   logAIQueryToFirestore,
   subscribeToLiveBookings,
+  subscribeToLiveProviders,
   fetchRemoteProviders,
+  updateDriverLiveLocationToFirestore,
   seedProvidersIfEmpty,
   recordStripeTransaction,
   signInWithGoogle,

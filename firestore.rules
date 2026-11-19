@@ -42,7 +42,7 @@ service cloud.firestore {
     //    Document ID: providerId or SPN (e.g., 'DRV-102938' or 'SPN-123456')
     //    Access: SuperAdmin 100% unconditional full control (approve, verify, edit, delete);
     //            Public read strictly requires BOTH approved == true AND isActive == true (plus owner read);
-    //            Driver updates own non-sensitive profile only.
+    //            Driver updates own non-sensitive profile & bounded live GPS telemetry only.
     //
     // 5. roles/{roleId}
     //    Document ID: Role key ('superadmin', 'driver', 'supporter', 'customer')
@@ -218,6 +218,7 @@ service cloud.firestore {
              data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('baseSuburb' in data) || (data.baseSuburb is string && data.baseSuburb.size() <= 120)) &&
              (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
              (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
              (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
@@ -226,7 +227,15 @@ service cloud.firestore {
              (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
              (!('skills' in data) || (data.skills is list && data.skills.size() <= 30)) &&
              (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
-             (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180));
+             (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
+             (!('heading' in data) || (data.heading is number && data.heading >= -1 && data.heading <= 360)) &&
+             (!('speedKmh' in data) || (data.speedKmh is number && data.speedKmh >= 0 && data.speedKmh <= 300)) &&
+             (!('accuracyM' in data) || (data.accuracyM is number && data.accuracyM >= 0 && data.accuracyM <= 50000)) &&
+             (!('isLiveTracking' in data) || data.isLiveTracking is bool) &&
+             (!('lastLocationAt' in data) || (data.lastLocationAt is string && data.lastLocationAt.size() <= 40)) &&
+             (!('currentLocationText' in data) || (data.currentLocationText is string && data.currentLocationText.size() <= 250)) &&
+             (!('isActive' in data) || data.isActive is bool) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40) || data.updatedAt is timestamp);
     }
 
     // Provider profile update validator
@@ -236,6 +245,7 @@ service cloud.firestore {
              (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 120)) &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
+             (!('baseSuburb' in data) || (data.baseSuburb is string && data.baseSuburb.size() <= 120)) &&
              (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
              (!('hourlyRate' in data) || (data.hourlyRate is number && data.hourlyRate >= 0 && data.hourlyRate <= 1000)) &&
              (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
@@ -246,7 +256,14 @@ service cloud.firestore {
              (!('availability' in data) || (data.availability is string && data.availability.size() <= 50)) &&
              (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
              (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
-             (!('isActive' in data) || data.isActive is bool);
+             (!('heading' in data) || (data.heading is number && data.heading >= -1 && data.heading <= 360)) &&
+             (!('speedKmh' in data) || (data.speedKmh is number && data.speedKmh >= 0 && data.speedKmh <= 300)) &&
+             (!('accuracyM' in data) || (data.accuracyM is number && data.accuracyM >= 0 && data.accuracyM <= 50000)) &&
+             (!('isLiveTracking' in data) || data.isLiveTracking is bool) &&
+             (!('lastLocationAt' in data) || (data.lastLocationAt is string && data.lastLocationAt.size() <= 40)) &&
+             (!('currentLocationText' in data) || (data.currentLocationText is string && data.currentLocationText.size() <= 250)) &&
+             (!('isActive' in data) || data.isActive is bool) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40) || data.updatedAt is timestamp);
     }
 
     // Booking customer ownership helper

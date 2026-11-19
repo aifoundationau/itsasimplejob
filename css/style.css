@@ -149,7 +149,7 @@ textarea {
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1150;
   border-bottom: 1px solid var(--border-light);
   transition: all var(--transition-fast);
 }
@@ -1884,7 +1884,7 @@ textarea {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 6000;
   padding: 1.5rem;
 }
 
@@ -3286,6 +3286,17 @@ body.google-logged-in .supporter-gated-nav {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--primary-navy);
+}
+
+#google-user-menu,
+.google-user-menu {
+  position: fixed;
+  z-index: 5000;
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 #google-user-menu.show {
@@ -6721,9 +6732,12 @@ dialog.welcome-intro-dialog::backdrop {
 
 /* 4. Standard iPhone & Android Phones (<= 640px: iPhone 15/16/16 Pro/17, Galaxy A06/S25) */
 @media screen and (max-width: 640px) {
-  /* Zero-scrollbar mobile navbar & section tab bar on iPhone & Android */
+  /* Zero-scrollbar mobile section tab bar while keeping navbar overflow visible for dropdowns on Android */
   .navbar,
-  .nav-container,
+  .nav-container {
+    overflow: visible !important;
+  }
+
   .app-section-tabs,
   .tab-nav-bar,
   .admin-tab-nav,
@@ -6849,20 +6863,21 @@ dialog.welcome-intro-dialog::backdrop {
     min-height: 54px;
   }
 
-  /* Google Profile Dropdown Menu stays inside mobile viewport */
+  /* Google Profile Dropdown Menu stays inside mobile viewport above all page elements */
   .google-auth-nav-wrap {
     position: relative;
   }
 
+  #google-user-menu,
   .google-user-menu {
     position: fixed !important;
-    top: calc(58px + env(safe-area-inset-top, 0px)) !important;
-    right: 0.65rem !important;
+    right: 0.6rem !important;
     left: auto !important;
-    width: min(290px, calc(100vw - 1.3rem)) !important;
-    max-height: calc(100dvh - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    width: min(300px, calc(100vw - 1.2rem)) !important;
+    max-height: calc(100dvh - 76px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    padding: 0.85rem !important;
     overflow-y: auto !important;
-    z-index: 3000 !important;
+    z-index: 5000 !important;
   }
 
   /* Courier booking card & address autocomplete mobile ergonomics */
@@ -7161,5 +7176,58 @@ dialog.welcome-intro-dialog::backdrop {
   .modal-box,
   .modal-box.stripe-small-popup-box {
     margin: auto;
+  }
+}
+
+/* 10. Live Driver GPS Tracking Pulse Ring & Modal Responsive Stats */
+@keyframes liveGpsPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.75);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.75);
+    opacity: 0;
+  }
+}
+
+.live-gps-pin-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-gps-pulse-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid #10B981;
+  background: rgba(16, 185, 129, 0.22);
+  pointer-events: none;
+  animation: liveGpsPulse 1.8s ease-out infinite;
+}
+
+.driver-live-tracking-btn-active {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+@media screen and (max-width: 640px) {
+  .live-tracking-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #live-tracking-leaflet-map {
+    height: 260px !important;
   }
 }

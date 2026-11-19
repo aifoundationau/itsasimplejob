@@ -37,6 +37,8 @@ const appState = {
   driverServiceModeOverrides: {},
   contractorCardModeOverrides: {},
   contractorMarkers: [],
+  osmContractorMarkerById: {},
+  osmCourierDriverMarkersById: {},
   userMarker: null,
   contractorInfoWindow: null,
   contractorMap: null,
@@ -167,6 +169,9 @@ function initApp() {
   try {
     syncDriverBookingNotificationUI();
     initDriverBookingCrossTabAlertListener();
+  } catch (e) {}
+  try {
+    initLiveDriverTrackingListeners();
   } catch (e) {}
   try {
     renderSuperadminFreeDriverHourUI();
@@ -437,15 +442,100 @@ function updateOsmRadiusCircle(immediateFit = false) {
 }
 window.updateOsmRadiusCircle = updateOsmRadiusCircle;
 
+function isDriverLiveMoving(drv) {
+  if (!drv) return false;
+  if (drv.isLiveTracking === true) return true;
+  const ts = Date.parse(drv.lastLocationAt || '');
+  return Boolean(ts && (Date.now() - ts) < 120000);
+}
+
+function animateLeafletMarkerTo(marker, targetLat, targetLng, durationMs = 650) {
+  if (!marker || typeof marker.setLatLng !== 'function') return;
+  const lat = Number(targetLat);
+  const lng = Number(targetLng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  if (marker._iasjAnimFrame && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(marker._iasjAnimFrame);
+    marker._iasjAnimFrame = null;
+  }
+
+  const startPos = typeof marker.getLatLng === 'function' ? marker.getLatLng() : null;
+  const shouldSnap = !startPos
+    || (typeof document !== 'undefined' && document.hidden)
+    || typeof requestAnimationFrame !== 'function'
+    || (Math.abs(startPos.lat - lat) < 0.000002 && Math.abs(startPos.lng - lng) < 0.000002);
+
+  if (shouldSnap) {
+    marker.setLatLng([lat, lng]);
+    return;
+  }
+
+  const fromLat = startPos.lat;
+  const fromLng = startPos.lng;
+  const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+  const step = (now) => {
+    const elapsed = (now || Date.now()) - startTime;
+    const progress = Math.min(1, elapsed / Math.max(100, durationMs));
+    const eased = 1 - Math.pow(1 - progress, 3);
+    marker.setLatLng([
+      fromLat + (lat - fromLat) * eased,
+      fromLng + (lng - fromLng) * eased
+    ]);
+    if (progress < 1) {
+      marker._iasjAnimFrame = requestAnimationFrame(step);
+    } else {
+      marker._iasjAnimFrame = null;
+    }
+  };
+  marker._iasjAnimFrame = requestAnimationFrame(step);
+}
+
+function buildDirectoryPinIcon(provider, { isClosest = false } = {}) {
+  const isFemale = (provider.gender === 'female') || (!provider.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (provider.name || '').toLowerCase().includes(n)));
+  const bgPin = isFemale ? '#EC4899' : '#2563EB';
+  const pinIconName = provider.hasBicycleCourier && !provider.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast';
+  const liveRing = isDriverLiveMoving(provider) ? '<span class="live-gps-pulse-ring" aria-hidden="true"></span>' : '';
+  return L.divIcon({
+    className: 'osm-contractor-pin',
+    html: `<div class="live-gps-pin-wrap">${liveRing}<div style="background:${bgPin}; color:#fff; width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer; position:relative;" title="${escapeAttr(provider.name)}">
+            <i class="fa-solid ${pinIconName}" style="transform:rotate(45deg); font-size:13px;"></i>
+            ${isClosest ? '<span style="position:absolute; top:-3px; right:-3px; background:#F59E0B; color:#fff; border-radius:50%; width:13px; height:13px; font-size:8px; font-weight:900; display:flex; align-items:center; justify-content:center; transform:rotate(45deg); border:1.5px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.4);" title="Closest Driver">★</span>' : ''}
+           </div></div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 34],
+    popupAnchor: [0, -32]
+  });
+}
+
+function buildRoutePinIcon(drv, { isSelected = false, distFromPickup = 0 } = {}) {
+  const isFemale = (drv.gender === 'female') || (!drv.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (drv.name || '').toLowerCase().includes(n)));
+  const drvPinColor = isFemale ? '#EC4899' : '#2563EB';
+  const liveRing = isDriverLiveMoving(drv) ? '<span class="live-gps-pulse-ring" aria-hidden="true"></span>' : '';
+  return L.divIcon({
+    className: 'osm-driver-pin',
+    html: `<div class="live-gps-pin-wrap">${liveRing}<div style="background:${drvPinColor}; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid ${isSelected ? '#FF5A1F' : '#fff'}; box-shadow:${isSelected ? '0 0 10px rgba(255,90,31,0.85)' : '0 2px 6px rgba(0,0,0,0.35)'}; position:relative;" title="${escapeAttr(drv.name)} (${Number(distFromPickup).toFixed(1)} km from pickup)">
+            <i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast'}" style="font-size:11px;"></i>
+           </div></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
 function updateOsmContractorMarkers() {
   if (!appState.osmMap || !window.L) return;
 
   if (appState.osmContractorMarkers) {
     appState.osmContractorMarkers.forEach(m => {
+      if (m._iasjAnimFrame && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(m._iasjAnimFrame);
+      }
       try { appState.osmMap.removeLayer(m); } catch(e) {}
     });
   }
   appState.osmContractorMarkers = [];
+  appState.osmContractorMarkerById = {};
 
   const minWeight = parseFloat(document.getElementById('contractor-min-weight')?.value || '0') || 0;
   const radius = appState.searchRadiusKm || 50;
@@ -477,20 +567,7 @@ function updateOsmContractorMarkers() {
 
   matched.forEach(({ provider, dist, pLat, pLng }, idx) => {
     const isClosest = idx === 0;
-    const isFemale = (provider.gender === 'female') || (!provider.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (provider.name || '').toLowerCase().includes(n)));
-    const bgPin = isFemale ? '#EC4899' : '#2563EB'; // Pink pin for female, Blue pin for male
-    const pinIconName = provider.hasBicycleCourier && !provider.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast';
-
-    const markerIcon = L.divIcon({
-      className: 'osm-contractor-pin',
-      html: `<div style="background:${bgPin}; color:#fff; width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:2px solid #FFFFFF; cursor:pointer; position:relative;" title="${provider.name}">
-              <i class="fa-solid ${pinIconName}" style="transform:rotate(45deg); font-size:13px;"></i>
-              ${isClosest ? '<span style="position:absolute; top:-3px; right:-3px; background:#F59E0B; color:#fff; border-radius:50%; width:13px; height:13px; font-size:8px; font-weight:900; display:flex; align-items:center; justify-content:center; transform:rotate(45deg); border:1.5px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.4);" title="Closest Driver">★</span>' : ''}
-             </div>`,
-      iconSize: [34, 34],
-      iconAnchor: [17, 34],
-      popupAnchor: [0, -32]
-    });
+    const markerIcon = buildDirectoryPinIcon(provider, { isClosest });
 
     const hasVeh = provider.hasVehicleCourier !== false;
     const hasBic = !!provider.hasBicycleCourier;
@@ -556,7 +633,12 @@ function updateOsmContractorMarkers() {
       .addTo(appState.osmMap)
       .bindPopup(popupHtml);
 
+    marker._iasjClosest = isClosest;
     appState.osmContractorMarkers.push(marker);
+    appState.osmContractorMarkerById[provider.id] = marker;
+    if (provider.serviceProviderNumber) {
+      appState.osmContractorMarkerById[provider.serviceProviderNumber] = marker;
+    }
   });
 
   const mapCounter = document.getElementById('map-counter-text');
@@ -634,24 +716,21 @@ function renderOsmCourierRouteMap(origCoords, destCoords, routePoints = null, or
 
   // Also plot live Courier Driver pins around the route (Pink = Female, Blue = Male)
   // Dual Map Visibility Gate: Driver must have their profile turned ON AND be approved by SuperAdmin to be seen on maps
+  appState.osmCourierDriverMarkersById = {};
   const allDrivers = window.providerDB ? window.providerDB.getAll().filter(d => typeof isDriverVisibleOnMap === 'function' ? isDriverVisibleOnMap(d) : ((typeof isDriverApproved === 'function' ? isDriverApproved(d) : (d.approved !== false && d.status !== 'pending_approval' && d.status !== 'revoked')) && d.profileTurnedOn !== false && d.profileActive !== false)) : [];
   allDrivers.forEach(drv => {
     if (!drv.lat || !drv.lng) return;
     const isSelected = drv.id === appState.selectedCourierDriverId;
     const distFromPickup = computeDistanceInKm(c1.lat, c1.lng, drv.lat, drv.lng);
-    const isFemale = (drv.gender === 'female') || (!drv.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (drv.name || '').toLowerCase().includes(n)));
-    const drvPinColor = isFemale ? '#EC4899' : '#2563EB';
-    const drvIcon = L.divIcon({
-      className: 'osm-driver-pin',
-      html: `<div style="background:${drvPinColor}; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid ${isSelected ? '#FF5A1F' : '#fff'}; box-shadow:${isSelected ? '0 0 10px rgba(255,90,31,0.85)' : '0 2px 6px rgba(0,0,0,0.35)'};" title="${drv.name} (${distFromPickup.toFixed(1)} km from pickup)">
-              <i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast'}" style="font-size:11px;"></i>
-             </div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
-    });
-    L.marker([drv.lat, drv.lng], { icon: drvIcon })
+    const drvIcon = buildRoutePinIcon(drv, { isSelected, distFromPickup });
+    const marker = L.marker([drv.lat, drv.lng], { icon: drvIcon })
       .addTo(map)
       .bindPopup(`<strong>🚚 ${drv.name}</strong><br><span style="font-size:0.75rem;">${distFromPickup.toFixed(1)} km from pickup • $${Number(drv.perKmRateAud || 2.20).toFixed(2)} AUD/km</span>`);
+    marker._iasjSelected = isSelected;
+    appState.osmCourierDriverMarkersById[drv.id] = marker;
+    if (drv.serviceProviderNumber) {
+      appState.osmCourierDriverMarkersById[drv.serviceProviderNumber] = marker;
+    }
   });
 
   // Draw Route Polyline: use real OSRM road geometry if available, otherwise direct dashed line
@@ -3566,8 +3645,9 @@ function selectCourierDriverMode(driverId, mode, event) {
 }
 window.selectCourierDriverMode = selectCourierDriverMode;
 
-// Track per-driver Leaflet map instances inside the Left-Side Driver Box Dropdowns
+// Track per-driver Leaflet map instances & live layers inside Left-Side Driver Box Dropdowns
 const driverBoxLeafletMaps = {};
+const driverBoxMapMeta = {};
 
 function toggleDriverBoxMap(driverId) {
   if (appState.expandedDriverMapId === driverId) {
@@ -3599,6 +3679,7 @@ function renderInlineDriverBoxMap(driverId) {
   if (driverBoxLeafletMaps[driverId]) {
     try { driverBoxLeafletMaps[driverId].remove(); } catch (e) {}
     delete driverBoxLeafletMaps[driverId];
+    delete driverBoxMapMeta[driverId];
   }
 
   const map = L.map(mapContainer, { zoomControl: true, scrollWheelZoom: false }).setView([dLat, dLng], 12);
@@ -3611,10 +3692,11 @@ function renderInlineDriverBoxMap(driverId) {
 
   const isFemale = (drv.gender === 'female') || (!drv.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (drv.name || '').toLowerCase().includes(n)));
   const drvPinColor = isFemale ? '#EC4899' : '#2563EB';
+  const liveRing = isDriverLiveMoving(drv) ? '<span class="live-gps-pulse-ring" aria-hidden="true"></span>' : '';
 
   const driverIcon = L.divIcon({
     className: 'osm-custom-pin',
-    html: `<div style="background:${drvPinColor};color:#fff;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);white-space:nowrap;"><i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck'}"></i> ${drv.name.split(' ')[0]} ($${Number(drv.perKmRateAud).toFixed(2)}/km)</div>`,
+    html: `<div class="live-gps-pin-wrap">${liveRing}<div style="background:${drvPinColor};color:#fff;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);white-space:nowrap;position:relative;"><i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck'}"></i> ${drv.name.split(' ')[0]} ($${Number(drv.perKmRateAud).toFixed(2)}/km)</div></div>`,
     iconSize: [135, 26],
     iconAnchor: [67, 13]
   });
@@ -3633,7 +3715,7 @@ function renderInlineDriverBoxMap(driverId) {
     iconAnchor: [13, 13]
   });
 
-  L.marker([dLat, dLng], { icon: driverIcon })
+  const driverMarker = L.marker([dLat, dLng], { icon: driverIcon })
     .addTo(map)
     .bindPopup(`<strong>${drv.name} (${drv.businessName})</strong><br>${drv.baseSuburb || drv.address || 'Gold Coast QLD'}<br>Rate: $${Number(drv.perKmRateAud).toFixed(2)} AUD/km`);
 
@@ -3646,12 +3728,17 @@ function renderInlineDriverBoxMap(driverId) {
     .bindPopup(`<strong>Delivery Destination</strong><br>${document.getElementById('courier-dest')?.value || 'Destination'}`);
 
   // Dashed green line: Driver's GPS -> Pickup Origin
-  L.polyline([[dLat, dLng], [origCoords.lat, origCoords.lng]], {
+  const approachLine = L.polyline([[dLat, dLng], [origCoords.lat, origCoords.lng]], {
     color: '#059669',
     weight: 3,
     dashArray: '6, 6',
     opacity: 0.85
   }).addTo(map);
+
+  driverBoxMapMeta[driverId] = { map, driverMarker, approachLine, origCoords };
+  if (drv.serviceProviderNumber && drv.serviceProviderNumber !== driverId) {
+    driverBoxMapMeta[drv.serviceProviderNumber] = driverBoxMapMeta[driverId];
+  }
 
   // Solid orange line: Pickup Origin -> Delivery Destination
   const routePts = (appState.lastRouteLatLngs && appState.lastRouteLatLngs.length > 1)
@@ -4309,6 +4396,7 @@ function submitCourierBooking() {
   });
 
   // 3. Set active admin driver to the booked driver so Driver Admin page immediately shows this order
+  window.lastBookedOrderId = newOrder.orderId;
   appState.activeAdminDriverId = drv.id;
   updateCourierPricingWithSettings(calc.distanceKm, calc.durationMins);
   renderDriverAdminDashboard();
@@ -5561,6 +5649,10 @@ function syncDriverProfileTurnOnUI(activeDriver) {
       topToggleBtn.title = 'Driver is Inactive and Hidden from Map (Click to turn ON)';
     }
   }
+
+  if (typeof syncDriverLiveTrackingUI === 'function') {
+    syncDriverLiveTrackingUI(activeDriver);
+  }
 }
 window.syncDriverProfileTurnOnUI = syncDriverProfileTurnOnUI;
 
@@ -5595,8 +5687,13 @@ function toggleActiveDriverProfileOnWithGeo(explicitState) {
     window.providerDB.save();
   }
 
-  if (!nextState && appState.selectedCourierDriverId === activeDriver.id) {
-    appState.selectedCourierDriverId = null;
+  if (!nextState) {
+    if (typeof stopDriverLiveTracking === 'function') {
+      try { stopDriverLiveTracking({ silent: true }); } catch (e) {}
+    }
+    if (appState.selectedCourierDriverId === activeDriver.id) {
+      appState.selectedCourierDriverId = null;
+    }
   }
 
   // Immediately synchronize UI, bookings, and maps for both ON and OFF transitions
@@ -6482,6 +6579,15 @@ function renderUnifiedBookingHistoryCardHtml(ord, options = {}) {
             </button>
           ` : ''}
         </div>
+        ${!isSampleOrd ? `
+        <button type="button" class="btn btn-primary btn-sm"
+          style="background:#059669; border-color:#059669; font-size:0.78rem; font-weight:800;"
+          onclick="openLiveDriverTrackingModal('${ord.orderId}')"
+          data-agent-id="${prefix}btn-track-driver-${ord.orderId}" data-testid="${prefix}btn-track-driver-${ord.orderId}"
+          aria-label="Track Driver Live on Map">
+          <i class="fa-solid fa-satellite-dish"></i> Track Driver Live
+        </button>
+        ` : ''}
         ${showMakeBooking ? `
         <button type="button" class="btn btn-outline btn-sm" onclick="rebookSimilarCourier('${ord.orderId}')"
           style="font-size:0.78rem; font-weight:800; ${isSampleOrd ? 'color:#64748B; border-color:#CBD5E1;' : ''}"
@@ -7844,6 +7950,7 @@ function triggerDriverAdminGeolocate(options = {}) {
 
   const fallbackLat = Number.isFinite(Number(activeDriver.lat)) ? Number(activeDriver.lat) : (appState.userCoords?.lat || -27.9635);
   const fallbackLng = Number.isFinite(Number(activeDriver.lng)) ? Number(activeDriver.lng) : (appState.userCoords?.lng || 153.4064);
+  const geoRequestStartedAt = Date.now();
 
   const saveGps = async (lat, lng) => {
     let suburbLabel = activeDriver.baseSuburb || 'Southport QLD';
@@ -7851,6 +7958,13 @@ function triggerDriverAdminGeolocate(options = {}) {
       const osmAddr = await reverseGeocodeOsm(lat, lng);
       if (osmAddr) suburbLabel = osmAddr;
     } catch (e) {}
+
+    // Never let an older one-shot geocode overwrite newer continuous live GPS coordinates
+    const latestDrv = window.providerDB?.findById(activeDriver.id) || activeDriver;
+    const latestLocTs = Date.parse(latestDrv.lastLocationAt || '') || 0;
+    if ((driverLiveTrackingState.active && driverLiveTrackingState.driverId === activeDriver.id) || latestLocTs > geoRequestStartedAt) {
+      return;
+    }
 
     window.providerDB.updateDriverLocation(activeDriver.id, lat, lng, suburbLabel);
     syncDriverProfileTurnOnUI(activeDriver);
@@ -7888,6 +8002,578 @@ function autoGeolocateActiveDriverQuick() {
   triggerDriverAdminGeolocate();
 }
 window.autoGeolocateActiveDriverQuick = autoGeolocateActiveDriverQuick;
+
+/**
+ * =========================================================================
+ * LIVE CONTINUOUS DRIVER GPS TRACKING, SCREEN WAKE LOCK & CUSTOMER LIVE MAP
+ * =========================================================================
+ */
+const driverLiveTrackingState = {
+  active: false,
+  driverId: null,
+  watchId: null,
+  wakeLock: null,
+  wakeLockActive: false,
+  lastSentAt: 0,
+  lastSentCoords: null,
+  lastGeocodeAt: 0,
+  lastGeocodeCoords: null,
+  unsubscribeFirestore: null,
+  listenersReady: false
+};
+
+const liveTrackingMapState = {
+  modalOrderId: null,
+  driverId: null,
+  map: null,
+  driverMarker: null,
+  approachLine: null,
+  originCoords: null,
+  destCoords: null,
+  freshnessTimerId: null
+};
+
+async function requestDriverWakeLock() {
+  if (typeof navigator === 'undefined' || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+    driverLiveTrackingState.wakeLockActive = false;
+    return false;
+  }
+  try {
+    if (driverLiveTrackingState.wakeLock && !driverLiveTrackingState.wakeLock.released) {
+      driverLiveTrackingState.wakeLockActive = true;
+      return true;
+    }
+    const sentinel = await navigator.wakeLock.request('screen');
+    driverLiveTrackingState.wakeLock = sentinel;
+    driverLiveTrackingState.wakeLockActive = true;
+    if (sentinel && typeof sentinel.addEventListener === 'function') {
+      sentinel.addEventListener('release', () => {
+        driverLiveTrackingState.wakeLock = null;
+        driverLiveTrackingState.wakeLockActive = false;
+        const drv = driverLiveTrackingState.driverId ? window.providerDB?.findById(driverLiveTrackingState.driverId) : null;
+        if (drv) syncDriverLiveTrackingUI(drv);
+      });
+    }
+    return true;
+  } catch (e) {
+    driverLiveTrackingState.wakeLockActive = false;
+    return false;
+  }
+}
+
+async function releaseDriverWakeLock() {
+  try {
+    if (driverLiveTrackingState.wakeLock && typeof driverLiveTrackingState.wakeLock.release === 'function') {
+      await driverLiveTrackingState.wakeLock.release();
+    }
+  } catch (e) {}
+  driverLiveTrackingState.wakeLock = null;
+  driverLiveTrackingState.wakeLockActive = false;
+}
+
+function syncDriverLiveTrackingUI(activeDriver) {
+  const isTrackingThisDriver = Boolean(
+    driverLiveTrackingState.active &&
+    activeDriver &&
+    driverLiveTrackingState.driverId === activeDriver.id
+  );
+  const btn = document.getElementById('btn-driver-live-tracking');
+  if (btn) {
+    if (isTrackingThisDriver) {
+      btn.classList.add('driver-live-tracking-btn-active');
+      btn.setAttribute('aria-pressed', 'true');
+      btn.innerHTML = driverLiveTrackingState.wakeLockActive
+        ? '<i class="fa-solid fa-satellite-dish"></i> Live GPS ON • Awake'
+        : '<i class="fa-solid fa-satellite-dish"></i> Live GPS ON';
+      btn.title = 'Live continuous GPS streaming active while screen stays open (Click to stop)';
+    } else {
+      btn.classList.remove('driver-live-tracking-btn-active');
+      btn.setAttribute('aria-pressed', 'false');
+      btn.style.background = '#FFFFFF';
+      btn.style.borderColor = '#CBD5E1';
+      btn.style.color = '#475569';
+      btn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Live GPS OFF';
+      btn.title = 'Start live continuous GPS tracking (keeps phone screen awake)';
+    }
+  }
+
+  const topGeoStatus = document.getElementById('driver-top-geo-status');
+  if (topGeoStatus && isTrackingThisDriver) {
+    topGeoStatus.style.color = '#059669';
+    topGeoStatus.innerHTML = driverLiveTrackingState.wakeLockActive
+      ? '<i class="fa-solid fa-satellite-dish"></i> Live Tracking ON • Screen Awake'
+      : '<i class="fa-solid fa-satellite-dish"></i> Live Tracking ON';
+  }
+}
+window.syncDriverLiveTrackingUI = syncDriverLiveTrackingUI;
+
+function formatTelemetryFreshnessLabel(isoTime) {
+  const ts = Date.parse(isoTime || '');
+  if (!ts) return 'Standby';
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 5) return 'Just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const mins = Math.floor(diffSec / 60);
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
+
+function updateLiveDriverTrackingModalStats() {
+  if (!liveTrackingMapState.driverId) return;
+  const drv = window.providerDB?.findById(liveTrackingMapState.driverId);
+  if (!drv) return;
+
+  const nameEl = document.getElementById('live-tracking-driver-name');
+  if (nameEl) nameEl.textContent = drv.name || 'Courier Driver';
+
+  const dLat = Number(drv.lat ?? -27.9635);
+  const dLng = Number(drv.lng ?? 153.4064);
+  const orig = liveTrackingMapState.originCoords || appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
+  const distKm = computeDistanceInKm(dLat, dLng, orig.lat, orig.lng);
+
+  const distEl = document.getElementById('live-tracking-distance');
+  if (distEl) distEl.textContent = `${distKm.toFixed(1)} km`;
+
+  const speedEl = document.getElementById('live-tracking-speed');
+  if (speedEl) {
+    const spd = Number.isFinite(Number(drv.speedKmh)) ? Math.max(0, Math.round(Number(drv.speedKmh))) : 0;
+    speedEl.textContent = `${spd} km/h`;
+  }
+
+  const freshEl = document.getElementById('live-tracking-freshness');
+  const isoTs = drv.lastLocationAt || drv.lastGeolocatedAt || '';
+  if (freshEl) freshEl.textContent = formatTelemetryFreshnessLabel(isoTs);
+
+  const subEl = document.getElementById('live-tracking-suburb');
+  if (subEl) subEl.textContent = drv.currentLocationText || drv.baseSuburb || drv.address || 'Gold Coast QLD';
+
+  const pillEl = document.getElementById('live-tracking-status-pill');
+  if (pillEl) {
+    const moving = isDriverLiveMoving(drv);
+    pillEl.textContent = moving ? '● LIVE GPS' : 'Last Known GPS';
+    pillEl.style.background = moving ? '#10B981' : 'rgba(255,255,255,0.2)';
+    pillEl.style.borderColor = moving ? '#A7F3D0' : 'rgba(255,255,255,0.45)';
+  }
+}
+
+function buildLiveModalDriverIcon(drv) {
+  const isFemale = (drv.gender === 'female') || (!drv.gender && ['sarah', 'tanya', 'emma', 'chloe', 'sophie', 'jessica'].some(n => (drv.name || '').toLowerCase().includes(n)));
+  const bg = isFemale ? '#EC4899' : '#2563EB';
+  const liveRing = isDriverLiveMoving(drv) ? '<span class="live-gps-pulse-ring" aria-hidden="true"></span>' : '';
+  return L.divIcon({
+    className: 'osm-custom-pin',
+    html: `<div class="live-gps-pin-wrap">${liveRing}<div style="background:${bg}; color:#fff; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2.5px solid #fff; box-shadow:0 3px 10px rgba(0,0,0,0.35); position:relative;" title="${escapeAttr(drv.name || 'Driver')}"><i class="fa-solid ${drv.hasBicycleCourier && !drv.hasVehicleCourier ? 'fa-bicycle' : 'fa-truck-fast'}" style="font-size:14px;"></i></div></div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+}
+
+function applyIncomingLiveDriverPosition(driverId, telemetry = {}, options = {}) {
+  const persist = Boolean(options?.persist);
+  const rawLat = Number(telemetry.lat);
+  const rawLng = Number(telemetry.lng);
+  if (!Number.isFinite(rawLat) || !Number.isFinite(rawLng)) return null;
+
+  const drv = window.providerDB?.findById(driverId);
+  if (!drv) return null;
+
+  const nowIso = telemetry.lastLocationAt || new Date().toISOString();
+  const cleanPayload = {
+    lat: rawLat,
+    lng: rawLng,
+    heading: Number.isFinite(Number(telemetry.heading)) ? Number(telemetry.heading) : drv.heading,
+    speedKmh: Number.isFinite(Number(telemetry.speedKmh)) ? Math.max(0, Math.min(300, Math.round(Number(telemetry.speedKmh)))) : (drv.speedKmh ?? 0),
+    accuracyM: Number.isFinite(Number(telemetry.accuracyM)) ? Math.max(0, Math.round(Number(telemetry.accuracyM))) : drv.accuracyM,
+    isLiveTracking: typeof telemetry.isLiveTracking === 'boolean' ? telemetry.isLiveTracking : Boolean(drv.isLiveTracking),
+    lastLocationAt: nowIso,
+    baseSuburb: telemetry.baseSuburb || drv.baseSuburb,
+    currentLocationText: telemetry.currentLocationText || drv.currentLocationText,
+    skipRemote: !persist
+  };
+
+  if (window.providerDB?.updateDriverLocation) {
+    window.providerDB.updateDriverLocation(drv.id, cleanPayload);
+  }
+
+  // Smoothly glide existing markers without destroying Leaflet map instances or resetting zoom
+  const dirMarker = appState.osmContractorMarkerById?.[drv.id] || (drv.serviceProviderNumber && appState.osmContractorMarkerById?.[drv.serviceProviderNumber]);
+  if (dirMarker && window.L) {
+    animateLeafletMarkerTo(dirMarker, rawLat, rawLng, 650);
+    if (typeof dirMarker.setIcon === 'function') {
+      dirMarker.setIcon(buildDirectoryPinIcon(drv, { isClosest: Boolean(dirMarker._iasjClosest) }));
+    }
+  }
+
+  const routeMarker = appState.osmCourierDriverMarkersById?.[drv.id] || (drv.serviceProviderNumber && appState.osmCourierDriverMarkersById?.[drv.serviceProviderNumber]);
+  if (routeMarker && window.L) {
+    animateLeafletMarkerTo(routeMarker, rawLat, rawLng, 650);
+    if (typeof routeMarker.setIcon === 'function') {
+      const c1 = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
+      const distFromPickup = computeDistanceInKm(c1.lat, c1.lng, rawLat, rawLng);
+      routeMarker.setIcon(buildRoutePinIcon(drv, { isSelected: Boolean(routeMarker._iasjSelected), distFromPickup }));
+    }
+  }
+
+  const inlineMeta = driverBoxMapMeta[drv.id] || (drv.serviceProviderNumber && driverBoxMapMeta[drv.serviceProviderNumber]);
+  if (inlineMeta && inlineMeta.driverMarker) {
+    animateLeafletMarkerTo(inlineMeta.driverMarker, rawLat, rawLng, 650);
+    if (inlineMeta.approachLine && inlineMeta.origCoords) {
+      inlineMeta.approachLine.setLatLngs([[rawLat, rawLng], [inlineMeta.origCoords.lat, inlineMeta.origCoords.lng]]);
+    }
+  }
+
+  const modalMatches = liveTrackingMapState.driverId && (
+    liveTrackingMapState.driverId === drv.id ||
+    (drv.serviceProviderNumber && liveTrackingMapState.driverId === drv.serviceProviderNumber)
+  );
+  if (modalMatches && liveTrackingMapState.map && liveTrackingMapState.driverMarker) {
+    animateLeafletMarkerTo(liveTrackingMapState.driverMarker, rawLat, rawLng, 650);
+    if (typeof liveTrackingMapState.driverMarker.setIcon === 'function') {
+      liveTrackingMapState.driverMarker.setIcon(buildLiveModalDriverIcon(drv));
+    }
+    if (liveTrackingMapState.approachLine && liveTrackingMapState.originCoords) {
+      liveTrackingMapState.approachLine.setLatLngs([[rawLat, rawLng], [liveTrackingMapState.originCoords.lat, liveTrackingMapState.originCoords.lng]]);
+    }
+    updateLiveDriverTrackingModalStats();
+  }
+
+  if (appState.activeAdminDriverId === drv.id) {
+    const topSuburb = document.getElementById('driver-top-suburb-display');
+    if (topSuburb && drv.baseSuburb) topSuburb.textContent = drv.baseSuburb;
+  }
+
+  return drv;
+}
+window.applyIncomingLiveDriverPosition = applyIncomingLiveDriverPosition;
+
+async function startDriverLiveTracking(driverId) {
+  const accessible = getAccessibleDriverProfilesForCurrentUser();
+  const targetId = driverId || appState.activeAdminDriverId;
+  const activeDriver = accessible.find(d => d.id === targetId || d.serviceProviderNumber === targetId)
+    || window.providerDB?.findById(targetId)
+    || accessible[0];
+
+  if (!activeDriver || !canUserAccessDriverProfile(activeDriver)) {
+    showToast('🔒 Access denied: Only the driver who owns this profile or SuperAdmin can start Live GPS tracking.');
+    return { started: false, reason: 'UNAUTHORIZED' };
+  }
+
+  if (driverLiveTrackingState.watchId !== null && navigator.geolocation?.clearWatch) {
+    try { navigator.geolocation.clearWatch(driverLiveTrackingState.watchId); } catch (e) {}
+    driverLiveTrackingState.watchId = null;
+  }
+
+  // Turning on Live GPS also activates profile visibility on customer maps
+  if (typeof window.providerDB?.setDriverProfileTurnedOn === 'function' && activeDriver.profileTurnedOn === false) {
+    window.providerDB.setDriverProfileTurnedOn(activeDriver.id, true);
+  }
+
+  appState.activeAdminDriverId = activeDriver.id;
+  driverLiveTrackingState.active = true;
+  driverLiveTrackingState.driverId = activeDriver.id;
+  driverLiveTrackingState.lastSentAt = 0;
+
+  await requestDriverWakeLock();
+  syncDriverProfileTurnOnUI(activeDriver);
+  syncDriverLiveTrackingUI(activeDriver);
+
+  const handleCoords = (pos) => {
+    if (!driverLiveTrackingState.active || driverLiveTrackingState.driverId !== activeDriver.id) return;
+    const lat = Number(pos?.coords?.latitude);
+    const lng = Number(pos?.coords?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const nowMs = Date.now();
+    const prev = driverLiveTrackingState.lastSentCoords;
+    const movedMeters = prev ? computeDistanceInKm(prev.lat, prev.lng, lat, lng) * 1000 : Infinity;
+    const elapsedMs = nowMs - (driverLiveTrackingState.lastSentAt || 0);
+    if (elapsedMs < 4500 && movedMeters < 15) return;
+
+    driverLiveTrackingState.lastSentAt = nowMs;
+    driverLiveTrackingState.lastSentCoords = { lat, lng };
+
+    const rawSpeedMs = pos?.coords?.speed;
+    const speedKmh = (Number.isFinite(rawSpeedMs) && rawSpeedMs >= 0) ? Math.min(300, Math.round(rawSpeedMs * 3.6)) : 0;
+    const rawHeading = pos?.coords?.heading;
+    const heading = (Number.isFinite(rawHeading) && rawHeading >= 0 && rawHeading <= 360) ? Math.round(rawHeading) : -1;
+    const accuracyM = Number.isFinite(pos?.coords?.accuracy) ? Math.round(pos.coords.accuracy) : 15;
+    const isoNow = new Date(nowMs).toISOString();
+
+    // Update live map pin immediately without waiting for network reverse-geocoding
+    applyIncomingLiveDriverPosition(activeDriver.id, {
+      lat,
+      lng,
+      heading,
+      speedKmh,
+      accuracyM,
+      isLiveTracking: true,
+      lastLocationAt: isoNow,
+      baseSuburb: activeDriver.baseSuburb,
+      currentLocationText: activeDriver.currentLocationText
+    }, { persist: true });
+
+    const geoPrev = driverLiveTrackingState.lastGeocodeCoords;
+    const geoMovedMeters = geoPrev ? computeDistanceInKm(geoPrev.lat, geoPrev.lng, lat, lng) * 1000 : Infinity;
+    if ((nowMs - (driverLiveTrackingState.lastGeocodeAt || 0)) >= 45000 || geoMovedMeters >= 250) {
+      driverLiveTrackingState.lastGeocodeAt = nowMs;
+      driverLiveTrackingState.lastGeocodeCoords = { lat, lng };
+      Promise.resolve(reverseGeocodeOsm(lat, lng)).then((addr) => {
+        if (!addr || !driverLiveTrackingState.active || driverLiveTrackingState.driverId !== activeDriver.id) return;
+        const latestCoords = driverLiveTrackingState.lastSentCoords || { lat, lng };
+        applyIncomingLiveDriverPosition(activeDriver.id, {
+          lat: latestCoords.lat,
+          lng: latestCoords.lng,
+          isLiveTracking: true,
+          lastLocationAt: new Date().toISOString(),
+          baseSuburb: addr.split(',')[0] || addr,
+          currentLocationText: addr
+        }, { persist: true });
+      }).catch(() => {});
+    }
+  };
+
+  if (navigator.geolocation && typeof navigator.geolocation.watchPosition === 'function') {
+    driverLiveTrackingState.watchId = navigator.geolocation.watchPosition(
+      handleCoords,
+      (err) => {
+        if (err && err.code === 1) {
+          showToast('⚠️ Location permission denied. Enable GPS access in browser settings for live movement.');
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+  } else {
+    // Graceful fallback when browser lacks watchPosition: publish current coordinates immediately
+    handleCoords({
+      coords: {
+        latitude: Number(activeDriver.lat ?? -27.9635),
+        lng: Number(activeDriver.lng ?? 153.4064),
+        longitude: Number(activeDriver.lng ?? 153.4064),
+        speed: 0,
+        heading: -1,
+        accuracy: 25
+      }
+    });
+  }
+
+  showToast(`📡 Live GPS Tracking ON for ${activeDriver.name}${driverLiveTrackingState.wakeLockActive ? ' (Screen kept awake)' : ''}!`);
+  return {
+    started: true,
+    driverId: activeDriver.id,
+    wakeLockActive: driverLiveTrackingState.wakeLockActive
+  };
+}
+window.startDriverLiveTracking = startDriverLiveTracking;
+
+async function stopDriverLiveTracking(options = {}) {
+  if (driverLiveTrackingState.watchId !== null && navigator.geolocation?.clearWatch) {
+    try { navigator.geolocation.clearWatch(driverLiveTrackingState.watchId); } catch (e) {}
+  }
+  const trackedId = driverLiveTrackingState.driverId;
+  driverLiveTrackingState.active = false;
+  driverLiveTrackingState.watchId = null;
+  driverLiveTrackingState.driverId = null;
+  await releaseDriverWakeLock();
+
+  const drv = trackedId ? window.providerDB?.findById(trackedId) : null;
+  if (drv && window.providerDB?.updateDriverLocation) {
+    applyIncomingLiveDriverPosition(drv.id, {
+      lat: drv.lat ?? -27.9635,
+      lng: drv.lng ?? 153.4064,
+      speedKmh: 0,
+      isLiveTracking: false,
+      lastLocationAt: new Date().toISOString()
+    }, { persist: true });
+  }
+  if (drv) syncDriverLiveTrackingUI(drv);
+
+  if (!options?.silent) {
+    showToast('🛑 Live GPS Tracking paused.');
+  }
+  return { stopped: true, driverId: trackedId };
+}
+window.stopDriverLiveTracking = stopDriverLiveTracking;
+
+function toggleDriverLiveTracking() {
+  if (driverLiveTrackingState.active) {
+    return stopDriverLiveTracking();
+  }
+  return startDriverLiveTracking(appState.activeAdminDriverId);
+}
+window.toggleDriverLiveTracking = toggleDriverLiveTracking;
+
+function openLiveDriverTrackingModal(orderIdOrDriverId = null) {
+  const modal = document.getElementById('live-driver-tracking-modal');
+  if (!modal) return;
+
+  let order = null;
+  if (orderIdOrDriverId && window.courierOrderDB?.getAll) {
+    order = window.courierOrderDB.getAll().find(o => o.orderId === orderIdOrDriverId) || null;
+  }
+  if (!order && window.lastBookedOrderId && window.courierOrderDB?.getAll) {
+    order = window.courierOrderDB.getAll().find(o => o.orderId === window.lastBookedOrderId) || null;
+  }
+
+  const drvId = order?.driverId || orderIdOrDriverId || appState.selectedCourierDriverId || appState.activeAdminDriverId;
+  const drv = window.providerDB?.findById(drvId) || window.providerDB?.getAll()?.[0];
+  if (!drv) {
+    showToast('⚠️ Select or book a courier driver first to view their live map.');
+    return;
+  }
+
+  liveTrackingMapState.modalOrderId = order?.orderId || null;
+  liveTrackingMapState.driverId = drv.id;
+  liveTrackingMapState.originCoords = appState.courierOriginCoords || { lat: -27.9635, lng: 153.4064 };
+  liveTrackingMapState.destCoords = appState.courierDestCoords || { lat: -28.0280, lng: 153.4312 };
+
+  modal.classList.add('active');
+  updateLiveDriverTrackingModalStats();
+
+  if (liveTrackingMapState.freshnessTimerId) {
+    clearInterval(liveTrackingMapState.freshnessTimerId);
+    liveTrackingMapState.freshnessTimerId = null;
+  }
+  liveTrackingMapState.freshnessTimerId = setInterval(() => {
+    updateLiveDriverTrackingModalStats();
+  }, 1000);
+
+  if (window.L) {
+    const container = document.getElementById('live-tracking-leaflet-map');
+    if (container) {
+      if (liveTrackingMapState.map) {
+        try { liveTrackingMapState.map.remove(); } catch (e) {}
+        liveTrackingMapState.map = null;
+      }
+      const dLat = Number(drv.lat ?? -27.9635);
+      const dLng = Number(drv.lng ?? 153.4064);
+      const orig = liveTrackingMapState.originCoords;
+      const dest = liveTrackingMapState.destCoords;
+
+      const map = L.map(container, { zoomControl: true, scrollWheelZoom: false }).setView([dLat, dLng], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      const drvMarker = L.marker([dLat, dLng], { icon: buildLiveModalDriverIcon(drv) })
+        .addTo(map)
+        .bindPopup(`<strong>🚚 ${drv.name}</strong><br>${drv.baseSuburb || 'Gold Coast QLD'}`);
+
+      const pickupIcon = L.divIcon({
+        className: 'osm-custom-pin',
+        html: '<div style="background:#10B981;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">P</div>',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      const destIcon = L.divIcon({
+        className: 'osm-custom-pin',
+        html: '<div style="background:#EF4444;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">D</div>',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+
+      L.marker([orig.lat, orig.lng], { icon: pickupIcon }).addTo(map).bindPopup(`<strong>Pickup</strong><br>${order?.originAddress || 'Pickup Address'}`);
+      L.marker([dest.lat, dest.lng], { icon: destIcon }).addTo(map).bindPopup(`<strong>Destination</strong><br>${order?.destAddress || 'Delivery Destination'}`);
+
+      const approachLine = L.polyline([[dLat, dLng], [orig.lat, orig.lng]], {
+        color: '#059669',
+        weight: 3,
+        dashArray: '6, 6',
+        opacity: 0.9
+      }).addTo(map);
+
+      L.polyline([[orig.lat, orig.lng], [dest.lat, dest.lng]], {
+        color: '#FF5A1F',
+        weight: 4,
+        opacity: 0.85
+      }).addTo(map);
+
+      const bounds = L.latLngBounds([[dLat, dLng], [orig.lat, orig.lng], [dest.lat, dest.lng]]);
+      map.fitBounds(bounds, { padding: [32, 32] });
+
+      liveTrackingMapState.map = map;
+      liveTrackingMapState.driverMarker = drvMarker;
+      liveTrackingMapState.approachLine = approachLine;
+      appState.liveTrackingDriverMarker = drvMarker;
+
+      setTimeout(() => { try { map.invalidateSize(true); } catch (e) {} }, 100);
+    }
+  }
+}
+window.openLiveDriverTrackingModal = openLiveDriverTrackingModal;
+
+function closeLiveDriverTrackingModal() {
+  document.getElementById('live-driver-tracking-modal')?.classList.remove('active');
+  if (liveTrackingMapState.freshnessTimerId) {
+    clearInterval(liveTrackingMapState.freshnessTimerId);
+    liveTrackingMapState.freshnessTimerId = null;
+  }
+  if (liveTrackingMapState.map) {
+    try { liveTrackingMapState.map.remove(); } catch (e) {}
+    liveTrackingMapState.map = null;
+  }
+  liveTrackingMapState.driverMarker = null;
+  liveTrackingMapState.approachLine = null;
+}
+window.closeLiveDriverTrackingModal = closeLiveDriverTrackingModal;
+
+function centerLiveTrackingMapOnDriver() {
+  if (!liveTrackingMapState.map || !liveTrackingMapState.driverId) return;
+  const drv = window.providerDB?.findById(liveTrackingMapState.driverId);
+  if (!drv || !Number.isFinite(Number(drv.lat)) || !Number.isFinite(Number(drv.lng))) return;
+  liveTrackingMapState.map.setView([Number(drv.lat), Number(drv.lng)], 14, { animate: true });
+}
+window.centerLiveTrackingMapOnDriver = centerLiveTrackingMapOnDriver;
+
+function initLiveDriverTrackingListeners() {
+  if (driverLiveTrackingState.listenersReady) return;
+  driverLiveTrackingState.listenersReady = true;
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && driverLiveTrackingState.active) {
+        requestDriverWakeLock().then(() => {
+          const drv = driverLiveTrackingState.driverId ? window.providerDB?.findById(driverLiveTrackingState.driverId) : null;
+          if (drv) syncDriverLiveTrackingUI(drv);
+        });
+      }
+    });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'iasj_live_driver_telemetry_v1' && e.newValue) {
+        try {
+          const payload = JSON.parse(e.newValue);
+          if (payload && payload.driverId) {
+            applyIncomingLiveDriverPosition(payload.driverId, payload, { persist: false });
+          }
+        } catch (err) {}
+      }
+    });
+  }
+
+  if (window.firebaseService?.subscribeToLiveProviders && !driverLiveTrackingState.unsubscribeFirestore) {
+    driverLiveTrackingState.unsubscribeFirestore = window.firebaseService.subscribeToLiveProviders((remoteProviders) => {
+      if (!window.providerDB?.mergeRemoteLiveProviders) return;
+      const changed = window.providerDB.mergeRemoteLiveProviders(remoteProviders);
+      changed.forEach(drv => {
+        applyIncomingLiveDriverPosition(drv.id, {
+          lat: drv.lat,
+          lng: drv.lng,
+          heading: drv.heading,
+          speedKmh: drv.speedKmh,
+          accuracyM: drv.accuracyM,
+          isLiveTracking: drv.isLiveTracking,
+          lastLocationAt: drv.lastLocationAt,
+          baseSuburb: drv.baseSuburb,
+          currentLocationText: drv.currentLocationText
+        }, { persist: false });
+      });
+    });
+  }
+}
+window.initLiveDriverTrackingListeners = initLiveDriverTrackingListeners;
 
 function saveDriverAdminProfile(event) {
   if (event && event.preventDefault) event.preventDefault();
@@ -11962,6 +12648,30 @@ async function updateUserLocationFromGoogleMenu(btnOrCoords = null) {
 }
 window.updateUserLocationFromGoogleMenu = updateUserLocationFromGoogleMenu;
 
+function positionGoogleUserMenu() {
+  const menu = document.getElementById('google-user-menu');
+  if (!menu) return;
+  const chip = document.getElementById('google-user-chip');
+  const rect = chip ? chip.getBoundingClientRect() : null;
+  const topPx = (rect && rect.height > 0 && rect.bottom > 0)
+    ? Math.max(52, Math.round(rect.bottom + 8))
+    : 62;
+  const rightPx = (rect && rect.right > 0 && typeof window !== 'undefined')
+    ? Math.max(10, Math.round(window.innerWidth - rect.right))
+    : 12;
+  const maxH = (typeof window !== 'undefined')
+    ? Math.max(240, Math.round(window.innerHeight - topPx - 56))
+    : 500;
+
+  menu.style.position = 'fixed';
+  menu.style.zIndex = '5000';
+  menu.style.left = 'auto';
+  menu.style.top = `${topPx}px`;
+  menu.style.right = `${rightPx}px`;
+  menu.style.maxHeight = `${maxH}px`;
+}
+window.positionGoogleUserMenu = positionGoogleUserMenu;
+
 function toggleGoogleUserMenu(event) {
   event?.stopPropagation();
   syncGoogleMenuLocationDisplay();
@@ -11972,6 +12682,7 @@ function toggleGoogleUserMenu(event) {
       menu.style.display = 'none';
       menu.classList.remove('show');
     } else {
+      positionGoogleUserMenu();
       menu.style.display = 'block';
       menu.classList.add('show');
     }
@@ -11984,6 +12695,25 @@ function closeGoogleUserMenu() {
     menu.style.display = 'none';
     menu.classList.remove('show');
   }
+}
+
+if (typeof window !== 'undefined' && !window._iasjGoogleMenuListenersAttached) {
+  window._iasjGoogleMenuListenersAttached = true;
+  const repositionIfOpen = () => {
+    const menu = document.getElementById('google-user-menu');
+    if (menu && (menu.classList.contains('show') || menu.style.display === 'block')) {
+      positionGoogleUserMenu();
+    }
+  };
+  window.addEventListener('resize', repositionIfOpen, { passive: true });
+  window.addEventListener('scroll', repositionIfOpen, { passive: true });
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('google-user-menu');
+    const chip = document.getElementById('google-user-chip');
+    if (!menu || (!menu.classList.contains('show') && menu.style.display !== 'block')) return;
+    if (menu.contains(e.target) || chip?.contains(e.target)) return;
+    closeGoogleUserMenu();
+  });
 }
 
 function updateGoogleAuthUI(user) {

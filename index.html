@@ -170,106 +170,6 @@
           </span>
           <i class="fa-solid fa-chevron-down" style="font-size:0.65rem; color:var(--text-muted);"></i>
         </div>
-
-        <!-- Google User Dropdown Menu -->
-        <div id="google-user-menu"
-          style="display:none; position:absolute; right:0; top:46px; z-index:1100; background:#ffffff; border-radius:var(--radius-md); box-shadow:0 12px 28px rgba(0,0,0,0.18); border:1px solid var(--border-light); width:270px; padding:1.15rem;">
-          <div
-            style="display:flex; align-items:center; gap:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt); margin-bottom:0.75rem;">
-            <img id="google-menu-avatar"
-              style="width:38px; height:38px; border-radius:50%; border:2px solid #3B82F6; object-fit:cover;"
-              src="https://lh3.googleusercontent.com/a/default-user" alt="Avatar">
-            <div style="overflow:hidden;">
-              <div id="google-menu-name"
-                style="font-weight:800; font-size:0.9rem; color:var(--primary-navy); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
-                Google User</div>
-              <div id="google-menu-email"
-                style="font-size:0.74rem; color:var(--text-muted); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
-                user@gmail.com</div>
-            </div>
-          </div>
-          <div style="margin-bottom:0.75rem;">
-            <span id="google-menu-role-badge"
-              style="display:inline-block; font-size:0.72rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.25rem 0.6rem; border-radius:999px;">
-              Active Supporter • Logged In
-            </span>
-          </div>
-
-          <!-- SuperAdmin Role Perspective Switcher in Google User Menu -->
-          <div id="google-menu-superadmin-switcher"
-            style="display:none; padding:0.65rem 0.5rem; border-top:1px dashed var(--border-light); border-bottom:1px dashed var(--border-light); margin-bottom:0.75rem; background:#FFFBEB; border-radius:6px;"
-            data-agent-id="google-menu-superadmin-switcher" data-testid="google-menu-superadmin-switcher">
-            <div
-              style="font-size:0.7rem; font-weight:800; color:#92400E; margin-bottom:0.4rem; display:flex; align-items:center; gap:0.35rem;">
-              <i class="fa-solid fa-users-viewfinder" style="color:#D97706;"></i> VIEW SITE AS ROLE:
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.35rem;">
-              <button type="button" class="btn btn-sm btn-outline superadmin-role-btn active" data-role="superadmin"
-                onclick="switchSuperadminViewRole('superadmin'); closeGoogleUserMenu();"
-                style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#F59E0B; background:#FFFBEB; color:#92400E; font-weight:800;"
-                data-agent-id="btn-menu-view-superadmin" data-testid="btn-menu-view-superadmin"
-                aria-label="View as SuperAdmin">
-                👑 SuperAdmin
-              </button>
-              <button type="button" class="btn btn-sm btn-outline superadmin-role-btn" data-role="driver"
-                onclick="switchSuperadminViewRole('driver'); closeGoogleUserMenu();"
-                style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#3B82F6; color:#1E40AF;"
-                data-agent-id="btn-menu-view-driver" data-testid="btn-menu-view-driver" aria-label="View as Driver">
-                🚚 Driver
-              </button>
-              <button type="button" class="btn btn-sm btn-outline superadmin-role-btn" data-role="supporter"
-                onclick="switchSuperadminViewRole('supporter'); closeGoogleUserMenu();"
-                style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#10B981; color:#065F46;"
-                data-agent-id="btn-menu-view-supporter" data-testid="btn-menu-view-supporter"
-                aria-label="View as Supporter">
-                🤝 Supporter
-              </button>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:0.45rem;">
-            <!-- Current Geo Location Indicator & Geo Update Button (Updates User Location on All Maps) -->
-            <div id="google-menu-location-status"
-              style="font-size:0.73rem; color:#065F46; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.35rem 0.55rem; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-              data-agent-id="google-menu-location-status" data-testid="google-menu-location-status">
-              <i class="fa-solid fa-location-dot" style="color:#10B981; flex-shrink:0;"></i>
-              <span id="google-menu-location-text" style="overflow:hidden; text-overflow:ellipsis; font-weight:700;">10
-                Smith Street, Southport QLD</span>
-            </div>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-menu-update-geo-location"
-              onclick="updateUserLocationFromGoogleMenu(this);"
-              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#ECFDF5; border-color:#10B981; color:#065F46;"
-              data-agent-id="btn-menu-update-geo-location" data-testid="btn-menu-update-geo-location"
-              aria-label="Geo Button: Update My Location on All Maps">
-              <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> Geo: Update My Location
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-menu-supporter-portal"
-              onclick="openSupporterPanelFromGoogleMenu();"
-              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:var(--brand-orange); border-color:var(--brand-orange); color:#ffffff;"
-              data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal"
-              aria-label="Open Supporter Panel">
-              <i class="fa-solid fa-shield-heart"></i> Supporter Panel
-            </button>
-            <button type="button" class="btn btn-primary btn-sm driver-and-superadmin-only"
-              id="btn-menu-driver-admin-panel" onclick="openDriverAdminPanelFromGoogleMenu();"
-              style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#1E3A8A; border-color:#1E3A8A; color:#ffffff;"
-              data-agent-id="btn-menu-driver-admin-panel" data-testid="btn-menu-driver-admin-panel"
-              aria-label="Open Driver Admin Panel">
-              <i class="fa-solid fa-id-card-clip"></i> Driver Admin Panel
-            </button>
-            <button type="button" class="btn btn-primary btn-sm superadmin-only"
-              id="btn-menu-superadmin-panel" onclick="openSuperadminPanelFromGoogleMenu();"
-              style="display:none; width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#D97706; border-color:#D97706; color:#ffffff;"
-              data-agent-id="btn-menu-superadmin-panel" data-testid="btn-menu-superadmin-panel"
-              aria-label="Open SuperAdmin Admin Panel (SuperAdmin Only)">
-              <i class="fa-solid fa-crown"></i> SuperAdmin Admin Panel
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
-              style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
-              data-agent-id="btn-menu-signout" data-testid="btn-menu-signout" aria-label="Sign Out">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -291,6 +191,107 @@
       </div>
     </div>
   </nav>
+
+  <!-- Google User Dropdown Menu (Mounted directly under <body> so sticky navbar overflow/backdrop-filter never clips or hides Admin Panel buttons on Android/iOS) -->
+  <div id="google-user-menu" class="google-user-menu"
+    style="display:none; position:fixed; right:12px; top:62px; z-index:5000; background:#ffffff; border-radius:var(--radius-md); box-shadow:0 12px 28px rgba(0,0,0,0.18); border:1px solid var(--border-light); width:270px; padding:1.15rem;"
+    data-agent-id="google-user-menu" data-testid="google-user-menu">
+    <div
+      style="display:flex; align-items:center; gap:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid var(--bg-card-alt); margin-bottom:0.75rem;">
+      <img id="google-menu-avatar"
+        style="width:38px; height:38px; border-radius:50%; border:2px solid #3B82F6; object-fit:cover;"
+        src="https://lh3.googleusercontent.com/a/default-user" alt="Avatar">
+      <div style="overflow:hidden;">
+        <div id="google-menu-name"
+          style="font-weight:800; font-size:0.9rem; color:var(--primary-navy); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
+          Google User</div>
+        <div id="google-menu-email"
+          style="font-size:0.74rem; color:var(--text-muted); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
+          user@gmail.com</div>
+      </div>
+    </div>
+    <div style="margin-bottom:0.75rem;">
+      <span id="google-menu-role-badge"
+        style="display:inline-block; font-size:0.72rem; font-weight:800; background:#EFF6FF; color:#1E40AF; padding:0.25rem 0.6rem; border-radius:999px;">
+        Active Supporter • Logged In
+      </span>
+    </div>
+
+    <!-- SuperAdmin Role Perspective Switcher in Google User Menu -->
+    <div id="google-menu-superadmin-switcher"
+      style="display:none; padding:0.65rem 0.5rem; border-top:1px dashed var(--border-light); border-bottom:1px dashed var(--border-light); margin-bottom:0.75rem; background:#FFFBEB; border-radius:6px;"
+      data-agent-id="google-menu-superadmin-switcher" data-testid="google-menu-superadmin-switcher">
+      <div
+        style="font-size:0.7rem; font-weight:800; color:#92400E; margin-bottom:0.4rem; display:flex; align-items:center; gap:0.35rem;">
+        <i class="fa-solid fa-users-viewfinder" style="color:#D97706;"></i> VIEW SITE AS ROLE:
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.35rem;">
+        <button type="button" class="btn btn-sm btn-outline superadmin-role-btn active" data-role="superadmin"
+          onclick="switchSuperadminViewRole('superadmin'); closeGoogleUserMenu();"
+          style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#F59E0B; background:#FFFBEB; color:#92400E; font-weight:800;"
+          data-agent-id="btn-menu-view-superadmin" data-testid="btn-menu-view-superadmin"
+          aria-label="View as SuperAdmin">
+          👑 SuperAdmin
+        </button>
+        <button type="button" class="btn btn-sm btn-outline superadmin-role-btn" data-role="driver"
+          onclick="switchSuperadminViewRole('driver'); closeGoogleUserMenu();"
+          style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#3B82F6; color:#1E40AF;"
+          data-agent-id="btn-menu-view-driver" data-testid="btn-menu-view-driver" aria-label="View as Driver">
+          🚚 Driver
+        </button>
+        <button type="button" class="btn btn-sm btn-outline superadmin-role-btn" data-role="supporter"
+          onclick="switchSuperadminViewRole('supporter'); closeGoogleUserMenu();"
+          style="font-size:0.7rem; padding:0.3rem 0.4rem; justify-content:center; border-color:#10B981; color:#065F46;"
+          data-agent-id="btn-menu-view-supporter" data-testid="btn-menu-view-supporter"
+          aria-label="View as Supporter">
+          🤝 Supporter
+        </button>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.45rem;">
+      <!-- Current Geo Location Indicator & Geo Update Button (Updates User Location on All Maps) -->
+      <div id="google-menu-location-status"
+        style="font-size:0.73rem; color:#065F46; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.35rem 0.55rem; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+        data-agent-id="google-menu-location-status" data-testid="google-menu-location-status">
+        <i class="fa-solid fa-location-dot" style="color:#10B981; flex-shrink:0;"></i>
+        <span id="google-menu-location-text" style="overflow:hidden; text-overflow:ellipsis; font-weight:700;">10
+          Smith Street, Southport QLD</span>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-menu-update-geo-location"
+        onclick="updateUserLocationFromGoogleMenu(this);"
+        style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#ECFDF5; border-color:#10B981; color:#065F46;"
+        data-agent-id="btn-menu-update-geo-location" data-testid="btn-menu-update-geo-location"
+        aria-label="Geo Button: Update My Location on All Maps">
+        <i class="fa-solid fa-location-crosshairs" style="color:#059669;"></i> Geo: Update My Location
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-menu-supporter-portal"
+        onclick="openSupporterPanelFromGoogleMenu();"
+        style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:var(--brand-orange); border-color:var(--brand-orange); color:#ffffff;"
+        data-agent-id="btn-menu-supporter-portal" data-testid="btn-menu-supporter-portal"
+        aria-label="Open Supporter Panel">
+        <i class="fa-solid fa-shield-heart"></i> Supporter Panel
+      </button>
+      <button type="button" class="btn btn-primary btn-sm driver-and-superadmin-only"
+        id="btn-menu-driver-admin-panel" onclick="openDriverAdminPanelFromGoogleMenu();"
+        style="width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#1E3A8A; border-color:#1E3A8A; color:#ffffff;"
+        data-agent-id="btn-menu-driver-admin-panel" data-testid="btn-menu-driver-admin-panel"
+        aria-label="Open Driver Admin Panel">
+        <i class="fa-solid fa-id-card-clip"></i> Driver Admin Panel
+      </button>
+      <button type="button" class="btn btn-primary btn-sm superadmin-only"
+        id="btn-menu-superadmin-panel" onclick="openSuperadminPanelFromGoogleMenu();"
+        style="display:none; width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#D97706; border-color:#D97706; color:#ffffff;"
+        data-agent-id="btn-menu-superadmin-panel" data-testid="btn-menu-superadmin-panel"
+        aria-label="Open SuperAdmin Admin Panel (SuperAdmin Only)">
+        <i class="fa-solid fa-crown"></i> SuperAdmin Admin Panel
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
+        style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
+        data-agent-id="btn-menu-signout" data-testid="btn-menu-signout" aria-label="Sign Out">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+      </button>
+    </div>
+  </div>
 
   <!-- Interactive Section Tabs Navigation Bar -->
   <section class="app-section-tabs">
@@ -917,6 +918,13 @@
                 data-agent-id="btn-driver-top-geolocate" data-testid="btn-driver-top-geolocate"
                 aria-label="Auto Geolocate Driver Live GPS">
                 <i class="fa-solid fa-location-crosshairs" style="color:var(--brand-orange);"></i> GPS
+              </button>
+              <button type="button" id="btn-driver-live-tracking" class="btn btn-outline"
+                onclick="toggleDriverLiveTracking()"
+                style="font-weight:800; font-size:0.82rem; padding:0.6rem 0.95rem; display:inline-flex; align-items:center; gap:0.4rem; background:#FFFFFF; border-color:#CBD5E1; color:#475569;"
+                data-agent-id="btn-driver-live-tracking" data-testid="btn-driver-live-tracking"
+                aria-label="Toggle Live Continuous GPS Tracking" aria-pressed="false">
+                <i class="fa-solid fa-satellite-dish"></i> Live GPS OFF
               </button>
             </div>
           </div>
@@ -2470,16 +2478,100 @@
         <!-- Populated dynamically when order is submitted -->
       </div>
       <div
-        style="display:flex; justify-content:space-between; gap:0.75rem; padding:1rem 1.35rem; border-top:1px solid var(--border-light);">
+        style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.6rem; padding:1rem 1.35rem; border-top:1px solid var(--border-light);">
         <button type="button" class="btn btn-outline" onclick="closePayIdConfirmationModal()"
           data-agent-id="btn-payid-modal-done" data-testid="btn-payid-modal-done" aria-label="Close">
           Close
         </button>
-        <button type="button" class="btn btn-primary"
-          onclick="closePayIdConfirmationModal(); switchTab('driver-admin-tab');"
-          data-agent-id="btn-payid-modal-view-admin" data-testid="btn-payid-modal-view-admin"
-          aria-label="View Recorded Order on Driver Admin Page">
-          <i class="fa-solid fa-gauge-high"></i> View Order on Driver Admin Page
+        <div style="display:flex; gap:0.55rem; flex-wrap:wrap;">
+          <button type="button" id="btn-payid-modal-track-driver" class="btn btn-primary"
+            style="background:#059669; border-color:#059669; font-weight:800;"
+            onclick="closePayIdConfirmationModal(); openLiveDriverTrackingModal(window.lastBookedOrderId || null);"
+            data-agent-id="btn-payid-modal-track-driver" data-testid="btn-payid-modal-track-driver"
+            aria-label="Track Driver Live on Map">
+            <i class="fa-solid fa-satellite-dish"></i> Track Driver Live
+          </button>
+          <button type="button" class="btn btn-primary"
+            onclick="closePayIdConfirmationModal(); switchTab('driver-admin-tab');"
+            data-agent-id="btn-payid-modal-view-admin" data-testid="btn-payid-modal-view-admin"
+            aria-label="View Recorded Order on Driver Admin Page">
+            <i class="fa-solid fa-gauge-high"></i> View Order on Driver Admin Page
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 1B: LIVE DRIVER GPS TRACKING MODAL (CUSTOMER VIEW)
+       ===================================================================== -->
+  <div class="modal-overlay" id="live-driver-tracking-modal" role="dialog" aria-modal="true"
+    aria-labelledby="live-tracking-modal-title" data-agent-id="live-driver-tracking-modal"
+    data-testid="live-driver-tracking-modal">
+    <div class="modal-box" style="max-width: 720px; width: 95%;">
+      <div class="modal-header" style="background:linear-gradient(135deg, #065F46 0%, #059669 100%); color:#FFFFFF; border-bottom:1px solid #047857; padding:1rem 1.25rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap;">
+            <h4 id="live-tracking-modal-title" style="margin:0; font-size:1.08rem; font-weight:900; color:#FFFFFF;">
+              <i class="fa-solid fa-satellite-dish"></i> Live Driver Map — <span id="live-tracking-driver-name">Courier Driver</span>
+            </h4>
+            <span id="live-tracking-status-pill"
+              style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.45); color:#FFFFFF; font-size:0.72rem; font-weight:800; padding:0.18rem 0.55rem; border-radius:999px;"
+              data-agent-id="live-tracking-status-pill" data-testid="live-tracking-status-pill">
+              Checking Signal...
+            </span>
+          </div>
+          <span style="font-size:0.76rem; color:#D1FAE5;" id="live-tracking-phone-hint"
+            data-agent-id="live-tracking-phone-hint" data-testid="live-tracking-phone-hint">
+            Updates automatically while driver's phone screen stays on
+          </span>
+        </div>
+        <button type="button" id="btn-close-live-tracking-modal" class="modal-close-btn"
+          style="color:#FFFFFF;" onclick="closeLiveDriverTrackingModal()"
+          data-agent-id="btn-close-live-tracking-modal" data-testid="btn-close-live-tracking-modal"
+          aria-label="Close Live Driver Tracking Modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+        <div class="live-tracking-stats-grid"
+          style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:0.55rem; margin-bottom:0.85rem;">
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.55rem 0.7rem;">
+            <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Distance to Pickup</div>
+            <div id="live-tracking-distance" style="font-size:0.92rem; font-weight:900; color:var(--primary-navy);"
+              data-agent-id="live-tracking-distance" data-testid="live-tracking-distance">— km</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.55rem 0.7rem;">
+            <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Live Speed</div>
+            <div id="live-tracking-speed" style="font-size:0.92rem; font-weight:900; color:#059669;"
+              data-agent-id="live-tracking-speed" data-testid="live-tracking-speed">0 km/h</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.55rem 0.7rem;">
+            <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Last Update</div>
+            <div id="live-tracking-freshness" style="font-size:0.92rem; font-weight:900; color:#1D4ED8;"
+              data-agent-id="live-tracking-freshness" data-testid="live-tracking-freshness">Just now</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border-light); border-radius:var(--radius-sm); padding:0.55rem 0.7rem;">
+            <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Current Area</div>
+            <div id="live-tracking-suburb" style="font-size:0.86rem; font-weight:800; color:var(--primary-navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+              data-agent-id="live-tracking-suburb" data-testid="live-tracking-suburb">Gold Coast QLD</div>
+          </div>
+        </div>
+
+        <div id="live-tracking-leaflet-map"
+          style="height:340px; width:100%; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:#F1F5F9;"
+          data-agent-id="live-tracking-leaflet-map" data-testid="live-tracking-leaflet-map"
+          aria-label="Live Driver Location Map"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; padding:0.85rem 1.25rem; border-top:1px solid var(--border-light);">
+        <button type="button" id="btn-live-track-center" class="btn btn-outline btn-sm"
+          onclick="centerLiveTrackingMapOnDriver()"
+          data-agent-id="btn-live-track-center" data-testid="btn-live-track-center"
+          aria-label="Center Map on Driver">
+          <i class="fa-solid fa-crosshairs"></i> Center on Driver
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="closeLiveDriverTrackingModal()"
+          data-agent-id="btn-live-track-close-footer" data-testid="btn-live-track-close-footer"
+          aria-label="Close Live Map">
+          Close
         </button>
       </div>
     </div>
