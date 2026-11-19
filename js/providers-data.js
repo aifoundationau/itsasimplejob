@@ -76,6 +76,82 @@ function normalizeDriverUsername(rawUsername, fallbackName = "", fallbackId = ""
 
 const INITIAL_PROVIDERS = [
   {
+    id: "drv-72171",
+    serviceProviderNumber: "DRV-615571",
+    businessId: "its-a-simple-job",
+    isSample: false,
+    sampleTag: "",
+    samplePurpose: "",
+    canBeBooked: true,
+    sampleRegistryFile: "",
+    approved: true,
+    isActive: true,
+    profileTurnedOn: true,
+    profileActive: true,
+    status: "active",
+    role: "driver",
+    isDriver: true,
+    name: "AI Foundation",
+    username: "@aifoundation",
+    gender: "male",
+    businessName: "AI Foundation Express Couriers",
+    category: "courier",
+    tradeTitle: "Courier Driver (2017 Renault Kangoo Maxi) & Bicycle Runner",
+    vehicle: "2017 Renault Kangoo Maxi",
+    avatar: "assets/images/courier_worker.jpg",
+    rating: 5.0,
+    reviewCount: 1,
+    licenceNumber: "70760551",
+    licenceState: "QLD",
+    licenceClass: "C (Car / Van)",
+    licenceExpiry: "2029-12-31",
+    qbccLicense: "QLD #70760551 (C (Car / Van))",
+    insurance: "$10M Transit Goods & Liability",
+    policeChecked: true,
+    address: "77 Parkwood Boulevard, Parkwood QLD 4214",
+    baseSuburb: "Parkwood QLD 4214",
+    phone: "0495 019 791",
+    email: "support@aifoundation.net.au",
+    payIdType: "abn",
+    payIdValue: "36339516584",
+    payIdAccountName: "AI Foundation Express Couriers",
+    hasVehicleCourier: true,
+    hasBicycleCourier: true,
+    vehiclePerKmRateAud: 3.00,
+    vehicleSameDayFeeAud: 20,
+    vehicleUrgentFeeAud: 30,
+    vehicleMaxWeightKg: 500,
+    vehicleMaxHeightCm: 120,
+    vehicleMaxWidthCm: 120,
+    vehicleMaxLengthCm: 180,
+    bicyclePerKmRateAud: 3.00,
+    bicycleSameDayFeeAud: 10,
+    bicycleUrgentFeeAud: 20,
+    bicycleMaxWeightKg: 8,
+    bicycleMaxHeightCm: 35,
+    bicycleMaxWidthCm: 30,
+    bicycleMaxLengthCm: 40,
+    perKmRateAud: 3.00,
+    sameDayFeeAud: 20,
+    urgentFeeAud: 30,
+    maxWeightKg: 500,
+    maxHeightCm: 120,
+    maxWidthCm: 120,
+    maxLengthCm: 180,
+    tokenBalance: 50,
+    lat: -27.9534,
+    lng: 153.3660,
+    lastGeolocatedAt: "2026-11-20T05:00:00Z",
+    autoGeolocateEnabled: true,
+    completedJobs: 0,
+    badge: "Verified Courier Driver",
+    serviceAreas: ["Parkwood", "Southport", "Gold Coast", "Surfers Paradise", "Broadbeach", "Brisbane"],
+    skills: ["courier", "parcel delivery", "same day express", "urgent dispatch", "bicycle runner"],
+    bio: "Verified Gold Coast & Southport express courier operating 2017 Renault Kangoo Maxi and bicycle runner service. Direct PayID settlement.",
+    workingHours: { days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], shifts: ["morning", "afternoon"], is24_7: true, shiftDescription: "Pickup Window: 9:00 AM – 4:00 PM Daily" },
+    calendarSchedule: getDefaultCalendarSchedule(true)
+  },
+  {
     id: "drv-101",
     serviceProviderNumber: "DRV-101001",
     businessId: "its-a-simple-job",
@@ -473,12 +549,37 @@ class ProviderDatabase {
   }
 
   loadProviders() {
+    const ensureLivePrimaryDriver = (list) => {
+      const livePrimary = INITIAL_PROVIDERS[0];
+      if (!livePrimary || livePrimary.id !== "drv-72171") return list;
+      const existingIdx = list.findIndex(p => p.id === "drv-72171" || p.serviceProviderNumber === "DRV-615571");
+      if (existingIdx === -1) {
+        return [this.normalizeDriver({ ...livePrimary }), ...list];
+      }
+      const existing = list[existingIdx];
+      list[existingIdx] = this.normalizeDriver({
+        ...livePrimary,
+        ...existing,
+        id: "drv-72171",
+        serviceProviderNumber: "DRV-615571",
+        isSample: false,
+        canBeBooked: true,
+        approved: true,
+        isActive: true,
+        profileTurnedOn: true,
+        profileActive: true,
+        status: "active",
+        tokenBalance: Math.max(25, Number(existing.tokenBalance ?? 50))
+      });
+      return list;
+    };
+
     try {
       const stored = localStorage.getItem(this.storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(p => this.normalizeDriver(p));
+          return ensureLivePrimaryDriver(parsed.map(p => this.normalizeDriver(p)));
         }
       }
     } catch (e) {
@@ -791,7 +892,23 @@ class ProviderDatabase {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
       const local = this.findById(rp.serviceProviderNumber || rp.id) || (rp.id ? this.findById(rp.id) : null);
-      if (!local) return;
+      if (!local) {
+        if ((rp.id || rp.serviceProviderNumber) && rp.name && rp.approved === true && rp.isSample !== true) {
+          const inserted = this.normalizeDriver({
+            ...rp,
+            isSample: false,
+            canBeBooked: true,
+            approved: true,
+            isActive: true,
+            profileTurnedOn: rp.profileTurnedOn !== false,
+            profileActive: rp.profileActive !== false
+          });
+          this.providers.unshift(inserted);
+          touched = true;
+          changed.push(inserted);
+        }
+        return;
+      }
 
       const remoteTs = Date.parse(rp.lastLocationAt || rp.updatedAt || '') || 0;
       const localTs = Date.parse(local.lastLocationAt || local.lastGeolocatedAt || '') || 0;
