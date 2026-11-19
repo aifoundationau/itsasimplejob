@@ -285,6 +285,13 @@
         aria-label="Open SuperAdmin Admin Panel (SuperAdmin Only)">
         <i class="fa-solid fa-crown"></i> SuperAdmin Admin Panel
       </button>
+      <button type="button" class="btn btn-primary btn-sm superadmin-only"
+        id="btn-menu-superadmin-courier-toggle" onclick="toggleSuperadminCourierMode();"
+        style="display:none; width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#059669; border-color:#059669; color:#ffffff;"
+        data-agent-id="btn-menu-superadmin-courier-toggle" data-testid="btn-menu-superadmin-courier-toggle"
+        aria-label="Toggle SuperAdmin Active Courier Driver Mode" aria-pressed="true">
+        <i class="fa-solid fa-truck-fast"></i> <span id="menu-sa-courier-toggle-label">SuperAdmin Courier: ON</span>
+      </button>
       <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
         style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
         data-agent-id="btn-menu-signout" data-testid="btn-menu-signout" aria-label="Sign Out">
@@ -2032,6 +2039,14 @@
               </button>
             </div>
 
+            <button type="button" id="btn-sa-header-courier-toggle" class="btn btn-primary btn-sm"
+              onclick="event.stopPropagation(); toggleSuperadminCourierMode();"
+              style="background:#059669; border-color:#059669; color:#ffffff; font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem;"
+              data-agent-id="btn-sa-header-courier-toggle" data-testid="btn-sa-header-courier-toggle"
+              aria-label="Turn SuperAdmin Courier Mode ON or OFF" aria-pressed="true">
+              <i class="fa-solid fa-toggle-on"></i> <span id="sa-header-courier-toggle-label">Courier Mode: ON</span>
+            </button>
+
             <button type="button" id="btn-superadmin-make-new-booking" class="btn btn-primary btn-sm"
               onclick="event.stopPropagation(); makeNewBookingAsSupporter();"
               style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem;"
@@ -2057,6 +2072,59 @@
         <div id="superadmin-console-collapse-body" class="supporter-collapse-body"
           style="display:block; padding:1.35rem 1.75rem 1.75rem; border-top:1px solid #FDE68A;"
           data-agent-id="superadmin-console-collapse-body" data-testid="superadmin-console-collapse-body">
+
+          <!-- Section 0: SuperAdmin Courier Mode — Turn ON / OFF as a Live Bookable Courier -->
+          <div id="superadmin-own-courier-mode-card"
+            style="margin-bottom:1.5rem; background:#F0FDF4; border:2px solid #10B981; border-radius:var(--radius-sm); padding:1.15rem;"
+            data-agent-id="superadmin-own-courier-mode-card" data-testid="superadmin-own-courier-mode-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.85rem;">
+              <div style="flex:1; min-width:250px;">
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <span style="background:#059669; color:#ffffff; font-size:0.72rem; font-weight:900; padding:0.18rem 0.55rem; border-radius:999px;">
+                    <i class="fa-solid fa-crown"></i> SUPERADMIN COURIER DRIVER
+                  </span>
+                  <strong id="sa-courier-mode-driver-name" style="font-size:1.02rem; color:#065F46;">
+                    AI Foundation — AI Foundation Express Couriers
+                  </strong>
+                  <span id="sa-courier-mode-status-badge"
+                    style="font-size:0.74rem; font-weight:800; background:#DCFCE7; color:#15803D; border:1px solid #86EFAC; padding:0.2rem 0.6rem; border-radius:999px;"
+                    data-agent-id="sa-courier-mode-status-badge" data-testid="sa-courier-mode-status-badge">
+                    <i class="fa-solid fa-circle-check"></i> ONLINE AS COURIER • Visible &amp; Bookable on Map
+                  </span>
+                </div>
+                <div id="sa-courier-mode-meta-line" style="font-size:0.8rem; color:#047857; font-weight:700; margin-top:0.35rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
+                  <span><i class="fa-solid fa-id-badge"></i> SPN: <strong id="sa-courier-mode-spn">DRV-615571</strong></span>
+                  <span><i class="fa-solid fa-location-dot"></i> <strong id="sa-courier-mode-suburb">10 Smith Street, Southport QLD 4215</strong></span>
+                  <span><i class="fa-solid fa-truck-fast"></i> Rate: <strong id="sa-courier-mode-rate">$2.20/km</strong></span>
+                  <span><i class="fa-solid fa-money-bill-transfer"></i> PayID: <strong id="sa-courier-mode-payid">36339516584</strong></span>
+                  <span><i class="fa-solid fa-coins"></i> <strong id="sa-courier-mode-tokens">50 Tokens</strong></span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap;">
+                <button type="button" id="btn-superadmin-toggle-courier-mode" class="btn btn-primary btn-sm"
+                  onclick="toggleSuperadminCourierMode()"
+                  style="background:#059669; border-color:#059669; color:#ffffff; font-weight:800; font-size:0.88rem; padding:0.55rem 1.15rem; display:inline-flex; align-items:center; gap:0.45rem;"
+                  data-agent-id="btn-superadmin-toggle-courier-mode" data-testid="btn-superadmin-toggle-courier-mode"
+                  aria-label="Turn SuperAdmin Courier Mode ON or OFF" aria-pressed="true">
+                  <i class="fa-solid fa-toggle-on"></i> Turn OFF as Courier
+                </button>
+                <button type="button" id="btn-sa-courier-geolocate" class="btn btn-outline btn-sm"
+                  onclick="geolocateSuperadminCourier()"
+                  style="background:#FFFFFF; border-color:#10B981; color:#065F46; font-weight:800; font-size:0.8rem;"
+                  data-agent-id="btn-sa-courier-geolocate" data-testid="btn-sa-courier-geolocate"
+                  aria-label="Update SuperAdmin Courier GPS Location">
+                  <i class="fa-solid fa-location-crosshairs"></i> Update GPS
+                </button>
+                <button type="button" id="btn-sa-courier-edit-profile" class="btn btn-outline btn-sm"
+                  onclick="openSuperadminOwnCourierProfileInDriverAdmin()"
+                  style="background:#FFFFFF; border-color:#3B82F6; color:#1E40AF; font-weight:800; font-size:0.8rem;"
+                  data-agent-id="btn-sa-courier-edit-profile" data-testid="btn-sa-courier-edit-profile"
+                  aria-label="Open SuperAdmin Courier Profile and Rates in Driver Admin Panel">
+                  <i class="fa-solid fa-sliders"></i> My Courier Profile &amp; Rates
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Section A: SuperAdmin Sets All Token Prices (Supporter Booking Fee + 5 Courier Distance Tiers + AUD Price) -->
           <div

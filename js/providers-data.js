@@ -557,6 +557,9 @@ class ProviderDatabase {
         return [this.normalizeDriver({ ...livePrimary }), ...list];
       }
       const existing = list[existingIdx];
+      const isTurnedOn = typeof existing.profileTurnedOn === "boolean"
+        ? existing.profileTurnedOn
+        : (existing.profileActive !== false && existing.status !== "paused");
       list[existingIdx] = this.normalizeDriver({
         ...livePrimary,
         ...existing,
@@ -565,10 +568,10 @@ class ProviderDatabase {
         isSample: false,
         canBeBooked: true,
         approved: true,
-        isActive: true,
-        profileTurnedOn: true,
-        profileActive: true,
-        status: "active",
+        isActive: isTurnedOn,
+        profileTurnedOn: isTurnedOn,
+        profileActive: isTurnedOn,
+        status: isTurnedOn ? "active" : "paused",
         tokenBalance: Math.max(25, Number(existing.tokenBalance ?? 50))
       });
       return list;
@@ -918,8 +921,9 @@ class ProviderDatabase {
       const lngChanged = Math.abs((Number(local.lng) || 0) - lng) > 0.000001;
       const trackingChanged = typeof rp.isLiveTracking === 'boolean' && local.isLiveTracking !== rp.isLiveTracking;
       const timeChanged = Boolean(rp.lastLocationAt && rp.lastLocationAt !== local.lastLocationAt);
+      const profileTurnedOnChanged = typeof rp.profileTurnedOn === 'boolean' && local.profileTurnedOn !== rp.profileTurnedOn;
 
-      if (latChanged || lngChanged || trackingChanged || timeChanged) {
+      if (latChanged || lngChanged || trackingChanged || timeChanged || profileTurnedOnChanged) {
         local.lat = lat;
         local.lng = lng;
         local.coords = { lat, lng };
@@ -927,6 +931,12 @@ class ProviderDatabase {
         if (Number.isFinite(Number(rp.speedKmh))) local.speedKmh = Number(rp.speedKmh);
         if (Number.isFinite(Number(rp.accuracyM))) local.accuracyM = Number(rp.accuracyM);
         if (typeof rp.isLiveTracking === 'boolean') local.isLiveTracking = rp.isLiveTracking;
+        if (typeof rp.profileTurnedOn === 'boolean') {
+          local.profileTurnedOn = rp.profileTurnedOn;
+          local.profileActive = rp.profileTurnedOn;
+          local.isActive = rp.profileTurnedOn && local.approved !== false;
+          local.status = rp.profileTurnedOn ? (local.approved !== false ? 'active' : 'pending_approval') : 'paused';
+        }
         if (rp.lastLocationAt) {
           local.lastLocationAt = rp.lastLocationAt;
           local.lastGeolocatedAt = rp.lastLocationAt;

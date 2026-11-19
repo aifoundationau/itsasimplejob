@@ -2439,6 +2439,9 @@ window.syncSuperadminDistanceTierInputs = syncSuperadminDistanceTierInputs;
 
 function syncSuperadminCourierControls() {
   syncSuperadminDistanceTierInputs();
+  if (typeof syncSuperadminCourierModeUI === 'function') {
+    syncSuperadminCourierModeUI();
+  }
 }
 
 async function onSuperadminDistanceTierChange(showToastMsg = false) {
@@ -3356,11 +3359,13 @@ function renderSuperadminDriverApprovals() {
     const isApproved = checkApproved(d);
     const isProfileOn = typeof isDriverProfileTurnedOn === 'function' ? isDriverProfileTurnedOn(d) : (d.profileTurnedOn !== false && d.profileActive !== false);
     const isVisibleOnMap = isApproved && isProfileOn;
+    const isSuperadminCourierRow = d.id === 'drv-72171' || d.serviceProviderNumber === 'DRV-615571';
     return `
       <div style="background:#FFFBEB; border:1px solid ${isVisibleOnMap ? '#A7F3D0' : '#FCD34D'}; border-left:4px solid ${isVisibleOnMap ? '#059669' : '#D97706'}; border-radius:6px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;" data-agent-id="sa-driver-row-${d.id}" data-testid="sa-driver-row-${d.id}">
         <div style="flex:1; min-width:240px;">
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
             <strong style="font-size:0.92rem; color:#1E3A8A;">${escapeAttr(d.name)}</strong>
+            ${isSuperadminCourierRow ? `<span style="font-size:0.7rem; font-weight:900; padding:0.15rem 0.55rem; border-radius:999px; background:#FEF3C7; color:#92400E; border:1px solid #F59E0B;" data-agent-id="sa-driver-superadmin-badge-${d.id}" data-testid="sa-driver-superadmin-badge-${d.id}">👑 SuperAdmin Courier</span>` : ''}
             <span class="driver-username-pill" data-agent-id="sa-driver-username-${d.id}" data-testid="sa-driver-username-${d.id}">${escapeAttr(d.username || window.normalizeDriverUsername?.('', d.name, d.id) || '@driver')}</span>
             <span style="font-size:0.76rem; color:#475569;">(${escapeAttr(d.businessName || 'Express Courier')})</span>
             <span style="font-size:0.7rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:999px; background:${isApproved ? '#ECFDF5' : '#FEF3C7'}; color:${isApproved ? '#065F46' : '#92400E'};">
@@ -3429,6 +3434,12 @@ function renderSuperadminDriverApprovals() {
               <i class="fa-solid fa-check"></i> Approve (Show on Map)
             </button>
           ` : `
+            <button type="button" id="btn-sa-toggle-profile-drv-${d.id}" class="btn ${isProfileOn ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleDriverProfileBySuperadmin('${d.id}')"
+              style="${isProfileOn ? 'background:#059669; border-color:#059669; color:#FFFFFF;' : 'background:#F1F5F9; border-color:#94A3B8; color:#334155;'} font-size:0.76rem; font-weight:800; padding:0.35rem 0.75rem;"
+              data-agent-id="btn-sa-toggle-profile-drv-${d.id}" data-testid="btn-sa-toggle-profile-drv-${d.id}"
+              aria-label="Toggle Courier Profile ${escapeAttr(d.name)} ON or OFF" aria-pressed="${isProfileOn ? 'true' : 'false'}">
+              ${isProfileOn ? '🟢 Courier ON (Turn OFF)' : '⚪ Courier OFF (Turn ON)'}
+            </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="handleRevokeDriverClick(this, '${d.id}')"
               style="color:#DC2626; border-color:#FECACA; font-size:0.78rem; font-weight:800; padding:0.35rem 0.75rem;"
               data-agent-id="btn-sa-revoke-drv-${d.id}" data-testid="btn-sa-revoke-drv-${d.id}"
@@ -3440,6 +3451,9 @@ function renderSuperadminDriverApprovals() {
       </div>
     `;
   }).join('');
+  if (typeof syncSuperadminCourierModeUI === 'function') {
+    syncSuperadminCourierModeUI();
+  }
 }
 window.renderSuperadminDriverApprovals = renderSuperadminDriverApprovals;
 
@@ -5501,6 +5515,58 @@ function switchSupporterSubTab(subtabId) {
 window.switchSupporterSubTab = switchSupporterSubTab;
 
 /**
+ * Resolve or automatically provision the SuperAdmin's active Courier Driver profile (drv-72171 / DRV-615571).
+ */
+function getOrEnsureSuperadminCourierDriver() {
+  if (!window.providerDB) return null;
+  let saDriver = window.providerDB.findById('drv-72171') || window.providerDB.findById('DRV-615571');
+  const gUser = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  const saEmail = (gUser?.email || 'support@aifoundation.net.au').toLowerCase().trim();
+
+  if (!saDriver && saEmail) {
+    saDriver = window.providerDB.getAll().find(d => (d.email || '').toLowerCase().trim() === saEmail) || null;
+  }
+
+  if (!saDriver) {
+    const seed = Array.isArray(window.INITIAL_PROVIDERS)
+      ? (window.INITIAL_PROVIDERS.find(p => p.id === 'drv-72171' || p.serviceProviderNumber === 'DRV-615571') || {})
+      : {};
+    saDriver = window.providerDB.addProvider({
+      id: 'drv-72171',
+      serviceProviderNumber: 'DRV-615571',
+      businessId: 'its-a-simple-job',
+      isSample: false,
+      canBeBooked: true,
+      name: gUser?.displayName || seed.name || 'AI Foundation',
+      username: seed.username || '@aifoundation',
+      businessName: seed.businessName || 'AI Foundation Express Couriers',
+      email: saEmail || 'support@aifoundation.net.au',
+      phone: seed.phone || '0412 000 000',
+      address: seed.address || '10 Smith Street, Southport QLD 4215',
+      baseSuburb: seed.baseSuburb || 'Southport QLD',
+      payIdType: seed.payIdType || 'abn',
+      payIdValue: seed.payIdValue || '36339516584',
+      payIdAccountName: seed.payIdAccountName || 'AI Foundation Express Couriers',
+      approved: true,
+      profileTurnedOn: true,
+      profileActive: true,
+      isActive: true,
+      status: 'active',
+      tokenBalance: Number(seed.tokenBalance ?? 50),
+      ...seed
+    });
+  }
+
+  if (saDriver) {
+    saDriver.approved = true;
+    saDriver.isSample = false;
+    saDriver.canBeBooked = true;
+  }
+  return saDriver;
+}
+window.getOrEnsureSuperadminCourierDriver = getOrEnsureSuperadminCourierDriver;
+
+/**
  * Resolve the registered driver profile owned by the currently signed-in user.
  * Active Driver Profile can ONLY be seen by the registered driver who owns the profile and SuperAdmin.
  */
@@ -5527,8 +5593,13 @@ function getOwnedDriverProfile() {
     if (byId) return byId;
   }
 
-  // If user is an authorized Driver or SuperAdmin simulating Driver perspective, resolve their bound driver profile
+  // SuperAdmin always owns/controls the primary SuperAdmin Courier Driver profile
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
+  if ((typeof checkIsSuperadmin === 'function' && checkIsSuperadmin(gUser)) || activeRole === 'superadmin') {
+    return getOrEnsureSuperadminCourierDriver();
+  }
+
+  // If user is an authorized Driver simulating Driver perspective, resolve their bound driver profile
   if (activeRole === 'driver') {
     return window.providerDB.findById(appState.activeAdminDriverId) || allDrivers[0] || null;
   }
@@ -5705,6 +5776,9 @@ function syncDriverProfileTurnOnUI(activeDriver) {
   if (typeof syncDriverLiveTrackingUI === 'function') {
     syncDriverLiveTrackingUI(activeDriver);
   }
+  if (typeof syncSuperadminCourierModeUI === 'function') {
+    syncSuperadminCourierModeUI();
+  }
 }
 window.syncDriverProfileTurnOnUI = syncDriverProfileTurnOnUI;
 
@@ -5776,6 +5850,215 @@ function toggleActiveDriverProfileOn(explicitState) {
   return toggleActiveDriverProfileOnWithGeo(explicitState);
 }
 window.toggleActiveDriverProfileOn = toggleActiveDriverProfileOn;
+
+function syncSuperadminCourierModeUI() {
+  if (!window.providerDB) return;
+  const saDriver = typeof getOrEnsureSuperadminCourierDriver === 'function'
+    ? getOrEnsureSuperadminCourierDriver()
+    : (window.providerDB.findById('drv-72171') || window.providerDB.findById('DRV-615571'));
+  if (!saDriver) return;
+
+  const isTurnedOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(saDriver)
+    : (saDriver.profileTurnedOn !== false && saDriver.profileActive !== false && saDriver.status !== 'paused');
+
+  const cardEl = document.getElementById('superadmin-own-courier-mode-card');
+  if (cardEl) {
+    cardEl.style.background = isTurnedOn ? '#F0FDF4' : '#F8FAFC';
+    cardEl.style.borderColor = isTurnedOn ? '#10B981' : '#CBD5E1';
+  }
+
+  const setText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+  setText('sa-courier-mode-driver-name', `${saDriver.name || 'AI Foundation'} — ${saDriver.businessName || 'AI Foundation Express Couriers'}`);
+  setText('sa-courier-mode-spn', saDriver.serviceProviderNumber || 'DRV-615571');
+  setText('sa-courier-mode-suburb', saDriver.baseSuburb || saDriver.address || 'Southport QLD');
+  setText('sa-courier-mode-rate', `$${Number(saDriver.vehiclePerKmRateAud ?? saDriver.perKmRateAud ?? 2.20).toFixed(2)}/km`);
+  setText('sa-courier-mode-payid', saDriver.payIdValue || saDriver.phone || '36339516584');
+  setText('sa-courier-mode-tokens', `${saDriver.tokenBalance ?? 50} Tokens`);
+
+  const statusBadge = document.getElementById('sa-courier-mode-status-badge');
+  if (statusBadge) {
+    if (isTurnedOn) {
+      statusBadge.style.background = '#DCFCE7';
+      statusBadge.style.color = '#15803D';
+      statusBadge.style.borderColor = '#86EFAC';
+      statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> ONLINE AS COURIER • Visible &amp; Bookable on Map';
+    } else {
+      statusBadge.style.background = '#F1F5F9';
+      statusBadge.style.color = '#475569';
+      statusBadge.style.borderColor = '#CBD5E1';
+      statusBadge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> OFFLINE AS COURIER • Hidden from Customer Map';
+    }
+  }
+
+  const cardBtn = document.getElementById('btn-superadmin-toggle-courier-mode');
+  if (cardBtn) {
+    cardBtn.setAttribute('aria-pressed', isTurnedOn ? 'true' : 'false');
+    if (isTurnedOn) {
+      cardBtn.style.background = '#059669';
+      cardBtn.style.borderColor = '#059669';
+      cardBtn.innerHTML = '<i class="fa-solid fa-toggle-on"></i> Courier ON (Click to Turn OFF)';
+    } else {
+      cardBtn.style.background = '#475569';
+      cardBtn.style.borderColor = '#475569';
+      cardBtn.innerHTML = '<i class="fa-solid fa-toggle-off"></i> Courier OFF (Click to Turn ON)';
+    }
+  }
+
+  const headerBtn = document.getElementById('btn-sa-header-courier-toggle');
+  if (headerBtn) {
+    headerBtn.setAttribute('aria-pressed', isTurnedOn ? 'true' : 'false');
+    headerBtn.style.background = isTurnedOn ? '#059669' : '#475569';
+    headerBtn.style.borderColor = isTurnedOn ? '#059669' : '#475569';
+    headerBtn.innerHTML = isTurnedOn
+      ? '<i class="fa-solid fa-toggle-on"></i> <span id="sa-header-courier-toggle-label">Courier Mode: ON</span>'
+      : '<i class="fa-solid fa-toggle-off"></i> <span id="sa-header-courier-toggle-label">Courier Mode: OFF</span>';
+  }
+
+  const menuBtn = document.getElementById('btn-menu-superadmin-courier-toggle');
+  if (menuBtn) {
+    menuBtn.setAttribute('aria-pressed', isTurnedOn ? 'true' : 'false');
+    menuBtn.style.background = isTurnedOn ? '#059669' : '#475569';
+    menuBtn.style.borderColor = isTurnedOn ? '#059669' : '#475569';
+    menuBtn.innerHTML = isTurnedOn
+      ? '<i class="fa-solid fa-truck-fast"></i> <span id="menu-sa-courier-toggle-label">SuperAdmin Courier: ON</span>'
+      : '<i class="fa-solid fa-eye-slash"></i> <span id="menu-sa-courier-toggle-label">SuperAdmin Courier: OFF</span>';
+  }
+}
+window.syncSuperadminCourierModeUI = syncSuperadminCourierModeUI;
+
+function toggleSuperadminCourierMode(explicitState) {
+  const user = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  if (typeof checkIsSuperadmin !== 'function' || !checkIsSuperadmin(user)) {
+    if (typeof showToast === 'function') {
+      showToast('⛔ Restricted: Only SuperAdmin can toggle SuperAdmin Courier Mode.');
+    }
+    return null;
+  }
+  if (!window.providerDB) return null;
+
+  const saDriver = getOrEnsureSuperadminCourierDriver();
+  if (!saDriver) return null;
+
+  const currentlyOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(saDriver)
+    : (saDriver.profileTurnedOn !== false && saDriver.profileActive !== false && saDriver.status !== 'paused');
+  const nextState = typeof explicitState === 'boolean' ? explicitState : !currentlyOn;
+
+  saDriver.approved = true;
+  saDriver.isSample = false;
+  saDriver.canBeBooked = true;
+
+  if (typeof window.providerDB.setDriverProfileTurnedOn === 'function') {
+    window.providerDB.setDriverProfileTurnedOn(saDriver.id, nextState);
+  } else {
+    saDriver.profileTurnedOn = nextState;
+    saDriver.profileActive = nextState;
+    saDriver.isActive = nextState;
+    saDriver.status = nextState ? 'active' : 'paused';
+    window.providerDB.save();
+  }
+
+  appState.activeAdminDriverId = saDriver.id;
+  if (nextState && !appState.selectedCourierDriverId) {
+    appState.selectedCourierDriverId = saDriver.id;
+  } else if (!nextState) {
+    if (typeof stopDriverLiveTracking === 'function') {
+      try { stopDriverLiveTracking({ silent: true }); } catch (e) {}
+    }
+    if (appState.selectedCourierDriverId === saDriver.id) {
+      appState.selectedCourierDriverId = null;
+    }
+  }
+
+  syncSuperadminCourierModeUI();
+  syncDriverProfileTurnOnUI(saDriver);
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { renderDriverInformationView(); } catch (e) {}
+  try { renderSuperadminDriverApprovals(); } catch (e) {}
+  try { filterContractors(); } catch (e) {}
+  if (appState.osmMap && window.L) {
+    try { updateOsmContractorMarkers(); } catch (e) {}
+  }
+  if (appState.osmCourierMap && window.L) {
+    try { renderOsmCourierRouteMap(); } catch (e) {}
+  }
+  try { calculateCourierQuote(); } catch (e) {}
+
+  if (typeof showToast === 'function') {
+    if (nextState) {
+      try { triggerDriverAdminGeolocate({ silentStart: true }); } catch (e) {}
+      showToast(`🟢 SuperAdmin is now TURNED ON as a Courier (${saDriver.name}) — Live & bookable on customer maps!`);
+    } else {
+      showToast(`⚪ SuperAdmin is now TURNED OFF as a Courier (${saDriver.name}) — Hidden from customer maps.`);
+    }
+  }
+  return saDriver;
+}
+window.toggleSuperadminCourierMode = toggleSuperadminCourierMode;
+
+function toggleDriverProfileBySuperadmin(driverId, explicitState) {
+  const user = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  if (typeof checkIsSuperadmin !== 'function' || !checkIsSuperadmin(user)) {
+    showToast('⛔ Unauthorized: Only SuperAdmin can toggle driver courier availability here.');
+    return null;
+  }
+  const saDriver = getOrEnsureSuperadminCourierDriver();
+  if (saDriver && (driverId === saDriver.id || driverId === 'drv-72171' || driverId === 'DRV-615571')) {
+    return toggleSuperadminCourierMode(explicitState);
+  }
+  const drv = window.providerDB?.findById(driverId);
+  if (!drv) return null;
+  const currentlyOn = typeof isDriverProfileTurnedOn === 'function'
+    ? isDriverProfileTurnedOn(drv)
+    : (drv.profileTurnedOn !== false && drv.profileActive !== false);
+  const nextState = typeof explicitState === 'boolean' ? explicitState : !currentlyOn;
+  window.providerDB.setDriverProfileTurnedOn(drv.id, nextState);
+  syncSuperadminCourierModeUI();
+  if (appState.activeAdminDriverId === drv.id) {
+    syncDriverProfileTurnOnUI(drv);
+  }
+  try { renderSuperadminDriverApprovals(); } catch (e) {}
+  try { filterContractors(); } catch (e) {}
+  if (appState.osmMap && window.L) {
+    try { updateOsmContractorMarkers(); } catch (e) {}
+  }
+  if (appState.osmCourierMap && window.L) {
+    try { renderOsmCourierRouteMap(); } catch (e) {}
+  }
+  try { calculateCourierQuote(); } catch (e) {}
+  showToast(nextState
+    ? `🟢 ${drv.name} is now ON & visible on customer maps.`
+    : `⚪ ${drv.name} is now OFF & hidden from customer maps.`);
+  return drv;
+}
+window.toggleDriverProfileBySuperadmin = toggleDriverProfileBySuperadmin;
+
+function geolocateSuperadminCourier() {
+  const saDriver = getOrEnsureSuperadminCourierDriver();
+  if (!saDriver) return;
+  appState.activeAdminDriverId = saDriver.id;
+  triggerDriverAdminGeolocate();
+}
+window.geolocateSuperadminCourier = geolocateSuperadminCourier;
+
+function openSuperadminOwnCourierProfileInDriverAdmin() {
+  const saDriver = getOrEnsureSuperadminCourierDriver();
+  if (!saDriver) return;
+  appState.activeAdminDriverId = saDriver.id;
+  appState.selectedCourierDriverId = saDriver.id;
+  appState.activePortalPanelMode = 'driver-admin';
+  switchTab('driver-admin-tab', true);
+  try { collapseAllSupporterPanels(); } catch (e) {}
+  try { toggleSupporterCollapsePanel('delivery-modes-rates', true); } catch (e) {}
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderDriverInformationView(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+}
+window.openSuperadminOwnCourierProfileInDriverAdmin = openSuperadminOwnCourierProfileInDriverAdmin;
 
 function renderDriverInformationView() {
   if (!window.providerDB) return;
@@ -16237,7 +16520,7 @@ function syncSuperadminControls() {
   }
 
   document.querySelectorAll('.superadmin-only').forEach(el => {
-    if (el.id === 'btn-menu-superadmin-panel') {
+    if (el.id === 'btn-menu-superadmin-panel' || el.id === 'btn-menu-superadmin-courier-toggle') {
       el.style.display = showPriceTools ? 'inline-flex' : 'none';
     } else {
       el.style.display = showPriceTools ? '' : 'none';
@@ -16251,6 +16534,7 @@ function syncSuperadminControls() {
   }
   if (showPriceTools) {
     syncSuperadminCourierControls();
+    if (typeof syncSuperadminCourierModeUI === 'function') syncSuperadminCourierModeUI();
     if (typeof renderSuperadminTokenBalance === 'function') renderSuperadminTokenBalance();
     if (typeof renderSuperadminDriverApprovals === 'function') renderSuperadminDriverApprovals();
     if (typeof renderSuperadminUniversalTokenConsole === 'function') renderSuperadminUniversalTokenConsole();

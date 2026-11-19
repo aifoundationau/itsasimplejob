@@ -3735,3 +3735,43 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   }
 }
 ```
+
+---
+
+### 25.4 SuperAdmin Courier Driver Mode Toggle Contract
+SuperAdmin (`support@aifoundation.net.au` / `davidrobertson.info@gmail.com`) can toggle their own live Courier Driver profile (`drv-72171` / `DRV-615571`, **AI Foundation Express Couriers**) ON or OFF from `#superadmin-admin-tab` (`#btn-superadmin-toggle-courier-mode`, `#btn-sa-header-courier-toggle`, `#btn-sa-toggle-profile-drv-drv-72171`) or `#google-user-menu` (`#btn-menu-superadmin-courier-toggle`), persisting `profileTurnedOn`, `profileActive`, `isActive`, and `status` across reloads via `localStorage` and Cloud Firestore (`providers/DRV-615571`) and immediately updating customer maps and booking dropdowns.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SuperadminCourierModeToggleContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "driverId",
+    "serviceProviderNumber",
+    "email",
+    "approved",
+    "isSample",
+    "canBeBooked",
+    "profileTurnedOn",
+    "profileActive",
+    "isActive",
+    "status",
+    "updatedAt"
+  ],
+  "properties": {
+    "driverId": { "type": "string", "const": "drv-72171" },
+    "serviceProviderNumber": { "type": "string", "const": "DRV-615571" },
+    "email": { "type": "string", "format": "email", "maxLength": 200 },
+    "approved": { "type": "boolean", "const": true },
+    "isSample": { "type": "boolean", "const": false },
+    "canBeBooked": { "type": "boolean", "const": true },
+    "profileTurnedOn": { "type": "boolean" },
+    "profileActive": { "type": "boolean" },
+    "isActive": { "type": "boolean" },
+    "status": { "type": "string", "enum": ["active", "paused"] },
+    "updatedAt": { "type": "string", "format": "date-time", "maxLength": 40 }
+  }
+}
+```
