@@ -18,45 +18,14 @@ const MIN_AMOUNT_AUD = 1;
 const MAX_AMOUNT_AUD = 20000;   // safety ceiling
 const DOCKET_PATTERN = /^[A-Z0-9-]{4,40}$/i;
 
-// Provisioned via Stripe MCP on account acct_1UKnKUI8bClhBF4P (AI Foundation sandbox)
-// Default price is $1.00 AUD per token (unit_amount: 100 cents, tax_behavior: 'exclusive') with quantity = tokens (10, 50, or 100)
-const STRIPE_MCP_PRODUCT_ID = 'prod_VaqooBzIgPduQC';
-const STRIPE_MCP_DEFAULT_UNIT_PRICE_ID = 'price_1UZgMSI8bClhBF4PKywysjAj';
-const STRIPE_MCP_TOKEN_PRICE_IDS = {
-  10: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
-  50: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
-  100: STRIPE_MCP_DEFAULT_UNIT_PRICE_ID
-};
-const STRIPE_MCP_TOKEN_PAYMENT_LINKS = {
+// Provisioned via Stripe MCP on sandbox account acct_1UKnKUI8bClhBF4P ONLY (never used in live mode)
+const SANDBOX_STRIPE_PRODUCT_ID = 'prod_VaqooBzIgPduQC';
+const SANDBOX_STRIPE_DEFAULT_UNIT_PRICE_ID = 'price_1UZgMSI8bClhBF4PKywysjAj';
+const SANDBOX_STRIPE_TOKEN_PAYMENT_LINKS = {
   10: 'https://buy.stripe.com/test_bJebJ15ggaFf1t673z1wY07',
   50: 'https://buy.stripe.com/test_14AbJ1bEE8x71t687D1wY08',
   100: 'https://buy.stripe.com/test_cNi8wP9wwbJj5Jm0Fb1wY09'
 };
-
-let cachedExclusiveGstTaxRateId = 'txr_1UWRnsI8bClhBF4PWROuyTyt';
-
-async function getExclusiveAudGstTaxRateId(stripe) {
-  if (cachedExclusiveGstTaxRateId) return cachedExclusiveGstTaxRateId;
-  try {
-    const rates = await stripe.taxRates.list({ active: true, limit: 25 });
-    let gstRate = rates.data.find(r => Number(r.percentage) === 10 && r.inclusive === false);
-    if (!gstRate) {
-      gstRate = await stripe.taxRates.create({
-        display_name: 'GST',
-        description: 'Australian Goods & Services Tax (10% Exclusive)',
-        jurisdiction: 'AU',
-        percentage: 10,
-        inclusive: false,
-        country: 'AU'
-      });
-    }
-    cachedExclusiveGstTaxRateId = gstRate.id;
-    return cachedExclusiveGstTaxRateId;
-  } catch (err) {
-    console.warn('💳 [Stripe TaxRate lookup warning]:', err.message);
-    return null;
-  }
-}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -115,11 +84,17 @@ export default async function handler(req, res) {
 
   const customerName = String(body.customerName || '').trim().slice(0, 100);
   const description = String(body.description || `Payment for docket ${docketNumber}`).trim().slice(0, 200);
+  const hostHeader = String(req.headers?.host || '').trim();
+  const hostProto = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(hostHeader) ? 'http' : 'https';
   const reqOrigin = String(
     body.returnUrl ||
     req.headers?.origin ||
-    (req.headers?.host ? `http://${req.headers.host}` : 'http://localhost:3002')
+    (hostHeader ? `${hostProto}://${hostHeader}` : 'https://www.itsasimplejob.com')
   ).replace(/\/+$/, '');
+
+  const isTestMode = String(process.env.STRIPE_SECRET_KEY || '').startsWith('sk_test_');
+  const configuredProductId = (process.env.STRIPE_TOKEN_PRODUCT_ID || '').trim() || (isTestMode ? SANDBOX_STRIPE_PRODUCT_ID : null);
+  const configuredUnitPriceId = (process.env.STRIPE_TOKEN_PRICE_ID || '').trim() || (isTestMode ? SANDBOX_STRIPE_DEFAULT_UNIT_PRICE_ID : null);
 
   try {
     const subtotalCents = Math.round(subtotalExGstAud * 100);
@@ -128,7 +103,7 @@ export default async function handler(req, res) {
       ? Math.max(100, Math.round(subtotalCents / tokens))
       : subtotalCents;
     const unitPriceAud = Math.round(unitAmountCents) / 100;
-    const mcpPriceId = (tokens && unitAmountCents === 100) ? STRIPE_MCP_DEFAULT_UNIT_PRICE_ID : null;
+    const mcpPriceId = (tokens && unitAmountCents === 100 && configuredUnitPriceId) ? configuredUnitPriceId : null;
 
     // Default price is $1.00 AUD per token (unit_amount: 100 cents) with quantity = tokens (e.g. Qty 50 × A$1.00 per token = A$50.00).
     // Uses Stripe Tax (automatic_tax: { enabled: true }) with tax_behavior: 'exclusive' so 10% GST applies strictly to Australians (AU).
@@ -140,11 +115,11 @@ export default async function handler(req, res) {
               currency: 'aud',
               unit_amount: unitAmountCents,
               tax_behavior: 'exclusive',
-              ...(tokens
-                ? { product: STRIPE_MCP_PRODUCT_ID }
+              ...(tokens && configuredProductId
+                ? { product: configuredProductId }
                 : {
                     product_data: {
-                      name: description,
+                      name: tokens ? "It's A Simple Job Token" : description,
                       tax_code: 'txcd_10000000',
                       description: `AUD only: $${subtotalExGstAud.toFixed(2)} AUD ex-GST subtotal (10% GST applies to Australian customers only)`
                     }
@@ -187,6 +162,7 @@ export default async function handler(req, res) {
         line_items: lineItems,
         success_url: `${reqOrigin}/?stripe_token_success=1&tokens=${encodeURIComponent(tokens || 10)}&docket=${encodeURIComponent(docketNumber)}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${reqOrigin}/?stripe_token_cancel=1&tokens=${encodeURIComponent(tokens || 10)}`,
+        payment_intent_data: { metadata: sharedMetadata },
         metadata: sharedMetadata
       })
     ]);
@@ -201,13 +177,13 @@ export default async function handler(req, res) {
       clientSecret: intent.client_secret,
       checkoutSessionId: checkoutSession.id,
       checkoutUrl: checkoutSession.url,
-      productId: STRIPE_MCP_PRODUCT_ID,
-      priceId: mcpPriceId || STRIPE_MCP_DEFAULT_UNIT_PRICE_ID,
+      productId: configuredProductId,
+      priceId: mcpPriceId || configuredUnitPriceId,
       unitPriceAud,
       unitAmountCents,
       quantity: itemQuantity,
       pricePerTokenLabel: `$${unitPriceAud.toFixed(2)} AUD per token`,
-      paymentLinkUrl: (tokens && unitAmountCents === 100 && STRIPE_MCP_TOKEN_PAYMENT_LINKS[tokens]) || null,
+      paymentLinkUrl: (isTestMode && tokens && unitAmountCents === 100 && SANDBOX_STRIPE_TOKEN_PAYMENT_LINKS[tokens]) || null,
       status: intent.status,
       tokens,
       customerCountry,

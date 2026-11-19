@@ -3602,3 +3602,82 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   }
 }
 ```
+
+---
+
+## 24. Stripe Live Webhook Endpoint Contract (`/api/stripe-webhook`)
+
+> Added to support live Stripe payment settlement, token crediting, Checkout Session audit, invoice status syncing, and refund reconciliation without trusting the browser.
+
+### 24.1 Endpoint & Security Invariants
+- **Canonical Production URL:** `https://www.itsasimplejob.com/api/stripe-webhook` (explicit `www.` host because apex `itsasimplejob.com` responds with HTTP `308` redirect, and Stripe does not follow 3xx webhook redirects).
+- **Raw Body Verification:** Exports `config = { api: { bodyParser: false } }`, enforces `POST`, caps payload bytes at `1 MiB` (`413` on overflow), and verifies `stripe-signature` via `Stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`.
+- **Shared-Account Multi-Tenant Guard:** Because live Stripe account `acct_1UKnKJRBuANNU7hY` serves multiple AI Foundation applications, incoming events whose `metadata.businessId` is not in `['its-a-simple-job', 'itsasimplejob']` (except `charge.refunded` matching an existing `stripe_transactions/{paymentIntentId}` doc) are acknowledged safely with `200 { received: true, ignored: true, reason: 'other_tenant' }` without writing to Firestore.
+- **Crash-Safe Idempotency:** Processed events are recorded in `stripe_webhook_events/{event.id}` (server Admin SDK only per `firestore.rules`); retries return `200 { received: true, duplicate: true }` without double-crediting `wallets/{uid}`.
+- **Subscribed Live Events:** `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `invoice.paid`, `invoice.payment_failed`.
+
+### 24.2 Strict JSON Schemas (`additionalProperties: false`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "StripeWebhookResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["received", "eventId", "type"],
+  "properties": {
+    "received": { "type": "boolean", "const": true },
+    "eventId": { "type": "string", "minLength": 4, "maxLength": 120 },
+    "type": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "handled": { "type": "boolean" },
+    "duplicate": { "type": "boolean" },
+    "ignored": { "type": "boolean" },
+    "reason": { "type": "string", "enum": ["other_tenant"] }
+  }
+}
+```
+
+```json
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "StripeTransactionWebhookRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId", "status", "currency", "livemode", "webhookEventId", "updatedAt"],
+  "properties": {
+    "businessId": { "type": "string", "const": "its-a-simple-job" },
+    "paymentIntentId": { "type": ["string", "null"] },
+    "checkoutSessionId": { "type": ["string", "null"] },
+    "chargeId": { "type": ["string", "null"] },
+    "invoiceId": { "type": ["string", "null"] },
+    "invoiceNumber": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["succeeded", "pending", "failed", "canceled", "expired", "refunded", "partially_refunded", "paid"]
+    },
+    "paymentStatus": { "type": "string" },
+    "amountCents": { "type": "integer", "minimum": 0 },
+    "amountTotalCents": { "type": ["integer", "null"], "minimum": 0 },
+    "amountSubtotalCents": { "type": ["integer", "null"], "minimum": 0 },
+    "taxCents": { "type": "integer", "minimum": 0 },
+    "amountPaidCents": { "type": "integer", "minimum": 0 },
+    "amountDueCents": { "type": "integer", "minimum": 0 },
+    "amountRefundedCents": { "type": "integer", "minimum": 0 },
+    "amountAud": { "type": ["number", "null"], "minimum": 0 },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "docketNumber": { "type": "string", "maxLength": 80 },
+    "tokens": { "type": ["integer", "null"], "minimum": 1 },
+    "uid": { "type": ["string", "null"], "maxLength": 128 },
+    "customerEmail": { "type": ["string", "null"], "maxLength": 200 },
+    "customerCrn": { "type": "string", "maxLength": 64 },
+    "providerSpn": { "type": "string", "maxLength": 64 },
+    "hostedInvoiceUrl": { "type": ["string", "null"], "maxLength": 500 },
+    "type": { "type": "string", "maxLength": 64 },
+    "refunded": { "type": "boolean" },
+    "failureMessage": { "type": ["string", "null"], "maxLength": 500 },
+    "livemode": { "type": "boolean" },
+    "webhookEventId": { "type": "string", "minLength": 4, "maxLength": 120 },
+    "updatedAt": { "type": "string", "format": "date-time", "maxLength": 40 }
+  }
+}
+```

@@ -10,6 +10,9 @@ const __dirname = dirname(__filename);
 // Server-only variables the /api handlers need locally (Vercel injects these in production)
 const SERVER_ENV_KEYS = [
   'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_TOKEN_PRODUCT_ID',
+  'STRIPE_TOKEN_PRICE_ID',
   'FIREBASE_SERVICE_ACCOUNT',
   'FIREBASE_PROJECT_ID',
   'FIREBASE_DATABASE_ID',
