@@ -21,11 +21,7 @@ const SERVER_ENV_KEYS = [
   'FX_FALLBACK_USD_AUD',
   'DEV_COUNTRY',
   'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'GEMINI_API_KEY',
-  'GEMINI_PROJECT_ID',
-  'GEMINI_MODEL',
-  'GEMINI_ENABLED'
+  'GOOGLE_CLIENT_SECRET'
 ];
 
 // Serve /api/<name> from api/<name>.js so `npm run dev` and `npm run preview` behave like Vercel
@@ -127,10 +123,6 @@ export default defineConfig(({ mode }) => {
             FIREBASE_MESSAGING_SENDER_ID: env.FIREBASE_MESSAGING_SENDER_ID || '614773274800',
             FIREBASE_APP_ID: env.FIREBASE_APP_ID || '1:614773274800:web:a35e56edaa97ca729ea375',
             FIREBASE_MEASUREMENT_ID: env.FIREBASE_MEASUREMENT_ID || 'G-CKTVQJTZ8V',
-            GEMINI_API_KEY: '',
-            GEMINI_PROJECT_ID: env.GEMINI_PROJECT_ID || 'gen-lang-client-0551298781',
-            GEMINI_MODEL: env.GEMINI_MODEL || 'gemini-3.8-flash',
-            GEMINI_ENABLED: env.GEMINI_ENABLED === 'true',
             SUPERADMIN_EMAILS: env.SUPERADMIN_EMAILS || 'support@aifoundation.net.au'
           };
 

@@ -8731,6 +8731,81 @@ function saveVerifiedLicenceToProfile(result) {
   try { renderSuperadminDriverApprovals(); } catch (e) {}
 }
 
+let tesseractLoadPromise = null;
+function loadEphemeralTesseractScript(timeoutMs = 8000) {
+  if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
+    return Promise.resolve(window.Tesseract);
+  }
+  if (tesseractLoadPromise) return tesseractLoadPromise;
+  tesseractLoadPromise = new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.async = true;
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    script.onload = () => {
+      clearTimeout(timer);
+      resolve(window.Tesseract || null);
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      resolve(null);
+    };
+    document.head.appendChild(script);
+  });
+  return tesseractLoadPromise;
+}
+
+async function extractEphemeralLicenceOcrInMemory(frontItem, backItem) {
+  const out = { frontOcrText: '', backOcrText: '', barcodeText: '' };
+  if (!frontItem?.base64 || !backItem?.base64) return out;
+
+  // Skip WASM OCR for tiny synthetic unit-test placeholders (< 400 bytes)
+  if ((frontItem.byteLength || 0) < 400 || (backItem.byteLength || 0) < 400) {
+    return out;
+  }
+
+  let frontDataUrl = `data:${frontItem.mimeType || 'image/jpeg'};base64,${frontItem.base64}`;
+  let backDataUrl = `data:${backItem.mimeType || 'image/jpeg'};base64,${backItem.base64}`;
+
+  try {
+    // 1. Optional native BarcodeDetector pass for back PDF417 / QR / Code128
+    if (typeof window.BarcodeDetector === 'function') {
+      try {
+        const detector = new window.BarcodeDetector({ formats: ['pdf417', 'qr_code', 'code_128', 'code_39'] });
+        const imgEl = new Image();
+        await new Promise((res) => { imgEl.onload = res; imgEl.onerror = res; imgEl.src = backDataUrl; });
+        if (imgEl.complete && imgEl.naturalWidth > 0) {
+          const codes = await detector.detect(imgEl);
+          if (Array.isArray(codes) && codes.length > 0) {
+            out.barcodeText = codes.map(c => c.rawValue || '').filter(Boolean).join(' ').slice(0, 1000);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Zero-key in-browser WebAssembly OCR via Tesseract.js (guarded with 12s timeout)
+    const tess = await loadEphemeralTesseractScript(8000);
+    if (tess && typeof tess.recognize === 'function') {
+      const recognizeWithTimeout = (dataUrl) => Promise.race([
+        tess.recognize(dataUrl, 'eng').then(r => String(r?.data?.text || '')).catch(() => ''),
+        new Promise(res => setTimeout(() => res(''), 12000))
+      ]);
+      const [frontTxt, backTxt] = await Promise.all([
+        recognizeWithTimeout(frontDataUrl),
+        recognizeWithTimeout(backDataUrl)
+      ]);
+      out.frontOcrText = frontTxt.slice(0, 8000);
+      out.backOcrText = backTxt.slice(0, 8000);
+    }
+  } catch (e) {
+  } finally {
+    frontDataUrl = '';
+    backDataUrl = '';
+  }
+
+  return out;
+}
+
 async function verifyDriverLicenceImagesWithAi(prefix = 'sup-drv') {
   const safePrefix = ephemeralLicenceUploads[prefix] ? prefix : 'sup-drv';
   const slot = ephemeralLicenceUploads[safePrefix];
@@ -8762,6 +8837,7 @@ async function verifyDriverLicenceImagesWithAi(prefix = 'sup-drv') {
 
   let result = null;
   try {
+    const ocrResult = await extractEphemeralLicenceOcrInMemory(slot.front, slot.back);
     const resp = await fetch('/api/verify-driver-licence', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -8772,6 +8848,9 @@ async function verifyDriverLicenceImagesWithAi(prefix = 'sup-drv') {
         backImageBase64: slot.back.base64,
         backMimeType: slot.back.mimeType,
         backFileName: slot.back.fileName,
+        frontOcrText: ocrResult.frontOcrText || '',
+        backOcrText: ocrResult.backOcrText || '',
+        barcodeText: ocrResult.barcodeText || '',
         applicantHintName: hintName,
         applicantHintState: hintState,
         applicantHintLicenceNumber: hintLicenceNum

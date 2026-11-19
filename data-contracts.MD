@@ -3798,6 +3798,9 @@ SuperAdmin (`support@aifoundation.net.au` / `davidrobertson.info@gmail.com`) can
     "backImageBase64": { "type": "string", "minLength": 4, "maxLength": 7000000 },
     "backMimeType": { "type": "string", "pattern": "^image\\/[a-zA-Z0-9.+-]+$", "maxLength": 40 },
     "backFileName": { "type": "string", "maxLength": 80 },
+    "frontOcrText": { "type": "string", "maxLength": 8000 },
+    "backOcrText": { "type": "string", "maxLength": 8000 },
+    "barcodeText": { "type": "string", "maxLength": 2000 },
     "applicantHintName": { "type": "string", "maxLength": 100 },
     "applicantHintState": { "type": "string", "enum": ["QLD", "NSW", "VIC", "WA", "SA", "TAS", "ACT", "NT"] },
     "applicantHintLicenceNumber": { "type": "string", "maxLength": 32 }
