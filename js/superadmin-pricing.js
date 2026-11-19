@@ -3,12 +3,14 @@
  *
  * SuperAdmin decides:
  *  - AUD price of 1 Token (default $1 AUD)
- *  - Driver Tokens charged per customer order by distance bracket:
- *      • 0 – 20 km
- *      • 21 – 50 km
- *      • 51 – 100 km
- *      • 101+ km
- *  - Token pack sizes sold to drivers in AUD
+ *  - Supporter (Customer) Booking Fee (default 1 Token)
+ *  - Courier Tokens charged per delivery by distance bracket:
+ *      • 0 – 10 km (1 Token)
+ *      • 11 – 20 km (2 Tokens)
+ *      • 21 – 40 km (3 Tokens)
+ *      • 41 – 60 km (4 Tokens)
+ *      • 61+ km (5 Tokens)
+ *  - Token pack sizes sold in AUD
  */
 
 const cur = () => window.iasjCurrency;
@@ -64,8 +66,8 @@ class SuperadminPricing {
       <div class="modal-box" style="max-width:680px;">
         <div class="modal-header" style="background:#FFFBEB; border-bottom:1px solid #FDE68A; padding:1rem 1.25rem;">
           <div>
-            <h4 id="sa-pricing-title" style="margin:0; font-size:1.1rem; color:#92400E; font-weight:800;"><i class="fa-solid fa-crown" style="color:#F59E0B;"></i> SuperAdmin Driver Token Pricing (AUD Only)</h4>
-            <span style="font-size:0.76rem; color:#92400E;">Set the token charge for each courier distance tier (0–20km, 21–50km, 51–100km, 101+km) and the AUD price per token.</span>
+            <h4 id="sa-pricing-title" style="margin:0; font-size:1.1rem; color:#92400E; font-weight:800;"><i class="fa-solid fa-crown" style="color:#F59E0B;"></i> SuperAdmin Token Pricing (AUD Only)</h4>
+            <span style="font-size:0.76rem; color:#92400E;">Set the Supporter booking fee (default 1 token), courier distance tiers (0–10km, 11–20km, 21–40km, 41–60km, 61+km), and AUD price per token.</span>
           </div>
           <button type="button" class="modal-close-btn" data-sa-action="close" data-agent-id="sa-pricing-close" data-testid="sa-pricing-close" aria-label="Close price list">&times;</button>
         </div>

@@ -2,12 +2,13 @@
  * It's A Simple Job - AUD-Only Currency & SuperAdmin Distance-Tier Token Pricing (Browser)
  *
  *  - Web App uses Australian Dollars (AUD) ONLY.
- *  - Customers pay the selected Courier Driver directly via the Driver's PayID (they do not pay the web app).
- *  - Drivers buy Tokens in AUD. Every customer order charges the driver tokens based on route distance:
- *      • 0 – 20 km
- *      • 21 – 50 km
- *      • 51 – 100 km
- *      • 101+ km
+ *  - Customers register as Supporters, pay a 1 Token booking fee (SuperAdmin-adjustable), and pay the Courier Driver directly via PayID.
+ *  - Couriers buy Tokens in AUD. Every customer order charges the courier tokens based on route distance:
+ *      • 0 – 10 km (1 Token)
+ *      • 11 – 20 km (2 Tokens)
+ *      • 21 – 40 km (3 Tokens)
+ *      • 41 – 60 km (4 Tokens)
+ *      • 61+ km (5 Tokens)
  */
 
 import {
@@ -22,6 +23,7 @@ import {
   convertAudToUsd,
   displayCurrencyFor,
   getDriverOrderTokenCharge,
+  getSupporterBookingFeeTokens,
   isAudRegion,
   normalizePricing,
   priceCategoryJob,
@@ -38,6 +40,8 @@ function readCache() {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
     const localTiersRaw = localStorage.getItem('iasj_driver_order_tokens');
     const localTokenAud = localStorage.getItem('iasj_token_price_aud');
+    const localSupporterFee = localStorage.getItem('iasj_supporter_booking_fee_tokens');
+    const localEconomyRaw = localStorage.getItem('iasj_economy_controls');
     let p = cached?.pricing || {};
     if (localTiersRaw) {
       try {
@@ -48,7 +52,15 @@ function readCache() {
     if (localTokenAud) {
       p.tokenPriceAud = Math.max(1, Math.round(Number(localTokenAud) || 1));
     }
-    if (cached || localTiersRaw || localTokenAud) {
+    if (localSupporterFee !== null && localSupporterFee !== '') {
+      p.supporterBookingFeeTokens = Math.max(0, Math.round(Number(localSupporterFee) || 0));
+    }
+    if (localEconomyRaw) {
+      try {
+        p.economyControls = { ...(p.economyControls || {}), ...JSON.parse(localEconomyRaw) };
+      } catch (e) {}
+    }
+    if (cached || localTiersRaw || localTokenAud || localSupporterFee !== null || localEconomyRaw) {
       return { pricing: normalizePricing(p).pricing, pricingUpdatedAt: cached?.pricingUpdatedAt || new Date().toISOString() };
     }
   } catch (e) {}
@@ -66,6 +78,12 @@ function writeCache() {
     }
     if (state.pricing?.tokenPriceAud) {
       localStorage.setItem('iasj_token_price_aud', String(state.pricing.tokenPriceAud));
+    }
+    if (state.pricing?.supporterBookingFeeTokens !== undefined) {
+      localStorage.setItem('iasj_supporter_booking_fee_tokens', String(state.pricing.supporterBookingFeeTokens));
+    }
+    if (state.pricing?.economyControls) {
+      localStorage.setItem('iasj_economy_controls', JSON.stringify(state.pricing.economyControls));
     }
   } catch (e) {}
 }
@@ -117,6 +135,17 @@ async function load() {
       if (firestorePricing) {
         state.pricing = normalizePricing(firestorePricing).pricing;
         state.pricingUpdatedAt = firestorePricing.updatedAt || null;
+        if (firestorePricing.freeDriverHourUntil !== undefined && typeof window !== 'undefined' && window.superadminDB) {
+          const remoteUntil = Number(firestorePricing.freeDriverHourUntil) || 0;
+          const localUntil = Number(window.superadminDB.getFreeDriverHourUntil?.() || 0);
+          const remoteUpdatedMs = Date.parse(firestorePricing.updatedAt || '') || 0;
+          if (remoteUntil > Date.now() && remoteUntil > localUntil) {
+            window.superadminDB.activateFreeDriverHour(Math.max(1000, remoteUntil - Date.now()));
+          } else if (remoteUntil <= Date.now() && (localUntil <= Date.now() || (remoteUpdatedMs > 0 && localUntil - 3600000 < remoteUpdatedMs))) {
+            window.superadminDB.endFreeDriverHour();
+          }
+          window.renderSuperadminFreeDriverHourUI?.();
+        }
         writeCache();
       }
     } catch (fe) {}
@@ -167,7 +196,7 @@ function disclaimerHtml({ compact = false } = {}) {
   return `
     <div class="aud-disclaimer${compact ? ' aud-disclaimer-compact' : ''}" role="note" data-agent-id="aud-disclaimer" data-testid="aud-disclaimer">
       <i class="fa-solid fa-circle-info"></i>
-      <span><strong>AUD Only — Direct Driver PayID Settlement:</strong> Customers pay the selected driver directly via PayID in Australian Dollars (AUD). Drivers are charged platform tokens per order by distance tier (0–20km, 21–50km, 51–100km, 101+km).</span>
+      <span><strong>AUD Only — Direct Driver PayID Settlement:</strong> Supporters pay a 1 Token booking fee and pay the selected driver directly via PayID in Australian Dollars (AUD). Couriers pay distance-tier tokens per order (0–10km, 11–20km, 21–40km, 41–60km, 61+km).</span>
     </div>
   `;
 }
@@ -181,6 +210,10 @@ function updateLocalPricing(partialPricing) {
     driverOrderTokens: {
       ...(state.pricing.driverOrderTokens || {}),
       ...(partialPricing?.driverOrderTokens || {})
+    },
+    economyControls: {
+      ...(state.pricing.economyControls || {}),
+      ...(partialPricing?.economyControls || {})
     }
   };
   state.pricing = normalizePricing(merged).pricing;
@@ -198,7 +231,7 @@ async function savePricing(newPricing) {
   try {
     const gUser = window.firebaseService?.getCurrentGoogleUser?.();
     if (window.firebaseService?.savePlatformPricingToFirestore) {
-      await window.firebaseService.savePlatformPricingToFirestore(newPricing, gUser?.email || 'support@aifoundation.net.au');
+      await window.firebaseService.savePlatformPricingToFirestore(state.pricing, gUser?.email || 'support@aifoundation.net.au');
     }
   } catch (e) {}
 
@@ -252,6 +285,7 @@ export const iasjCurrency = {
   getPricing,
   updateLocalPricing,
   savePricing,
+  getSupporterBookingFeeTokens: () => getSupporterBookingFeeTokens(state.pricing),
   getDriverOrderTokenCharge: km => {
     const base = getDriverOrderTokenCharge(km, state.pricing);
     if (typeof window !== 'undefined' && window.superadminDB?.isFreeDriverHourActive?.()) {

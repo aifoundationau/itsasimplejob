@@ -256,6 +256,13 @@
               aria-label="Open Driver Admin Panel">
               <i class="fa-solid fa-id-card-clip"></i> Driver Admin Panel
             </button>
+            <button type="button" class="btn btn-primary btn-sm superadmin-only"
+              id="btn-menu-superadmin-panel" onclick="openSuperadminPanelFromGoogleMenu();"
+              style="display:none; width:100%; justify-content:flex-start; gap:0.5rem; font-size:0.82rem; font-weight:800; background:#D97706; border-color:#D97706; color:#ffffff;"
+              data-agent-id="btn-menu-superadmin-panel" data-testid="btn-menu-superadmin-panel"
+              aria-label="Open SuperAdmin Admin Panel (SuperAdmin Only)">
+              <i class="fa-solid fa-crown"></i> SuperAdmin Admin Panel
+            </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="closeGoogleUserMenu(); handleGoogleSignOut();"
               style="width:100%; justify-content:flex-start; gap:0.5rem; color:#DC2626; border-color:#FECACA; font-size:0.8rem;"
               data-agent-id="btn-menu-signout" data-testid="btn-menu-signout" aria-label="Sign Out">
@@ -263,6 +270,24 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Global Sticky Top Navbar Free Hour Promotion Banner (Visible when SuperAdmin Free Hour is active) -->
+    <div id="navbar-free-hour-banner" class="navbar-free-hour-banner" role="status" aria-live="polite"
+      style="display:none;" data-agent-id="navbar-free-hour-banner" data-testid="navbar-free-hour-banner">
+      <div class="container navbar-free-hour-inner">
+        <span class="navbar-free-hour-badge">
+          <i class="fa-solid fa-gift" aria-hidden="true"></i> FREE HOUR ACTIVE
+        </span>
+        <span id="navbar-free-hour-text" class="navbar-free-hour-text"
+          data-agent-id="navbar-free-hour-text" data-testid="navbar-free-hour-text">
+          1-Hour Free Mode Active — 0 Tokens for Supporters &amp; Couriers!
+        </span>
+        <span id="navbar-free-hour-countdown" class="navbar-free-hour-countdown"
+          data-agent-id="navbar-free-hour-countdown" data-testid="navbar-free-hour-countdown">
+          60m 00s left
+        </span>
       </div>
     </div>
   </nav>
@@ -625,6 +650,13 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div id="courier-booking-fee-notice"
+                style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:0.65rem 0.9rem; margin:0.35rem 0 0.55rem 0; font-size:0.82rem; color:#92400E; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;"
+                data-agent-id="courier-booking-fee-notice" data-testid="courier-booking-fee-notice">
+                <i class="fa-solid fa-coins" style="color:#D97706;"></i>
+                <span>Supporter Booking Fee: <strong id="courier-booking-fee-tokens-label">1 Token</strong> • Delivery fare paid directly to your chosen Courier via <strong>PayID</strong>.</span>
               </div>
 
               <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-courier-booking"
@@ -1926,151 +1958,206 @@
           </div>
 
         </div> <!-- /#supporter-collapsed-panels-stack -->
+      </div> <!-- /#supporter-panel-wrapper -->
+    </section>
 
-        <!-- SuperAdmin Panel: Distance Token Costs, Live Driver Approvals & Token Account Vault (Collapsible) -->
-        <div id="superadmin-courier-config-card" class="superadmin-only courier-calc-card supporter-collapsible-card"
-          style="display:none; padding:0; overflow:hidden; background:#FFFBEB; border:2px solid #F59E0B; border-radius:var(--radius-md); margin-top:1.75rem;"
-          data-agent-id="superadmin-courier-config-card" data-testid="superadmin-courier-config-card">
+    <!-- =====================================================================
+         VIEW 5: SUPERADMIN ADMIN PANEL (RESTRICTED TO SUPERADMIN ONLY)
+         ===================================================================== -->
+    <section class="workspace-view superadmin-only" id="superadmin-admin-tab"
+      data-agent-id="superadmin-admin-tab" data-testid="superadmin-admin-tab">
+      <div class="section-header">
+        <span class="section-tag" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">
+          <i class="fa-solid fa-crown"></i> Restricted Access • SuperAdmin Only
+        </span>
+        <h2 class="section-title" id="superadmin-admin-main-title">SuperAdmin Admin Panel</h2>
+        <p class="section-desc">
+          Exclusive SuperAdmin console to adjust all token prices (Supporter booking fee &amp; 5 courier distance tiers),
+          manage token &amp; currency toggles, approve driver applications, and oversee the Token Vault.
+        </p>
+      </div>
 
-          <!-- SuperAdmin Account Header (Collapsible Toggle) -->
-          <div id="superadmin-console-header-toggle" role="button" tabindex="0" aria-expanded="false"
-            aria-controls="superadmin-console-collapse-body" onclick="toggleSuperadminConsoleCollapse()"
-            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSuperadminConsoleCollapse();}"
-            style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; padding:1.25rem 1.75rem; cursor:pointer; background:#FFFBEB; user-select:none;"
-            data-agent-id="superadmin-console-header-toggle" data-testid="superadmin-console-header-toggle"
-            aria-label="Toggle SuperAdmin Console Firebase Admin Account">
-            <div>
-              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                <span
-                  style="background:#F59E0B; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; font-size:0.75rem; font-weight:900;">
-                  <i class="fa-solid fa-crown"></i> SUPERADMIN CONSOLE
-                </span>
-                <strong style="font-size:1.1rem; color:#92400E;">Firebase Admin Account</strong>
-              </div>
-              <div style="font-size:0.82rem; color:#78350F; font-weight:700; margin-top:0.2rem;">
-                <i class="fa-solid fa-envelope"></i> <span
-                  id="superadmin-firebase-email">support@aifoundation.net.au</span> (Authorized SuperAdmin)
-              </div>
+      <!-- SuperAdmin Panel: Token Prices, Live Driver Approvals & Token Account Vault -->
+      <div id="superadmin-courier-config-card" class="superadmin-only courier-calc-card supporter-collapsible-card"
+        style="display:none; padding:0; overflow:hidden; background:#FFFBEB; border:2px solid #F59E0B; border-radius:var(--radius-md); margin-top:0.5rem;"
+        data-agent-id="superadmin-courier-config-card" data-testid="superadmin-courier-config-card">
+
+        <!-- SuperAdmin Account Header (Collapsible Toggle) -->
+        <div id="superadmin-console-header-toggle" role="button" tabindex="0" aria-expanded="true"
+          aria-controls="superadmin-console-collapse-body" onclick="toggleSuperadminConsoleCollapse()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSuperadminConsoleCollapse();}"
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; padding:1.25rem 1.75rem; cursor:pointer; background:#FFFBEB; user-select:none;"
+          data-agent-id="superadmin-console-header-toggle" data-testid="superadmin-console-header-toggle"
+          aria-label="Toggle SuperAdmin Console Firebase Admin Account">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <span
+                style="background:#F59E0B; color:#ffffff; padding:0.2rem 0.55rem; border-radius:4px; font-size:0.75rem; font-weight:900;">
+                <i class="fa-solid fa-crown"></i> SUPERADMIN ADMIN PANEL
+              </span>
+              <strong style="font-size:1.1rem; color:#92400E;">Firebase Admin Account</strong>
             </div>
-
-            <!-- SuperAdmin Token Vault, Wipe Control & Collapse Toggle Button -->
-            <div style="display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap;">
-              <div onclick="event.stopPropagation();"
-                style="background:#FFFFFF; border:1.5px solid #F59E0B; border-radius:var(--radius-sm); padding:0.6rem 1rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm);">
-                <div>
-                  <div style="font-size:0.7rem; font-weight:800; color:#92400E; text-transform:uppercase;">SuperAdmin
-                    Token Vault</div>
-                  <div
-                    style="font-size:1.25rem; font-weight:900; color:#D97706; display:flex; align-items:center; gap:0.4rem;">
-                    <i class="fa-solid fa-coins"></i> <span id="superadmin-token-vault-balance">0 Tokens</span>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-outline btn-sm" id="btn-wipe-superadmin-tokens"
-                  onclick="event.stopPropagation(); handleWipeSuperadminTokens(this)"
-                  style="color:#DC2626; border-color:#FECACA; font-weight:800; font-size:0.78rem;"
-                  data-agent-id="btn-wipe-superadmin-tokens" data-testid="btn-wipe-superadmin-tokens"
-                  aria-label="Wipe All Superadmin Tokens">
-                  <i class="fa-solid fa-trash-can"></i> Wipe Tokens
-                </button>
-              </div>
-
-              <button type="button" id="btn-superadmin-make-new-booking" class="btn btn-primary btn-sm"
-                onclick="event.stopPropagation(); makeNewBookingAsSupporter();"
-                style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem;"
-                data-agent-id="btn-superadmin-make-new-booking" data-testid="btn-superadmin-make-new-booking"
-                aria-label="Make a New Courier Booking from SuperAdmin Panel">
-                <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
-              </button>
-
-              <button type="button" id="btn-toggle-superadmin-console"
-                onclick="event.stopPropagation(); toggleSuperadminConsoleCollapse();" aria-expanded="false"
-                aria-controls="superadmin-console-collapse-body"
-                style="background:#FEF3C7; color:#92400E; border:1.5px solid #F59E0B; border-radius:999px; padding:0.45rem 0.9rem; font-size:0.78rem; font-weight:800; display:inline-flex; align-items:center; gap:0.45rem; cursor:pointer;"
-                data-agent-id="btn-toggle-superadmin-console" data-testid="btn-toggle-superadmin-console"
-                aria-label="Toggle SuperAdmin Console Firebase Admin Account">
-                <span id="superadmin-console-toggle-label">Expand Console</span>
-                <i id="chevron-panel-superadmin-console" class="fa-solid fa-chevron-down"
-                  style="color:#92400E; font-size:0.85rem; transition:transform 0.2s ease;"></i>
-              </button>
+            <div style="font-size:0.82rem; color:#78350F; font-weight:700; margin-top:0.2rem;">
+              <i class="fa-solid fa-envelope"></i> <span
+                id="superadmin-firebase-email">support@aifoundation.net.au</span> (Authorized SuperAdmin)
             </div>
           </div>
 
-          <!-- Collapsible Body of SuperAdmin Console (Firebase Admin Account) -->
-          <div id="superadmin-console-collapse-body" class="supporter-collapse-body"
-            style="display:none; padding:1.35rem 1.75rem 1.75rem; border-top:1px solid #FDE68A;"
-            data-agent-id="superadmin-console-collapse-body" data-testid="superadmin-console-collapse-body">
+          <!-- SuperAdmin Token Vault, Wipe Control & Collapse Toggle Button -->
+          <div style="display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+            <div onclick="event.stopPropagation();"
+              style="background:#FFFFFF; border:1.5px solid #F59E0B; border-radius:var(--radius-sm); padding:0.6rem 1rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm);">
+              <div>
+                <div style="font-size:0.7rem; font-weight:800; color:#92400E; text-transform:uppercase;">SuperAdmin
+                  Token Vault</div>
+                <div
+                  style="font-size:1.25rem; font-weight:900; color:#D97706; display:flex; align-items:center; gap:0.4rem;">
+                  <i class="fa-solid fa-coins"></i> <span id="superadmin-token-vault-balance">0 Tokens</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-wipe-superadmin-tokens"
+                onclick="event.stopPropagation(); handleWipeSuperadminTokens(this)"
+                style="color:#DC2626; border-color:#FECACA; font-weight:800; font-size:0.78rem;"
+                data-agent-id="btn-wipe-superadmin-tokens" data-testid="btn-wipe-superadmin-tokens"
+                aria-label="Wipe All Superadmin Tokens">
+                <i class="fa-solid fa-trash-can"></i> Wipe Tokens
+              </button>
+            </div>
 
-            <!-- Section A: SuperAdmin Sets Token Cost per Order Driver Receives -->
+            <button type="button" id="btn-superadmin-make-new-booking" class="btn btn-primary btn-sm"
+              onclick="event.stopPropagation(); makeNewBookingAsSupporter();"
+              style="font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.9rem;"
+              data-agent-id="btn-superadmin-make-new-booking" data-testid="btn-superadmin-make-new-booking"
+              aria-label="Make a New Courier Booking from SuperAdmin Panel">
+              <i class="fa-solid fa-plus-circle"></i> + Make a New Booking
+            </button>
+
+            <button type="button" id="btn-toggle-superadmin-console"
+              onclick="event.stopPropagation(); toggleSuperadminConsoleCollapse();" aria-expanded="true"
+              aria-controls="superadmin-console-collapse-body"
+              style="background:#FEF3C7; color:#92400E; border:1.5px solid #F59E0B; border-radius:999px; padding:0.45rem 0.9rem; font-size:0.78rem; font-weight:800; display:inline-flex; align-items:center; gap:0.45rem; cursor:pointer;"
+              data-agent-id="btn-toggle-superadmin-console" data-testid="btn-toggle-superadmin-console"
+              aria-label="Toggle SuperAdmin Console Firebase Admin Account">
+              <span id="superadmin-console-toggle-label">Collapse Console</span>
+              <i id="chevron-panel-superadmin-console" class="fa-solid fa-chevron-up"
+                style="color:#92400E; font-size:0.85rem; transition:transform 0.2s ease;"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Body of SuperAdmin Console (Firebase Admin Account) -->
+        <div id="superadmin-console-collapse-body" class="supporter-collapse-body"
+          style="display:block; padding:1.35rem 1.75rem 1.75rem; border-top:1px solid #FDE68A;"
+          data-agent-id="superadmin-console-collapse-body" data-testid="superadmin-console-collapse-body">
+
+          <!-- Section A: SuperAdmin Sets All Token Prices (Supporter Booking Fee + 5 Courier Distance Tiers + AUD Price) -->
+          <div
+            style="margin-bottom:1.5rem; background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;">
             <div
-              style="margin-bottom:1.5rem; background:#FFFFFF; border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:1.15rem;">
-              <div
-                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; flex-wrap:wrap; gap:0.4rem;">
-                <strong style="font-size:0.98rem; color:#92400E;">
-                  <i class="fa-solid fa-sliders"></i> Token Cost per Order Driver Receives (Distance Tiers)
-                </strong>
-                <span
-                  style="font-size:0.74rem; font-weight:800; color:#047857; background:#ECFDF5; padding:0.2rem 0.5rem; border-radius:4px;">
-                  Tokens automatically transferred to SuperAdmin on each order
-                </span>
-              </div>
-              <p style="font-size:0.8rem; color:#78350F; margin-bottom:0.85rem;">
-                Configure how many tokens are deducted from the driver and credited to the SuperAdmin token account per
-                order:
-              </p>
+              style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; flex-wrap:wrap; gap:0.4rem;">
+              <strong style="font-size:0.98rem; color:#92400E;">
+                <i class="fa-solid fa-sliders"></i> All Token Prices &amp; Distance Tiers (SuperAdmin Editable)
+              </strong>
+              <span
+                style="font-size:0.74rem; font-weight:800; color:#047857; background:#ECFDF5; padding:0.2rem 0.5rem; border-radius:4px;">
+                Supporters pay booking fee • Couriers pay distance tier • PayID for fares
+              </span>
+            </div>
+            <p style="font-size:0.8rem; color:#78350F; margin-bottom:0.85rem;">
+              Adjust the AUD price of 1 token, the Customer (Supporter) booking fee, and all 5 courier delivery distance tiers (whole tokens only):
+            </p>
 
-              <div
-                style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:0.65rem; margin-bottom:0.85rem;">
-                <div>
-                  <label for="sa-tier-0-20"
-                    style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">0–20
-                    km Order</label>
-                  <input type="number" id="sa-tier-0-20" class="form-control" min="1" max="1000" value="2"
-                    style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-0-20"
-                    data-testid="sa-tier-0-20" aria-label="0 to 20 km Token Charge">
-                </div>
-                <div>
-                  <label for="sa-tier-21-50"
-                    style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">21–50
-                    km Order</label>
-                  <input type="number" id="sa-tier-21-50" class="form-control" min="1" max="1000" value="5"
-                    style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-21-50"
-                    data-testid="sa-tier-21-50" aria-label="21 to 50 km Token Charge">
-                </div>
-                <div>
-                  <label for="sa-tier-51-100"
-                    style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">51–100
-                    km Order</label>
-                  <input type="number" id="sa-tier-51-100" class="form-control" min="1" max="1000" value="10"
-                    style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-51-100"
-                    data-testid="sa-tier-51-100" aria-label="51 to 100 km Token Charge">
-                </div>
-                <div>
-                  <label for="sa-tier-101-plus"
-                    style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">101+
-                    km Order</label>
-                  <input type="number" id="sa-tier-101-plus" class="form-control" min="1" max="1000" value="15"
-                    style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()"
-                    data-agent-id="sa-tier-101-plus" data-testid="sa-tier-101-plus"
-                    aria-label="101 plus km Token Charge">
-                </div>
-                <div>
-                  <label for="sa-token-aud-price"
-                    style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">1
-                    Token ($ AUD)</label>
-                  <input type="number" id="sa-token-aud-price" class="form-control" min="1" max="1000" value="1"
-                    style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()"
-                    data-agent-id="sa-token-aud-price" data-testid="sa-token-aud-price"
-                    aria-label="AUD Price per 1 Token">
-                </div>
+            <div
+              style="display:grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap:0.65rem; margin-bottom:0.85rem;">
+              <div>
+                <label for="sa-token-aud-price"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">1 Token ($ AUD)</label>
+                <input type="number" id="sa-token-aud-price" class="form-control" min="1" max="1000" step="1" value="1"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()"
+                  data-agent-id="sa-token-aud-price" data-testid="sa-token-aud-price"
+                  aria-label="AUD Price per 1 Token">
               </div>
-              <div
-                style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
-                <button type="button" class="btn btn-primary btn-sm" onclick="onSuperadminDistanceTierChange(true)"
-                  style="background:#D97706; border-color:#D97706;" data-agent-id="btn-save-sa-tiers"
-                  data-testid="btn-save-sa-tiers" aria-label="Save SuperAdmin Token Tiers">
-                  <i class="fa-solid fa-floppy-disk"></i> Save Token Costs per Order
-                </button>
+              <div>
+                <label for="sa-supporter-booking-fee"
+                  style="font-size:0.74rem; font-weight:700; color:#1E40AF; display:block; margin-bottom:0.2rem;">Supporter Booking Fee</label>
+                <input type="number" id="sa-supporter-booking-fee" class="form-control" min="0" max="100" step="1" value="1"
+                  style="padding:0.45rem; border-color:#93C5FD;" onchange="onSuperadminDistanceTierChange()"
+                  data-agent-id="sa-supporter-booking-fee" data-testid="sa-supporter-booking-fee"
+                  aria-label="Supporter Booking Fee in Tokens">
               </div>
+              <div>
+                <label for="sa-tier-0-10"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">0–10 km Courier</label>
+                <input type="number" id="sa-tier-0-10" class="form-control" min="0" max="1000" step="1" value="1"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-0-10"
+                  data-testid="sa-tier-0-10" aria-label="0 to 10 km Courier Token Charge">
+              </div>
+              <div>
+                <label for="sa-tier-11-20"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">11–20 km Courier</label>
+                <input type="number" id="sa-tier-11-20" class="form-control" min="0" max="1000" step="1" value="2"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-11-20"
+                  data-testid="sa-tier-11-20" aria-label="11 to 20 km Courier Token Charge">
+              </div>
+              <div>
+                <label for="sa-tier-21-40"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">21–40 km Courier</label>
+                <input type="number" id="sa-tier-21-40" class="form-control" min="0" max="1000" step="1" value="3"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()" data-agent-id="sa-tier-21-40"
+                  data-testid="sa-tier-21-40" aria-label="21 to 40 km Courier Token Charge">
+              </div>
+              <div>
+                <label for="sa-tier-41-60"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">41–60 km Courier</label>
+                <input type="number" id="sa-tier-41-60" class="form-control" min="0" max="1000" step="1" value="4"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()"
+                  data-agent-id="sa-tier-41-60" data-testid="sa-tier-41-60"
+                  aria-label="41 to 60 km Courier Token Charge">
+              </div>
+              <div>
+                <label for="sa-tier-61-plus"
+                  style="font-size:0.74rem; font-weight:700; color:#92400E; display:block; margin-bottom:0.2rem;">61+ km Courier</label>
+                <input type="number" id="sa-tier-61-plus" class="form-control" min="0" max="1000" step="1" value="5"
+                  style="padding:0.45rem;" onchange="onSuperadminDistanceTierChange()"
+                  data-agent-id="sa-tier-61-plus" data-testid="sa-tier-61-plus"
+                  aria-label="61 plus km Courier Token Charge">
+              </div>
+            </div>
+
+            <!-- Token Economy & Currency Toggle Controls -->
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; padding:0.65rem 0.85rem; background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm); margin-bottom:0.85rem;">
+              <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.8rem; font-weight:700; color:#78350F; cursor:pointer;">
+                <input type="checkbox" id="sa-toggle-token-system" checked onchange="onSuperadminDistanceTierChange(true)"
+                  data-agent-id="sa-toggle-token-system" data-testid="sa-toggle-token-system" aria-label="Enable Token Economy System">
+                Token System Enabled
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.8rem; font-weight:700; color:#78350F; cursor:pointer;">
+                <input type="checkbox" id="sa-toggle-aud-enabled" checked onchange="onSuperadminDistanceTierChange(true)"
+                  data-agent-id="sa-toggle-aud-enabled" data-testid="sa-toggle-aud-enabled" aria-label="Enable AUD Currency">
+                AUD Enabled
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.8rem; font-weight:700; color:#78350F; cursor:pointer;">
+                <input type="checkbox" id="sa-toggle-usd-enabled" onchange="onSuperadminDistanceTierChange(true)"
+                  data-agent-id="sa-toggle-usd-enabled" data-testid="sa-toggle-usd-enabled" aria-label="Enable USD Display">
+                USD Display Enabled
+              </label>
+            </div>
+
+            <div
+              style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+              <button type="button" id="btn-save-sa-tiers" class="btn btn-primary btn-sm" onclick="onSuperadminDistanceTierChange(true)"
+                style="background:#D97706; border-color:#D97706;" data-agent-id="btn-save-sa-tiers"
+                data-testid="btn-save-sa-tiers" aria-label="Save All Token Prices">
+                <i class="fa-solid fa-floppy-disk"></i> Save All Token Prices
+              </button>
+              <button type="button" id="btn-open-sa-full-pricing-modal" class="btn btn-outline btn-sm"
+                onclick="openSuperadminPricing()"
+                style="border-color:#F59E0B; color:#92400E; font-weight:800;"
+                data-agent-id="btn-open-sa-full-pricing-modal" data-testid="btn-open-sa-full-pricing-modal"
+                aria-label="Edit Token Packs and Messaging Prices">
+                <i class="fa-solid fa-tags"></i> Edit Token Packs &amp; Message Fee
+              </button>
+            </div>
 
               <!-- SuperAdmin 1-Hour Free For All Drivers Control -->
               <div id="superadmin-free-hour-card"
@@ -2351,10 +2438,9 @@
               </div>
             </div>
 
-          </div> <!-- /#superadmin-console-collapse-body -->
-        </div> <!-- /#superadmin-courier-config-card -->
-      </div> <!-- /#supporter-panel-wrapper -->
-    </section>
+        </div> <!-- /#superadmin-console-collapse-body -->
+      </div> <!-- /#superadmin-courier-config-card -->
+    </section> <!-- /#superadmin-admin-tab -->
 
     <!-- Courier Driver Application has moved from the middle of the supporter page to a popup modal accessible via the bottom footer -->
     <div id="driver-application-bottom-section" style="display:none;" data-agent-id="driver-application-bottom-section">

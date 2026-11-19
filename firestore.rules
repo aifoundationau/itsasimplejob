@@ -41,7 +41,8 @@ service cloud.firestore {
     // 4. providers/{providerId}
     //    Document ID: providerId or SPN (e.g., 'DRV-102938' or 'SPN-123456')
     //    Access: SuperAdmin 100% unconditional full control (approve, verify, edit, delete);
-    //            Public read for active/approved drivers; Driver updates own profile only.
+    //            Public read strictly requires BOTH approved == true AND isActive == true (plus owner read);
+    //            Driver updates own non-sensitive profile only.
     //
     // 5. roles/{roleId}
     //    Document ID: Role key ('superadmin', 'driver', 'supporter', 'customer')
@@ -90,8 +91,10 @@ service cloud.firestore {
         (('role' in request.auth.token) && request.auth.token.role == 'superadmin') ||
         (('isSuperAdmin' in request.auth.token) && request.auth.token.isSuperAdmin == true) ||
         // 3. Verified bootstrap superadmin email addresses
-        (('email' in request.auth.token) && request.auth.token.email in ['support@aifoundation.net.au', 'davidrobertson.info@gmail.com'] &&
-         (!('email_verified' in request.auth.token) || request.auth.token.email_verified == true))
+        (('email' in request.auth.token) &&
+         request.auth.token.email in ['support@aifoundation.net.au', 'davidrobertson.info@gmail.com'] &&
+         ('email_verified' in request.auth.token) &&
+         request.auth.token.email_verified == true)
       );
     }
 
@@ -128,6 +131,7 @@ service cloud.firestore {
              (!('isSuperAdmin' in data) || data.isSuperAdmin == false) &&
              (!('isSuperadmin' in data) || data.isSuperadmin == false) &&
              (!('tokens' in data) || data.tokens == 0) &&
+             (!('tokenBalance' in data) || data.tokenBalance == 0) &&
              (!('email' in data) || isValidEmail(data.email)) &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
@@ -137,9 +141,9 @@ service cloud.firestore {
     }
 
     // User profile update validator
-    // Regular users CANNOT change 'role', 'approved', 'isDriver', 'isSuperAdmin', or 'tokens'
+    // Regular users CANNOT change 'role', 'approved', 'isDriver', 'isSuperAdmin', 'tokens', or 'tokenBalance'
     function isValidUserUpdate(data) {
-      return areImmutableFieldsUnchanged(['uid', 'role', 'approved', 'isDriver', 'isSuperAdmin', 'isSuperadmin', 'tokens', 'email', 'createdAt']) &&
+      return areImmutableFieldsUnchanged(['uid', 'role', 'approved', 'isDriver', 'isSuperAdmin', 'isSuperadmin', 'tokens', 'tokenBalance', 'email', 'createdAt']) &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
              (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
@@ -196,7 +200,11 @@ service cloud.firestore {
              (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 100)) &&
              (!('perKmRateAud' in data) || (data.perKmRateAud is number && data.perKmRateAud >= 0 && data.perKmRateAud <= 1000)) &&
              (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
-             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000));
+             (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000)) &&
+             (!('maxWeightKg' in data) || (data.maxWeightKg is number && data.maxWeightKg >= 0 && data.maxWeightKg <= 50000)) &&
+             (!('maxHeightCm' in data) || (data.maxHeightCm is number && data.maxHeightCm >= 0 && data.maxHeightCm <= 2000)) &&
+             (!('maxWidthCm' in data) || (data.maxWidthCm is number && data.maxWidthCm >= 0 && data.maxWidthCm <= 2000)) &&
+             (!('maxLengthCm' in data) || (data.maxLengthCm is number && data.maxLengthCm >= 0 && data.maxLengthCm <= 3000));
     }
 
     // Provider profile creation validator
@@ -222,9 +230,9 @@ service cloud.firestore {
     }
 
     // Provider profile update validator
-    // Drivers CANNOT change 'approved', 'isVerified', or financial fields
+    // Drivers CANNOT change 'approved', 'isVerified', role/sample flags, or financial fields
     function isValidProviderUpdate(data) {
-      return areImmutableFieldsUnchanged(['uid', 'serviceProviderNumber', 'businessId', 'createdAt', 'isVerified', 'approved', 'tokenBalance', 'tokens']) &&
+      return areImmutableFieldsUnchanged(['uid', 'serviceProviderNumber', 'businessId', 'createdAt', 'isVerified', 'approved', 'tokenBalance', 'tokens', 'role', 'isDriver', 'isSample', 'canBeBooked']) &&
              (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 120)) &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('suburb' in data) || (data.suburb is string && data.suburb.size() <= 120)) &&
@@ -234,6 +242,7 @@ service cloud.firestore {
              (!('sameDayFeeAud' in data) || (data.sameDayFeeAud is number && data.sameDayFeeAud >= 0 && data.sameDayFeeAud <= 1000)) &&
              (!('urgentFeeAud' in data) || (data.urgentFeeAud is number && data.urgentFeeAud >= 0 && data.urgentFeeAud <= 1000)) &&
              (!('bio' in data) || (data.bio is string && data.bio.size() <= 1000)) &&
+             (!('skills' in data) || (data.skills is list && data.skills.size() <= 30)) &&
              (!('availability' in data) || (data.availability is string && data.availability.size() <= 50)) &&
              (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
              (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
@@ -270,6 +279,8 @@ service cloud.firestore {
              (!('tradeCategory' in data) || (data.tradeCategory is string && data.tradeCategory.size() <= 50)) &&
              (!('shiftType' in data) || (data.shiftType is string && data.shiftType.size() <= 50)) &&
              (!('jobPhotos' in data) || (data.jobPhotos is list && data.jobPhotos.size() <= 10)) &&
+             (!('supporterBookingFeeTokens' in data) || (data.supporterBookingFeeTokens is int && data.supporterBookingFeeTokens >= 0 && data.supporterBookingFeeTokens <= 100)) &&
+             (!('tokensChargedToDriver' in data) || (data.tokensChargedToDriver is int && data.tokensChargedToDriver >= 0 && data.tokensChargedToDriver <= 1000)) &&
              (!('businessId' in data) || data.businessId == 'its-a-simple-job');
     }
 
@@ -354,13 +365,10 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.applicantUid == request.auth.uid) && isValidDriverAppUpdate(request.resource.data);
     }
 
-    // 4. Providers: SuperAdmin full control; Public read active/approved; Drivers update own non-sensitive profile
+    // 4. Providers: SuperAdmin full control; Public read strictly requires approved == true && isActive == true (or owner); Drivers update own non-sensitive profile
     match /providers/{providerId} {
       allow read, write, delete: if isSuperAdmin();
-      allow read: if resource.data.isActive == true ||
-                     resource.data.approved == true ||
-                     resource.data.status == 'active' ||
-                     resource.data.businessId == 'its-a-simple-job' ||
+      allow read: if (resource.data.approved == true && resource.data.isActive == true) ||
                      (isAuthenticated() && resource.data.uid == request.auth.uid);
       allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidProviderCreate(request.resource.data);
       allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && isValidProviderUpdate(request.resource.data);
@@ -382,7 +390,7 @@ service cloud.firestore {
                          request.resource.data.uid == request.auth.uid ||
                          (('customer' in request.resource.data) && ('uid' in request.resource.data.customer) && request.resource.data.customer.uid == request.auth.uid)
                        ) &&
-                       (request.resource.data.status in ['pending', 'Confirmed & Dispatched']) &&
+                       (request.resource.data.status in ['pending', 'Confirmed & Dispatched', 'Scheduled (9am–4pm Pickup)']) &&
                        (!('paid' in request.resource.data) || request.resource.data.paid == false) &&
                        (!('settled' in request.resource.data) || request.resource.data.settled == false) &&
                        (!('paymentIntentId' in request.resource.data)) &&
@@ -394,7 +402,7 @@ service cloud.firestore {
                        request.resource.data.status != 'paid' &&
                        request.resource.data.status != 'settled' &&
                        request.resource.data.status != 'refunded' &&
-                       areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens']) &&
+                       areImmutableFieldsUnchanged(['docketNumber', 'customerUid', 'createdAt', 'paymentIntentId', 'paid', 'settled', 'totalAudCents', 'tokens', 'supporterBookingFeeTokens', 'tokensChargedToDriver', 'totalAud', 'payoutCompleted', 'uid', 'providerUid', 'assignedProviderId', 'providerId']) &&
                        isValidBooking(request.resource.data);
     }
 

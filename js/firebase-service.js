@@ -378,7 +378,9 @@ export async function fetchRemoteProviders() {
   try {
     const q = query(
       collection(db, 'providers'),
-      where('businessId', '==', BUSINESS_ID)
+      where('businessId', '==', BUSINESS_ID),
+      where('approved', '==', true),
+      where('isActive', '==', true)
     );
     const snapshot = await withTimeout(getDocs(q), 3500);
     const providers = [];
@@ -462,10 +464,12 @@ export async function saveDriverApplicationToFirestore(driverApp) {
       const appRef = doc(collection(db, 'driver_applications'), appId);
       await withTimeout(setDoc(appRef, payload, { merge: true }), 3500);
 
-      // 2. Also record in providers collection with inactive / unapproved status
-      const provRef = doc(collection(db, 'providers'), driverApp.id || driverApp.serviceProviderNumber || appId);
+      // 2. Also record in providers collection under canonical SPN document ID with inactive / unapproved status
+      const canonicalProvId = driverApp.serviceProviderNumber || driverApp.id || appId;
+      const provRef = doc(collection(db, 'providers'), canonicalProvId);
       await withTimeout(setDoc(provRef, {
         ...payload,
+        serviceProviderNumber: canonicalProvId,
         isActive: false, // Hidden from public map until SuperAdmin approves
         approved: false,
         status: 'pending_approval'
@@ -490,9 +494,13 @@ export async function approveDriverInFirestore(driverId, superadminEmail = 'supp
 
   try {
     const timestamp = new Date().toISOString();
+    const matchedDriver = (typeof window !== 'undefined' && window.providerDB?.findById)
+      ? window.providerDB.findById(driverId)
+      : null;
+    const canonicalDocId = matchedDriver?.serviceProviderNumber || driverId;
 
-    // 1. Update providers collection
-    const provRef = doc(collection(db, 'providers'), driverId);
+    // 1. Update canonical provider document in providers collection
+    const provRef = doc(collection(db, 'providers'), canonicalDocId);
     await withTimeout(setDoc(provRef, {
       role: 'driver',
       isDriver: true,
@@ -582,9 +590,13 @@ export async function revokeDriverInFirestore(driverId, superadminEmail = 'suppo
 
   try {
     const timestamp = new Date().toISOString();
+    const matchedDriver = (typeof window !== 'undefined' && window.providerDB?.findById)
+      ? window.providerDB.findById(driverId)
+      : null;
+    const canonicalDocId = matchedDriver?.serviceProviderNumber || driverId;
 
-    // 1. Update providers collection
-    const provRef = doc(collection(db, 'providers'), driverId);
+    // 1. Update canonical provider document in providers collection
+    const provRef = doc(collection(db, 'providers'), canonicalDocId);
     await withTimeout(setDoc(provRef, {
       approved: false,
       status: 'pending_approval',
@@ -712,6 +724,28 @@ export async function getPlatformPricingFromFirestore() {
     console.warn("Notice reading platform pricing from Firestore:", e.message);
   }
   return null;
+}
+
+/**
+ * Persist SuperAdmin 1-Hour Free Mode expiration timestamp to Firestore
+ */
+export async function saveFreeHourToFirestore(freeDriverHourUntil, superadminEmail = 'support@aifoundation.net.au') {
+  if (!db || !isConnected) return { ok: false, error: 'Database not connected' };
+  try {
+    const timestamp = new Date().toISOString();
+    const untilMs = Math.max(0, Math.round(Number(freeDriverHourUntil) || 0));
+    const pricingRef = doc(collection(db, 'platform_settings'), 'pricing');
+    await withTimeout(setDoc(pricingRef, {
+      freeDriverHourUntil: untilMs,
+      updatedAt: timestamp,
+      updatedBy: superadminEmail,
+      businessId: BUSINESS_ID
+    }, { merge: true }), 3500);
+    return { ok: true, freeDriverHourUntil: untilMs, timestamp };
+  } catch (err) {
+    console.warn("⚠️ [Firestore Free Hour] Write notice:", err.message);
+    return { ok: false, error: err.message };
+  }
 }
 
 const GOOGLE_SIGN_IN_ERRORS = {
@@ -927,6 +961,7 @@ window.firebaseService = {
   syncUserRoleFromFirestore,
   savePlatformPricingToFirestore,
   getPlatformPricingFromFirestore,
+  saveFreeHourToFirestore,
   logAIQueryToFirestore,
   subscribeToLiveBookings,
   fetchRemoteProviders,

@@ -154,6 +154,64 @@ textarea {
   transition: all var(--transition-fast);
 }
 
+/* Global Sticky Free Hour Banner inside Top Navbar */
+.navbar-free-hour-banner {
+  width: 100%;
+  background: linear-gradient(90deg, #047857 0%, #059669 50%, #10B981 100%);
+  color: #FFFFFF;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 0.42rem 0;
+}
+
+.navbar-free-hour-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.navbar-free-hour-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #FFFFFF;
+  color: #065F46;
+  border-radius: 999px;
+  padding: 0.14rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+
+.navbar-free-hour-countdown {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(6, 78, 59, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  border-radius: 999px;
+  padding: 0.14rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .navbar-free-hour-banner {
+    padding: 0.38rem 0;
+  }
+
+  .navbar-free-hour-inner {
+    font-size: 0.75rem;
+    gap: 0.3rem 0.5rem;
+  }
+}
+
 .nav-container {
   display: flex;
   justify-content: space-between;

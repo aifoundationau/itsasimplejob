@@ -3,7 +3,7 @@
  * Integrates OpenStreetMap Leaflet Maps, OSRM Road Routing, Live Driver Geolocation,
  * Driver Registration (Licence, Address, Phone, Email, PayID, $/km, Same-Day, Urgent, Max Weight, Max H×W×L),
  * 9:00 AM – 4:00 PM Customer Pickup Booking, Direct Driver PayID Settlement, Driver Admin Dashboard,
- * and SuperAdmin Distance-Tier Token Economy (0-20km, 21-50km, 51-100km, 101+km).
+ * Supporter 1-Token Booking Fee, and SuperAdmin 5-Tier Distance Token Economy (0-10km, 11-20km, 21-40km, 41-60km, 61+km).
  */
 
 import { MAX_COURIER_WEIGHT_KG } from '../shared/pricing.js';
@@ -209,12 +209,24 @@ function switchTab(tabId, bypassGate = false) {
     }
   }
 
+  // Dedicated SuperAdmin Admin Panel is strictly gated to verified SuperAdmin accounts only
+  if (tabId === 'superadmin-admin-tab') {
+    const isSaUser = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin() : false;
+    if (!isSaUser) {
+      showToast('⛔ Restricted: SuperAdmin Admin Panel is strictly accessible to SuperAdmin accounts only.');
+      return;
+    }
+  }
+
   // Update view containers
   const views = document.querySelectorAll('.workspace-view');
   views.forEach(view => view.classList.remove('active-view'));
 
   const targetView = document.getElementById(tabId);
   if (targetView) {
+    if (tabId === 'superadmin-admin-tab') {
+      targetView.style.display = '';
+    }
     targetView.classList.add('active-view');
   }
 
@@ -258,6 +270,16 @@ function switchTab(tabId, bypassGate = false) {
     document.getElementById('pill-driver-admin')?.classList.add('active');
     try { renderSupporterPanel(); } catch (e) {}
     try { renderDriverAdminDashboard(); } catch (e) {}
+  } else if (tabId === 'superadmin-admin-tab') {
+    const saCard = document.getElementById('superadmin-courier-config-card');
+    if (saCard) saCard.style.display = 'block';
+    const saBody = document.getElementById('superadmin-console-collapse-body');
+    if (saBody) saBody.style.display = 'block';
+    try { syncSuperadminControls(); } catch (e) {}
+    try { syncSuperadminDistanceTierInputs(); } catch (e) {}
+    try { renderSuperadminTokenBalance(); } catch (e) {}
+    try { renderSuperadminDriverApprovals(); } catch (e) {}
+    try { renderSuperadminUniversalTokenConsole(); } catch (e) {}
   } else if (tabId === 'how-it-works-tab') {
     window.location.href = '/terms.html#how-it-works';
     return;
@@ -2220,50 +2242,102 @@ function syncSuperadminDistanceTierInputs() {
   if (!cur) return;
 
   const p = cur.getPricing();
-  let tiers = p.driverOrderTokens;
+  const tierKeys = ['tier0to10km', 'tier11to20km', 'tier21to40km', 'tier41to60km', 'tier61PlusKm'];
+  let tiers = {
+    tier0to10km: 1,
+    tier11to20km: 2,
+    tier21to40km: 3,
+    tier41to60km: 4,
+    tier61PlusKm: 5,
+    ...(p.driverOrderTokens || {})
+  };
   try {
     const localTiersRaw = localStorage.getItem('iasj_driver_order_tokens');
     if (localTiersRaw) {
-      tiers = { ...tiers, ...JSON.parse(localTiersRaw) };
+      const parsedTiers = JSON.parse(localTiersRaw);
+      tierKeys.forEach(k => {
+        if (parsedTiers && parsedTiers[k] !== undefined && parsedTiers[k] !== null && Number.isFinite(Number(parsedTiers[k]))) {
+          tiers[k] = Math.max(0, Math.round(Number(parsedTiers[k])));
+        }
+      });
     }
   } catch (e) {}
 
-  tiers = tiers || {
-    tier0to20km: 2,
-    tier21to50km: 5,
-    tier51to100km: 10,
-    tier101PlusKm: 15
+  let supporterBookingFeeTokens = p.supporterBookingFeeTokens !== undefined && p.supporterBookingFeeTokens !== null
+    ? Math.max(0, Math.round(Number(p.supporterBookingFeeTokens)))
+    : 1;
+  try {
+    const localFeeRaw = localStorage.getItem('iasj_supporter_booking_fee_tokens');
+    if (localFeeRaw !== null && localFeeRaw !== '' && Number.isFinite(Number(localFeeRaw))) {
+      supporterBookingFeeTokens = Math.max(0, Math.round(Number(localFeeRaw)));
+    }
+  } catch (e) {}
+
+  const economyControls = {
+    isTokenSystemEnabled: p.economyControls?.isTokenSystemEnabled !== false,
+    isAudEnabled: p.economyControls?.isAudEnabled !== false,
+    isUsdEnabled: p.economyControls?.isUsdEnabled === true
+  };
+  window.platformSettings = {
+    ...(window.platformSettings || {}),
+    ...economyControls
   };
 
   const localTokenAud = localStorage.getItem('iasj_token_price_aud');
   const tokenAud = localTokenAud ? Math.max(1, Math.round(Number(localTokenAud) || 1)) : (p.tokenPriceAud || 1);
 
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = String(v); };
-  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = Boolean(v); };
 
-  setVal('sa-tier-0-20', tiers.tier0to20km);
-  setVal('sa-tier-21-50', tiers.tier21to50km);
-  setVal('sa-tier-51-100', tiers.tier51to100km);
-  setVal('sa-tier-101-plus', tiers.tier101PlusKm);
+  setVal('sa-supporter-booking-fee', supporterBookingFeeTokens);
   setVal('sa-token-aud-price', tokenAud);
+  setVal('sa-tier-0-10', tiers.tier0to10km);
+  setVal('sa-tier-11-20', tiers.tier11to20km);
+  setVal('sa-tier-21-40', tiers.tier21to40km);
+  setVal('sa-tier-41-60', tiers.tier41to60km);
+  setVal('sa-tier-61-plus', tiers.tier61PlusKm);
 
-  setTxt('hero-tier-0-20', String(tiers.tier0to20km));
-  setTxt('hero-tier-21-50', String(tiers.tier21to50km));
-  setTxt('hero-tier-51-100', String(tiers.tier51to100km));
-  setTxt('hero-tier-101-plus', String(tiers.tier101PlusKm));
-  setTxt('hero-token-aud-price', `$${tokenAud} AUD`);
+  setChk('sa-toggle-token-system', economyControls.isTokenSystemEnabled);
+  setChk('sa-toggle-aud-enabled', economyControls.isAudEnabled);
+  setChk('sa-toggle-usd-enabled', economyControls.isUsdEnabled);
 
-  // Authorize SuperAdmin using robust check
-  const isSuperadmin = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin() : true;
-  const tierInputs = ['sa-tier-0-20', 'sa-tier-21-50', 'sa-tier-51-100', 'sa-tier-101-plus', 'sa-token-aud-price', 'btn-save-sa-tiers'];
+  const feeLabelEl = document.getElementById('courier-booking-fee-tokens-label');
+  if (feeLabelEl) {
+    const isFreeHour = typeof isSuperadminFreeDriverHourActive === 'function'
+      ? isSuperadminFreeDriverHourActive()
+      : Boolean(window.superadminDB?.isFreeDriverHourActive?.());
+    if (isFreeHour || !economyControls.isTokenSystemEnabled) {
+      feeLabelEl.textContent = isFreeHour ? '0 Tokens (1-Hr Free Mode)' : '0 Tokens';
+    } else {
+      feeLabelEl.textContent = `${supporterBookingFeeTokens} ${supporterBookingFeeTokens === 1 ? 'Token' : 'Tokens'}`;
+    }
+  }
+
+  // Authorize SuperAdmin strictly using active verified Google user check
+  const user = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  const isSuperadmin = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin(user) : false;
+  const tierInputs = [
+    'sa-supporter-booking-fee',
+    'sa-token-aud-price',
+    'sa-tier-0-10',
+    'sa-tier-11-20',
+    'sa-tier-21-40',
+    'sa-tier-41-60',
+    'sa-tier-61-plus',
+    'sa-toggle-token-system',
+    'sa-toggle-aud-enabled',
+    'sa-toggle-usd-enabled',
+    'btn-save-sa-tiers',
+    'btn-open-sa-full-pricing-modal'
+  ];
   tierInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.disabled = !isSuperadmin;
       if (!isSuperadmin) {
-        el.title = 'Token price and distance tier token costs are set ONLY by SuperAdmin.';
+        el.title = 'Token prices, currency toggles, and distance tier token costs are configured ONLY by SuperAdmin.';
       } else {
-        el.title = 'SuperAdmin: You can edit token prices and distance tier charges at any time.';
+        el.title = 'SuperAdmin: Edit Supporter fee, AUD token value, and 5 Courier distance tiers.';
       }
     }
   });
@@ -2275,10 +2349,10 @@ function syncSuperadminCourierControls() {
 }
 
 async function onSuperadminDistanceTierChange(showToastMsg = false) {
-  const user = window.firebaseService?.getCurrentGoogleUser?.();
-  const isSa = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin(user) : true;
+  const user = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  const isSa = typeof checkIsSuperadmin === 'function' ? checkIsSuperadmin(user) : false;
   if (!isSa) {
-    showToast('⛔ Unauthorized: Token price and distance tier token costs can only be configured by SuperAdmin.');
+    showToast('⛔ Unauthorized: Token prices, currency controls, and distance tiers can only be configured by SuperAdmin.');
     syncSuperadminDistanceTierInputs();
     return;
   }
@@ -2286,58 +2360,73 @@ async function onSuperadminDistanceTierChange(showToastMsg = false) {
   const cur = window.iasjCurrency;
   if (!cur) return;
 
-  const t0_20 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-0-20')?.value) || 2));
-  const t21_50 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-21-50')?.value) || 5));
-  const t51_100 = Math.max(1, Math.round(Number(document.getElementById('sa-tier-51-100')?.value) || 10));
-  const t101Plus = Math.max(1, Math.round(Number(document.getElementById('sa-tier-101-plus')?.value) || 15));
-  const tokenPriceAud = Math.max(1, Math.round(Number(document.getElementById('sa-token-aud-price')?.value) || 1));
+  const parseWholeInt = (id, fallback, minVal = 0) => {
+    const raw = document.getElementById(id)?.value;
+    if (raw === '' || raw === null || raw === undefined) return fallback;
+    const num = Number(raw);
+    if (!Number.isFinite(num)) return fallback;
+    return Math.max(minVal, Math.round(num));
+  };
+
+  const supporterBookingFeeTokens = parseWholeInt('sa-supporter-booking-fee', 1, 0);
+  const tokenPriceAud = parseWholeInt('sa-token-aud-price', 1, 1);
+  const t0_10 = parseWholeInt('sa-tier-0-10', 1, 0);
+  const t11_20 = parseWholeInt('sa-tier-11-20', 2, 0);
+  const t21_40 = parseWholeInt('sa-tier-21-40', 3, 0);
+  const t41_60 = parseWholeInt('sa-tier-41-60', 4, 0);
+  const t61Plus = parseWholeInt('sa-tier-61-plus', 5, 0);
+
+  const economyControls = {
+    isTokenSystemEnabled: document.getElementById('sa-toggle-token-system')?.checked !== false,
+    isAudEnabled: document.getElementById('sa-toggle-aud-enabled')?.checked !== false,
+    isUsdEnabled: document.getElementById('sa-toggle-usd-enabled')?.checked === true
+  };
 
   // 1. Explicitly persist to dedicated local storage keys so amounts never revert
   const driverOrderTokens = {
-    tier0to20km: t0_20,
-    tier21to50km: t21_50,
-    tier51to100km: t51_100,
-    tier101PlusKm: t101Plus
+    tier0to10km: t0_10,
+    tier11to20km: t11_20,
+    tier21to40km: t21_40,
+    tier41to60km: t41_60,
+    tier61PlusKm: t61Plus
   };
   localStorage.setItem('iasj_driver_order_tokens', JSON.stringify(driverOrderTokens));
   localStorage.setItem('iasj_token_price_aud', String(tokenPriceAud));
+  localStorage.setItem('iasj_supporter_booking_fee_tokens', String(supporterBookingFeeTokens));
+  window.platformSettings = {
+    ...(window.platformSettings || {}),
+    ...economyControls
+  };
 
   // 2. Build full pricing object
   const currentPricing = cur.getPricing();
   const newPricing = {
     ...currentPricing,
     tokenPriceAud,
+    supporterBookingFeeTokens,
     driverOrderTokens,
-    tokenPacks: [10, 50, 100]
+    economyControls,
+    tokenPacks: currentPricing.tokenPacks || [10, 50, 100]
   };
 
-  // 3. Update local currency state immediately
+  // 3. Persist locally and sync remote Firestore + /api/pricing when authenticated
   cur.updateLocalPricing(newPricing);
+  syncSuperadminDistanceTierInputs();
 
-  // 4. Update hero badges & text immediately
-  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  setTxt('hero-tier-0-20', String(t0_20));
-  setTxt('hero-tier-21-50', String(t21_50));
-  setTxt('hero-tier-51-100', String(t51_100));
-  setTxt('hero-tier-101-plus', String(t101Plus));
-  setTxt('hero-token-aud-price', `$${tokenPriceAud} AUD`);
-
-  // 5. Persist to Firestore database platform_settings/pricing (SuperAdmin supreme ruler)
   try {
-    if (window.firebaseService?.savePlatformPricingToFirestore) {
-      await window.firebaseService.savePlatformPricingToFirestore(newPricing, user?.email || 'support@aifoundation.net.au');
-    }
+    await cur.savePricing(newPricing);
   } catch (err) {
-    console.warn("Notice persisting pricing to remote Firestore:", err);
+    console.warn("Notice persisting pricing to remote store:", err);
   }
 
-  calculateCourierQuote();
+  try { calculateCourierQuote(); } catch (e) {}
+  try { refreshPriceTags(); } catch (e) {}
   if (typeof renderDriverAdminDashboard === 'function') {
     renderDriverAdminDashboard();
   }
 
   if (showToastMsg) {
-    showToast(`👑 SuperAdmin Token Price & Tiers Saved: 1 Token = $${tokenPriceAud} AUD | 0–20km=${t0_20}, 21–50km=${t21_50}, 51–100km=${t51_100}, 101+km=${t101Plus} Tokens`);
+    showToast(`👑 SuperAdmin Prices Saved: Supporter Fee=${supporterBookingFeeTokens} Tok | 1 Token=$${tokenPriceAud} AUD | 0-10km=${t0_10}, 11-20km=${t11_20}, 21-40km=${t21_40}, 41-60km=${t41_60}, 61+km=${t61Plus} Tokens`);
   }
 }
 window.onSuperadminDistanceTierChange = onSuperadminDistanceTierChange;
@@ -2400,6 +2489,9 @@ function renderSuperadminFreeDriverHourUI() {
   const endBtn = document.getElementById('btn-sa-end-free-hour');
   const driverBannerEl = document.getElementById('driver-free-hour-active-banner');
   const driverBannerTextEl = document.getElementById('driver-free-hour-banner-text');
+  const navbarBannerEl = document.getElementById('navbar-free-hour-banner');
+  const navbarTextEl = document.getElementById('navbar-free-hour-text');
+  const navbarCountdownEl = document.getElementById('navbar-free-hour-countdown');
 
   if (badgeEl) {
     if (isActive) {
@@ -2440,6 +2532,16 @@ function renderSuperadminFreeDriverHourUI() {
     driverBannerTextEl.textContent = `SuperAdmin 1-Hour Free Mode Active (${remainingLabel} remaining)! All drivers pay 0 Tokens to SuperAdmin during this hour.`;
   }
 
+  if (navbarBannerEl) {
+    navbarBannerEl.style.display = isActive ? 'block' : 'none';
+  }
+  if (navbarTextEl && isActive) {
+    navbarTextEl.textContent = '1-Hour Free Mode Active — 0 Tokens for Supporters & Couriers!';
+  }
+  if (navbarCountdownEl && isActive) {
+    navbarCountdownEl.textContent = `${remainingLabel} left`;
+  }
+
   return { isActive, remainingMs, remainingLabel };
 }
 window.renderSuperadminFreeDriverHourUI = renderSuperadminFreeDriverHourUI;
@@ -2455,6 +2557,7 @@ function startSuperadminFreeDriverHourTicker() {
     if (!active) {
       clearInterval(superadminFreeHourIntervalId);
       superadminFreeHourIntervalId = null;
+      try { syncSuperadminDistanceTierInputs(); } catch (e) {}
       try { calculateCourierQuote(); } catch (e) {}
     }
   }, 1000);
@@ -2465,8 +2568,13 @@ function activateSuperadminFreeDriverHour(btnOrDurationMs) {
     ? btnOrDurationMs
     : 3600000; // 1 Hour (60 minutes = 3,600,000 ms)
   const until = window.superadminDB?.activateFreeDriverHour?.(durationMs) || (Date.now() + durationMs);
+  const activeSaUser = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  if (typeof window !== 'undefined' && window.firebaseService?.saveFreeHourToFirestore) {
+    Promise.resolve(window.firebaseService.saveFreeHourToFirestore(until, activeSaUser?.email || 'support@aifoundation.net.au')).catch(() => {});
+  }
   startSuperadminFreeDriverHourTicker();
   const status = renderSuperadminFreeDriverHourUI();
+  try { syncSuperadminDistanceTierInputs(); } catch (e) {}
   try { calculateCourierQuote(); } catch (e) {}
   try { renderDriverAdminDashboard(); } catch (e) {}
   showToast('🎉 1-Hour Free Mode Activated for All Drivers! For the next 60 minutes, drivers do not pay SuperAdmin any tokens.');
@@ -2481,11 +2589,16 @@ window.activateSuperadminFreeDriverHour = activateSuperadminFreeDriverHour;
 
 function endSuperadminFreeDriverHour() {
   window.superadminDB?.endFreeDriverHour?.();
+  const activeSaUser = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  if (typeof window !== 'undefined' && window.firebaseService?.saveFreeHourToFirestore) {
+    Promise.resolve(window.firebaseService.saveFreeHourToFirestore(0, activeSaUser?.email || 'support@aifoundation.net.au')).catch(() => {});
+  }
   if (superadminFreeHourIntervalId) {
     clearInterval(superadminFreeHourIntervalId);
     superadminFreeHourIntervalId = null;
   }
   renderSuperadminFreeDriverHourUI();
+  try { syncSuperadminDistanceTierInputs(); } catch (e) {}
   try { calculateCourierQuote(); } catch (e) {}
   try { renderDriverAdminDashboard(); } catch (e) {}
   showToast('ℹ️ SuperAdmin 1-Hour Free Mode ended. Standard driver token tiers are now active.');
@@ -2496,6 +2609,22 @@ function endSuperadminFreeDriverHour() {
   };
 }
 window.endSuperadminFreeDriverHour = endSuperadminFreeDriverHour;
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'iasj_superadmin_free_driver_hour_until') {
+      renderSuperadminFreeDriverHourUI();
+      if (isSuperadminFreeDriverHourActive()) {
+        startSuperadminFreeDriverHourTicker();
+      } else if (superadminFreeHourIntervalId) {
+        clearInterval(superadminFreeHourIntervalId);
+        superadminFreeHourIntervalId = null;
+      }
+      try { syncSuperadminDistanceTierInputs(); } catch (err) {}
+      try { calculateCourierQuote(); } catch (err) {}
+    }
+  });
+}
 
 /**
  * SuperAdmin Universal Token Management: Refresh to 0, Add (+), or Minus (-) for ANY account
@@ -3919,6 +4048,23 @@ function updateCourierPricingWithSettings(distanceKm, durationMins) {
     navTokenCount.textContent = `${activeAdmDrv.tokenBalance ?? 45} Tokens`;
   }
 
+  const bookingFeeLabel = document.getElementById('courier-booking-fee-tokens-label');
+  if (bookingFeeLabel && cur) {
+    const isFreeHr = typeof isSuperadminFreeDriverHourActive === 'function'
+      ? isSuperadminFreeDriverHourActive()
+      : Boolean(window.superadminDB?.isFreeDriverHourActive?.());
+    const tokenEnabled = window.platformSettings?.isTokenSystemEnabled !== false
+      && cur.getPricing?.()?.economyControls?.isTokenSystemEnabled !== false;
+    const supFee = typeof cur.getSupporterBookingFeeTokens === 'function'
+      ? cur.getSupporterBookingFeeTokens().tokens
+      : (cur.getPricing?.()?.supporterBookingFeeTokens ?? 1);
+    if (isFreeHr || !tokenEnabled) {
+      bookingFeeLabel.textContent = isFreeHr ? '0 Tokens (1-Hr Free Mode)' : '0 Tokens';
+    } else {
+      bookingFeeLabel.textContent = `${supFee} ${supFee === 1 ? 'Token' : 'Tokens'}`;
+    }
+  }
+
   return appState.lastCalculatedQuote;
 }
 window.updateCourierPricingWithSettings = updateCourierPricingWithSettings;
@@ -4049,25 +4195,67 @@ function submitCourierBooking() {
   const isFreeHour = typeof isSuperadminFreeDriverHourActive === 'function'
     ? isSuperadminFreeDriverHourActive()
     : Boolean(window.superadminDB?.isFreeDriverHourActive?.());
-  const tokenCharge = isFreeHour
+  const tokenSystemEnabled = window.platformSettings?.isTokenSystemEnabled !== false
+    && cur?.getPricing?.()?.economyControls?.isTokenSystemEnabled !== false;
+  const supporterFeeObj = typeof cur?.getSupporterBookingFeeTokens === 'function'
+    ? cur.getSupporterBookingFeeTokens()
+    : { tokens: cur?.getPricing?.()?.supporterBookingFeeTokens ?? 1 };
+  const supporterBookingFeeTokens = (isFreeHour || !tokenSystemEnabled)
+    ? 0
+    : Math.max(0, Math.round(Number(supporterFeeObj.tokens ?? 1)));
+
+  const tokenCharge = (isFreeHour || !tokenSystemEnabled)
     ? {
         ...calc.tokenCharge,
         baseTierTokens: calc.tokenCharge?.baseTierTokens ?? calc.tokenCharge?.tokens ?? 0,
         tokens: 0,
         audEquivalent: 0,
-        freeHourActive: true,
-        tierLabel: `${String(calc.tokenCharge?.tierLabel || 'Standard Distance').replace(/\s*\(FREE HOUR.*\)$/i, '')} (FREE HOUR — 0 Tokens)`
+        freeHourActive: isFreeHour,
+        tierLabel: isFreeHour
+          ? `${String(calc.tokenCharge?.tierLabel || 'Standard Distance').replace(/\s*\(FREE HOUR.*\)$/i, '')} (FREE HOUR — 0 Tokens)`
+          : `${String(calc.tokenCharge?.tierLabel || 'Standard Distance')} (Token System Paused — 0 Tokens)`
       }
     : calc.tokenCharge;
 
-  if (!isFreeHour && tokenCharge.tokens > 0 && (drv.tokenBalance ?? 0) < tokenCharge.tokens) {
+  // 0. Check & reserve Supporter booking fee (default 1 Token, configurable by SuperAdmin)
+  const bookingSupporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (supporterBookingFeeTokens > 0) {
+    const supporterBalance = Math.max(0, Math.round(Number(bookingSupporter?.tokenBalance ?? 0)));
+    if (!bookingSupporter || supporterBalance < supporterBookingFeeTokens) {
+      showToast(`⚠️ Booking requires ${supporterBookingFeeTokens} Supporter ${supporterBookingFeeTokens === 1 ? 'Token' : 'Tokens'}. Your Supporter wallet has ${supporterBalance} Tokens — please top up first.`);
+      if (typeof openDriverTokenTopupModal === 'function') {
+        openDriverTokenTopupModal('supporter');
+      }
+      return {
+        blocked: true,
+        reason: 'INSUFFICIENT_SUPPORTER_TOKENS',
+        requiredTokens: supporterBookingFeeTokens,
+        supporterBalance
+      };
+    }
+  }
+
+  if (!isFreeHour && tokenSystemEnabled && tokenCharge.tokens > 0 && (drv.tokenBalance ?? 0) < tokenCharge.tokens) {
     showToast(`⚠️ Driver ${drv.name} needs ${tokenCharge.tokens} Tokens for this ${tokenCharge.tierLabel} order. Please top up Driver Tokens first.`);
     openDriverTokenTopupModal(drv.id);
     return;
   }
 
-  // 1. Deduct distance-tier tokens from driver wallet and automatically credit to SuperAdmin account (0 tokens during SuperAdmin 1-Hour Free Mode)
-  if (!isFreeHour && tokenCharge.tokens > 0) {
+  // 1a. Deduct Supporter booking fee from Supporter wallet and credit SuperAdmin Vault
+  if (supporterBookingFeeTokens > 0 && bookingSupporter && window.supporterDB) {
+    bookingSupporter.tokenBalance = Math.max(0, Math.round((bookingSupporter.tokenBalance ?? 0) - supporterBookingFeeTokens));
+    window.supporterDB.save();
+    if (window.superadminDB) {
+      window.superadminDB.addTokens(supporterBookingFeeTokens, {
+        driverName: `Supporter: ${bookingSupporter.name || customerName}`,
+        supporterId: bookingSupporter.id,
+        tier: `Supporter Booking Fee (${supporterBookingFeeTokens} ${supporterBookingFeeTokens === 1 ? 'Token' : 'Tokens'})`
+      });
+    }
+  }
+
+  // 1b. Deduct distance-tier tokens from driver wallet and automatically credit to SuperAdmin account
+  if (!isFreeHour && tokenSystemEnabled && tokenCharge.tokens > 0) {
     window.providerDB.deductDriverTokens(drv.id, tokenCharge.tokens);
     if (window.superadminDB) {
       window.superadminDB.addTokens(tokenCharge.tokens, {
@@ -4075,10 +4263,10 @@ function submitCourierBooking() {
         driverId: drv.id,
         tier: tokenCharge.tierLabel
       });
-      if (typeof renderSuperadminTokenBalance === 'function') {
-        renderSuperadminTokenBalance();
-      }
     }
+  }
+  if (typeof renderSuperadminTokenBalance === 'function') {
+    renderSuperadminTokenBalance();
   }
 
   // 2. Record the order in CourierOrderDatabase (shown on Driver Admin Page)
@@ -4100,6 +4288,8 @@ function submitCourierBooking() {
     customerPhone,
     customerEmail,
     customerAddress,
+    supporterId: bookingSupporter?.id || null,
+    supporterBookingFeeTokens,
     packageContents,
     weightKg,
     heightCm,
@@ -4122,6 +4312,9 @@ function submitCourierBooking() {
   appState.activeAdminDriverId = drv.id;
   updateCourierPricingWithSettings(calc.distanceKm, calc.durationMins);
   renderDriverAdminDashboard();
+  if (typeof syncAllTokenDisplays === 'function') {
+    try { syncAllTokenDisplays(); } catch (e) {}
+  }
   try { renderSupporterBookings(); } catch (e) {}
   try { triggerDriverBookingAlert(newOrder); } catch (e) {}
 
@@ -4148,6 +4341,7 @@ function submitCourierBooking() {
           <div><strong>Customer Address:</strong> ${newOrder.customerAddress}</div>
           <div><strong>Package Contents:</strong> ${newOrder.packageContents}</div>
           <div><strong>Package Weight &amp; Size:</strong> ${newOrder.weightKg} kg • ${newOrder.heightCm}cm (H) × ${newOrder.widthCm}cm (W) × ${newOrder.lengthCm}cm (L)</div>
+          <div><strong>Supporter Booking Fee Paid:</strong> ${newOrder.supporterBookingFeeTokens ?? 0} ${(newOrder.supporterBookingFeeTokens ?? 0) === 1 ? 'Token' : 'Tokens'}</div>
         </div>
       </div>
 
@@ -4160,7 +4354,7 @@ function submitCourierBooking() {
           <strong style="font-size:1.25rem; color:#047857;">$${newOrder.totalAud.toFixed(2)} AUD</strong>
         </div>
         <p style="font-size:0.78rem; color:#065F46; margin-bottom:0.65rem;">
-          Customers never pay the web app. Transfer <strong>$${newOrder.totalAud.toFixed(2)} AUD</strong> directly to your driver's registered PayID below using reference <strong>${newOrder.orderId}</strong>:
+          Your Supporter booking fee (${newOrder.supporterBookingFeeTokens ?? 0} ${(newOrder.supporterBookingFeeTokens ?? 0) === 1 ? 'Token' : 'Tokens'}) has been settled. Transfer the <strong>$${newOrder.totalAud.toFixed(2)} AUD</strong> delivery fare directly to your driver's registered PayID below using reference <strong>${newOrder.orderId}</strong>:
         </p>
         <div style="background:#fff; border:1px solid #A7F3D0; border-radius:6px; padding:0.7rem 0.9rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
           <div>
@@ -5004,6 +5198,26 @@ function openSupporterPanelFromGoogleMenu() {
   try { renderSupporterPanel(); } catch (e) {}
 }
 window.openSupporterPanelFromGoogleMenu = openSupporterPanelFromGoogleMenu;
+
+function openSuperadminPanelFromGoogleMenu() {
+  closeGoogleUserMenu();
+  const user = typeof getActiveGoogleUser === 'function' ? getActiveGoogleUser() : window.firebaseService?.getCurrentGoogleUser?.();
+  if (!checkIsSuperadmin(user)) {
+    showToast('⛔ Restricted: SuperAdmin Admin Panel is strictly accessible to SuperAdmin accounts only.');
+    return;
+  }
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem('iasj_superadmin_view_role', 'superadmin');
+  }
+  appState.activePortalPanelMode = 'superadmin-admin';
+  switchTab('superadmin-admin-tab', true);
+  syncSuperadminControls();
+  try { syncSuperadminDistanceTierInputs(); } catch (e) {}
+  const saBody = document.getElementById('superadmin-console-collapse-body');
+  if (saBody) saBody.style.display = 'block';
+  try { updateGoogleAuthUI(user); } catch (e) {}
+}
+window.openSuperadminPanelFromGoogleMenu = openSuperadminPanelFromGoogleMenu;
 
 function openDriverAdminPanelFromGoogleMenu() {
   closeGoogleUserMenu();
@@ -5963,14 +6177,15 @@ function renderSupporterPanel() {
       deliveryModesRatesSubtabView.style.display = 'none';
     }
 
-    // SuperAdmin console gating — SuperAdmin is always superadmin and can always access SuperAdmin controls
+    // SuperAdmin console gating — strictly SuperAdmin-only inside #superadmin-admin-tab
+    const isSaUser = checkIsSuperadmin();
     const saCard = document.getElementById('superadmin-courier-config-card');
     if (saCard) {
-      saCard.style.display = (checkIsSuperadmin() || activeRole === 'superadmin') ? 'block' : 'none';
+      saCard.style.display = isSaUser ? 'block' : 'none';
     }
     const saMakeBookingBtn = document.getElementById('btn-superadmin-make-new-booking');
     if (saMakeBookingBtn) {
-      saMakeBookingBtn.style.display = (checkIsSuperadmin() || activeRole === 'superadmin') ? 'inline-flex' : 'none';
+      saMakeBookingBtn.style.display = isSaUser ? 'inline-flex' : 'none';
     }
 
     // Driver Admin Panel must NOT have "Make a New Booking" — only Supporter Panel and SuperAdmin Panel have it
@@ -11813,6 +12028,16 @@ function updateGoogleAuthUI(user) {
     try { syncGoogleMenuLocationDisplay(); } catch (e) {}
     
     const isSa = checkIsSuperadmin(user);
+    const menuSuperadminBtn = document.getElementById('btn-menu-superadmin-panel');
+    if (menuSuperadminBtn) menuSuperadminBtn.style.display = isSa ? 'inline-flex' : 'none';
+    const saTabEl = document.getElementById('superadmin-admin-tab');
+    if (!isSa && saTabEl) {
+      saTabEl.classList.remove('active-view');
+      saTabEl.style.display = 'none';
+      if (appState?.activeTab === 'superadmin-admin-tab' && typeof switchTab === 'function') {
+        switchTab('courier-tab', true);
+      }
+    }
     if (isSa && user.role !== 'superadmin') {
       user.role = 'superadmin';
       user.isSuperadmin = true;
@@ -11924,6 +12149,16 @@ function updateGoogleAuthUI(user) {
     if (supporterTabBtn) supporterTabBtn.style.display = 'none';
     const footerSupporterLink = document.getElementById('footer-supporter-link');
     if (footerSupporterLink) footerSupporterLink.style.display = 'none';
+    const menuSuperadminBtn = document.getElementById('btn-menu-superadmin-panel');
+    if (menuSuperadminBtn) menuSuperadminBtn.style.display = 'none';
+    const saTabEl = document.getElementById('superadmin-admin-tab');
+    if (saTabEl) {
+      saTabEl.classList.remove('active-view');
+      saTabEl.style.display = 'none';
+    }
+    if (appState?.activeTab === 'superadmin-admin-tab' && typeof switchTab === 'function') {
+      switchTab('courier-tab', true);
+    }
 
     if (adminEmail) adminEmail.textContent = 'Not connected';
     if (adminBadge) {
@@ -14457,8 +14692,8 @@ function switchSuperadminViewRole(role, shouldNavigateTab = false) {
     appState.activePortalPanelMode = 'supporter';
     if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
   } else if (role === 'superadmin') {
-    appState.activePortalPanelMode = 'driver-admin';
-    if (shouldNavigateTab && typeof switchTab === 'function') switchTab('driver-admin-tab', true);
+    appState.activePortalPanelMode = 'superadmin-admin';
+    if (shouldNavigateTab && typeof switchTab === 'function') switchTab('superadmin-admin-tab', true);
   }
 
   syncSuperadminControls();
@@ -14496,8 +14731,18 @@ function syncSuperadminControls() {
   }
 
   document.querySelectorAll('.superadmin-only').forEach(el => {
-    el.style.display = showPriceTools ? '' : 'none';
+    if (el.id === 'btn-menu-superadmin-panel') {
+      el.style.display = showPriceTools ? 'inline-flex' : 'none';
+    } else {
+      el.style.display = showPriceTools ? '' : 'none';
+      if (!showPriceTools) {
+        el.classList.remove('active-view');
+      }
+    }
   });
+  if (!showPriceTools && appState?.activeTab === 'superadmin-admin-tab' && typeof switchTab === 'function') {
+    switchTab('courier-tab', true);
+  }
   if (showPriceTools) {
     syncSuperadminCourierControls();
     if (typeof renderSuperadminTokenBalance === 'function') renderSuperadminTokenBalance();

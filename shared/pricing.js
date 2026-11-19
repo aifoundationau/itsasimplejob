@@ -4,18 +4,19 @@
  *
  * Business Rules:
  *  - Web App uses Australian Dollars (AUD) ONLY.
- *  - Customers pay the selected Courier Driver directly via the Driver's PayID (customers do not pay the web app).
+ *  - Customers register as Supporters, pay a 1 Token booking fee (SuperAdmin-adjustable), and pay the selected Courier Driver directly via PayID.
  *  - Each Courier Driver sets their own:
  *      • Per-km rate ($ AUD / km)
  *      • Same-day fee ($ AUD)
  *      • Urgent fee ($ AUD)
  *      • Max pickup weight (kg) & Max package dimensions: Height, Width, Length (cm)
- *  - Drivers buy Tokens in AUD. Every customer order charges the driver tokens based on route distance:
- *      • 0 – 20 km
- *      • 21 – 50 km
- *      • 51 – 100 km
- *      • 101+ km
- *    SuperAdmin decides the token price for each distance tier and the AUD price per token.
+ *  - Couriers buy Tokens in AUD. Every customer order charges the courier tokens based on route distance:
+ *      • 0 – 10 km (1 Token default)
+ *      • 11 – 20 km (2 Tokens default)
+ *      • 21 – 40 km (3 Tokens default)
+ *      • 41 – 60 km (4 Tokens default)
+ *      • 61+ km (5 Tokens default)
+ *    SuperAdmin decides all token prices (Supporter booking fee, all 5 courier tiers, AUD price per token) and currency/token toggles.
  */
 
 export const BASE_CURRENCY = 'AUD';
@@ -50,11 +51,18 @@ export const SERVICE_LABELS = {
 
 export const DEFAULT_PRICING = Object.freeze({
   tokenPriceAud: 1,
+  supporterBookingFeeTokens: 1,
   driverOrderTokens: Object.freeze({
-    tier0to20km: 2,
-    tier21to50km: 5,
-    tier51to100km: 10,
-    tier101PlusKm: 15
+    tier0to10km: 1,
+    tier11to20km: 2,
+    tier21to40km: 3,
+    tier41to60km: 4,
+    tier61PlusKm: 5
+  }),
+  economyControls: Object.freeze({
+    isTokenSystemEnabled: true,
+    isAudEnabled: true,
+    isUsdEnabled: false
   }),
   hourlyTokens: Object.freeze({
     courier: 55
@@ -77,15 +85,17 @@ export const DEFAULT_PRICING = Object.freeze({
 });
 
 /**
- * SuperAdmin editable fields (AUD only + 4 Distance Bracket Token Tiers)
+ * SuperAdmin editable fields (AUD only + Supporter Booking Fee + 5 Courier Distance Bracket Token Tiers)
  */
 export const PRICING_FIELDS = [
-  { path: 'tokenPriceAud', group: 'Token Economy (AUD Only)', label: 'AUD Price of 1 Driver Token', unit: 'AUD', min: 1, max: 1000 },
+  { path: 'tokenPriceAud', group: 'Token Economy (AUD Only)', label: 'AUD Price of 1 Token', unit: 'AUD', min: 1, max: 1000 },
+  { path: 'supporterBookingFeeTokens', group: 'Supporter Booking Fee (Customer)', label: 'Customer (Supporter) Booking Fee per Order', unit: 'tokens', min: 0, max: 100 },
 
-  { path: 'driverOrderTokens.tier0to20km', group: 'Driver Order Token Charge by Distance', label: '0 – 20 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
-  { path: 'driverOrderTokens.tier21to50km', group: 'Driver Order Token Charge by Distance', label: '21 – 50 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
-  { path: 'driverOrderTokens.tier51to100km', group: 'Driver Order Token Charge by Distance', label: '51 – 100 km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
-  { path: 'driverOrderTokens.tier101PlusKm', group: 'Driver Order Token Charge by Distance', label: '101+ km Customer Order Charge', unit: 'tokens', min: 1, max: 1000 },
+  { path: 'driverOrderTokens.tier0to10km', group: 'Courier Driver Distance Tiers', label: '0 – 10 km Delivery Charge', unit: 'tokens', min: 0, max: 1000 },
+  { path: 'driverOrderTokens.tier11to20km', group: 'Courier Driver Distance Tiers', label: '11 – 20 km Delivery Charge', unit: 'tokens', min: 0, max: 1000 },
+  { path: 'driverOrderTokens.tier21to40km', group: 'Courier Driver Distance Tiers', label: '21 – 40 km Delivery Charge', unit: 'tokens', min: 0, max: 1000 },
+  { path: 'driverOrderTokens.tier41to60km', group: 'Courier Driver Distance Tiers', label: '41 – 60 km Delivery Charge', unit: 'tokens', min: 0, max: 1000 },
+  { path: 'driverOrderTokens.tier61PlusKm', group: 'Courier Driver Distance Tiers', label: '61+ km Delivery Charge', unit: 'tokens', min: 0, max: 1000 },
 
   { path: 'fees.message', group: 'Platform Messaging', label: 'Message to another user (messages to SuperAdmin are always free)', unit: 'tokens', min: 0, max: 100 }
 ];
@@ -129,56 +139,60 @@ export function messagePriceTokens(pricing, { toSuperadmin, fromSuperadmin }) {
 }
 
 /**
- * Determine which distance bracket a courier route falls into and how many tokens the driver is charged.
- * Brackets:
- *  - 0–20 km
- *  - 21–50 km
- *  - 51–100 km
- *  - 101+ km
+ * Supporter (Customer) Booking Fee in whole tokens (default: 1 Token).
  */
-export function getDriverOrderTokenCharge(distanceKm, pricing = DEFAULT_PRICING) {
-  const km = Math.max(0, Number(distanceKm) || 0);
-  const tiers = pricing?.driverOrderTokens || DEFAULT_PRICING.driverOrderTokens;
-  const tokenPriceAud = wholeUp(pricing?.tokenPriceAud ?? DEFAULT_PRICING.tokenPriceAud);
-
-  if (km <= 20) {
-    const tokens = wholeUp(tiers.tier0to20km ?? DEFAULT_PRICING.driverOrderTokens.tier0to20km);
-    return {
-      tierKey: 'tier0to20km',
-      tierLabel: '0–20 km',
-      tokens,
-      tokenPriceAud,
-      audCost: tokens * tokenPriceAud
-    };
+export function getSupporterBookingFeeTokens(pricing = DEFAULT_PRICING) {
+  const tokenPriceAud = Math.max(1, wholeUp(pricing?.tokenPriceAud ?? DEFAULT_PRICING.tokenPriceAud));
+  if (pricing?.economyControls?.isTokenSystemEnabled === false) {
+    return { tokens: 0, tokenPriceAud, audCost: 0 };
   }
-  if (km <= 50) {
-    const tokens = wholeUp(tiers.tier21to50km ?? DEFAULT_PRICING.driverOrderTokens.tier21to50km);
-    return {
-      tierKey: 'tier21to50km',
-      tierLabel: '21–50 km',
-      tokens,
-      tokenPriceAud,
-      audCost: tokens * tokenPriceAud
-    };
-  }
-  if (km <= 100) {
-    const tokens = wholeUp(tiers.tier51to100km ?? DEFAULT_PRICING.driverOrderTokens.tier51to100km);
-    return {
-      tierKey: 'tier51to100km',
-      tierLabel: '51–100 km',
-      tokens,
-      tokenPriceAud,
-      audCost: tokens * tokenPriceAud
-    };
-  }
-  const tokens = wholeUp(tiers.tier101PlusKm ?? DEFAULT_PRICING.driverOrderTokens.tier101PlusKm);
+  const tokens = Math.max(0, wholeUp(pricing?.supporterBookingFeeTokens ?? DEFAULT_PRICING.supporterBookingFeeTokens));
   return {
-    tierKey: 'tier101PlusKm',
-    tierLabel: '101+ km',
     tokens,
     tokenPriceAud,
     audCost: tokens * tokenPriceAud
   };
+}
+
+/**
+ * Determine which distance bracket a courier route falls into and how many tokens the courier is charged.
+ * Brackets (default tokens):
+ *  - 0–10 km  → 1 Token
+ *  - 11–20 km → 2 Tokens
+ *  - 21–40 km → 3 Tokens
+ *  - 41–60 km → 4 Tokens
+ *  - 61+ km   → 5 Tokens
+ */
+export function getDriverOrderTokenCharge(distanceKm, pricing = DEFAULT_PRICING) {
+  const km = Math.max(0, Number(distanceKm) || 0);
+  const tiers = pricing?.driverOrderTokens || DEFAULT_PRICING.driverOrderTokens;
+  const tokenPriceAud = Math.max(1, wholeUp(pricing?.tokenPriceAud ?? DEFAULT_PRICING.tokenPriceAud));
+  const tokensEnabled = pricing?.economyControls?.isTokenSystemEnabled !== false;
+
+  const makeTier = (tierKey, tierLabel, rawTokens, defaultTokens) => {
+    const tokens = tokensEnabled ? Math.max(0, wholeUp(rawTokens ?? defaultTokens)) : 0;
+    return {
+      tierKey,
+      tierLabel,
+      tokens,
+      tokenPriceAud,
+      audCost: tokens * tokenPriceAud
+    };
+  };
+
+  if (km <= 10) {
+    return makeTier('tier0to10km', '0–10 km', tiers.tier0to10km, DEFAULT_PRICING.driverOrderTokens.tier0to10km);
+  }
+  if (km <= 20) {
+    return makeTier('tier11to20km', '11–20 km', tiers.tier11to20km, DEFAULT_PRICING.driverOrderTokens.tier11to20km);
+  }
+  if (km <= 40) {
+    return makeTier('tier21to40km', '21–40 km', tiers.tier21to40km, DEFAULT_PRICING.driverOrderTokens.tier21to40km);
+  }
+  if (km <= 60) {
+    return makeTier('tier41to60km', '41–60 km', tiers.tier41to60km, DEFAULT_PRICING.driverOrderTokens.tier41to60km);
+  }
+  return makeTier('tier61PlusKm', '61+ km', tiers.tier61PlusKm, DEFAULT_PRICING.driverOrderTokens.tier61PlusKm);
 }
 
 /**
@@ -222,6 +236,7 @@ export function calculateDriverCourierPrice(
   );
 
   const tokenCharge = getDriverOrderTokenCharge(km, pricing);
+  const supporterFee = getSupporterBookingFeeTokens(pricing);
 
   return {
     currency: 'AUD',
@@ -235,6 +250,8 @@ export function calculateDriverCourierPrice(
     sameDayFeeAud: appliedSameDayFeeAud,
     urgentFeeAud: appliedUrgentFeeAud,
     totalAud,
+    supporterBookingFeeTokens: supporterFee.tokens,
+    supporterBookingFeeAud: supporterFee.audCost,
     driverTokenCharge: tokenCharge.tokens,
     distanceTierLabel: tokenCharge.tierLabel,
     driverTokenCostAud: tokenCharge.audCost
@@ -283,6 +300,13 @@ export function normalizePricing(input, { strict = false } = {}) {
     pricing.tokenPacks = [...packs].sort((a, b) => a - b);
   } else if (strict && source.tokenPacks !== undefined) {
     errors.push(`Token packs must be ${TOKEN_PACK_COUNT} different whole numbers from ${MIN_TOKEN_PURCHASE} to ${MAX_TOKEN_PURCHASE}.`);
+  }
+
+  if (source.economyControls && typeof source.economyControls === 'object') {
+    const ec = source.economyControls;
+    if (typeof ec.isTokenSystemEnabled === 'boolean') pricing.economyControls.isTokenSystemEnabled = ec.isTokenSystemEnabled;
+    if (typeof ec.isAudEnabled === 'boolean') pricing.economyControls.isAudEnabled = ec.isAudEnabled;
+    if (typeof ec.isUsdEnabled === 'boolean') pricing.economyControls.isUsdEnabled = ec.isUsdEnabled;
   }
 
   return { pricing, errors };

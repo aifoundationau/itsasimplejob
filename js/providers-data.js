@@ -456,10 +456,11 @@ const INITIAL_ORDERS = [
     sameDayFeeAud: 18.00,
     urgentFeeAud: 0,
     totalAud: 36.70,
-    tokensCharged: 2,
-    tokensChargedToDriver: 2,
-    distanceTierLabel: "0–20 km",
-    tokenTierLabel: "0–20 km",
+    supporterBookingFeeTokens: 1,
+    tokensCharged: 1,
+    tokensChargedToDriver: 1,
+    distanceTierLabel: "0–10 km",
+    tokenTierLabel: "0–10 km",
     paymentMethod: "Direct Driver PayID (AUD)",
     status: "Awaiting Customer PayID"
   }

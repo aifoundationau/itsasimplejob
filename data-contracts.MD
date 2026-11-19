@@ -3464,3 +3464,105 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   }
 }
 ```
+
+
+---
+
+## 22. Supporter 1-Token Booking Fee, 5-Tier Courier Token Schedule & SuperAdmin-Only Admin Panel Contract (`#superadmin-admin-tab`)
+
+> Added to formalize the two-sided Token Fee Model (Customers register as Supporters and pay a 1-Token booking fee; Courier Drivers pay per distance tier across 5 tiers and receive the delivery fare in AUD via PayID) and isolate all pricing controls, economy toggles, driver approvals, Token Vault, and role switching inside a dedicated `#superadmin-admin-tab` strictly restricted to verified SuperAdmin accounts. All prices, fees, and token balances remain strictly integer-valued (`Math.round`, whole numbers only) and editable exclusively by SuperAdmin.
+
+### 22.1 Updated Fee Schedule & Shared Defaults (`shared/pricing.js`)
+
+| Role / Charge | Parameter Key | Default (Integer Tokens / AUD) | Editable By | Notes |
+| --- | --- | --- | --- | --- |
+| Supporter Booking Fee | `supporterBookingFeeTokens` | `1` Token | SuperAdmin Only (`#sa-supporter-booking-fee`) | Charged to Supporter wallet on booking submission; `0` during SuperAdmin 1-Hour Free Mode or when `isTokenSystemEnabled === false` |
+| Delivery Fare Settlement | PayID Direct | Computed Distance + Speed Fee (`AUD`) | Courier Driver Rates / Customer PayID | Paid directly by Customer to selected Courier Driver via PayID |
+| Token Base Value | `tokenPriceAud` | `1` AUD | SuperAdmin Only (`#sa-token-aud-price`) | Minimum `1` AUD whole dollar per token |
+| Courier Distance Tier 1 | `driverOrderTokens.tier0to10km` | `1` Token | SuperAdmin Only (`#sa-tier-0-10`) | `0–10 km` deliveries |
+| Courier Distance Tier 2 | `driverOrderTokens.tier11to20km` | `2` Tokens | SuperAdmin Only (`#sa-tier-11-20`) | `11–20 km` deliveries |
+| Courier Distance Tier 3 | `driverOrderTokens.tier21to40km` | `3` Tokens | SuperAdmin Only (`#sa-tier-21-40`) | `21–40 km` deliveries |
+| Courier Distance Tier 4 | `driverOrderTokens.tier41to60km` | `4` Tokens | SuperAdmin Only (`#sa-tier-41-60`) | `41–60 km` deliveries |
+| Courier Distance Tier 5 | `driverOrderTokens.tier61PlusKm` | `5` Tokens | SuperAdmin Only (`#sa-tier-61-plus`) | `61+ km` deliveries |
+
+### 22.2 Economy Currency Controls & SuperAdmin-Only Access Gate
+
+- **Menu Trigger:** `#btn-menu-superadmin-panel` (`.superadmin-only`, visible only when `checkIsSuperadmin(user) === true`) calls `openSuperadminPanelFromGoogleMenu()`.
+- **Standalone Workspace View:** `<section class="workspace-view superadmin-only" id="superadmin-admin-tab">` contains token pricing inputs (`#sa-supporter-booking-fee`, `#sa-token-aud-price`, `#sa-tier-0-10`, `#sa-tier-11-20`, `#sa-tier-21-40`, `#sa-tier-41-60`, `#sa-tier-61-plus`), economy toggles (`#sa-toggle-token-system`, `#sa-toggle-aud-enabled`, `#sa-toggle-usd-enabled`), SuperAdmin Token Vault, 1-Hour Free Driver Mode, Driver Application Approvals, Universal Token Account Management, and Role Switcher.
+- **UI & Function Enforcement:** Both `switchTab('superadmin-admin-tab')`, `openSuperadminPanelFromGoogleMenu()`, and `onSuperadminDistanceTierChange()` enforce `checkIsSuperadmin(user) === true`; non-SuperAdmin or signed-out callers are denied and redirected away from `#superadmin-admin-tab`.
+- **Booking UI Notice:** `#courier-booking-fee-notice` (`#courier-booking-fee-tokens-label`) dynamically displays the active `supporterBookingFeeTokens` (`1 Token` default) and direct PayID courier settlement notice above `#btn-submit-courier-booking`.
+
+### 22.3 Strict JSON Schema (`additionalProperties: false`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SupporterBookingFeeAnd5TierCourierPricing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tokenPriceAud",
+    "supporterBookingFeeTokens",
+    "driverOrderTokens",
+    "economyControls",
+    "tokenPacks"
+  ],
+  "properties": {
+    "tokenPriceAud": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "supporterBookingFeeTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "driverOrderTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier0to10km",
+        "tier11to20km",
+        "tier21to40km",
+        "tier41to60km",
+        "tier61PlusKm"
+      ],
+      "properties": {
+        "tier0to10km": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "tier11to20km": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "tier21to40km": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "tier41to60km": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "tier61PlusKm": { "type": "integer", "minimum": 0, "maximum": 1000 }
+      }
+    },
+    "economyControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isTokenSystemEnabled", "isAudEnabled", "isUsdEnabled"],
+      "properties": {
+        "isTokenSystemEnabled": { "type": "boolean" },
+        "isAudEnabled": { "type": "boolean" },
+        "isUsdEnabled": { "type": "boolean" }
+      }
+    },
+    "tokenPacks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "integer", "minimum": 1, "maximum": 10000 }
+    }
+  }
+}
+```
+
+### 22.4 Live Firestore Synchronization, Free Hour & Security Rules Contract (`firestore.rules`)
+
+- **Database Target:** Cloud Firestore project `ai-foundation-firebase`, named database `itsasimplejob` (`firestore.indexes.json` registered in `firebase.json`).
+- **Pricing & Free Hour Persistence (`platform_settings/pricing`, `platform_settings/global`):**
+  - Stores canonical `supporterBookingFeeTokens: 1`, 5-tier `driverOrderTokens`, `economyControls`, `tokenPacks`, and optional non-negative epoch field `freeDriverHourUntil` (`0` when inactive; ms timestamp when active via `saveFreeHourToFirestore`).
+- **Canonical Roles Collection (`roles/{superadmin|driver|supporter|customer}`):** Stores `role`, `label`, `permissions`, `businessId: 'its-a-simple-job'`, and `updatedAt`.
+- **Hardened `firestore.rules` Highlights:**
+  - `isSuperAdmin()` requires `email_verified == true` for email-based bootstrap matching while preserving explicit verified UIDs and custom claims.
+  - `providers/{providerId}` public reads strictly require BOTH `approved == true && isActive == true` (owners/SuperAdmin retain scoped read).
+  - `users/{uid}` blocks self-assignment or mutation of `tokenBalance`, `tokens`, `role`, `approved`, `isDriver`, `isSuperAdmin`, and `isSuperadmin`.
+  - `bookings/{bookingId}` accepts `'Scheduled (9am–4pm Pickup)'` on create, freezes `supporterBookingFeeTokens`, `tokensChargedToDriver`, `totalAud`, `payoutCompleted`, `uid`, `providerUid`, `assignedProviderId`, `providerId` on update, and validates token fee integer bounds (`0–100` supporter, `0–1000` driver).
