@@ -141,6 +141,9 @@ class MessagesPanel {
         </div>
 
         <div id="msg-status" role="alert" style="display:none;"></div>
+
+        <div id="msg-panel-courier-booking-root" style="margin-top:0.85rem;"
+          data-agent-id="msg-panel-courier-booking-root" data-testid="msg-panel-courier-booking-root"></div>
       </div>
     `;
 
@@ -163,6 +166,7 @@ class MessagesPanel {
     this.root.querySelectorAll('input[name="msg-to-type"]').forEach(r => r.addEventListener('change', () => this.onToTypeChange()));
     const body = this.root.querySelector('#msg-body');
     body.addEventListener('input', () => { this.root.querySelector('#msg-body-count').textContent = body.value.length; });
+    try { window.mountMessagesPanelCourierBookingControls?.(); } catch (e) {}
   }
 
   setStatus(text, kind = 'error', { walletButton = false } = {}) {
@@ -298,6 +302,7 @@ class MessagesPanel {
       this.loading = false;
       this.updateBadges();
       this.updateCostLine();
+      try { window.mountMessagesPanelCourierBookingControls?.(); } catch (e) {}
       if (this.refreshQueued) {
         this.refreshQueued = false;
         this.refresh({ quiet: true });

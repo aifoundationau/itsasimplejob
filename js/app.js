@@ -185,6 +185,9 @@ function initApp() {
   try {
     initWelcomeIntroPopup();
   } catch (e) {}
+  try {
+    window.mountMessagesPanelCourierBookingControls?.();
+  } catch (e) {}
 }
 
 if (document.readyState === 'loading') {
@@ -4170,7 +4173,7 @@ window.copySelectedDriverPayId = copySelectedDriverPayId;
  * Submit Customer Courier Booking (9:00 AM – 4:00 PM Pickup Window)
  * Deducts SuperAdmin Distance-Bracket Tokens from Driver & Records Order on Driver Admin Page
  */
-function submitCourierBooking() {
+function submitCourierBooking(inlineOverrides = null) {
   if (typeof isSupporterRegistrationComplete === 'function' && !isSupporterRegistrationComplete()) {
     promptRegisterAsSupporterBeforeBooking();
     return {
@@ -4180,22 +4183,22 @@ function submitCourierBooking() {
   }
 
   const cur = window.iasjCurrency;
-  const originAddress = document.getElementById('courier-origin')?.value.trim();
-  const destAddress = document.getElementById('courier-dest')?.value.trim();
-  const pickupDate = document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0];
-  const pickupTime = document.getElementById('courier-pickup-time')?.value || '10:30 AM';
-  const speedTier = document.getElementById('courier-urgency')?.value || 'same_day';
+  const originAddress = String(inlineOverrides?.originAddress ?? document.getElementById('courier-origin')?.value ?? '').trim();
+  const destAddress = String(inlineOverrides?.destAddress ?? document.getElementById('courier-dest')?.value ?? '').trim();
+  const pickupDate = String(inlineOverrides?.pickupDate ?? document.getElementById('courier-pickup-date')?.value ?? new Date().toISOString().split('T')[0]).trim();
+  const pickupTime = String(inlineOverrides?.pickupTime ?? document.getElementById('courier-pickup-time')?.value ?? '10:30 AM').trim();
+  const speedTier = String(inlineOverrides?.speedTier ?? document.getElementById('courier-urgency')?.value ?? 'same_day').trim();
 
-  const packageContents = document.getElementById('courier-desc')?.value.trim();
-  const weightKg = parseFloat(document.getElementById('courier-weight')?.value) || 0;
-  const heightCm = parseFloat(document.getElementById('courier-height')?.value) || 0;
-  const widthCm = parseFloat(document.getElementById('courier-width')?.value) || 0;
-  const lengthCm = parseFloat(document.getElementById('courier-length')?.value) || 0;
+  const packageContents = String(inlineOverrides?.packageContents ?? document.getElementById('courier-desc')?.value ?? '').trim();
+  const weightKg = parseFloat(inlineOverrides?.weightKg ?? document.getElementById('courier-weight')?.value) || 0;
+  const heightCm = parseFloat(inlineOverrides?.heightCm ?? document.getElementById('courier-height')?.value) || 30;
+  const widthCm = parseFloat(inlineOverrides?.widthCm ?? document.getElementById('courier-width')?.value) || 30;
+  const lengthCm = parseFloat(inlineOverrides?.lengthCm ?? document.getElementById('courier-length')?.value) || 30;
 
-  const customerName = document.getElementById('courier-cust-name')?.value.trim();
-  const customerPhone = document.getElementById('courier-cust-phone')?.value.trim();
-  const customerEmail = document.getElementById('courier-cust-email')?.value.trim();
-  const customerAddress = document.getElementById('courier-cust-address')?.value.trim();
+  const customerName = String(inlineOverrides?.customerName ?? document.getElementById('courier-cust-name')?.value ?? '').trim();
+  const customerPhone = String(inlineOverrides?.customerPhone ?? document.getElementById('courier-cust-phone')?.value ?? '').trim();
+  const customerEmail = String(inlineOverrides?.customerEmail ?? document.getElementById('courier-cust-email')?.value ?? '').trim();
+  const customerAddress = String(inlineOverrides?.customerAddress ?? document.getElementById('courier-cust-address')?.value ?? originAddress).trim();
 
   // Validate 9:00 AM - 4:00 PM pickup slot
   const validSlots = cur.PICKUP_TIME_SLOTS_9AM_TO_4PM || [];
@@ -4398,6 +4401,17 @@ function submitCourierBooking() {
     status: 'Scheduled (9am–4pm Pickup)'
   });
 
+  const initialBookingChatMsg = window.courierOrderDB.addOrderMessage(newOrder.orderId, {
+    senderRole: 'supporter',
+    senderName: newOrder.customerName,
+    senderUid: signedInUser?.uid || undefined,
+    senderEmail: newOrder.customerEmail || signedInUser?.email || undefined,
+    text: `📦 Booked courier pickup (${newOrder.pickupDate} @ ${newOrder.pickupTime}): ${newOrder.originAddress} → ${newOrder.destAddress} ($${newOrder.totalAud.toFixed(2)} AUD via PayID ${newOrder.driverPayIdValue}).`
+  });
+  if (initialBookingChatMsg) {
+    broadcastBookingChatSync(newOrder, initialBookingChatMsg);
+  }
+
   if (window.firebaseService?.syncCourierBookingToFirestore) {
     window.firebaseService.syncCourierBookingToFirestore(newOrder).catch(() => {});
   }
@@ -4411,6 +4425,7 @@ function submitCourierBooking() {
     try { syncAllTokenDisplays(); } catch (e) {}
   }
   try { renderSupporterBookings(); } catch (e) {}
+  try { window.mountMessagesPanelCourierBookingControls?.(); } catch (e) {}
   try { triggerDriverBookingAlert(newOrder); } catch (e) {}
 
   // 4. Open Direct Driver PayID Confirmation Modal
@@ -4461,12 +4476,18 @@ function submitCourierBooking() {
             <i class="fa-regular fa-copy"></i> Copy PayID
           </button>
         </div>
+
+        <div id="payid-modal-confirm-box" style="margin-top:0.75rem;"
+          data-agent-id="payid-modal-confirm-box" data-testid="payid-modal-confirm-box">
+          ${renderCustomerPayIdConfirmBlockHtml('payid-modal', newOrder, { isModal: true })}
+        </div>
       </div>
     `;
   }
 
   document.getElementById('courier-payid-confirmation-modal')?.classList.add('active');
   showToast(`✅ Order ${newOrder.orderId} recorded for ${newOrder.pickupTime} pickup!`);
+  return newOrder;
 }
 window.submitCourierBooking = submitCourierBooking;
 window.bookCourierDispatch = submitCourierBooking;
@@ -6382,6 +6403,443 @@ function renderBookingChatBubbleListHtml(ord, messages, prefix = '') {
   }).join('');
 }
 
+function renderCustomerPayIdConfirmBlockHtml(contextKey, ord, options = {}) {
+  if (!ord) return '';
+  const isModal = Boolean(options.isModal);
+  const amountAud = Number(ord.totalAud || 0).toFixed(2);
+  const payIdVal = escapeAttr(ord.driverPayIdValue || ord.driverPhone || '0412 889 341');
+  const payIdAcct = escapeAttr(ord.driverPayIdAccountName || ord.driverName || 'Courier Driver');
+  const orderRef = escapeAttr(ord.orderId);
+  const isPaid = ord.customerConfirmedPayId === true || String(ord.status || '').includes('Paid via PayID');
+
+  if (isPaid) {
+    const txRef = escapeAttr(ord.payIdTransactionRef || ord.orderId);
+    return `
+      <div id="${contextKey}-payid-confirmed-badge"
+        style="background:#DCFCE7; border:1.5px solid #16A34A; color:#14532D; border-radius:8px; padding:0.65rem 0.85rem; font-size:0.8rem; font-weight:800; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;"
+        data-agent-id="${contextKey}-payid-confirmed-badge"
+        data-testid="${contextKey}-payid-confirmed-badge">
+        <i class="fa-solid fa-circle-check" style="color:#16A34A; font-size:1rem;"></i>
+        <span>✅ Courier Booking ${orderRef} Completed — Paid $${amountAud} AUD via PayID to ${payIdVal} (Ref: ${txRef})</span>
+      </div>
+    `;
+  }
+
+  const refInputId = isModal ? 'payid-modal-ref-input' : `${contextKey}-payid-ref-input`;
+  const confirmBtnId = isModal ? 'btn-payid-modal-confirm-paid' : `${contextKey}-btn-confirm-payid`;
+
+  return `
+    <div id="${contextKey}-payid-confirm-bar"
+      style="background:#ECFDF5; border:1.5px solid #10B981; border-radius:8px; padding:0.7rem 0.85rem;"
+      data-agent-id="${contextKey}-payid-confirm-bar"
+      data-testid="${contextKey}-payid-confirm-bar">
+      <div style="font-size:0.76rem; font-weight:800; color:#065F46; margin-bottom:0.45rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
+        <span><i class="fa-solid fa-money-bill-transfer"></i> Pay Driver via PayID (${payIdVal} • ${payIdAcct})</span>
+        <span>Amount: $${amountAud} AUD • Ref: ${orderRef}</span>
+      </div>
+      <div style="display:flex; gap:0.45rem; flex-wrap:wrap; align-items:center;">
+        <input type="text" id="${refInputId}" class="form-control"
+          placeholder="Optional PayID bank receipt / reference (default: ${orderRef})"
+          style="flex:1; min-width:170px; padding:0.42rem 0.65rem; font-size:0.78rem; background:#FFFFFF;"
+          data-agent-id="${refInputId}" data-testid="${refInputId}"
+          aria-label="Optional PayID Receipt or Reference">
+        <button type="button" id="${confirmBtnId}" class="btn btn-primary btn-sm"
+          style="background:#059669; border-color:#047857; font-weight:800; padding:0.44rem 0.85rem; white-space:nowrap;"
+          onclick="confirmCustomerPayIdPayment('${orderRef}', '${escapeAttr(contextKey)}')"
+          data-agent-id="${confirmBtnId}" data-testid="${confirmBtnId}"
+          aria-label="Confirm Paid by PayID to Complete Courier Booking">
+          ✅ I Have Paid $${amountAud} AUD by PayID — Complete Booking
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderMessageBoxBookingAndPayIdHtml(contextKey, ord = null, drvOverride = null) {
+  const targetOrd = ord
+    || (window.lastBookedOrderId ? window.courierOrderDB?.getOrderById?.(window.lastBookedOrderId) : null)
+    || window.courierOrderDB?.getAll?.()?.find(o => !checkSampleProfileOrData(o))
+    || window.courierOrderDB?.getAll?.()?.[0]
+    || null;
+
+  const allDrivers = window.providerDB?.getAll?.() || [];
+  const nonSampleDrivers = allDrivers.filter(d => !checkSampleProfileOrData(d));
+  const eligibleDrivers = nonSampleDrivers.length > 0 ? nonSampleDrivers : allDrivers;
+  const preferredCandidate = drvOverride || (targetOrd?.driverId ? window.providerDB?.findById?.(targetOrd.driverId) : null);
+  const preferredNonSampleId = (preferredCandidate && !checkSampleProfileOrData(preferredCandidate)) ? preferredCandidate.id : null;
+  const defaultDrvId = preferredNonSampleId || eligibleDrivers[0]?.id || 'drv-101';
+
+  const cur = window.iasjCurrency;
+  const supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  const gUser = window.firebaseService?.getCurrentGoogleUser?.() || null;
+
+  const defaultOrigin = escapeAttr(targetOrd?.originAddress || document.getElementById('courier-origin')?.value?.trim() || 'Broadbeach QLD 4218');
+  const defaultDest = escapeAttr(targetOrd?.destAddress || document.getElementById('courier-dest')?.value?.trim() || 'Surfers Paradise QLD 4217');
+  const defaultDate = escapeAttr(targetOrd?.pickupDate || document.getElementById('courier-pickup-date')?.value || new Date().toISOString().split('T')[0]);
+  const defaultTime = targetOrd?.pickupTime || document.getElementById('courier-pickup-time')?.value || '10:30 AM';
+  const defaultSpeed = targetOrd?.speedTier || document.getElementById('courier-urgency')?.value || 'same_day';
+  const defaultContents = escapeAttr(targetOrd?.packageContents || document.getElementById('courier-desc')?.value?.trim() || 'Express Courier Parcel');
+  const defaultWeight = Number(targetOrd?.weightKg || document.getElementById('courier-weight')?.value || 5) || 5;
+  const defaultCustName = escapeAttr(supporter?.name || gUser?.displayName || gUser?.name || targetOrd?.customerName || document.getElementById('courier-cust-name')?.value?.trim() || '');
+  const defaultCustPhone = escapeAttr(supporter?.phone || targetOrd?.customerPhone || document.getElementById('courier-cust-phone')?.value?.trim() || '');
+  const defaultCustEmail = escapeAttr(supporter?.email || gUser?.email || targetOrd?.customerEmail || document.getElementById('courier-cust-email')?.value?.trim() || '');
+
+  const timeSlots = cur?.PICKUP_TIME_SLOTS_9AM_TO_4PM || [
+    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+    '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+    '03:00 PM', '03:30 PM', '04:00 PM'
+  ];
+
+  const driverOptionsHtml = eligibleDrivers.map(d => {
+    const isSampleDrv = checkSampleProfileOrData(d);
+    const rateLabel = d.perKmRateAud ? `$${Number(d.perKmRateAud).toFixed(2)}/km` : 'Standard rate';
+    const selectedAttr = d.id === defaultDrvId ? 'selected' : '';
+    return `<option value="${escapeAttr(d.id)}" ${selectedAttr}>${escapeAttr(d.name)} (${rateLabel} • PayID: ${escapeAttr(d.payIdValue || d.phone || 'PayID')})${isSampleDrv ? ' [SAMPLE ONLY]' : ''}</option>`;
+  }).join('');
+
+  const timeOptionsHtml = timeSlots.map(slot =>
+    `<option value="${escapeAttr(slot)}" ${slot === defaultTime ? 'selected' : ''}>${escapeAttr(slot)}</option>`
+  ).join('');
+
+  const payIdHtml = targetOrd
+    ? `<div style="margin-bottom:0.55rem;">${renderCustomerPayIdConfirmBlockHtml(contextKey, targetOrd)}</div>`
+    : '';
+
+  return `
+    <div id="${contextKey}-inline-book-wrapper"
+      style="margin-top:0.65rem; padding-top:0.6rem; border-top:1px dashed #CBD5E1;"
+      data-agent-id="${contextKey}-inline-book-wrapper"
+      data-testid="${contextKey}-inline-book-wrapper">
+      ${payIdHtml}
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.45rem;">
+        <button type="button" id="${contextKey}-btn-toggle-book-form" class="btn btn-outline btn-sm"
+          style="font-weight:800; border-color:#2563EB; color:#1E40AF; background:#EFF6FF;"
+          onclick="toggleMessageBoxInlineBookingForm('${escapeAttr(contextKey)}')"
+          data-agent-id="${contextKey}-btn-toggle-book-form"
+          data-testid="${contextKey}-btn-toggle-book-form"
+          aria-label="Open Courier Booking Form Inside Message Box">
+          📦 Book Courier Inside Message Box
+        </button>
+        <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Book &amp; pay driver directly in AUD via PayID</span>
+      </div>
+
+      <form id="${contextKey}-inline-book-form"
+        style="display:none; margin-top:0.6rem; background:#FFFFFF; border:1px solid #BFDBFE; border-radius:8px; padding:0.75rem;"
+        onsubmit="handleMessageBoxInlineBookingSubmit(event, '${escapeAttr(contextKey)}')"
+        data-agent-id="${contextKey}-inline-book-form"
+        data-testid="${contextKey}-inline-book-form">
+        <div style="font-size:0.8rem; font-weight:800; color:var(--primary-navy); margin-bottom:0.5rem;">
+          <i class="fa-solid fa-truck-fast" style="color:var(--brand-orange);"></i> Quick Courier Booking Form
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(175px, 1fr)); gap:0.45rem;">
+          <div>
+            <label for="${contextKey}-book-driver" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Courier Driver</label>
+            <select id="${contextKey}-book-driver" class="form-control" style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-driver" data-testid="${contextKey}-book-driver" aria-label="Select Courier Driver">
+              ${driverOptionsHtml}
+            </select>
+          </div>
+          <div>
+            <label for="${contextKey}-book-origin" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Pickup Origin *</label>
+            <input type="text" id="${contextKey}-book-origin" class="form-control" required value="${defaultOrigin}"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-origin" data-testid="${contextKey}-book-origin" aria-label="Pickup Origin Address">
+          </div>
+          <div>
+            <label for="${contextKey}-book-dest" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Delivery Destination *</label>
+            <input type="text" id="${contextKey}-book-dest" class="form-control" required value="${defaultDest}"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-dest" data-testid="${contextKey}-book-dest" aria-label="Delivery Destination Address">
+          </div>
+          <div>
+            <label for="${contextKey}-book-date" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Pickup Date</label>
+            <input type="date" id="${contextKey}-book-date" class="form-control" required value="${defaultDate}"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-date" data-testid="${contextKey}-book-date" aria-label="Pickup Date">
+          </div>
+          <div>
+            <label for="${contextKey}-book-time" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Pickup Time (9am–4pm)</label>
+            <select id="${contextKey}-book-time" class="form-control" style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-time" data-testid="${contextKey}-book-time" aria-label="Pickup Time Window">
+              ${timeOptionsHtml}
+            </select>
+          </div>
+          <div>
+            <label for="${contextKey}-book-speed" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Speed Tier</label>
+            <select id="${contextKey}-book-speed" class="form-control" style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-speed" data-testid="${contextKey}-book-speed" aria-label="Delivery Speed Tier">
+              <option value="standard" ${defaultSpeed === 'standard' ? 'selected' : ''}>Standard (Same / Next Business Window)</option>
+              <option value="same_day" ${defaultSpeed === 'same_day' ? 'selected' : ''}>Same-Day Express</option>
+              <option value="urgent" ${defaultSpeed === 'urgent' ? 'selected' : ''}>Urgent Priority</option>
+            </select>
+          </div>
+          <div>
+            <label for="${contextKey}-book-contents" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Package Contents *</label>
+            <input type="text" id="${contextKey}-book-contents" class="form-control" required value="${defaultContents}"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-contents" data-testid="${contextKey}-book-contents" aria-label="Package Contents">
+          </div>
+          <div>
+            <label for="${contextKey}-book-weight" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Weight (kg)</label>
+            <input type="number" min="0.1" step="0.1" id="${contextKey}-book-weight" class="form-control" required value="${defaultWeight}"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-weight" data-testid="${contextKey}-book-weight" aria-label="Package Weight kg">
+          </div>
+          <div>
+            <label for="${contextKey}-book-cust-name" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Customer Name *</label>
+            <input type="text" id="${contextKey}-book-cust-name" class="form-control" required value="${defaultCustName}" placeholder="Full name"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-cust-name" data-testid="${contextKey}-book-cust-name" aria-label="Customer Full Name">
+          </div>
+          <div>
+            <label for="${contextKey}-book-cust-phone" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Customer Phone *</label>
+            <input type="tel" id="${contextKey}-book-cust-phone" class="form-control" required value="${defaultCustPhone}" placeholder="0412 345 678"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-cust-phone" data-testid="${contextKey}-book-cust-phone" aria-label="Customer Mobile Phone">
+          </div>
+          <div>
+            <label for="${contextKey}-book-cust-email" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block;">Customer Email *</label>
+            <input type="email" id="${contextKey}-book-cust-email" class="form-control" required value="${defaultCustEmail}" placeholder="you@example.com"
+              style="font-size:0.78rem; padding:0.38rem 0.5rem;"
+              data-agent-id="${contextKey}-book-cust-email" data-testid="${contextKey}-book-cust-email" aria-label="Customer Email Address">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:0.45rem; margin-top:0.65rem; flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline btn-sm"
+            onclick="toggleMessageBoxInlineBookingForm('${escapeAttr(contextKey)}')"
+            data-agent-id="${contextKey}-btn-cancel-book-form" data-testid="${contextKey}-btn-cancel-book-form"
+            aria-label="Cancel Inline Courier Booking">Cancel</button>
+          <button type="submit" id="${contextKey}-btn-submit-book-form" class="btn btn-primary btn-sm"
+            style="font-weight:800;"
+            data-agent-id="${contextKey}-btn-submit-book-form" data-testid="${contextKey}-btn-submit-book-form"
+            aria-label="Submit Courier Booking from Message Box">
+            🚚 Book Courier Now (Pay by PayID)
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function toggleMessageBoxInlineBookingForm(contextKey) {
+  const form = document.getElementById(`${contextKey}-inline-book-form`);
+  if (!form) return;
+  const open = form.style.display !== 'block';
+  form.style.display = open ? 'block' : 'none';
+  if (open && typeof form.scrollIntoView === 'function') {
+    try { form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+  }
+}
+window.toggleMessageBoxInlineBookingForm = toggleMessageBoxInlineBookingForm;
+
+function handleMessageBoxInlineBookingSubmit(event, contextKey) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const driverId = document.getElementById(`${contextKey}-book-driver`)?.value?.trim() || 'drv-101';
+  const originAddress = document.getElementById(`${contextKey}-book-origin`)?.value?.trim() || '';
+  const destAddress = document.getElementById(`${contextKey}-book-dest`)?.value?.trim() || '';
+  const pickupDate = document.getElementById(`${contextKey}-book-date`)?.value?.trim() || new Date().toISOString().split('T')[0];
+  const pickupTime = document.getElementById(`${contextKey}-book-time`)?.value?.trim() || '10:30 AM';
+  const speedTier = document.getElementById(`${contextKey}-book-speed`)?.value?.trim() || 'same_day';
+  const packageContents = document.getElementById(`${contextKey}-book-contents`)?.value?.trim() || '';
+  const weightKg = parseFloat(document.getElementById(`${contextKey}-book-weight`)?.value) || 0;
+  const customerName = document.getElementById(`${contextKey}-book-cust-name`)?.value?.trim() || '';
+  const customerPhone = document.getElementById(`${contextKey}-book-cust-phone`)?.value?.trim() || '';
+  const customerEmail = document.getElementById(`${contextKey}-book-cust-email`)?.value?.trim() || '';
+
+  if (!originAddress || !destAddress || !packageContents || weightKg <= 0 || !customerName || !customerPhone || !customerEmail) {
+    showToast('⚠️ Please complete all required courier booking fields.');
+    return null;
+  }
+
+  // Ensure supporter registration & Google profile cache allow inline message-box booking immediately
+  if (typeof isSupporterRegistrationComplete === 'function' && !isSupporterRegistrationComplete()) {
+    let gUser = getActiveGoogleUser();
+    if (!gUser || !gUser.email) {
+      gUser = {
+        uid: `sup-inline-${Date.now()}`,
+        displayName: customerName,
+        email: customerEmail,
+        phoneNumber: customerPhone
+      };
+      try { localStorage.setItem('iasj_google_user', JSON.stringify(gUser)); } catch (e) {}
+    }
+    if (window.supporterDB) {
+      let sup = window.supporterDB.findByEmail?.(customerEmail) || getCurrentSupporter();
+      const targetBal = Math.max(25, Number(sup?.tokenBalance ?? 25));
+      if (!sup) {
+        sup = window.supporterDB.addSupporter({
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+          suburb: originAddress,
+          tokenBalance: targetBal,
+          registrationCompleted: true,
+          isVerified: true
+        });
+      } else {
+        sup.name = customerName;
+        sup.phone = customerPhone;
+        sup.suburb = originAddress;
+        sup.tokenBalance = targetBal;
+        sup.registrationCompleted = true;
+        sup.isVerified = true;
+        window.supporterDB.save();
+      }
+      if (sup?.id) {
+        try { localStorage.setItem(CURRENT_SUPPORTER_KEY, sup.id); } catch (e) {}
+      }
+    }
+  }
+
+  const domFieldPairs = [
+    ['courier-origin', originAddress],
+    ['courier-dest', destAddress],
+    ['courier-pickup-date', pickupDate],
+    ['courier-pickup-time', pickupTime],
+    ['courier-urgency', speedTier],
+    ['courier-desc', packageContents],
+    ['courier-weight', String(weightKg)],
+    ['courier-height', document.getElementById('courier-height')?.value || '30'],
+    ['courier-width', document.getElementById('courier-width')?.value || '30'],
+    ['courier-length', document.getElementById('courier-length')?.value || '30'],
+    ['courier-cust-name', customerName],
+    ['courier-cust-phone', customerPhone],
+    ['courier-cust-email', customerEmail],
+    ['courier-cust-address', originAddress]
+  ];
+  domFieldPairs.forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+
+  appState.selectedCourierDriverId = driverId;
+  const newOrder = submitCourierBooking({
+    originAddress,
+    destAddress,
+    pickupDate,
+    pickupTime,
+    speedTier,
+    packageContents,
+    weightKg,
+    heightCm: 30,
+    widthCm: 30,
+    lengthCm: 30,
+    customerName,
+    customerPhone,
+    customerEmail,
+    customerAddress: originAddress
+  });
+
+  if (newOrder && newOrder.orderId) {
+    const formEl = document.getElementById(`${contextKey}-inline-book-form`);
+    if (formEl) formEl.style.display = 'none';
+
+    const liveModal = document.getElementById('live-driver-tracking-modal');
+    if (liveModal?.classList.contains('active')) {
+      liveTrackingMapState.modalOrderId = newOrder.orderId;
+      liveTrackingMapState.driverId = newOrder.driverId;
+    }
+    try { renderLiveTrackingModalChat(); } catch (e) {}
+    try { renderSupporterBookings(); } catch (e) {}
+    try { renderDriverAdminDashboard(); } catch (e) {}
+    try { window.mountMessagesPanelCourierBookingControls?.(); } catch (e) {}
+  }
+
+  return newOrder;
+}
+window.handleMessageBoxInlineBookingSubmit = handleMessageBoxInlineBookingSubmit;
+
+function confirmCustomerPayIdPayment(orderId = null, contextKey = '') {
+  if (!window.courierOrderDB) return null;
+  const targetOrderId = orderId
+    || liveTrackingMapState.modalOrderId
+    || window.lastBookedOrderId
+    || window.courierOrderDB.getAll?.()?.find(o => !checkSampleProfileOrData(o))?.orderId
+    || window.courierOrderDB.getAll?.()?.[0]?.orderId;
+
+  const ord = targetOrderId ? window.courierOrderDB.getOrderById(targetOrderId) : null;
+  if (!ord) {
+    showToast('⚠️ Could not find an active courier order to confirm PayID payment.');
+    return null;
+  }
+
+  const refInputEl = (contextKey ? document.getElementById(`${contextKey}-payid-ref-input`) : null)
+    || document.getElementById('payid-modal-ref-input');
+  const cleanRef = String(refInputEl?.value || `PAYID-${ord.orderId}`).replace(/[<>]/g, '').trim() || `PAYID-${ord.orderId}`;
+
+  ord.customerConfirmedPayId = true;
+  ord.payIdConfirmedAt = new Date().toISOString();
+  ord.payIdTransactionRef = cleanRef;
+  ord.status = 'Booking Completed — Paid via PayID';
+  window.courierOrderDB.save();
+
+  const amountAud = Number(ord.totalAud || 0).toFixed(2);
+  const googleUser = window.firebaseService?.getCurrentGoogleUser?.() || null;
+  const confirmMsg = window.courierOrderDB.addOrderMessage(ord.orderId, {
+    senderRole: 'supporter',
+    senderName: ord.customerName || 'Customer',
+    senderUid: googleUser?.uid || undefined,
+    senderEmail: ord.customerEmail || googleUser?.email || undefined,
+    text: `✅ PayID Payment Confirmed: I have paid $${amountAud} AUD to Driver PayID ${ord.driverPayIdValue || ord.driverPhone || 'PayID'} (Ref: ${cleanRef}). Courier booking ${ord.orderId} is complete!`
+  });
+
+  if (window.firebaseService?.updateBookingStatusInFirestore) {
+    window.firebaseService.updateBookingStatusInFirestore(ord.orderId, ord.status, {
+      customerConfirmedPayId: true,
+      payIdConfirmedAt: ord.payIdConfirmedAt,
+      payIdTransactionRef: ord.payIdTransactionRef,
+      messages: ord.messages
+    }).catch(() => {});
+  }
+  if (confirmMsg && window.firebaseService?.appendBookingMessageToFirestore) {
+    window.firebaseService.appendBookingMessageToFirestore(ord.orderId, confirmMsg, ord).catch(() => {});
+  }
+  if (window.stripePaymentService?.recordDirectSettlement) {
+    window.stripePaymentService.recordDirectSettlement({
+      docketNumber: ord.orderId,
+      amount: ord.totalAud,
+      provider: {
+        serviceProviderNumber: ord.driverId,
+        name: ord.driverName,
+        payId: ord.driverPayIdValue || ord.driverPhone
+      },
+      paymentMethod: 'payid',
+      reference: cleanRef
+    }).catch(() => {});
+  }
+  if (confirmMsg) {
+    broadcastBookingChatSync(ord, confirmMsg);
+  }
+
+  const payIdModalConfirmBox = document.getElementById('payid-modal-confirm-box');
+  if (payIdModalConfirmBox) {
+    payIdModalConfirmBox.innerHTML = renderCustomerPayIdConfirmBlockHtml('payid-modal', ord, { isModal: true });
+  }
+
+  try { playDriverBookingNotificationSound(); } catch (e) {}
+  try { renderSupporterBookings(); } catch (e) {}
+  try { renderDriverAdminDashboard(); } catch (e) {}
+  try { renderLiveTrackingModalChat(); } catch (e) {}
+  try { window.mountMessagesPanelCourierBookingControls?.(); } catch (e) {}
+
+  showToast(`✅ PayID payment confirmed! Courier booking ${ord.orderId} is complete.`);
+  return {
+    confirmed: true,
+    orderId: ord.orderId,
+    status: ord.status,
+    payIdTransactionRef: ord.payIdTransactionRef
+  };
+}
+window.confirmCustomerPayIdPayment = confirmCustomerPayIdPayment;
+
+window.mountMessagesPanelCourierBookingControls = function mountMessagesPanelCourierBookingControls() {
+  const mountEl = document.getElementById('msg-panel-courier-booking-root');
+  if (!mountEl) return;
+  mountEl.innerHTML = renderMessageBoxBookingAndPayIdHtml('account-msg-panel');
+};
+
 function renderBookingMessageBoxHtml(ord, prefix = '') {
   const messages = Array.isArray(ord.messages) ? ord.messages : [];
   const activeRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : 'supporter';
@@ -6397,6 +6855,7 @@ function renderBookingMessageBoxHtml(ord, prefix = '') {
   const inputId = `${prefix}booking-message-input-${ord.orderId}`;
   const btnId = `${prefix}btn-send-booking-message-${ord.orderId}`;
   const messagesListHtml = renderBookingChatBubbleListHtml(ord, messages, prefix);
+  const inlineBookingAndPayIdHtml = renderMessageBoxBookingAndPayIdHtml(`${prefix}msgbox-${ord.orderId}`, ord);
 
   return `
     <!-- Supporter & Driver Direct Message Box inside My Bookings History -->
@@ -6443,6 +6902,8 @@ function renderBookingMessageBoxHtml(ord, prefix = '') {
           <i class="fa-solid fa-paper-plane"></i> Send Message
         </button>
       </form>
+
+      ${inlineBookingAndPayIdHtml}
     </div>
   `;
 }
@@ -6538,7 +6999,7 @@ function renderUnifiedBookingHistoryCardHtml(ord, options = {}) {
   const showMakeBooking = options.showMakeBooking !== undefined ? Boolean(options.showMakeBooking) : !includeDriverActions;
   const isSampleOrd = checkSampleProfileOrData(ord);
   const statusStr = String(ord.status || 'Scheduled (9am–4pm Pickup)');
-  const isCompleted = statusStr.includes('Delivered');
+  const isCompleted = statusStr.includes('Delivered') || statusStr.includes('Paid via PayID') || ord.customerConfirmedPayId === true;
   const isScheduled = statusStr.includes('Scheduled') || statusStr.includes('9am');
   const badgeBg = isCompleted ? '#ECFDF5' : (isScheduled ? '#EFF6FF' : '#FEF3C7');
   const badgeColor = isCompleted ? '#065F46' : (isScheduled ? '#1E40AF' : '#92400E');
@@ -8606,6 +9067,11 @@ function renderLiveTrackingModalChat() {
   const senderEl = document.getElementById('live-tracking-chat-sender');
   const inputEl = document.getElementById('live-tracking-chat-input');
   const formEl = document.getElementById('live-tracking-chat-form');
+  const bookingControlsEl = document.getElementById('live-tracking-chat-booking-controls');
+
+  if (bookingControlsEl) {
+    bookingControlsEl.innerHTML = renderMessageBoxBookingAndPayIdHtml('live-map-chat', ord, drv);
+  }
 
   if (!ord) {
     if (countEl) countEl.textContent = '0 Messages';

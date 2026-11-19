@@ -3714,3 +3714,24 @@ The **Driver Information** panel (`#supporter-panel-driver-information`) has bee
   }
 }
 ```
+
+### 25.3 Inline Message-Box Courier Booking & Customer PayID Completion Contract
+- Customers can open and submit an inline courier booking form (`#<contextKey>-inline-book-form`) directly inside any message box (`#live-tracking-chat-section`, `.booking-message-box`, or `#msg-panel-courier-booking-root`), creating a live `ORD-XXXXXX` booking, logging an initial booking summary message into the thread, and syncing to Firestore `bookings/{orderId}`.
+- Customers can confirm PayID payment (`confirmCustomerPayIdPayment`) inside `#payid-modal-confirm-box` or any message box (`#<contextKey>-btn-confirm-payid`), transitioning the booking status to `'Booking Completed — Paid via PayID'`, setting `customerConfirmedPayId: true`, appending a PayID confirmation chat message, recording direct AUD settlement, and syncing Firestore + cross-tab state.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CustomerPayIdCompletionConfirmation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderId", "customerConfirmedPayId", "payIdConfirmedAt", "payIdTransactionRef", "status"],
+  "properties": {
+    "orderId": { "type": "string", "pattern": "^ORD-\\d{6}$" },
+    "customerConfirmedPayId": { "type": "boolean", "const": true },
+    "payIdConfirmedAt": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "payIdTransactionRef": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "status": { "type": "string", "const": "Booking Completed — Paid via PayID" }
+  }
+}
+```

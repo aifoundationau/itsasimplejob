@@ -1085,6 +1085,15 @@ class CourierOrderDatabase {
     if (extraFields?.lastMessageAt) {
       ord.lastMessageAt = extraFields.lastMessageAt;
     }
+    if (typeof extraFields?.customerConfirmedPayId === 'boolean') {
+      ord.customerConfirmedPayId = extraFields.customerConfirmedPayId;
+    }
+    if (extraFields?.payIdConfirmedAt) {
+      ord.payIdConfirmedAt = extraFields.payIdConfirmedAt;
+    }
+    if (extraFields?.payIdTransactionRef) {
+      ord.payIdTransactionRef = extraFields.payIdTransactionRef;
+    }
 
     if ((addedCount > 0 || createdNewOrder || extraFields?.forceSave) && options.persist !== false) {
       this.save();
