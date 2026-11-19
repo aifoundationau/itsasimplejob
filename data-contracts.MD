@@ -3775,3 +3775,97 @@ SuperAdmin (`support@aifoundation.net.au` / `davidrobertson.info@gmail.com`) can
   }
 }
 ```
+
+---
+
+## 26. Ephemeral AI Driver Licence Front & Back Verification Contract
+
+> Added to support front and back Driver Licence photo uploads inside the Courier Driver Application (`#supporter-register-driver-subtab`, `#driver-application-modal`) and Driver Registration Profile (`#supporter-registration-form`). Images are processed strictly in memory via `POST /api/verify-driver-licence`, never saved to disk, `localStorage`, ImgBB, or Cloud Firestore/Storage (`"imageStored": false`, `"imagesDiscarded": true`), and extracted licence fields populate the applicant/driver profile where every field remains editable by the driver.
+
+### 26.1 Verification Request (`DriverLicenceAiVerificationRequest`)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverLicenceAiVerificationRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["frontImageBase64", "backImageBase64"],
+  "properties": {
+    "frontImageBase64": { "type": "string", "minLength": 4, "maxLength": 7000000 },
+    "frontMimeType": { "type": "string", "pattern": "^image\\/[a-zA-Z0-9.+-]+$", "maxLength": 40 },
+    "frontFileName": { "type": "string", "maxLength": 80 },
+    "backImageBase64": { "type": "string", "minLength": 4, "maxLength": 7000000 },
+    "backMimeType": { "type": "string", "pattern": "^image\\/[a-zA-Z0-9.+-]+$", "maxLength": 40 },
+    "backFileName": { "type": "string", "maxLength": 80 },
+    "applicantHintName": { "type": "string", "maxLength": 100 },
+    "applicantHintState": { "type": "string", "enum": ["QLD", "NSW", "VIC", "WA", "SA", "TAS", "ACT", "NT"] },
+    "applicantHintLicenceNumber": { "type": "string", "maxLength": 32 }
+  }
+}
+```
+
+### 26.2 Verification Response (`DriverLicenceAiVerificationResponse`)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverLicenceAiVerificationResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verified",
+    "verificationStatus",
+    "authenticityScore",
+    "engine",
+    "fullName",
+    "licenceNumber",
+    "licenceCardNumber",
+    "licenceState",
+    "licenceClass",
+    "licenceExpiry",
+    "dateOfBirth",
+    "address",
+    "conditions",
+    "issuingAuthority",
+    "briefDescription",
+    "frontInspected",
+    "backInspected",
+    "imageStored",
+    "imagesDiscarded",
+    "verifiedAt"
+  ],
+  "properties": {
+    "verified": { "type": "boolean" },
+    "verificationStatus": { "type": "string", "enum": ["verified", "review_recommended"] },
+    "authenticityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "engine": { "type": "string", "maxLength": 80 },
+    "fullName": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "licenceNumber": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "licenceCardNumber": { "type": "string", "maxLength": 32 },
+    "licenceState": { "type": "string", "enum": ["QLD", "NSW", "VIC", "WA", "SA", "TAS", "ACT", "NT"] },
+    "licenceClass": {
+      "type": "string",
+      "enum": [
+        "C (Car / Van)",
+        "LR (Light Rigid)",
+        "MR (Medium Rigid)",
+        "HR (Heavy Rigid)",
+        "HC (Heavy Combination)",
+        "R (Motorcycle)"
+      ]
+    },
+    "licenceExpiry": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "dateOfBirth": { "type": "string", "maxLength": 10 },
+    "address": { "type": "string", "maxLength": 180 },
+    "conditions": { "type": "string", "maxLength": 120 },
+    "issuingAuthority": { "type": "string", "maxLength": 120 },
+    "briefDescription": { "type": "string", "minLength": 10, "maxLength": 400 },
+    "frontInspected": { "type": "boolean", "const": true },
+    "backInspected": { "type": "boolean", "const": true },
+    "imageStored": { "type": "boolean", "const": false },
+    "imagesDiscarded": { "type": "boolean", "const": true },
+    "verifiedAt": { "type": "string", "format": "date-time", "maxLength": 40 }
+  }
+}
+```

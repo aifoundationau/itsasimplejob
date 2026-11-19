@@ -5116,6 +5116,8 @@ function saveDriverApplicationDraft(notify = true) {
     licenceState: document.getElementById('drv-reg-licence-state')?.value || 'QLD',
     licenceClass: document.getElementById('drv-reg-licence-class')?.value || 'C (Car / Van)',
     licenceExpiry: document.getElementById('drv-reg-licence-expiry')?.value || '2029-12-31',
+    licenceCardNumber: document.getElementById('drv-reg-licence-card-num')?.value || '',
+    licenceConditions: document.getElementById('drv-reg-licence-conditions')?.value || 'None',
     payIdValue: document.getElementById('drv-reg-payid-value')?.value || '',
     hasVehicle: document.getElementById('drv-reg-has-vehicle')?.checked ?? true,
     hasBicycle: document.getElementById('drv-reg-has-bicycle')?.checked ?? false,
@@ -6277,6 +6279,10 @@ function handleSupporterRegistrationSubmit(event) {
   const phoneInput = document.getElementById('supporter-reg-phone');
   const suburbInput = document.getElementById('supporter-reg-suburb');
   const licenceInput = document.getElementById('supporter-reg-licence-number');
+  const licenceStateInput = document.getElementById('supporter-reg-licence-state');
+  const licenceClassInput = document.getElementById('supporter-reg-licence-class');
+  const licenceExpiryInput = document.getElementById('supporter-reg-licence-expiry');
+  const licenceConditionsInput = document.getElementById('supporter-reg-licence-conditions');
   const payidInput = document.getElementById('supporter-reg-payid');
 
   const name = nameInput?.value.trim();
@@ -6284,6 +6290,10 @@ function handleSupporterRegistrationSubmit(event) {
   const phone = phoneInput?.value.trim();
   const suburb = suburbInput?.value.trim();
   const licenceNumber = licenceInput?.value.trim() || '';
+  const licenceState = licenceStateInput?.value || '';
+  const licenceClass = licenceClassInput?.value || '';
+  const licenceExpiry = licenceExpiryInput?.value || '';
+  const licenceConditions = licenceConditionsInput?.value.trim() || '';
   const payIdValue = payidInput?.value.trim() || '';
 
   if (!name || !email || !phone || !suburb) {
@@ -6310,6 +6320,10 @@ function handleSupporterRegistrationSubmit(event) {
     : (existingUsername || `@${String(name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'supporter'}`);
 
   const resolvedLicence = licenceNumber || supporter?.licenceNumber || matchedDriver?.licenceNumber || '';
+  const resolvedLicenceState = licenceState || supporter?.licenceState || matchedDriver?.licenceState || 'QLD';
+  const resolvedLicenceClass = licenceClass || supporter?.licenceClass || matchedDriver?.licenceClass || 'C (Car / Van)';
+  const resolvedLicenceExpiry = licenceExpiry || supporter?.licenceExpiry || matchedDriver?.licenceExpiry || '2029-12-31';
+  const resolvedLicenceConditions = licenceConditions || supporter?.licenceConditions || matchedDriver?.licenceConditions || 'None';
   const resolvedPayId = payIdValue || supporter?.payIdValue || supporter?.payId || matchedDriver?.payIdValue || matchedDriver?.payId || phone;
 
   if (supporter && window.supporterDB) {
@@ -6321,6 +6335,10 @@ function handleSupporterRegistrationSubmit(event) {
       address: suburb,
       username: immutableUsername,
       licenceNumber: resolvedLicence,
+      licenceState: resolvedLicenceState,
+      licenceClass: resolvedLicenceClass,
+      licenceExpiry: resolvedLicenceExpiry,
+      licenceConditions: resolvedLicenceConditions,
       payId: resolvedPayId,
       payIdValue: resolvedPayId,
       role: resolvedRole,
@@ -6339,6 +6357,10 @@ function handleSupporterRegistrationSubmit(event) {
       address: suburb,
       username: immutableUsername,
       licenceNumber: resolvedLicence,
+      licenceState: resolvedLicenceState,
+      licenceClass: resolvedLicenceClass,
+      licenceExpiry: resolvedLicenceExpiry,
+      licenceConditions: resolvedLicenceConditions,
       payId: resolvedPayId,
       payIdValue: resolvedPayId,
       role: resolvedRole,
@@ -6361,7 +6383,11 @@ function handleSupporterRegistrationSubmit(event) {
       : (matchedDriver.username || immutableUsername);
     if (resolvedLicence) {
       matchedDriver.licenceNumber = resolvedLicence;
-      matchedDriver.licenceDetails = `${matchedDriver.licenceState || 'QLD'} #${resolvedLicence} (Class ${matchedDriver.licenceClass || 'C'})`;
+      matchedDriver.licenceState = resolvedLicenceState;
+      matchedDriver.licenceClass = resolvedLicenceClass;
+      matchedDriver.licenceExpiry = resolvedLicenceExpiry;
+      matchedDriver.licenceConditions = resolvedLicenceConditions;
+      matchedDriver.licenceDetails = `${resolvedLicenceState} #${resolvedLicence} (${resolvedLicenceClass})`;
     }
     if (resolvedPayId) {
       matchedDriver.payId = resolvedPayId;
@@ -6413,8 +6439,16 @@ function handleSupporterRegistrationSubmit(event) {
   if (drvPhone) drvPhone.value = phone;
   const drvAddr = document.getElementById('drv-reg-address');
   if (drvAddr) drvAddr.value = suburb;
-  const drvLic = document.getElementById('drv-reg-licence-number');
+  const drvLic = document.getElementById('drv-reg-licence-num');
   if (drvLic && resolvedLicence) drvLic.value = resolvedLicence;
+  const drvLicState = document.getElementById('drv-reg-licence-state');
+  if (drvLicState && resolvedLicenceState) drvLicState.value = resolvedLicenceState;
+  const drvLicClass = document.getElementById('drv-reg-licence-class');
+  if (drvLicClass && resolvedLicenceClass) drvLicClass.value = resolvedLicenceClass;
+  const drvLicExp = document.getElementById('drv-reg-licence-expiry');
+  if (drvLicExp && resolvedLicenceExpiry) drvLicExp.value = resolvedLicenceExpiry;
+  const drvLicCond = document.getElementById('drv-reg-licence-conditions');
+  if (drvLicCond && resolvedLicenceConditions) drvLicCond.value = resolvedLicenceConditions;
   const drvPayid = document.getElementById('drv-reg-payid-value');
   if (drvPayid && resolvedPayId) drvPayid.value = resolvedPayId;
 
@@ -6427,6 +6461,10 @@ function handleSupporterRegistrationSubmit(event) {
       address: suburb,
       suburb: suburb,
       licenceNumber: resolvedLicence,
+      licenceState: resolvedLicenceState,
+      licenceClass: resolvedLicenceClass,
+      licenceExpiry: resolvedLicenceExpiry,
+      licenceConditions: resolvedLicenceConditions,
       payId: resolvedPayId
     }).catch(e => console.warn('Could not sync supporter profile to Firestore:', e));
   }
@@ -6512,6 +6550,11 @@ function renderSupporterPanel() {
       ? window.normalizeDriverUsername(linkedDriver?.username || supporter.username, linkedDriver?.name || supporter.name, linkedDriver?.id || supporter.id)
       : (linkedDriver?.username || supporter.username || '@driver');
     const resolvedLicence = supporter.licenceNumber || linkedDriver?.licenceNumber || linkedDriver?.licenceDetails || '';
+    const resolvedLicenceState = supporter.licenceState || linkedDriver?.licenceState || 'QLD';
+    const resolvedLicenceClass = supporter.licenceClass || linkedDriver?.licenceClass || 'C (Car / Van)';
+    const resolvedLicenceExpiry = supporter.licenceExpiry || linkedDriver?.licenceExpiry || '2029-12-31';
+    const resolvedLicenceConditions = supporter.licenceConditions || linkedDriver?.licenceConditions || 'None';
+    const isLicenceAiVerified = Boolean(supporter.licenceVerifiedByAi || linkedDriver?.licenceVerifiedByAi);
     const resolvedPayId = supporter.payIdValue || supporter.payId || linkedDriver?.payIdValue || linkedDriver?.payId || supporter.phone || '';
 
     // Update Registration Details Summary Grid inside Collapsed Panel 1
@@ -6526,7 +6569,20 @@ function renderSupporterPanel() {
     const regDetUsername = document.getElementById('supporter-reg-detail-username');
     if (regDetUsername) regDetUsername.textContent = resolvedUsername;
     const regDetLicence = document.getElementById('supporter-reg-detail-licence');
-    if (regDetLicence) regDetLicence.textContent = resolvedLicence || 'Not entered yet';
+    if (regDetLicence) {
+      regDetLicence.textContent = resolvedLicence
+        ? `#${resolvedLicence} (${resolvedLicenceState} • ${resolvedLicenceClass} • Exp ${resolvedLicenceExpiry})`
+        : 'Not entered yet';
+    }
+    const regDetLicBadge = document.getElementById('supporter-reg-detail-licence-ai-badge');
+    if (regDetLicBadge) {
+      if (isLicenceAiVerified && resolvedLicence) {
+        regDetLicBadge.style.display = 'inline-block';
+        regDetLicBadge.innerHTML = '<i class="fa-solid fa-robot"></i> AI Verified (Front &amp; Back) • Images Not Saved';
+      } else {
+        regDetLicBadge.style.display = 'none';
+      }
+    }
     const regDetPayid = document.getElementById('supporter-reg-detail-payid');
     if (regDetPayid) regDetPayid.textContent = resolvedPayId || 'Not entered yet';
 
@@ -6651,6 +6707,14 @@ function renderSupporterPanel() {
     }
     const regLicence = document.getElementById('supporter-reg-licence-number');
     if (regLicence) regLicence.value = resolvedLicence;
+    const regLicenceState = document.getElementById('supporter-reg-licence-state');
+    if (regLicenceState) regLicenceState.value = resolvedLicenceState;
+    const regLicenceClass = document.getElementById('supporter-reg-licence-class');
+    if (regLicenceClass) regLicenceClass.value = resolvedLicenceClass;
+    const regLicenceExpiry = document.getElementById('supporter-reg-licence-expiry');
+    if (regLicenceExpiry) regLicenceExpiry.value = resolvedLicenceExpiry;
+    const regLicenceConditions = document.getElementById('supporter-reg-licence-conditions');
+    if (regLicenceConditions) regLicenceConditions.value = resolvedLicenceConditions;
     const regPayid = document.getElementById('supporter-reg-payid');
     if (regPayid) regPayid.value = resolvedPayId;
     
@@ -7773,8 +7837,13 @@ function prefillDriverRegistrationForm(supporter) {
     setVal('drv-reg-email', existingDriver.email || supporter?.email);
     setVal('drv-reg-address', existingDriver.suburb || existingDriver.address || supporter?.suburb);
     setVal('drv-reg-vehicle', existingDriver.vehicleMake || existingDriver.vehicle || '');
-    setVal('drv-reg-licence', existingDriver.licenceNumber || existingDriver.driverLicence || '');
-    setVal('drv-reg-payid', existingDriver.payId || existingDriver.driverPayId || '');
+    setVal('drv-reg-licence-num', existingDriver.licenceNumber || existingDriver.driverLicence || '');
+    setVal('drv-reg-licence-state', existingDriver.licenceState || 'QLD');
+    setVal('drv-reg-licence-class', existingDriver.licenceClass || 'C (Car / Van)');
+    setVal('drv-reg-licence-expiry', existingDriver.licenceExpiry || '2029-12-31');
+    setVal('drv-reg-licence-card-num', existingDriver.licenceCardNumber || '');
+    setVal('drv-reg-licence-conditions', existingDriver.licenceConditions || 'None');
+    setVal('drv-reg-payid-value', existingDriver.payIdValue || existingDriver.payId || existingDriver.driverPayId || '');
 
     const chkVehicle = document.getElementById('drv-reg-has-vehicle');
     if (chkVehicle) chkVehicle.checked = existingDriver.hasVehicleCourier !== false;
@@ -7828,6 +7897,8 @@ function prefillDriverRegistrationForm(supporter) {
       setVal('drv-reg-licence-state', draft.licenceState || 'QLD');
       setVal('drv-reg-licence-class', draft.licenceClass || 'C (Car / Van)');
       setVal('drv-reg-licence-expiry', draft.licenceExpiry || '2029-12-31');
+      setVal('drv-reg-licence-card-num', draft.licenceCardNumber || '');
+      setVal('drv-reg-licence-conditions', draft.licenceConditions || 'None');
       setVal('drv-reg-payid-value', draft.payIdValue);
 
       const chkVehicle = document.getElementById('drv-reg-has-vehicle');
@@ -7902,6 +7973,8 @@ function handleDriverRegistrationSubmit(event) {
   const licenceState = document.getElementById('drv-reg-licence-state')?.value || 'QLD';
   const licenceClass = document.getElementById('drv-reg-licence-class')?.value || 'C (Car / Van)';
   const licenceExpiry = document.getElementById('drv-reg-licence-expiry')?.value || '2029-12-31';
+  const licenceCardNumber = document.getElementById('drv-reg-licence-card-num')?.value?.trim() || '';
+  const licenceConditions = document.getElementById('drv-reg-licence-conditions')?.value?.trim() || 'None';
 
   const payIdValue = document.getElementById('drv-reg-payid-value')?.value.trim();
   const payIdType = (payIdValue && payIdValue.includes('@')) ? 'email' : ((payIdValue && /^\d{11}$/.test(payIdValue.replace(/\s+/g, ''))) ? 'abn' : 'phone');
@@ -7972,6 +8045,13 @@ function handleDriverRegistrationSubmit(event) {
       licenceState,
       licenceClass,
       licenceExpiry,
+      licenceCardNumber,
+      licenceConditions,
+      licenceDetails: `${licenceState} #${licenceNumber} (${licenceClass})`,
+      licenceVerifiedByAi: Boolean(lastAiLicenceVerification?.verified || existingDriver?.licenceVerifiedByAi || currentSupporter?.licenceVerifiedByAi),
+      licenceVerifiedAt: lastAiLicenceVerification?.verifiedAt || existingDriver?.licenceVerifiedAt || currentSupporter?.licenceVerifiedAt || '',
+      licenceAiSummary: lastAiLicenceVerification?.briefDescription || existingDriver?.licenceAiSummary || currentSupporter?.licenceAiSummary || '',
+      licenceImagesSaved: false,
       payIdType,
       payIdValue,
       payIdAccountName,
@@ -8019,6 +8099,13 @@ function handleDriverRegistrationSubmit(event) {
       licenceState,
       licenceClass,
       licenceExpiry,
+      licenceCardNumber,
+      licenceConditions,
+      licenceDetails: `${licenceState} #${licenceNumber} (${licenceClass})`,
+      licenceVerifiedByAi: Boolean(lastAiLicenceVerification?.verified || existingDriver?.licenceVerifiedByAi || currentSupporter?.licenceVerifiedByAi),
+      licenceVerifiedAt: lastAiLicenceVerification?.verifiedAt || existingDriver?.licenceVerifiedAt || currentSupporter?.licenceVerifiedAt || '',
+      licenceAiSummary: lastAiLicenceVerification?.briefDescription || existingDriver?.licenceAiSummary || currentSupporter?.licenceAiSummary || '',
+      licenceImagesSaved: false,
       payIdType,
       payIdValue,
       payIdAccountName,
@@ -8067,6 +8154,16 @@ function handleDriverRegistrationSubmit(event) {
 
   if (currentSupporter && window.supporterDB) {
     currentSupporter.driverId = savedDriver.id;
+    currentSupporter.licenceNumber = savedDriver.licenceNumber;
+    currentSupporter.licenceState = savedDriver.licenceState;
+    currentSupporter.licenceClass = savedDriver.licenceClass;
+    currentSupporter.licenceExpiry = savedDriver.licenceExpiry;
+    currentSupporter.licenceCardNumber = savedDriver.licenceCardNumber || '';
+    currentSupporter.licenceConditions = savedDriver.licenceConditions || 'None';
+    currentSupporter.licenceVerifiedByAi = Boolean(savedDriver.licenceVerifiedByAi);
+    currentSupporter.licenceVerifiedAt = savedDriver.licenceVerifiedAt || '';
+    currentSupporter.licenceAiSummary = savedDriver.licenceAiSummary || '';
+    currentSupporter.licenceImagesSaved = false;
     if (!isDriverApproved(savedDriver) && !checkIsSuperadmin()) {
       currentSupporter.role = 'supporter';
       currentSupporter.approved = false;
@@ -8248,6 +8345,8 @@ function prefillSupporterDriverRegistrationForm(supporter) {
     setVal('sup-drv-reg-licence-state', existingDriver.licenceState || 'QLD');
     setVal('sup-drv-reg-licence-class', existingDriver.licenceClass || 'C (Car / Van)');
     setVal('sup-drv-reg-licence-expiry', existingDriver.licenceExpiry || '2029-12-31');
+    setVal('sup-drv-reg-licence-card-num', existingDriver.licenceCardNumber || '');
+    setVal('sup-drv-reg-licence-conditions', existingDriver.licenceConditions || 'None');
     setVal('sup-drv-reg-payid-value', existingDriver.payIdValue || existingDriver.payId || '');
 
     const chkVehicle = document.getElementById('sup-drv-reg-has-vehicle');
@@ -8296,6 +8395,21 @@ function prefillSupporterDriverRegistrationForm(supporter) {
       setValIfEmpty('sup-drv-reg-phone', supporter.phone);
       setValIfEmpty('sup-drv-reg-email', supporter.email);
       setValIfEmpty('sup-drv-reg-address', supporter.suburb || supporter.address);
+      setValIfEmpty('sup-drv-reg-licence-num', supporter.licenceNumber);
+      if (supporter.licenceState) {
+        const stEl = document.getElementById('sup-drv-reg-licence-state');
+        if (stEl) stEl.value = supporter.licenceState;
+      }
+      if (supporter.licenceClass) {
+        const clEl = document.getElementById('sup-drv-reg-licence-class');
+        if (clEl) clEl.value = supporter.licenceClass;
+      }
+      if (supporter.licenceExpiry) {
+        const exEl = document.getElementById('sup-drv-reg-licence-expiry');
+        if (exEl) exEl.value = supporter.licenceExpiry;
+      }
+      if (supporter.licenceCardNumber) setValIfEmpty('sup-drv-reg-licence-card-num', supporter.licenceCardNumber);
+      if (supporter.licenceConditions) setValIfEmpty('sup-drv-reg-licence-conditions', supporter.licenceConditions);
     }
   }
   toggleSupporterDriverRegModesUI();
@@ -8319,6 +8433,8 @@ function handleSupporterDriverRegistrationSubmit(event) {
     ['sup-drv-reg-licence-state', 'drv-reg-licence-state'],
     ['sup-drv-reg-licence-class', 'drv-reg-licence-class'],
     ['sup-drv-reg-licence-expiry', 'drv-reg-licence-expiry'],
+    ['sup-drv-reg-licence-card-num', 'drv-reg-licence-card-num'],
+    ['sup-drv-reg-licence-conditions', 'drv-reg-licence-conditions'],
     ['sup-drv-reg-payid-value', 'drv-reg-payid-value'],
     ['sup-drv-reg-per-km', 'drv-reg-per-km'],
     ['sup-drv-reg-sameday-fee', 'drv-reg-sameday-fee'],
@@ -8366,6 +8482,369 @@ function handleSupporterDriverRegistrationSubmit(event) {
   return savedDriver;
 }
 window.handleSupporterDriverRegistrationSubmit = handleSupporterDriverRegistrationSubmit;
+
+/**
+ * Ephemeral In-Memory Driver Licence Front & Back AI Verification
+ * Security & Privacy Guarantee: Uploaded images are read into memory ONLY, sent transiently to /api/verify-driver-licence,
+ * verified details are saved to the applicant/driver profile (editable by the driver anytime), and images are discarded immediately.
+ */
+let lastAiLicenceVerification = null;
+const ephemeralLicenceUploads = {
+  'sup-drv': { front: null, back: null },
+  'drv': { front: null, back: null },
+  'supporter-reg': { front: null, back: null }
+};
+window.ephemeralLicenceUploads = ephemeralLicenceUploads;
+
+function readLicenceFileToEphemeralBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error('No file selected.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the selected licence photo.'));
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const rawCommaIdx = dataUrl.indexOf(',');
+      const rawBase64 = rawCommaIdx >= 0 ? dataUrl.slice(rawCommaIdx + 1) : dataUrl;
+      const mimeMatch = dataUrl.match(/^data:([^;]+);base64,/i);
+      const origMime = mimeMatch ? mimeMatch[1] : (file.type || 'image/jpeg');
+
+      // For files <= 450 KB (or test synthetic files), avoid unnecessary re-encoding if canvas isn't needed
+      if (file.size <= 450 * 1024) {
+        resolve({
+          base64: rawBase64,
+          mimeType: origMime,
+          fileName: file.name || 'licence-photo.jpg',
+          byteLength: rawBase64.length
+        });
+        return;
+      }
+
+      // Downscale large camera photos in memory so they fit safely inside API request limits
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxDim = 1280;
+          const scale = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round((img.width || 800) * scale));
+          canvas.height = Math.max(1, Math.round((img.height || 500) * scale));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          const cBase64 = compressed.slice(compressed.indexOf(',') + 1);
+          resolve({
+            base64: cBase64,
+            mimeType: 'image/jpeg',
+            fileName: file.name || 'licence-photo.jpg',
+            byteLength: cBase64.length
+          });
+        } catch (e) {
+          resolve({
+            base64: rawBase64,
+            mimeType: origMime,
+            fileName: file.name || 'licence-photo.jpg',
+            byteLength: rawBase64.length
+          });
+        }
+      };
+      img.onerror = () => {
+        resolve({
+          base64: rawBase64,
+          mimeType: origMime,
+          fileName: file.name || 'licence-photo.jpg',
+          byteLength: rawBase64.length
+        });
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onDriverLicenceImageSelect(prefix, side, inputEl) {
+  const safePrefix = ephemeralLicenceUploads[prefix] ? prefix : 'sup-drv';
+  const sideKey = side === 'back' ? 'back' : 'front';
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById(`${safePrefix}-licence-${sideKey}-status`);
+  if (statusEl) {
+    statusEl.style.color = '#1D4ED8';
+    statusEl.textContent = `⏳ Reading ${sideKey} image into memory (will NOT be saved)...`;
+  }
+
+  try {
+    const encoded = await readLicenceFileToEphemeralBase64(file);
+    ephemeralLicenceUploads[safePrefix][sideKey] = encoded;
+
+    // Immediately clear native file input value so the browser does not retain file references in form state
+    try {
+      if (inputEl) inputEl.value = '';
+    } catch (e) {}
+
+    const kb = Math.max(1, Math.round((file.size || encoded.byteLength || 1024) / 1024));
+    if (statusEl) {
+      statusEl.style.color = '#059669';
+      statusEl.textContent = `🟢 ${sideKey === 'front' ? 'Front' : 'Back'} ready in memory (${kb} KB • Not saved)`;
+    }
+
+    // Automatically run AI verification once both Front and Back images are loaded in memory
+    if (ephemeralLicenceUploads[safePrefix].front && ephemeralLicenceUploads[safePrefix].back) {
+      await verifyDriverLicenceImagesWithAi(safePrefix);
+    }
+  } catch (err) {
+    ephemeralLicenceUploads[safePrefix][sideKey] = null;
+    try { if (inputEl) inputEl.value = ''; } catch (e) {}
+    if (statusEl) {
+      statusEl.style.color = '#DC2626';
+      statusEl.textContent = `⚠️ Could not load ${sideKey} image: ${err.message}`;
+    }
+  }
+}
+window.onDriverLicenceImageSelect = onDriverLicenceImageSelect;
+
+function applyVerifiedLicenceDetailsToForms(result) {
+  if (!result) return;
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && String(val).trim() !== '') {
+      el.value = String(val).trim();
+    }
+  };
+  const setSelectVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el || !val) return;
+    const match = Array.from(el.options || []).find(opt => opt.value === val || opt.value.startsWith(val));
+    if (match) el.value = match.value;
+  };
+
+  // Sync extracted licence fields across Inline Driver App, Modal Driver App, and Registration Details Profile
+  setVal('sup-drv-reg-licence-num', result.licenceNumber);
+  setVal('drv-reg-licence-num', result.licenceNumber);
+  setVal('supporter-reg-licence-number', result.licenceNumber);
+
+  setSelectVal('sup-drv-reg-licence-state', result.licenceState);
+  setSelectVal('drv-reg-licence-state', result.licenceState);
+  setSelectVal('supporter-reg-licence-state', result.licenceState);
+
+  setSelectVal('sup-drv-reg-licence-class', result.licenceClass);
+  setSelectVal('drv-reg-licence-class', result.licenceClass);
+  setSelectVal('supporter-reg-licence-class', result.licenceClass);
+
+  setVal('sup-drv-reg-licence-expiry', result.licenceExpiry);
+  setVal('drv-reg-licence-expiry', result.licenceExpiry);
+  setVal('supporter-reg-licence-expiry', result.licenceExpiry);
+
+  setVal('sup-drv-reg-licence-card-num', result.licenceCardNumber);
+  setVal('drv-reg-licence-card-num', result.licenceCardNumber);
+
+  const condLabel = result.licenceCardNumber && result.conditions && result.conditions !== 'None'
+    ? `${result.licenceCardNumber} / ${result.conditions}`
+    : (result.conditions || 'None');
+  setVal('sup-drv-reg-licence-conditions', result.conditions || 'None');
+  setVal('drv-reg-licence-conditions', result.conditions || 'None');
+  setVal('supporter-reg-licence-conditions', condLabel);
+
+  // Fill name & address only if blank or generic placeholder
+  const cleanName = String(result.fullName || '').trim();
+  if (cleanName && !cleanName.toLowerCase().includes('verified courier applicant')) {
+    ['sup-drv-reg-name', 'drv-reg-name'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) el.value = cleanName;
+    });
+  }
+  if (result.address) {
+    ['sup-drv-reg-address', 'drv-reg-address'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) el.value = result.address;
+    });
+  }
+
+  try { saveDriverApplicationDraft(false); } catch (e) {}
+}
+
+function saveVerifiedLicenceToProfile(result) {
+  if (!result) return;
+  const licenceDetailsText = `${result.licenceState || 'QLD'} #${result.licenceNumber} (${result.licenceClass || 'C (Car / Van)'})`;
+
+  // 1. Save verified licence details (zero images!) into Supporter profile
+  let supporter = typeof getCurrentSupporter === 'function' ? getCurrentSupporter() : null;
+  if (supporter && window.supporterDB) {
+    Object.assign(supporter, {
+      licenceNumber: result.licenceNumber,
+      licenceState: result.licenceState,
+      licenceClass: result.licenceClass,
+      licenceExpiry: result.licenceExpiry,
+      licenceCardNumber: result.licenceCardNumber || '',
+      licenceConditions: result.conditions || 'None',
+      licenceVerifiedByAi: true,
+      licenceVerifiedAt: result.verifiedAt || new Date().toISOString(),
+      licenceAiSummary: result.briefDescription || '',
+      licenceImagesSaved: false,
+      updatedAt: new Date().toISOString()
+    });
+    window.supporterDB.save();
+  }
+
+  // 2. Save verified licence details (zero images!) into linked Driver profile if present
+  const ownedDriver = typeof getOwnedDriverProfile === 'function' ? getOwnedDriverProfile() : null;
+  const supEmailLower = String(supporter?.email || document.getElementById('sup-drv-reg-email')?.value || document.getElementById('drv-reg-email')?.value || '').toLowerCase().trim();
+  const matchedDriver = ownedDriver || (supEmailLower && window.providerDB?.getAll
+    ? window.providerDB.getAll().find(d => !checkSampleProfileOrData(d) && String(d.email || '').toLowerCase().trim() === supEmailLower)
+    : null);
+
+  if (matchedDriver && window.providerDB) {
+    window.providerDB.updateProvider(matchedDriver.id, {
+      licenceNumber: result.licenceNumber,
+      licenceState: result.licenceState,
+      licenceClass: result.licenceClass,
+      licenceExpiry: result.licenceExpiry,
+      licenceCardNumber: result.licenceCardNumber || '',
+      licenceConditions: result.conditions || 'None',
+      licenceDetails: licenceDetailsText,
+      licenceVerifiedByAi: true,
+      licenceVerifiedAt: result.verifiedAt || new Date().toISOString(),
+      licenceAiSummary: result.briefDescription || '',
+      licenceImagesSaved: false
+    });
+  }
+
+  try {
+    const gRaw = localStorage.getItem('iasj_google_user');
+    if (gRaw) {
+      const parsed = JSON.parse(gRaw);
+      if (parsed) {
+        parsed.licenceNumber = result.licenceNumber;
+        parsed.licenceState = result.licenceState;
+        parsed.licenceClass = result.licenceClass;
+        parsed.licenceExpiry = result.licenceExpiry;
+        parsed.licenceVerifiedByAi = true;
+        localStorage.setItem('iasj_google_user', JSON.stringify(parsed));
+      }
+    }
+  } catch (e) {}
+
+  try { renderSupporterPanel(); } catch (e) {}
+  try { renderSuperadminDriverApprovals(); } catch (e) {}
+}
+
+async function verifyDriverLicenceImagesWithAi(prefix = 'sup-drv') {
+  const safePrefix = ephemeralLicenceUploads[prefix] ? prefix : 'sup-drv';
+  const slot = ephemeralLicenceUploads[safePrefix];
+  if (!slot?.front || !slot?.back) {
+    showToast('📸 Please select BOTH the Front and Back images of your Driver Licence first (images are never saved).');
+    return null;
+  }
+
+  const verifyBtn = document.getElementById(`btn-${safePrefix}-verify-licence-ai`);
+  const origBtnHtml = verifyBtn?.innerHTML || '';
+  if (verifyBtn) {
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI Inspecting Front &amp; Back Licence...';
+  }
+
+  const hintName = (
+    document.getElementById(`${safePrefix}-reg-name`)?.value
+    || document.getElementById('supporter-reg-name')?.value
+    || ''
+  ).trim();
+  const hintState = document.getElementById(`${safePrefix}-reg-licence-state`)?.value
+    || document.getElementById('supporter-reg-licence-state')?.value
+    || 'QLD';
+  const hintLicenceNum = (
+    document.getElementById(`${safePrefix}-reg-licence-num`)?.value
+    || document.getElementById('supporter-reg-licence-number')?.value
+    || ''
+  ).trim();
+
+  let result = null;
+  try {
+    const resp = await fetch('/api/verify-driver-licence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        frontImageBase64: slot.front.base64,
+        frontMimeType: slot.front.mimeType,
+        frontFileName: slot.front.fileName,
+        backImageBase64: slot.back.base64,
+        backMimeType: slot.back.mimeType,
+        backFileName: slot.back.fileName,
+        applicantHintName: hintName,
+        applicantHintState: hintState,
+        applicantHintLicenceNumber: hintLicenceNum
+      })
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      throw new Error(data.error || `Verification failed (HTTP ${resp.status})`);
+    }
+    result = {
+      ...data,
+      imageStored: false,
+      imagesDiscarded: true
+    };
+    lastAiLicenceVerification = result;
+
+    // Populate all editable form inputs first, then immediately persist verified text details to profile
+    applyVerifiedLicenceDetailsToForms(result);
+    saveVerifiedLicenceToProfile(result);
+
+    const summaryEl = document.getElementById(`${safePrefix}-licence-ai-summary-text`);
+    const resultBox = document.getElementById(`${safePrefix}-licence-ai-result-box`);
+    if (summaryEl) {
+      summaryEl.innerHTML = `✅ <strong>AI Verified Driver Licence (${escapeAttr(result.licenceState)} #${escapeAttr(result.licenceNumber)} • ${escapeAttr(result.licenceClass)} • Exp ${escapeAttr(result.licenceExpiry)})</strong><br><span style="font-weight:500; color:#047857;">${escapeAttr(result.briefDescription)}</span>`;
+    }
+    if (resultBox) {
+      resultBox.style.display = 'block';
+    }
+
+    showToast(`🤖 Driver Licence AI verified (${result.licenceState} #${result.licenceNumber}) & added to your profile! Images discarded & not saved — you can edit any field below if needed.`);
+  } catch (err) {
+    showToast(`⚠️ ${err.message || 'Could not verify driver licence images. You can still edit details manually.'}`);
+  } finally {
+    // IMMEDIATELY discard ephemeral front & back images from memory and reset file inputs
+    ephemeralLicenceUploads[safePrefix].front = null;
+    ephemeralLicenceUploads[safePrefix].back = null;
+    ['front', 'back'].forEach(sideKey => {
+      const inp = document.getElementById(`${safePrefix}-licence-${sideKey}-file`);
+      if (inp) {
+        try { inp.value = ''; } catch (e) {}
+      }
+      const st = document.getElementById(`${safePrefix}-licence-${sideKey}-status`);
+      if (st) {
+        st.style.color = '#059669';
+        st.textContent = result
+          ? `🗑️ ${sideKey === 'front' ? 'Front' : 'Back'} verified & discarded from memory (NOT saved)`
+          : `Select ${sideKey} image (verified in memory, never saved)`;
+      }
+    });
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.innerHTML = origBtnHtml;
+    }
+  }
+
+  return result;
+}
+window.verifyDriverLicenceImagesWithAi = verifyDriverLicenceImagesWithAi;
+
+function focusEditableLicenceFields(prefix = 'sup-drv') {
+  const numInputId = prefix === 'supporter-reg'
+    ? 'supporter-reg-licence-number'
+    : (prefix === 'drv' ? 'drv-reg-licence-num' : 'sup-drv-reg-licence-num');
+  const el = document.getElementById(numInputId);
+  if (el) {
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    el.focus();
+    el.select?.();
+  }
+  showToast('✏️ Edit any Driver Licence field below and save/submit your profile.');
+}
+window.focusEditableLicenceFields = focusEditableLicenceFields;
 
 /**
  * Format Driver @username input fields live with a leading '@'

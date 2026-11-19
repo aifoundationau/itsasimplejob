@@ -1144,11 +1144,15 @@
                 <div
                   style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
                   <div style="font-size:0.7rem; font-weight:800; color:#64748B; text-transform:uppercase;">Driver
-                    Licence Number</div>
+                    Licence Details</div>
                   <div id="supporter-reg-detail-licence"
                     style="font-size:0.95rem; font-weight:800; color:var(--primary-navy); margin-top:0.2rem;"
                     data-agent-id="supporter-reg-detail-licence" data-testid="supporter-reg-detail-licence">Not entered
                     yet</div>
+                  <div id="supporter-reg-detail-licence-ai-badge"
+                    style="display:none; font-size:0.72rem; font-weight:700; color:#065F46; background:#ECFDF5; border:1px solid #A7F3D0; border-radius:6px; padding:0.25rem 0.5rem; margin-top:0.35rem;"
+                    data-agent-id="supporter-reg-detail-licence-ai-badge" data-testid="supporter-reg-detail-licence-ai-badge">
+                  </div>
                 </div>
                 <div
                   style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:0.85rem 1rem;">
@@ -1223,11 +1227,117 @@
                     </div>
                     <div class="input-group">
                       <label class="input-label" for="supporter-reg-licence-number">
-                        <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> Driver Licence Number:
+                        <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> Driver Licence Number (Editable):
                       </label>
                       <input type="text" id="supporter-reg-licence-number" class="form-control"
                         placeholder="e.g. 482910384" data-agent-id="supporter-reg-licence-number"
                         data-testid="supporter-reg-licence-number" aria-label="Driver Licence Number">
+                    </div>
+                  </div>
+                  <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));">
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-licence-state">Licence State / Territory (Editable):</label>
+                      <select id="supporter-reg-licence-state" class="form-control"
+                        data-agent-id="supporter-reg-licence-state" data-testid="supporter-reg-licence-state"
+                        aria-label="Profile Licence Issuing State">
+                        <option value="QLD">QLD - Queensland</option>
+                        <option value="NSW">NSW - New South Wales</option>
+                        <option value="VIC">VIC - Victoria</option>
+                        <option value="WA">WA - Western Australia</option>
+                        <option value="SA">SA - South Australia</option>
+                        <option value="TAS">TAS - Tasmania</option>
+                        <option value="ACT">ACT - Australian Capital Territory</option>
+                        <option value="NT">NT - Northern Territory</option>
+                      </select>
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-licence-class">Licence Class (Editable):</label>
+                      <select id="supporter-reg-licence-class" class="form-control"
+                        data-agent-id="supporter-reg-licence-class" data-testid="supporter-reg-licence-class"
+                        aria-label="Profile Driver Licence Class">
+                        <option value="C (Car / Van)">C — Car / Standard Van</option>
+                        <option value="LR (Light Rigid)">LR — Light Rigid</option>
+                        <option value="MR (Medium Rigid)">MR — Medium Rigid</option>
+                        <option value="HR (Heavy Rigid)">HR — Heavy Rigid</option>
+                        <option value="HC (Heavy Combination)">HC — Heavy Combination</option>
+                        <option value="R (Motorcycle)">R — Motorcycle Courier</option>
+                      </select>
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-licence-expiry">Licence Expiry Date (Editable):</label>
+                      <input type="date" id="supporter-reg-licence-expiry" class="form-control" value="2029-12-31"
+                        data-agent-id="supporter-reg-licence-expiry" data-testid="supporter-reg-licence-expiry"
+                        aria-label="Profile Driver Licence Expiry Date">
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label" for="supporter-reg-licence-conditions">Card No. / Conditions (Editable):</label>
+                      <input type="text" id="supporter-reg-licence-conditions" class="form-control"
+                        placeholder="e.g. CRD-8841209 / None" data-agent-id="supporter-reg-licence-conditions"
+                        data-testid="supporter-reg-licence-conditions" aria-label="Profile Licence Card Number or Conditions">
+                    </div>
+                  </div>
+
+                  <!-- Quick AI Driver Licence Front & Back Verification inside Profile (Images Never Saved) -->
+                  <div id="supporter-reg-licence-ai-upload-box"
+                    style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-sm); padding:0.9rem 1rem; margin-bottom:1rem;"
+                    data-agent-id="supporter-reg-licence-ai-upload-box" data-testid="supporter-reg-licence-ai-upload-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.55rem;">
+                      <strong style="font-size:0.84rem; color:#1E40AF;">
+                        <i class="fa-solid fa-robot"></i> Update / Re-Verify Driver Licence with AI (Front &amp; Back)
+                      </strong>
+                      <span style="font-size:0.72rem; font-weight:800; color:#065F46; background:#DCFCE7; padding:0.15rem 0.55rem; border-radius:999px;">
+                        <i class="fa-solid fa-shield-halved"></i> Images Verified in Memory &amp; NEVER Saved
+                      </span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:0.65rem; margin-bottom:0.65rem;">
+                      <div style="background:#FFFFFF; border:1px dashed #93C5FD; border-radius:6px; padding:0.55rem 0.7rem;">
+                        <label class="input-label" for="supporter-reg-licence-front-file" style="font-size:0.76rem; margin-bottom:0.25rem;">
+                          1. Upload Front Image of Licence
+                        </label>
+                        <input type="file" id="supporter-reg-licence-front-file" accept="image/*" class="form-control" style="padding:0.3rem; font-size:0.75rem;"
+                          onchange="onDriverLicenceImageSelect('supporter-reg', 'front', this)"
+                          data-agent-id="supporter-reg-licence-front-file" data-testid="supporter-reg-licence-front-file"
+                          aria-label="Upload Front Image of Driver Licence in Profile">
+                        <div id="supporter-reg-licence-front-status" style="font-size:0.71rem; color:#64748B; margin-top:0.25rem; font-weight:700;">
+                          No front photo queued (not saved)
+                        </div>
+                      </div>
+                      <div style="background:#FFFFFF; border:1px dashed #93C5FD; border-radius:6px; padding:0.55rem 0.7rem;">
+                        <label class="input-label" for="supporter-reg-licence-back-file" style="font-size:0.76rem; margin-bottom:0.25rem;">
+                          2. Upload Back Image of Licence
+                        </label>
+                        <input type="file" id="supporter-reg-licence-back-file" accept="image/*" class="form-control" style="padding:0.3rem; font-size:0.75rem;"
+                          onchange="onDriverLicenceImageSelect('supporter-reg', 'back', this)"
+                          data-agent-id="supporter-reg-licence-back-file" data-testid="supporter-reg-licence-back-file"
+                          aria-label="Upload Back Image of Driver Licence in Profile">
+                        <div id="supporter-reg-licence-back-status" style="font-size:0.71rem; color:#64748B; margin-top:0.25rem; font-weight:700;">
+                          No back photo queued (not saved)
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" id="btn-supporter-reg-verify-licence-ai" class="btn btn-outline btn-sm"
+                      onclick="verifyDriverLicenceImagesWithAi('supporter-reg')"
+                      style="background:#FFFFFF; border-color:#2563EB; color:#1E40AF; font-weight:800; font-size:0.78rem;"
+                      data-agent-id="btn-supporter-reg-verify-licence-ai" data-testid="btn-supporter-reg-verify-licence-ai"
+                      aria-label="Verify Front and Back Driver Licence Images with AI in Profile">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> Verify Front &amp; Back with AI &amp; Update Profile
+                    </button>
+                    <div id="supporter-reg-licence-ai-result-box"
+                      style="display:none; margin-top:0.65rem; background:#ECFDF5; border:1px solid #10B981; border-radius:6px; padding:0.6rem 0.8rem; font-size:0.78rem; color:#065F46;"
+                      data-agent-id="supporter-reg-licence-ai-result-box" data-testid="supporter-reg-licence-ai-result-box">
+                      <div id="supporter-reg-licence-ai-summary-text" style="font-weight:700; margin-bottom:0.35rem;"></div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                        <span style="font-size:0.71rem; font-weight:800; background:#DCFCE7; padding:0.15rem 0.5rem; border-radius:4px;">
+                          🗑️ Front &amp; Back Images Discarded (Not Saved)
+                        </span>
+                        <button type="button" id="btn-supporter-reg-edit-licence-fields" class="btn btn-outline btn-xs"
+                          onclick="focusEditableLicenceFields('supporter-reg')"
+                          style="font-size:0.72rem; font-weight:800; border-color:#059669; color:#065F46; background:#FFFFFF;"
+                          data-agent-id="btn-supporter-reg-edit-licence-fields" data-testid="btn-supporter-reg-edit-licence-fields"
+                          aria-label="Edit Profile Licence Details">
+                          ✏️ Edit Licence Details if Incorrect
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div class="form-row">
@@ -1739,18 +1849,91 @@
 
                 <!-- 2. Driver Licence Details (Mandatory) -->
                 <h3 style="font-size:1.08rem; font-weight:800; color:var(--primary-navy); margin:1.25rem 0 0.85rem 0; padding-bottom:0.45rem; border-bottom:2px solid var(--bg-card-alt);">
-                  <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> 2. Driver Licence Details (Required — SuperAdmin Only)
+                  <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> 2. Driver Licence Details &amp; AI Front/Back Verification
                 </h3>
+
+                <!-- Ephemeral Front & Back Licence Upload Box (AI Inspects, NEVER Saves Images) -->
+                <div id="sup-drv-licence-ai-upload-box"
+                  style="background:#EFF6FF; border:1.5px solid #93C5FD; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1rem;"
+                  data-agent-id="sup-drv-licence-ai-upload-box" data-testid="sup-drv-licence-ai-upload-box">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.65rem;">
+                    <strong style="font-size:0.9rem; color:#1E3A8A;">
+                      <i class="fa-solid fa-robot" style="color:#2563EB;"></i> Upload Driver Licence Front &amp; Back for AI Verification
+                    </strong>
+                    <span style="font-size:0.72rem; font-weight:800; background:#DCFCE7; color:#065F46; border:1px solid #86EFAC; padding:0.2rem 0.6rem; border-radius:999px;">
+                      🔒 Privacy Guarantee: Images Verified in Memory &amp; NEVER Saved
+                    </span>
+                  </div>
+                  <p style="font-size:0.78rem; color:#1E40AF; margin:0 0 0.75rem 0;">
+                    Upload your <strong>Front</strong> and <strong>Back</strong> driver licence photos below. Our AI will inspect them in memory to verify authenticity and automatically add your details to your profile. The photos are discarded immediately — never stored anywhere — and you can edit any detail below if incorrect.
+                  </p>
+                  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-bottom:0.75rem;">
+                    <div style="background:#FFFFFF; border:1.5px dashed #60A5FA; border-radius:8px; padding:0.75rem;">
+                      <label class="input-label" for="sup-drv-licence-front-file" style="font-size:0.8rem; margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-id-card" style="color:#2563EB;"></i> 1. Front Image of Driver Licence:
+                      </label>
+                      <input type="file" id="sup-drv-licence-front-file" accept="image/*" class="form-control" style="padding:0.35rem; font-size:0.78rem;"
+                        onchange="onDriverLicenceImageSelect('sup-drv', 'front', this)"
+                        data-agent-id="sup-drv-licence-front-file" data-testid="sup-drv-licence-front-file"
+                        aria-label="Upload Front Image of Driver Licence">
+                      <div id="sup-drv-licence-front-status" style="font-size:0.73rem; color:#64748B; margin-top:0.3rem; font-weight:700;"
+                        data-agent-id="sup-drv-licence-front-status" data-testid="sup-drv-licence-front-status">
+                        Select Front image (verified in memory, never saved)
+                      </div>
+                    </div>
+                    <div style="background:#FFFFFF; border:1.5px dashed #60A5FA; border-radius:8px; padding:0.75rem;">
+                      <label class="input-label" for="sup-drv-licence-back-file" style="font-size:0.8rem; margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-barcode" style="color:#2563EB;"></i> 2. Back Image of Driver Licence:
+                      </label>
+                      <input type="file" id="sup-drv-licence-back-file" accept="image/*" class="form-control" style="padding:0.35rem; font-size:0.78rem;"
+                        onchange="onDriverLicenceImageSelect('sup-drv', 'back', this)"
+                        data-agent-id="sup-drv-licence-back-file" data-testid="sup-drv-licence-back-file"
+                        aria-label="Upload Back Image of Driver Licence">
+                      <div id="sup-drv-licence-back-status" style="font-size:0.73rem; color:#64748B; margin-top:0.3rem; font-weight:700;"
+                        data-agent-id="sup-drv-licence-back-status" data-testid="sup-drv-licence-back-status">
+                        Select Back image (verified in memory, never saved)
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-sup-drv-verify-licence-ai" class="btn btn-primary btn-sm"
+                    onclick="verifyDriverLicenceImagesWithAi('sup-drv')"
+                    style="background:#2563EB; border-color:#1D4ED8; font-weight:800; width:100%;"
+                    data-agent-id="btn-sup-drv-verify-licence-ai" data-testid="btn-sup-drv-verify-licence-ai"
+                    aria-label="Verify Front and Back Driver Licence with AI and Add Details to Profile">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 🤖 Verify Front &amp; Back Licence with AI &amp; Add to Profile (Images Not Saved)
+                  </button>
+                  <div id="sup-drv-licence-ai-result-box"
+                    style="display:none; margin-top:0.75rem; background:#ECFDF5; border:1.5px solid #10B981; border-radius:8px; padding:0.75rem 0.9rem; font-size:0.8rem; color:#065F46;"
+                    data-agent-id="sup-drv-licence-ai-result-box" data-testid="sup-drv-licence-ai-result-box">
+                    <div id="sup-drv-licence-ai-summary-text" style="font-weight:700; margin-bottom:0.45rem;"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                      <span style="font-size:0.73rem; font-weight:800; background:#DCFCE7; padding:0.2rem 0.55rem; border-radius:4px;">
+                        🗑️ Front &amp; Back Images Discarded (Not Saved)
+                      </span>
+                      <button type="button" id="btn-sup-drv-edit-licence-fields" class="btn btn-outline btn-xs"
+                        onclick="focusEditableLicenceFields('sup-drv')"
+                        style="font-size:0.74rem; font-weight:800; border-color:#059669; color:#065F46; background:#FFFFFF;"
+                        data-agent-id="btn-sup-drv-edit-licence-fields" data-testid="btn-sup-drv-edit-licence-fields"
+                        aria-label="Edit Extracted Driver Licence Details Below">
+                        ✏️ Edit Licence Details Below if Incorrect
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="font-size:0.76rem; color:#475569; font-weight:700; margin-bottom:0.55rem;">
+                  ✏️ Review &amp; Edit: After AI verification fills your licence details below, you can edit any field if it is incorrect.
+                </div>
 
                 <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));">
                   <div class="input-group">
-                    <label class="input-label" for="sup-drv-reg-licence-num">Driver Licence Number:</label>
+                    <label class="input-label" for="sup-drv-reg-licence-num">Driver Licence Number (Editable):</label>
                     <input type="text" id="sup-drv-reg-licence-num" class="form-control" required placeholder="e.g. 492018374"
                       data-agent-id="sup-drv-reg-licence-num" data-testid="sup-drv-reg-licence-num"
                       aria-label="Driver Licence Number">
                   </div>
                   <div class="input-group">
-                    <label class="input-label" for="sup-drv-reg-licence-state">Issuing State / Territory:</label>
+                    <label class="input-label" for="sup-drv-reg-licence-state">Issuing State / Territory (Editable):</label>
                     <select id="sup-drv-reg-licence-state" class="form-control" required data-agent-id="sup-drv-reg-licence-state"
                       data-testid="sup-drv-reg-licence-state" aria-label="Licence Issuing State">
                       <option value="QLD" selected>QLD - Queensland</option>
@@ -1764,7 +1947,7 @@
                     </select>
                   </div>
                   <div class="input-group">
-                    <label class="input-label" for="sup-drv-reg-licence-class">Licence Class:</label>
+                    <label class="input-label" for="sup-drv-reg-licence-class">Licence Class (Editable):</label>
                     <select id="sup-drv-reg-licence-class" class="form-control" required data-agent-id="sup-drv-reg-licence-class"
                       data-testid="sup-drv-reg-licence-class" aria-label="Driver Licence Class">
                       <option value="C (Car / Van)" selected>C — Car / Standard Van</option>
@@ -1776,10 +1959,22 @@
                     </select>
                   </div>
                   <div class="input-group">
-                    <label class="input-label" for="sup-drv-reg-licence-expiry">Licence Expiry Date:</label>
+                    <label class="input-label" for="sup-drv-reg-licence-expiry">Licence Expiry Date (Editable):</label>
                     <input type="date" id="sup-drv-reg-licence-expiry" class="form-control" required value="2029-12-31"
                       data-agent-id="sup-drv-reg-licence-expiry" data-testid="sup-drv-reg-licence-expiry"
                       aria-label="Driver Licence Expiry Date">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-card-num">Card / Back Barcode No. (Editable):</label>
+                    <input type="text" id="sup-drv-reg-licence-card-num" class="form-control" placeholder="e.g. CRD-8841209"
+                      data-agent-id="sup-drv-reg-licence-card-num" data-testid="sup-drv-reg-licence-card-num"
+                      aria-label="Driver Licence Card or Back Barcode Number">
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label" for="sup-drv-reg-licence-conditions">Conditions / Endorsements (Editable):</label>
+                    <input type="text" id="sup-drv-reg-licence-conditions" class="form-control" placeholder="e.g. None or Automatic Only"
+                      data-agent-id="sup-drv-reg-licence-conditions" data-testid="sup-drv-reg-licence-conditions"
+                      aria-label="Driver Licence Conditions or Endorsements">
                   </div>
                 </div>
 
@@ -3040,18 +3235,91 @@
             <!-- 2. Driver Licence Details (Mandatory) -->
             <h3
               style="font-size:1.15rem; font-weight:800; color:var(--primary-navy); margin:1.5rem 0 1rem 0; padding-bottom:0.5rem; border-bottom:2px solid var(--bg-card-alt);">
-              <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> Driver Licence Details (Required)
+              <i class="fa-solid fa-id-card" style="color:var(--brand-orange);"></i> Driver Licence Details &amp; AI Front/Back Verification
             </h3>
+
+            <!-- Ephemeral Front & Back Licence Upload Box (AI Inspects, NEVER Saves Images) -->
+            <div id="drv-licence-ai-upload-box"
+              style="background:#EFF6FF; border:1.5px solid #93C5FD; border-radius:var(--radius-sm); padding:1rem; margin-bottom:1rem;"
+              data-agent-id="drv-licence-ai-upload-box" data-testid="drv-licence-ai-upload-box">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.65rem;">
+                <strong style="font-size:0.9rem; color:#1E3A8A;">
+                  <i class="fa-solid fa-robot" style="color:#2563EB;"></i> Upload Driver Licence Front &amp; Back for AI Verification
+                </strong>
+                <span style="font-size:0.72rem; font-weight:800; background:#DCFCE7; color:#065F46; border:1px solid #86EFAC; padding:0.2rem 0.6rem; border-radius:999px;">
+                  🔒 Images Verified in Memory &amp; NEVER Saved
+                </span>
+              </div>
+              <p style="font-size:0.78rem; color:#1E40AF; margin:0 0 0.75rem 0;">
+                Upload your <strong>Front</strong> and <strong>Back</strong> driver licence photos. AI verifies the licence details, adds them to your profile, and immediately discards the images. You can edit any detail below if incorrect.
+              </p>
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-bottom:0.75rem;">
+                <div style="background:#FFFFFF; border:1.5px dashed #60A5FA; border-radius:8px; padding:0.75rem;">
+                  <label class="input-label" for="drv-licence-front-file" style="font-size:0.8rem; margin-bottom:0.35rem;">
+                    <i class="fa-solid fa-id-card" style="color:#2563EB;"></i> 1. Front Image of Driver Licence
+                  </label>
+                  <input type="file" id="drv-licence-front-file" accept="image/*" class="form-control" style="padding:0.35rem; font-size:0.78rem;"
+                    onchange="onDriverLicenceImageSelect('drv', 'front', this)"
+                    data-agent-id="drv-licence-front-file" data-testid="drv-licence-front-file"
+                    aria-label="Upload Front Image of Driver Licence">
+                  <div id="drv-licence-front-status" style="font-size:0.73rem; color:#64748B; margin-top:0.3rem; font-weight:700;"
+                    data-agent-id="drv-licence-front-status" data-testid="drv-licence-front-status">
+                    Select Front image (verified in memory, never saved)
+                  </div>
+                </div>
+                <div style="background:#FFFFFF; border:1.5px dashed #60A5FA; border-radius:8px; padding:0.75rem;">
+                  <label class="input-label" for="drv-licence-back-file" style="font-size:0.8rem; margin-bottom:0.35rem;">
+                    <i class="fa-solid fa-barcode" style="color:#2563EB;"></i> 2. Back Image of Driver Licence
+                  </label>
+                  <input type="file" id="drv-licence-back-file" accept="image/*" class="form-control" style="padding:0.35rem; font-size:0.78rem;"
+                    onchange="onDriverLicenceImageSelect('drv', 'back', this)"
+                    data-agent-id="drv-licence-back-file" data-testid="drv-licence-back-file"
+                    aria-label="Upload Back Image of Driver Licence">
+                  <div id="drv-licence-back-status" style="font-size:0.73rem; color:#64748B; margin-top:0.3rem; font-weight:700;"
+                    data-agent-id="drv-licence-back-status" data-testid="drv-licence-back-status">
+                    Select Back image (verified in memory, never saved)
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="btn-drv-verify-licence-ai" class="btn btn-primary btn-sm"
+                onclick="verifyDriverLicenceImagesWithAi('drv')"
+                style="background:#2563EB; border-color:#1D4ED8; font-weight:800; width:100%;"
+                data-agent-id="btn-drv-verify-licence-ai" data-testid="btn-drv-verify-licence-ai"
+                aria-label="Verify Front and Back Driver Licence with AI and Add Details to Profile">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 🤖 Verify Front &amp; Back Licence with AI &amp; Add to Profile (Images Not Saved)
+              </button>
+              <div id="drv-licence-ai-result-box"
+                style="display:none; margin-top:0.75rem; background:#ECFDF5; border:1.5px solid #10B981; border-radius:8px; padding:0.75rem 0.9rem; font-size:0.8rem; color:#065F46;"
+                data-agent-id="drv-licence-ai-result-box" data-testid="drv-licence-ai-result-box">
+                <div id="drv-licence-ai-summary-text" style="font-weight:700; margin-bottom:0.45rem;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                  <span style="font-size:0.73rem; font-weight:800; background:#DCFCE7; padding:0.2rem 0.55rem; border-radius:4px;">
+                    🗑️ Front &amp; Back Images Discarded (Not Saved)
+                  </span>
+                  <button type="button" id="btn-drv-edit-licence-fields" class="btn btn-outline btn-xs"
+                    onclick="focusEditableLicenceFields('drv')"
+                    style="font-size:0.74rem; font-weight:800; border-color:#059669; color:#065F46; background:#FFFFFF;"
+                    data-agent-id="btn-drv-edit-licence-fields" data-testid="btn-drv-edit-licence-fields"
+                    aria-label="Edit Extracted Driver Licence Details Below">
+                    ✏️ Edit Licence Details Below if Incorrect
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size:0.76rem; color:#475569; font-weight:700; margin-bottom:0.55rem;">
+              ✏️ Review &amp; Edit: After AI verification fills your licence details below, you can edit any field if it is incorrect.
+            </div>
 
             <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
               <div class="input-group">
-                <label class="input-label" for="drv-reg-licence-num">Driver Licence Number</label>
+                <label class="input-label" for="drv-reg-licence-num">Driver Licence Number (Editable)</label>
                 <input type="text" id="drv-reg-licence-num" class="form-control" required placeholder="e.g. 492018374"
                   data-agent-id="drv-reg-licence-num" data-testid="drv-reg-licence-num"
                   aria-label="Driver Licence Number">
               </div>
               <div class="input-group">
-                <label class="input-label" for="drv-reg-licence-state">Issuing State / Territory</label>
+                <label class="input-label" for="drv-reg-licence-state">Issuing State / Territory (Editable)</label>
                 <select id="drv-reg-licence-state" class="form-control" required data-agent-id="drv-reg-licence-state"
                   data-testid="drv-reg-licence-state" aria-label="Licence Issuing State">
                   <option value="QLD" selected>QLD - Queensland</option>
@@ -3065,7 +3333,7 @@
                 </select>
               </div>
               <div class="input-group">
-                <label class="input-label" for="drv-reg-licence-class">Licence Class</label>
+                <label class="input-label" for="drv-reg-licence-class">Licence Class (Editable)</label>
                 <select id="drv-reg-licence-class" class="form-control" required data-agent-id="drv-reg-licence-class"
                   data-testid="drv-reg-licence-class" aria-label="Driver Licence Class">
                   <option value="C (Car / Van)" selected>C — Car / Standard Van</option>
@@ -3077,10 +3345,22 @@
                 </select>
               </div>
               <div class="input-group">
-                <label class="input-label" for="drv-reg-licence-expiry">Licence Expiry Date</label>
+                <label class="input-label" for="drv-reg-licence-expiry">Licence Expiry Date (Editable)</label>
                 <input type="date" id="drv-reg-licence-expiry" class="form-control" required value="2029-12-31"
                   data-agent-id="drv-reg-licence-expiry" data-testid="drv-reg-licence-expiry"
                   aria-label="Driver Licence Expiry Date">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-licence-card-num">Card / Back Barcode No. (Editable)</label>
+                <input type="text" id="drv-reg-licence-card-num" class="form-control" placeholder="e.g. CRD-8841209"
+                  data-agent-id="drv-reg-licence-card-num" data-testid="drv-reg-licence-card-num"
+                  aria-label="Driver Licence Card or Back Barcode Number">
+              </div>
+              <div class="input-group">
+                <label class="input-label" for="drv-reg-licence-conditions">Conditions / Endorsements (Editable)</label>
+                <input type="text" id="drv-reg-licence-conditions" class="form-control" placeholder="e.g. None or Automatic Only"
+                  data-agent-id="drv-reg-licence-conditions" data-testid="drv-reg-licence-conditions"
+                  aria-label="Driver Licence Conditions or Endorsements">
               </div>
             </div>
 

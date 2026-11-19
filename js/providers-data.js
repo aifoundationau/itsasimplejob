@@ -618,9 +618,16 @@ class ProviderDatabase {
       : (Boolean(p.isSample) || SAMPLE_DRIVER_IDS.includes(p.id) || SAMPLE_PROVIDER_SPNS.includes(p.serviceProviderNumber));
 
     const username = normalizeDriverUsername(p.username, p.name, p.id);
+    const sanitizedCopy = { ...p };
+    delete sanitizedCopy.frontImageBase64;
+    delete sanitizedCopy.backImageBase64;
+    delete sanitizedCopy.licenceFrontImage;
+    delete sanitizedCopy.licenceBackImage;
+    delete sanitizedCopy.frontImage;
+    delete sanitizedCopy.backImage;
 
     return {
-      ...p,
+      ...sanitizedCopy,
       username,
       isSample,
       sampleTag: isSample ? (p.sampleTag || "SAMPLE ONLY") : "",
@@ -650,6 +657,12 @@ class ProviderDatabase {
       licenceState: p.licenceState || "QLD",
       licenceClass: p.licenceClass || "C (Car / Van)",
       licenceExpiry: p.licenceExpiry || "2029-12-31",
+      licenceCardNumber: p.licenceCardNumber || "",
+      licenceConditions: p.licenceConditions || "None",
+      licenceVerifiedByAi: Boolean(p.licenceVerifiedByAi),
+      licenceVerifiedAt: p.licenceVerifiedAt || "",
+      licenceAiSummary: p.licenceAiSummary || "",
+      licenceImagesSaved: false,
       address: p.address || p.baseSuburb || "Southport QLD 4215",
       baseSuburb: p.baseSuburb || "Southport QLD",
       phone: p.phone || "0412 000 000",
